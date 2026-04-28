@@ -11,7 +11,15 @@ import {
 } from '@mantine/core';
 import {
   IconEdit,
+  IconCopy,
+  IconEye,
+  IconEyeOff,
+  IconChevronLeft,
+  IconChevronRight,
+  IconArrowUp,
+  IconArrowDown,
   IconPlayerStop,
+  IconPhotoPlus,
   IconRefresh,
   IconSend,
   IconSparkles,
@@ -36,6 +44,11 @@ import {
   parseSceneTag,
   streamRoleplayChat,
 } from '../../services/roleplayChatService';
+import {
+  getMessageContent,
+  getMessageSceneImageUrl,
+  getMessageSuggestedImagePrompt,
+} from '../../features/roleplay/roleplayMessageUtils';
 import { useRoleplayStore } from '../../stores/roleplayStore';
 import type { ChatMessage, RoleplayCharacter, RoleplayMemoryFact } from '../../types/roleplay';
 import { ElevatedCard } from '../../components/ui/ElevatedCard';
@@ -59,17 +72,39 @@ function getGreetingOptions(character: RoleplayCharacter): string[] {
   return [...new Set(greetings)];
 }
 
+function getLatestSessionMessages(sessionId: string): ChatMessage[] {
+  return (
+    useRoleplayStore.getState().chatSessions.find((session) => session.id === sessionId)
+      ?.messages ?? []
+  );
+}
+
+function expandGreetingMacros(
+  greeting: string,
+  character: RoleplayCharacter,
+  persona?: { name?: string; description?: string; notes?: string } | null
+): string {
+  return greeting
+    .replaceAll('{{char}}', character.name)
+    .replaceAll('{{user}}', persona?.name || 'User')
+    .replaceAll('{{persona}}', persona?.description || persona?.notes || '')
+    .replaceAll('{{scenario}}', character.scenario);
+}
+
 export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const [dismissedResumeRecapKeys, setDismissedResumeRecapKeys] = useState<string[]>([]);
   const [visibleResumeRecapKey, setVisibleResumeRecapKey] = useState<string | null>(null);
-  const [editingUserMessageId, setEditingUserMessageId] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const RESUME_RECAP_MINUTES = 20;
 
   const {
     activeSessionId,
+    characters,
+    chatSessions,
+    personas,
     isStreamingChat,
     streamingContent,
     connectionStatus,
@@ -81,15 +116,18 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     chatMaxTokens,
     lorebooks,
     addMessage,
+    replaceMessageContent,
+    deleteMessage,
+    moveMessage,
+    setMessageIncluded,
+    addAssistantMessageVariant,
+    selectMessageVariant,
     deleteMessagesFrom,
     clearConversation,
     setStreamingChat,
     setStreamingContent,
     appendStreamingContent,
     dismissSuggestion,
-    getActiveCharacter,
-    getActiveSession,
-    getActivePersona,
     setDetectedServerMode,
     setSessionMemoryStatus,
     incrementMessagesSinceMemoryRefresh,
@@ -100,6 +138,9 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   } = useRoleplayStore(
     useShallow((state) => ({
       activeSessionId: state.activeSessionId,
+      characters: state.characters,
+      chatSessions: state.chatSessions,
+      personas: state.personas,
       isStreamingChat: state.isStreamingChat,
       streamingContent: state.streamingContent,
       connectionStatus: state.connectionStatus,
@@ -111,15 +152,18 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       chatMaxTokens: state.chatMaxTokens,
       lorebooks: state.lorebooks,
       addMessage: state.addMessage,
+      replaceMessageContent: state.replaceMessageContent,
+      deleteMessage: state.deleteMessage,
+      moveMessage: state.moveMessage,
+      setMessageIncluded: state.setMessageIncluded,
+      addAssistantMessageVariant: state.addAssistantMessageVariant,
+      selectMessageVariant: state.selectMessageVariant,
       deleteMessagesFrom: state.deleteMessagesFrom,
       clearConversation: state.clearConversation,
       setStreamingChat: state.setStreamingChat,
       setStreamingContent: state.setStreamingContent,
       appendStreamingContent: state.appendStreamingContent,
       dismissSuggestion: state.dismissSuggestion,
-      getActiveCharacter: state.getActiveCharacter,
-      getActiveSession: state.getActiveSession,
-      getActivePersona: state.getActivePersona,
       setDetectedServerMode: state.setDetectedServerMode,
       setSessionMemoryStatus: state.setSessionMemoryStatus,
       incrementMessagesSinceMemoryRefresh: state.incrementMessagesSinceMemoryRefresh,
@@ -130,9 +174,18 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     }))
   );
 
-  const activeCharacter = getActiveCharacter();
-  const activeSession = getActiveSession();
-  const activePersona = getActivePersona();
+  const activeSession = useMemo(
+    () => chatSessions.find((session) => session.id === activeSessionId) ?? null,
+    [activeSessionId, chatSessions]
+  );
+  const activeCharacter = useMemo(
+    () => characters.find((character) => character.id === activeSession?.characterId) ?? null,
+    [activeSession?.characterId, characters]
+  );
+  const activePersona = useMemo(
+    () => personas.find((persona) => persona.id === activeSession?.activePersonaId) ?? null,
+    [activeSession?.activePersonaId, personas]
+  );
   const messages = useMemo(() => activeSession?.messages ?? [], [activeSession?.messages]);
   const greetingOptions = activeCharacter ? getGreetingOptions(activeCharacter) : [];
   const selectedModelCompatibility = useMemo(
@@ -294,6 +347,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   const streamAssistantReply = async (
     baseMessages: ChatMessage[],
     options?: {
+      targetVariantMessageId?: string;
       onDone?: (assistantMessage: ChatMessage) => void;
     }
   ) => {
@@ -307,16 +361,30 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       return;
     }
 
+    const latestState = useRoleplayStore.getState();
+    const promptSession =
+      latestState.chatSessions.find((session) => session.id === activeSessionId) ?? activeSession;
+    const promptCharacter =
+      latestState.characters.find((character) => character.id === promptSession.characterId) ??
+      activeCharacter;
+    const promptPersona =
+      latestState.personas.find((persona) => persona.id === promptSession.activePersonaId) ??
+      activePersona;
+
     const compiledPrompt = compileRoleplayPrompt({
-      character: activeCharacter,
-      session: activeSession,
-      persona: activePersona,
+      character: promptCharacter,
+      session: promptSession,
+      persona: promptPersona,
       lorebooks,
       pendingMessages: baseMessages
-        .filter((message) => message.role === 'user' || message.role === 'assistant')
+        .filter(
+          (message) =>
+            (message.role === 'user' || message.role === 'assistant') &&
+            message.includedInPrompt !== false
+        )
         .map((message) => ({
           role: message.role as 'user' | 'assistant',
-          content: message.content,
+          content: getMessageContent(message),
         })),
     });
 
@@ -345,18 +413,29 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
           id: crypto.randomUUID(),
           role: 'assistant',
           content: cleanText,
+          includedInPrompt: true,
+          variants: [],
+          activeVariantId: null,
           timestamp: Date.now(),
           sceneImageUrl: null,
           suggestedImagePrompt: scenePrompt,
         };
-        addMessage(activeSessionId, assistantMessage);
+        if (options?.targetVariantMessageId) {
+          addAssistantMessageVariant(activeSessionId, options.targetVariantMessageId, {
+            content: cleanText,
+            sceneImageUrl: null,
+            suggestedImagePrompt: scenePrompt,
+          });
+        } else {
+          addMessage(activeSessionId, assistantMessage);
+        }
         incrementMessagesSinceMemoryRefresh(activeSessionId);
         const nextMessages = [...baseMessages, assistantMessage];
         const latestSession = useRoleplayStore
           .getState()
           .chatSessions.find((entry) => entry.id === activeSessionId);
         const messagesSinceRefresh =
-          latestSession?.messagesSinceMemoryRefresh ?? activeSession.messagesSinceMemoryRefresh + 1;
+          latestSession?.messagesSinceMemoryRefresh ?? promptSession.messagesSinceMemoryRefresh + 1;
         if (messagesSinceRefresh >= ROLEPLAY_MEMORY_REFRESH_THRESHOLD) {
           void refreshSessionMemory(activeSessionId, nextMessages);
         }
@@ -394,19 +473,23 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       return;
     }
 
+    const currentMessages = getLatestSessionMessages(activeSessionId);
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
       content: rawInput.trim(),
-      timestamp: (messages[messages.length - 1]?.timestamp ?? 0) + 1,
+      includedInPrompt: true,
+      variants: [],
+      activeVariantId: null,
+      timestamp: (currentMessages[currentMessages.length - 1]?.timestamp ?? 0) + 1,
       sceneImageUrl: null,
       suggestedImagePrompt: null,
     };
 
     const replaceIndex = replaceFromMessageId
-      ? messages.findIndex((message) => message.id === replaceFromMessageId)
+      ? currentMessages.findIndex((message) => message.id === replaceFromMessageId)
       : -1;
-    const baseMessages = replaceIndex >= 0 ? messages.slice(0, replaceIndex) : messages;
+    const baseMessages = replaceIndex >= 0 ? currentMessages.slice(0, replaceIndex) : currentMessages;
 
     if (replaceFromMessageId && replaceIndex >= 0) {
       deleteMessagesFrom(activeSessionId, replaceFromMessageId);
@@ -420,8 +503,16 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   const handleSend = async () => {
     const nextInput = input;
     setInput('');
-    setEditingUserMessageId(null);
-    await sendUserText(nextInput, editingUserMessageId);
+    const currentMessages = activeSessionId ? getLatestSessionMessages(activeSessionId) : messages;
+    const targetMessage = editingMessageId
+      ? currentMessages.find((message) => message.id === editingMessageId) ?? null
+      : null;
+    setEditingMessageId(null);
+    if (targetMessage && activeSessionId && targetMessage.role === 'assistant') {
+      replaceMessageContent(activeSessionId, targetMessage.id, nextInput.trim());
+      return;
+    }
+    await sendUserText(nextInput, targetMessage?.role === 'user' ? targetMessage.id : null);
   };
 
   const handleAbort = () => {
@@ -435,47 +526,109 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     if (!activeSessionId || !lastAssistantMessageId) {
       return;
     }
-    const assistantIndex = messages.findIndex((message) => message.id === lastAssistantMessageId);
+    const currentMessages = getLatestSessionMessages(activeSessionId);
+    const assistantIndex = currentMessages.findIndex(
+      (message) => message.id === lastAssistantMessageId
+    );
     if (assistantIndex === -1) {
       return;
     }
 
-    const baseMessages = messages.slice(0, assistantIndex);
-    deleteMessagesFrom(activeSessionId, lastAssistantMessageId);
-    await streamAssistantReply(baseMessages);
+    const baseMessages = currentMessages.slice(0, assistantIndex);
+    await streamAssistantReply(baseMessages, { targetVariantMessageId: lastAssistantMessageId });
   };
 
   const handleContinue = async () => {
-    await streamAssistantReply(messages);
+    if (!activeSessionId) {
+      return;
+    }
+    await streamAssistantReply(getLatestSessionMessages(activeSessionId));
   };
 
   const handleRememberMessage = (message: ChatMessage) => {
     if (!activeSessionId) {
       return;
     }
-    addMemoryFact(activeSessionId, message.content);
+    addMemoryFact(activeSessionId, getMessageContent(message));
   };
 
   const handlePinThread = (message: ChatMessage) => {
     if (!activeSessionId) {
       return;
     }
-    addContinuityThread(activeSessionId, message.content);
+    addContinuityThread(activeSessionId, getMessageContent(message));
   };
 
   const handleStartGreeting = (greeting: string) => {
     if (!activeSessionId) {
       return;
     }
-    const timestamp = (messages[messages.length - 1]?.timestamp ?? 0) + 1;
+    if (!activeCharacter) {
+      return;
+    }
+    const currentMessages = getLatestSessionMessages(activeSessionId);
+    const timestamp = (currentMessages[currentMessages.length - 1]?.timestamp ?? 0) + 1;
     addMessage(activeSessionId, {
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: greeting,
+      content: expandGreetingMacros(greeting, activeCharacter, activePersona),
+      includedInPrompt: true,
+      variants: [],
+      activeVariantId: null,
       timestamp,
       sceneImageUrl: null,
       suggestedImagePrompt: null,
     });
+  };
+
+  const handleCopyMessage = async (message: ChatMessage) => {
+    try {
+      await navigator.clipboard.writeText(getMessageContent(message));
+      notifications.show({
+        title: 'Copied',
+        message: 'Message copied to clipboard.',
+        color: 'green',
+      });
+    } catch {
+      notifications.show({
+        title: 'Copy Failed',
+        message: 'Clipboard access was not available.',
+        color: 'orange',
+      });
+    }
+  };
+
+  const handleEditMessage = (message: ChatMessage) => {
+    setInput(getMessageContent(message));
+    setEditingMessageId(message.id);
+  };
+
+  const handleDeleteMessage = (message: ChatMessage) => {
+    if (!activeSessionId) {
+      return;
+    }
+    deleteMessage(activeSessionId, message.id);
+  };
+
+  const handleMoveMessage = (message: ChatMessage, direction: -1 | 1) => {
+    if (!activeSessionId) {
+      return;
+    }
+    moveMessage(activeSessionId, message.id, direction);
+  };
+
+  const handleToggleMessageIncluded = (message: ChatMessage) => {
+    if (!activeSessionId) {
+      return;
+    }
+    setMessageIncluded(activeSessionId, message.id, message.includedInPrompt === false);
+  };
+
+  const handleSelectVariant = (message: ChatMessage, variantId: string | null) => {
+    if (!activeSessionId) {
+      return;
+    }
+    selectMessageVariant(activeSessionId, message.id, variantId);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -643,15 +796,17 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
               message={message}
               character={activeCharacter}
               activeSessionId={activeSessionId}
-              onRegenerateScene={message.sceneImageUrl ? onRegenerateScene : undefined}
+              onRegenerateScene={getMessageSceneImageUrl(message) ? onRegenerateScene : undefined}
               onGenerateSceneWithPrompt={onGenerateSceneWithPrompt}
               onDismissSuggestion={dismissSuggestion}
               onRememberMessage={handleRememberMessage}
               onPinThread={handlePinThread}
-              onEditUserMessage={(targetMessage) => {
-                setInput(targetMessage.content);
-                setEditingUserMessageId(targetMessage.id);
-              }}
+              onEditMessage={handleEditMessage}
+              onCopyMessage={(targetMessage) => void handleCopyMessage(targetMessage)}
+              onDeleteMessage={handleDeleteMessage}
+              onMoveMessage={handleMoveMessage}
+              onToggleIncluded={handleToggleMessageIncluded}
+              onSelectVariant={handleSelectVariant}
               onRegenerateReply={() => void handleRegenerateReply()}
               onContinue={() => void handleContinue()}
               isLatestAssistantMessage={message.id === lastAssistantMessageId}
@@ -700,8 +855,8 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         <Textarea
           flex={1}
           placeholder={
-            editingUserMessageId
-              ? `Edit your last turn to resend it to ${activeCharacter.name}...`
+            editingMessageId
+              ? 'Edit the selected turn...'
               : `Message ${activeCharacter.name}... (Shift+Enter for new line)`
           }
           value={input}
@@ -713,13 +868,13 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
           disabled={isStreamingChat}
           size="sm"
         />
-        {editingUserMessageId ? (
+        {editingMessageId ? (
           <SwarmButton
             tone="secondary"
             emphasis="ghost"
             size="sm"
             onClick={() => {
-              setEditingUserMessageId(null);
+              setEditingMessageId(null);
               setInput('');
             }}
           >
@@ -745,7 +900,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
             disabled={!input.trim() || connectionStatus !== 'connected'}
             leftSection={<IconSend size={16} />}
           >
-            {editingUserMessageId ? 'Edit + Resend' : 'Send'}
+            {editingMessageId ? 'Save Edit' : 'Send'}
           </SwarmButton>
         )}
       </Group>
@@ -762,7 +917,12 @@ interface MessageBubbleProps {
   onDismissSuggestion: (sessionId: string, messageId: string) => void;
   onRememberMessage: (message: ChatMessage) => void;
   onPinThread: (message: ChatMessage) => void;
-  onEditUserMessage: (message: ChatMessage) => void;
+  onEditMessage: (message: ChatMessage) => void;
+  onCopyMessage: (message: ChatMessage) => void;
+  onDeleteMessage: (message: ChatMessage) => void;
+  onMoveMessage: (message: ChatMessage, direction: -1 | 1) => void;
+  onToggleIncluded: (message: ChatMessage) => void;
+  onSelectVariant: (message: ChatMessage, variantId: string | null) => void;
   onRegenerateReply: () => void;
   onContinue: () => void;
   isLatestAssistantMessage: boolean;
@@ -778,33 +938,78 @@ function MessageBubble({
   onDismissSuggestion,
   onRememberMessage,
   onPinThread,
-  onEditUserMessage,
+  onEditMessage,
+  onCopyMessage,
+  onDeleteMessage,
+  onMoveMessage,
+  onToggleIncluded,
+  onSelectVariant,
   onRegenerateReply,
   onContinue,
   isLatestAssistantMessage,
   isLatestUserMessage,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const content = getMessageContent(message);
+  const sceneImageUrl = getMessageSceneImageUrl(message);
+  const suggestedImagePrompt = getMessageSuggestedImagePrompt(message);
+  const variantIds = [null, ...message.variants.map((variant) => variant.id)];
+  const activeVariantIndex = Math.max(0, variantIds.indexOf(message.activeVariantId));
+  const canSwipe = message.role === 'assistant' && variantIds.length > 1;
+  const alignmentClass = isUser ? 'roleplay-message-row-user' : 'roleplay-message-row-assistant';
+  const handleVariantStep = (direction: -1 | 1) => {
+    if (!canSwipe) {
+      return;
+    }
+    const nextIndex = (activeVariantIndex + direction + variantIds.length) % variantIds.length;
+    onSelectVariant(message, variantIds[nextIndex] ?? null);
+  };
 
   if (isUser) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Stack gap={4} align="flex-end" style={{ maxWidth: '80%' }}>
+      <div className={`roleplay-message-row ${alignmentClass}`}>
+        <Stack gap={4} align="flex-end" className="roleplay-message-stack">
           <ElevatedCard elevation="paper" tone="brand">
             <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-              {message.content}
+              {content}
             </Text>
           </ElevatedCard>
-          {isLatestUserMessage ? (
-            <SwarmButton
-              tone="secondary"
-              emphasis="ghost"
-              size="xs"
-              leftSection={<IconEdit size={12} />}
-              onClick={() => onEditUserMessage(message)}
-            >
-              Edit + Resend
-            </SwarmButton>
+          <Group gap={4} wrap="wrap" justify="flex-end" className="roleplay-message-toolbar">
+            <Tooltip label={message.includedInPrompt === false ? 'Include in prompt' : 'Exclude from prompt'}>
+              <ActionIcon variant="subtle" size="xs" onClick={() => onToggleIncluded(message)}>
+                {message.includedInPrompt === false ? <IconEyeOff size={12} /> : <IconEye size={12} />}
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Copy">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onCopyMessage(message)}>
+                <IconCopy size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={isLatestUserMessage ? 'Edit and resend' : 'Edit'}>
+              <ActionIcon variant="subtle" size="xs" onClick={() => onEditMessage(message)}>
+                <IconEdit size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Move up">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, -1)}>
+                <IconArrowUp size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Move down">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, 1)}>
+                <IconArrowDown size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Delete">
+              <ActionIcon variant="subtle" color="red" size="xs" onClick={() => onDeleteMessage(message)}>
+                <IconTrash size={12} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+          {message.includedInPrompt === false ? (
+            <Text size="xs" c="dimmed">
+              Excluded from compiled prompt
+            </Text>
           ) : null}
         </Stack>
       </div>
@@ -812,24 +1017,24 @@ function MessageBubble({
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+    <div className={`roleplay-message-row ${alignmentClass}`}>
       <Group gap="xs" align="flex-start" wrap="nowrap">
         <div style={{ paddingTop: 4, flexShrink: 0 }}>
           <CharacterAvatar character={character} size={28} />
         </div>
-        <Stack gap={4} style={{ maxWidth: '80%' }}>
+        <Stack gap={4} className="roleplay-message-stack">
           <ElevatedCard elevation="table" tone="neutral">
             <Stack gap={4}>
               <Text size="xs" fw={600} c="dimmed">
                 {character.name}
               </Text>
               <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-                {message.content}
+                {content}
               </Text>
-              {message.sceneImageUrl ? (
+              {sceneImageUrl ? (
                 <div style={{ position: 'relative', marginTop: 4 }}>
                   <img
-                    src={message.sceneImageUrl}
+                    src={sceneImageUrl}
                     alt="Scene"
                     style={{
                       maxWidth: '100%',
@@ -860,7 +1065,55 @@ function MessageBubble({
             </Stack>
           </ElevatedCard>
 
-          <Group gap={6} wrap="wrap">
+          {canSwipe ? (
+            <Group gap={4} className="roleplay-swipe-controls">
+              <Tooltip label="Previous swipe">
+                <ActionIcon variant="subtle" size="xs" onClick={() => handleVariantStep(-1)}>
+                  <IconChevronLeft size={12} />
+                </ActionIcon>
+              </Tooltip>
+              <Text size="xs" c="dimmed">
+                Swipe {activeVariantIndex + 1} / {variantIds.length}
+              </Text>
+              <Tooltip label="Next swipe">
+                <ActionIcon variant="subtle" size="xs" onClick={() => handleVariantStep(1)}>
+                  <IconChevronRight size={12} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          ) : null}
+
+          <Group gap={4} wrap="wrap" className="roleplay-message-toolbar">
+            <Tooltip label={message.includedInPrompt === false ? 'Include in prompt' : 'Exclude from prompt'}>
+              <ActionIcon variant="subtle" size="xs" onClick={() => onToggleIncluded(message)}>
+                {message.includedInPrompt === false ? <IconEyeOff size={12} /> : <IconEye size={12} />}
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Copy">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onCopyMessage(message)}>
+                <IconCopy size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Edit">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onEditMessage(message)}>
+                <IconEdit size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Move up">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, -1)}>
+                <IconArrowUp size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Move down">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, 1)}>
+                <IconArrowDown size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Delete">
+              <ActionIcon variant="subtle" color="red" size="xs" onClick={() => onDeleteMessage(message)}>
+                <IconTrash size={12} />
+              </ActionIcon>
+            </Tooltip>
             <SwarmButton
               tone="secondary"
               emphasis="ghost"
@@ -881,6 +1134,16 @@ function MessageBubble({
               tone="secondary"
               emphasis="ghost"
               size="xs"
+              leftSection={<IconPhotoPlus size={12} />}
+              onClick={() => onGenerateSceneWithPrompt?.(suggestedImagePrompt || content)}
+              disabled={!onGenerateSceneWithPrompt}
+            >
+              Image
+            </SwarmButton>
+            <SwarmButton
+              tone="secondary"
+              emphasis="ghost"
+              size="xs"
               onClick={onContinue}
               disabled={!isLatestAssistantMessage}
             >
@@ -893,11 +1156,17 @@ function MessageBubble({
               onClick={onRegenerateReply}
               disabled={!isLatestAssistantMessage}
             >
-              Rewrite Reply
+              New Swipe
             </SwarmButton>
           </Group>
 
-          {message.suggestedImagePrompt && !message.sceneImageUrl ? (
+          {message.includedInPrompt === false ? (
+            <Text size="xs" c="dimmed">
+              Excluded from compiled prompt
+            </Text>
+          ) : null}
+
+          {suggestedImagePrompt && !sceneImageUrl ? (
             <ElevatedCard elevation="table" tone="brand">
               <Stack gap={6}>
                 <Group justify="space-between" wrap="nowrap">
@@ -921,14 +1190,14 @@ function MessageBubble({
                   </Tooltip>
                 </Group>
                 <Text size="xs" c="dimmed" lineClamp={2}>
-                  {message.suggestedImagePrompt}
+                  {suggestedImagePrompt}
                 </Text>
                 <SwarmButton
                   tone="brand"
                   emphasis="solid"
                   size="xs"
                   leftSection={<IconSparkles size={12} />}
-                  onClick={() => onGenerateSceneWithPrompt?.(message.suggestedImagePrompt!)}
+                  onClick={() => onGenerateSceneWithPrompt?.(suggestedImagePrompt)}
                   disabled={!onGenerateSceneWithPrompt}
                 >
                   Generate This Scene

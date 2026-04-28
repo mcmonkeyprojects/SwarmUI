@@ -51,6 +51,19 @@ export interface UseAutoCompleteReturn {
     loadAutocompletions: () => Promise<void>;
 }
 
+function normalizeAutocompletions(value: unknown): string[] {
+    if (Array.isArray(value)) {
+        return value.filter((item): item is string => typeof item === 'string');
+    }
+    if (value && typeof value === 'object' && 'userData' in value) {
+        const userData = (value as { userData?: { autocompletions?: unknown } }).userData;
+        if (Array.isArray(userData?.autocompletions)) {
+            return userData.autocompletions.filter((item): item is string => typeof item === 'string');
+        }
+    }
+    return [];
+}
+
 /**
  * Find the start and end of the current word at cursor position.
  * Words are separated by commas, spaces, or newlines.
@@ -112,8 +125,7 @@ export function useAutoComplete(options: UseAutoCompleteOptions = {}): UseAutoCo
 
         try {
             const result = await autocompletionsQuery.refetch();
-            const snapshot = result.data as { userData?: { autocompletions?: string[] } } | undefined;
-            const autocompletions = snapshot?.userData?.autocompletions ?? [];
+            const autocompletions = normalizeAutocompletions(result.data);
             if (autocompletions.length > 0) {
                 console.debug(`[useAutoComplete] Received ${autocompletions.length} entries`);
                 storeLoad(autocompletions);
@@ -128,10 +140,11 @@ export function useAutoComplete(options: UseAutoCompleteOptions = {}): UseAutoCo
     }, [autocompletionsQuery, isLoaded, storeLoad]);
 
     useEffect(() => {
-        if (!enabled || isLoaded || !autocompletionsQuery.data || autocompletionsQuery.data.length === 0) {
+        const autocompletions = normalizeAutocompletions(autocompletionsQuery.data);
+        if (!enabled || isLoaded || autocompletions.length === 0) {
             return;
         }
-        storeLoad(autocompletionsQuery.data);
+        storeLoad(autocompletions);
     }, [autocompletionsQuery.data, enabled, isLoaded, storeLoad]);
 
     // Auto-load on mount if not loaded
@@ -148,7 +161,7 @@ export function useAutoComplete(options: UseAutoCompleteOptions = {}): UseAutoCo
             return;
         }
 
-        const { start, end: _end } = findWordBounds(text, cursorPos);
+        const { start } = findWordBounds(text, cursorPos);
         const word = text.substring(start, cursorPos).trim();
 
         // Require at least 2 characters

@@ -5,13 +5,12 @@
  * Local state is only used for session gallery persistence and selection.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useTransition } from 'react';
 import { notifications } from '@mantine/notifications';
-import { useShallow } from 'zustand/react/shallow';
 import { swarmClient } from '../api/client';
 import { logger } from '../utils/logger';
 import type { GenerateParams } from '../api/types';
-import { useSessionImages, useCanvasNavigationState, useGenerationStore } from '../store/generationStore';
+import { useSessionImages, useCanvasNavigationState } from '../store/generationStore';
 import { useAdaptiveAccentStore } from '../store/adaptiveAccentStore';
 import {
     summarizeDiagnosticValue,
@@ -73,6 +72,17 @@ function summarizeRecord(record: Record<string, unknown>): Record<string, unknow
     );
 }
 
+function readFiniteNumber(value: unknown): number | null {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value === 'string' && value.trim()) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+}
+
 /**
  * Custom hook to manage image generation logic.
  * Uses the centralized WebSocket store for hot state and only persists final
@@ -82,18 +92,18 @@ export function useGenerationHandlers({
     featureToggles,
     mediaCapabilities,
 }: UseGenerationHandlersParams): UseGenerationHandlersReturn {
-    const wsGeneration = useWebSocketStore(
-        useShallow((state) => ({
-            isGenerating: state.generation.isGenerating,
-            generationId: state.generation.generationId,
-            phase: state.generation.phase,
-            images: state.generation.images,
-            requestId: state.generation.requestId,
-            error: state.generation.error,
-            errorId: state.generation.errorId,
-            errorData: state.generation.errorData,
-        }))
-    );
+    const isGenerating = useWebSocketStore((state) => state.generation.isGenerating);
+    const generationId = useWebSocketStore((state) => state.generation.generationId);
+    const generationPhase = useWebSocketStore((state) => state.generation.phase);
+    const generationRequestId = useWebSocketStore((state) => state.generation.requestId);
+    const generationImageCount = useWebSocketStore((state) => state.generation.images.length);
+    const latestGeneratedImage = useWebSocketStore((state) => {
+        const images = state.generation.images;
+        return images[images.length - 1] ?? null;
+    });
+    const generationError = useWebSocketStore((state) => state.generation.error);
+    const generationErrorId = useWebSocketStore((state) => state.generation.errorId);
+    const generationErrorData = useWebSocketStore((state) => state.generation.errorData);
     const startGeneration = useWebSocketStore((state) => state.startGeneration);
     const stopGeneration = useWebSocketStore((state) => state.stopGeneration);
     const isInitialized = useWebSocketStore((state) => state.isInitialized);
@@ -123,14 +133,13 @@ export function useGenerationHandlers({
     } = useCanvasNavigationState();
 
     const generatedImagesRef = useRef(generatedImages);
+    const [, startGalleryTransition] = useTransition();
     useEffect(() => {
         generatedImagesRef.current = generatedImages;
     }, [generatedImages]);
 
     const { enableInitImage, enableRefiner, enableControlNet, enableVideo, enableVariation } = featureToggles;
     const addPromptToCache = usePromptCacheStore((state) => state.addEntry);
-
-    const latestGeneratedImage = wsGeneration.images[wsGeneration.images.length - 1] ?? null;
 
     useEffect(() => {
         if (!latestGeneratedImage) {
@@ -142,17 +151,26 @@ export function useGenerationHandlers({
             : resolveAssetUrl(latestGeneratedImage.startsWith('/') ? latestGeneratedImage : `/${latestGeneratedImage}`);
 
         if (!generatedImagesRef.current.includes(imagePath)) {
-            setCurrentImageIndex(generatedImagesRef.current.length);
-            addSessionImage(imagePath);
+            const nextImageIndex = generatedImagesRef.current.length;
+            startGalleryTransition(() => {
+                setCurrentImageIndex(nextImageIndex);
+                addSessionImage(imagePath);
+            });
         }
         setAdaptiveAccentSourceImageUrl(imagePath);
-    }, [latestGeneratedImage, addSessionImage, setAdaptiveAccentSourceImageUrl, setCurrentImageIndex]);
+    }, [
+        addSessionImage,
+        latestGeneratedImage,
+        setAdaptiveAccentSourceImageUrl,
+        setCurrentImageIndex,
+        startGalleryTransition,
+    ]);
 
     useEffect(() => {
-        if (!wsGeneration.isGenerating && wsGeneration.phase === 'complete' && paramsRef.current) {
-            const imageCount = wsGeneration.images.length;
+        if (!isGenerating && generationPhase === 'complete' && paramsRef.current) {
+            const imageCount = generationImageCount;
             if (imageCount > 0) {
-                const completionKey = `${wsGeneration.requestId || 'no-request'}:${imageCount}`;
+                const completionKey = `${generationRequestId || 'no-request'}:${imageCount}`;
                 if (lastCompletionRef.current !== completionKey) {
                     lastCompletionRef.current = completionKey;
                     if (generatedImages.length > 0) {
@@ -174,25 +192,25 @@ export function useGenerationHandlers({
                     }
                 }
             }
-        } else if (wsGeneration.isGenerating || wsGeneration.phase !== 'complete') {
+        } else if (isGenerating || generationPhase !== 'complete') {
             lastCompletionRef.current = null;
         }
     }, [
         addPromptToCache,
+        generationImageCount,
+        generationPhase,
+        generationRequestId,
         generatedImages.length,
+        isGenerating,
         setCurrentImageIndex,
-        wsGeneration.images.length,
-        wsGeneration.isGenerating,
-        wsGeneration.phase,
-        wsGeneration.requestId,
     ]);
 
     useEffect(() => {
-        if (wsGeneration.error) {
+        if (generationError) {
             const diagnosticsSummary = (() => {
-                const backendErrorData = wsGeneration.errorData;
+                const backendErrorData = generationErrorData;
                 const ctx = lastDebugContextRef.current;
-                if (wsGeneration.errorId === 'missing_model_input' || wsGeneration.errorId === 'frontend_missing_model') {
+                if (generationErrorId === 'missing_model_input' || generationErrorId === 'frontend_missing_model') {
                     const payloadKeys = (backendErrorData && typeof backendErrorData === 'object' && 'payloadKeys' in backendErrorData)
                         ? (backendErrorData as { payloadKeys?: string[] }).payloadKeys
                         : (backendErrorData && typeof backendErrorData === 'object' && 'raw_keys' in backendErrorData)
@@ -204,13 +222,13 @@ export function useGenerationHandlers({
             })();
 
             const errorMessage = diagnosticsSummary
-                ? `${wsGeneration.error} (${diagnosticsSummary})`
-                : wsGeneration.error;
+                ? `${generationError} (${diagnosticsSummary})`
+                : generationError;
             const surfacedErrorMessage = `${errorMessage} Diagnostics captured.`;
 
-            if (lastErrorRef.current !== wsGeneration.error) {
-                lastErrorRef.current = wsGeneration.error;
-                if (wsGeneration.images.length > 0) {
+            if (lastErrorRef.current !== generationError) {
+                lastErrorRef.current = generationError;
+                if (generationImageCount > 0) {
                     notifications.show({
                         title: 'Generation Warning',
                         message: surfacedErrorMessage,
@@ -224,19 +242,26 @@ export function useGenerationHandlers({
                     });
                 }
                 logger.error('[useGenerationHandlers] generation error', {
-                    error: wsGeneration.error,
-                    errorId: wsGeneration.errorId,
-                    errorData: wsGeneration.errorData,
+                    error: generationError,
+                    errorId: generationErrorId,
+                    errorData: generationErrorData,
                     debugContext: lastDebugContextRef.current,
-                    requestId: wsGeneration.requestId,
-                    imagesSeen: wsGeneration.images.length,
-                    phase: wsGeneration.phase,
+                    requestId: generationRequestId,
+                    imagesSeen: generationImageCount,
+                    phase: generationPhase,
                 });
             }
         } else {
             lastErrorRef.current = null;
         }
-    }, [wsGeneration]);
+    }, [
+        generationError,
+        generationErrorData,
+        generationErrorId,
+        generationImageCount,
+        generationPhase,
+        generationRequestId,
+    ]);
 
     const handleGenerate = useCallback(async (values: GenerateParams, options?: { forceEnableRefiner?: boolean }) => {
         const normalizeModelValue = (value: unknown): string | null => {
@@ -413,7 +438,19 @@ export function useGenerationHandlers({
 
         const hasLoras = !!normalizedValues.loras;
         const hasMask = !!normalizedValues.maskimage;
-        const shouldIncludeRefiner = options?.forceEnableRefiner ?? enableRefiner;
+        const submittedRefinerUpscale = readFiniteNumber(normalizedValues.refinerupscale);
+        const submittedRefinerControl = readFiniteNumber(
+            normalizedValues.refinercontrolpercentage ?? normalizedValues.refinercontrol
+        );
+        const submittedRefinerModel = typeof normalizedValues.refinermodel === 'string'
+            ? normalizedValues.refinermodel.trim()
+            : '';
+        const submittedRefinerRequested = Boolean(
+            (submittedRefinerUpscale !== null && submittedRefinerUpscale !== 1)
+            || (submittedRefinerControl !== null && submittedRefinerControl > 0)
+            || submittedRefinerModel
+        );
+        const shouldIncludeRefiner = options?.forceEnableRefiner ?? (enableRefiner || submittedRefinerRequested);
 
         const includeParam = (key: string): boolean => {
             if (coreParams.has(key)) return true;
@@ -486,7 +523,6 @@ export function useGenerationHandlers({
 
         const omittedParameters: OmittedGenerationParameter[] = [];
         const backendParams: Partial<GenerateParams> = {};
-        const batchOutputFolder = useGenerationStore.getState().batchOutputFolder;
 
         for (const [key, value] of Object.entries(normalizedValues)) {
             if (!includeParam(key)) {
@@ -565,14 +601,6 @@ export function useGenerationHandlers({
         }
 
         backendParams.model = backendModel;
-        if (batchOutputFolder) {
-            backendParams.extra_metadata = {
-                ...(backendParams.extra_metadata && typeof backendParams.extra_metadata === 'object'
-                    ? backendParams.extra_metadata as Record<string, unknown>
-                    : {}),
-                batch_output_folder: batchOutputFolder,
-            };
-        }
         const payloadKeys = Object.keys(backendParams).sort();
         const payloadSummary = summarizeRecord(backendParams as Record<string, unknown>);
         startDiagnosticAttempt({
@@ -613,9 +641,6 @@ export function useGenerationHandlers({
         logger.info('Starting generation with WebSocket store:', backendParams);
 
         startGeneration(backendParams as GenerateParams, generationId);
-        if (batchOutputFolder) {
-            useGenerationStore.getState().clearBatchOutputFolder();
-        }
     }, [
         appendDiagnosticsEvent,
         enableControlNet,
@@ -634,8 +659,8 @@ export function useGenerationHandlers({
 
     const handleInterrupt = useCallback(async () => {
         try {
-            if (wsGeneration.generationId) {
-                markDiagnosticsInterrupted(wsGeneration.generationId, 'User interrupted generation.');
+            if (generationId) {
+                markDiagnosticsInterrupted(generationId, 'User interrupted generation.');
             }
 
             stopGeneration();
@@ -649,10 +674,10 @@ export function useGenerationHandlers({
         } catch (error) {
             console.error('Failed to interrupt:', error);
         }
-    }, [markDiagnosticsInterrupted, stopGeneration, wsGeneration.generationId]);
+    }, [generationId, markDiagnosticsInterrupted, stopGeneration]);
 
     return {
-        generating: wsGeneration.isGenerating,
+        generating: isGenerating,
         generatedImages,
         currentImageIndex,
         handleGenerate,

@@ -6,6 +6,7 @@ import {
   Grid,
   Group,
   Modal,
+  NumberInput,
   ScrollArea,
   Select,
   Stack,
@@ -28,8 +29,11 @@ import { SwarmButton } from '../../components/ui/SwarmButton';
 import { useRoleplayStore } from '../../stores/roleplayStore';
 import type {
   RoleplayLorebook,
+  RoleplayLoreActivationLogic,
   RoleplayLorebookEntry,
   RoleplayLorebookEntryMode,
+  RoleplayLoreInsertionPosition,
+  RoleplayLoreKeywordMode,
 } from '../../types/roleplay';
 
 interface LorebookManagerModalProps {
@@ -47,7 +51,11 @@ function lorebookToDraft(lorebook: RoleplayLorebook): LorebookDraft {
   return {
     name: lorebook.name,
     description: lorebook.description,
-    entries: lorebook.entries.map((entry) => ({ ...entry, keywords: [...entry.keywords] })),
+    entries: lorebook.entries.map((entry) => ({
+      ...entry,
+      keywords: [...entry.keywords],
+      secondaryKeywords: [...entry.secondaryKeywords],
+    })),
   };
 }
 
@@ -62,7 +70,16 @@ function createEmptyEntry(): RoleplayLorebookEntry {
     title: '',
     content: '',
     keywords: [],
+    secondaryKeywords: [],
     mode: 'keyword',
+    keywordMode: 'plain',
+    activationLogic: 'any',
+    selective: false,
+    caseSensitive: false,
+    scanDepth: 4,
+    insertionOrder: 100,
+    insertionPosition: 'before-history',
+    tokenBudget: 220,
     enabled: true,
     createdAt: now,
     updatedAt: now,
@@ -72,6 +89,18 @@ function createEmptyEntry(): RoleplayLorebookEntry {
 const ENTRY_MODE_OPTIONS: Array<{ value: RoleplayLorebookEntryMode; label: string }> = [
   { value: 'keyword', label: 'Keyword triggered' },
   { value: 'always-on', label: 'Always on' },
+];
+const KEYWORD_MODE_OPTIONS: Array<{ value: RoleplayLoreKeywordMode; label: string }> = [
+  { value: 'plain', label: 'Plain text' },
+  { value: 'regex', label: 'Regex' },
+];
+const ACTIVATION_LOGIC_OPTIONS: Array<{ value: RoleplayLoreActivationLogic; label: string }> = [
+  { value: 'any', label: 'Any keyword' },
+  { value: 'all', label: 'All keywords' },
+];
+const INSERTION_POSITION_OPTIONS: Array<{ value: RoleplayLoreInsertionPosition; label: string }> = [
+  { value: 'before-history', label: 'Before history' },
+  { value: 'after-history', label: 'After history' },
 ];
 
 /**
@@ -97,8 +126,10 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
     if (!opened) return;
     if (selectedId && lorebooks.some((book) => book.id === selectedId)) return;
     const fallback = lorebooks[0]?.id ?? null;
-    setSelectedId(fallback);
-    setIsNew(false);
+    queueMicrotask(() => {
+      setSelectedId(fallback);
+      setIsNew(false);
+    });
   }, [opened, lorebooks, selectedId]);
 
   // Sync draft when selection changes (unless editing a new draft).
@@ -106,8 +137,10 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
     if (isNew) return;
     const lorebook = lorebooks.find((item) => item.id === selectedId) ?? null;
     const nextDraft = lorebook ? lorebookToDraft(lorebook) : emptyDraft();
-    setDraft(nextDraft);
-    setSelectedEntryId(nextDraft.entries[0]?.id ?? null);
+    queueMicrotask(() => {
+      setDraft(nextDraft);
+      setSelectedEntryId(nextDraft.entries[0]?.id ?? null);
+    });
   }, [selectedId, lorebooks, isNew]);
 
   const existingLorebook = isNew
@@ -129,8 +162,17 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
         a.title !== b.title ||
         a.content !== b.content ||
         a.mode !== b.mode ||
+        a.keywordMode !== b.keywordMode ||
+        a.activationLogic !== b.activationLogic ||
+        a.selective !== b.selective ||
+        a.caseSensitive !== b.caseSensitive ||
+        a.scanDepth !== b.scanDepth ||
+        a.insertionOrder !== b.insertionOrder ||
+        a.insertionPosition !== b.insertionPosition ||
+        a.tokenBudget !== b.tokenBudget ||
         a.enabled !== b.enabled ||
-        a.keywords.join('|') !== b.keywords.join('|')
+        a.keywords.join('|') !== b.keywords.join('|') ||
+        a.secondaryKeywords.join('|') !== b.secondaryKeywords.join('|')
       ) {
         return true;
       }
@@ -431,6 +473,101 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                         onChange={(value) => updateEntry(selectedEntry.id, { keywords: value })}
                         disabled={selectedEntry.mode === 'always-on'}
                       />
+                      <TagsInput
+                        label="Secondary Keywords"
+                        description="Used when selective activation is enabled."
+                        value={selectedEntry.secondaryKeywords}
+                        onChange={(value) =>
+                          updateEntry(selectedEntry.id, { secondaryKeywords: value })
+                        }
+                        disabled={selectedEntry.mode === 'always-on'}
+                      />
+                      <Grid gutter="xs">
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <Select
+                            label="Keyword Mode"
+                            data={KEYWORD_MODE_OPTIONS}
+                            value={selectedEntry.keywordMode}
+                            onChange={(value) =>
+                              value &&
+                              updateEntry(selectedEntry.id, {
+                                keywordMode: value as RoleplayLoreKeywordMode,
+                              })
+                            }
+                            allowDeselect={false}
+                            disabled={selectedEntry.mode === 'always-on'}
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <Select
+                            label="Match Logic"
+                            data={ACTIVATION_LOGIC_OPTIONS}
+                            value={selectedEntry.activationLogic}
+                            onChange={(value) =>
+                              value &&
+                              updateEntry(selectedEntry.id, {
+                                activationLogic: value as RoleplayLoreActivationLogic,
+                              })
+                            }
+                            allowDeselect={false}
+                            disabled={selectedEntry.mode === 'always-on'}
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <Select
+                            label="Insertion"
+                            data={INSERTION_POSITION_OPTIONS}
+                            value={selectedEntry.insertionPosition}
+                            onChange={(value) =>
+                              value &&
+                              updateEntry(selectedEntry.id, {
+                                insertionPosition: value as RoleplayLoreInsertionPosition,
+                              })
+                            }
+                            allowDeselect={false}
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <NumberInput
+                            label="Order"
+                            min={0}
+                            value={selectedEntry.insertionOrder}
+                            onChange={(value) =>
+                              updateEntry(selectedEntry.id, {
+                                insertionOrder:
+                                  typeof value === 'number' ? value : selectedEntry.insertionOrder,
+                              })
+                            }
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <NumberInput
+                            label="Scan Depth"
+                            min={0}
+                            value={selectedEntry.scanDepth}
+                            onChange={(value) =>
+                              updateEntry(selectedEntry.id, {
+                                scanDepth:
+                                  typeof value === 'number' ? value : selectedEntry.scanDepth,
+                              })
+                            }
+                            disabled={selectedEntry.mode === 'always-on'}
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <NumberInput
+                            label="Token Budget"
+                            min={0}
+                            value={selectedEntry.tokenBudget ?? 0}
+                            onChange={(value) =>
+                              updateEntry(selectedEntry.id, {
+                                tokenBudget:
+                                  typeof value === 'number' && value > 0 ? value : null,
+                              })
+                            }
+                          />
+                        </Grid.Col>
+                      </Grid>
                       <Textarea
                         label="Content"
                         description="The lore text injected into the prompt when this entry activates."
@@ -440,6 +577,25 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                         onChange={(event) =>
                           updateEntry(selectedEntry.id, { content: event.currentTarget.value })
                         }
+                      />
+                      <Switch
+                        label="Selective secondary filter"
+                        checked={selectedEntry.selective}
+                        onChange={(event) =>
+                          updateEntry(selectedEntry.id, {
+                            selective: event.currentTarget.checked,
+                          })
+                        }
+                      />
+                      <Switch
+                        label="Case sensitive"
+                        checked={selectedEntry.caseSensitive}
+                        onChange={(event) =>
+                          updateEntry(selectedEntry.id, {
+                            caseSensitive: event.currentTarget.checked,
+                          })
+                        }
+                        disabled={selectedEntry.mode === 'always-on'}
                       />
                       <Switch
                         label="Enabled"

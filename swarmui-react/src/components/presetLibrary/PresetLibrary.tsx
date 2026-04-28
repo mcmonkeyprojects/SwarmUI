@@ -21,11 +21,15 @@ import { PresetLibraryFooter } from './PresetLibraryFooter';
 import { PresetLibraryGrid } from './PresetLibraryGrid';
 import { PresetLibraryHeader } from './PresetLibraryHeader';
 import { PresetStagingStrip } from './PresetStagingStrip';
-import type { LibraryPreset } from '../../features/presetLibrary/types';
+import type { LibraryPreset, PresetPromptSection } from '../../features/presetLibrary/types';
 import './presetLibrary.css';
 
 interface PresetLibraryProps {
-  onApplyToPrompt?: (text: string, mode?: 'replace' | 'append') => void;
+  onApplyToPrompt?: (
+    text: string,
+    mode?: 'replace' | 'append',
+    sections?: PresetPromptSection[]
+  ) => void;
   currentPromptText?: string;
   compact?: boolean;
 }
@@ -90,13 +94,14 @@ export const PresetLibrary = memo(function PresetLibrary({
     activeCategory,
     showExplicit,
     stagedWords,
+    stagedSections,
     stagedFromPresetIds,
     searchQuery,
     stagePreset,
     unstagePreset,
     unstageWord,
     clearStaged,
-    commitStaged,
+    commitStagedSections,
     migrateFromWizardStore,
     addUserPreset,
     updateUserPreset,
@@ -326,13 +331,14 @@ export const PresetLibrary = memo(function PresetLibrary({
   const handleApply = useCallback(
     (mode: 'append' | 'replace') => {
       const stagedWordCount = stagedWords.length;
-      const committedText = commitStaged();
-      if (!committedText || !onApplyToPrompt) {
+      const committedSections = commitStagedSections();
+      const committedText = committedSections.map((section) => section.text).join('\n');
+      if (committedSections.length === 0 || !onApplyToPrompt) {
         handleClose();
         return;
       }
 
-      onApplyToPrompt(committedText, mode);
+      onApplyToPrompt(committedText, mode, committedSections);
       notifications.show({
         title: mode === 'append' ? 'Added to Prompt' : 'Prompt Replaced',
         message: `${stagedWordCount} ${stagedWordCount === 1 ? 'word' : 'words'} ${mode === 'append' ? 'added to' : 'applied to'} prompt.`,
@@ -340,7 +346,7 @@ export const PresetLibrary = memo(function PresetLibrary({
       });
       handleClose();
     },
-    [commitStaged, handleClose, onApplyToPrompt, stagedWords.length]
+    [commitStagedSections, handleClose, onApplyToPrompt, stagedWords.length]
   );
 
   const handleSearchKeyDown = useCallback<KeyboardEventHandler<HTMLInputElement>>(
@@ -489,6 +495,7 @@ export const PresetLibrary = memo(function PresetLibrary({
 
           <PresetStagingStrip
             words={stagedWords}
+            sections={stagedSections}
             onRemoveWord={unstageWord}
             onClear={clearStaged}
           />

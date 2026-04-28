@@ -29,7 +29,6 @@ export function useProgressivePreview(
             requestTokenRef.current += 1;
             pendingSignatureRef.current = null;
             committedSignatureRef.current = null;
-            setDisplaySource(null);
         }
     }, [isActive]);
 
@@ -58,6 +57,11 @@ export function useProgressivePreview(
         let committed = false;
         const image = new Image();
         image.decoding = 'async';
+        try {
+            image.fetchPriority = 'high';
+        } catch {
+            // fetchPriority is optional; unsupported browsers can ignore it
+        }
 
         const commitSource = async () => {
             if (committed || cancelled) {

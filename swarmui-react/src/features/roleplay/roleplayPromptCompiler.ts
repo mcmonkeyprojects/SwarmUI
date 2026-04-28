@@ -1,9 +1,11 @@
 import type {
   ActivatedRoleplayLoreEntry,
+  ChatMessage,
   CompiledRoleplayPrompt,
   CompiledRoleplayPromptSegment,
   RoleplayCharacter,
   RoleplayChatSession,
+  RoleplayLorebookEntry,
   RoleplayLorebook,
   RoleplayPersona,
 } from '../../types/roleplay';
@@ -11,6 +13,7 @@ import {
   buildCharacterPersonalityBlock,
   getEffectiveSystemPrompt,
 } from './roleplayCharacterPrompting';
+import { getMessageContent } from './roleplayMessageUtils';
 
 type HistoryMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -27,12 +30,87 @@ function appendSegment(
   segments.push({ key, label, content: normalizedContent });
 }
 
-function areKeywordsActive(keywords: string[], sourceText: string): boolean {
-  const normalizedSource = sourceText.toLowerCase();
-  return keywords.some((keyword) => {
-    const normalizedKeyword = keyword.trim().toLowerCase();
-    return normalizedKeyword.length > 0 && normalizedSource.includes(normalizedKeyword);
-  });
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isKeywordActive(
+  keyword: string,
+  sourceText: string,
+  options: Pick<RoleplayLorebookEntry, 'keywordMode' | 'caseSensitive'>
+): boolean {
+  const normalizedKeyword = keyword.trim();
+  if (!normalizedKeyword) {
+    return false;
+  }
+
+  if (options.keywordMode === 'regex') {
+    try {
+      const flags = options.caseSensitive ? '' : 'i';
+      return new RegExp(normalizedKeyword, flags).test(sourceText);
+    } catch {
+      const escapedKeyword = escapeRegExp(normalizedKeyword);
+      const flags = options.caseSensitive ? '' : 'i';
+      return new RegExp(escapedKeyword, flags).test(sourceText);
+    }
+  }
+
+  const haystack = options.caseSensitive ? sourceText : sourceText.toLowerCase();
+  const needle = options.caseSensitive ? normalizedKeyword : normalizedKeyword.toLowerCase();
+  return haystack.includes(needle);
+}
+
+function areKeywordsActive(
+  keywords: string[],
+  sourceText: string,
+  entry: RoleplayLorebookEntry
+): boolean {
+  const activeKeywords = keywords.filter((keyword) => keyword.trim());
+  if (activeKeywords.length === 0) {
+    return false;
+  }
+
+  if (entry.activationLogic === 'all') {
+    return activeKeywords.every((keyword) => isKeywordActive(keyword, sourceText, entry));
+  }
+
+  return activeKeywords.some((keyword) => isKeywordActive(keyword, sourceText, entry));
+}
+
+function getLoreScanSource(options: {
+  character: RoleplayCharacter;
+  persona?: RoleplayPersona | null;
+  historyMessages: HistoryMessage[];
+  scanDepth: number;
+}): string {
+  const { character, persona, historyMessages, scanDepth } = options;
+  const scannedHistory =
+    scanDepth > 0 ? historyMessages.slice(-scanDepth) : historyMessages;
+
+  return [
+    character.name,
+    character.description,
+    character.scenario,
+    character.creatorNotes,
+    persona?.name ?? '',
+    persona?.description ?? '',
+    persona?.notes ?? '',
+    ...scannedHistory.map((message) => message.content),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function budgetLoreContent(content: string, tokenBudget: number | null): string {
+  const trimmed = content.trim();
+  if (!trimmed || !tokenBudget || tokenBudget <= 0) {
+    return trimmed;
+  }
+  const characterBudget = tokenBudget * 4;
+  if (trimmed.length <= characterBudget) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, Math.max(0, characterBudget - 3)).trimEnd()}...`;
 }
 
 function resolveActivatedLoreEntries(options: {
@@ -53,19 +131,6 @@ function resolveActivatedLoreEntries(options: {
     return [];
   }
 
-  const activationSource = [
-    character.name,
-    character.description,
-    character.scenario,
-    persona?.name ?? '',
-    persona?.description ?? '',
-    persona?.notes ?? '',
-    ...historyMessages.map((message) => message.content),
-  ]
-    .filter(Boolean)
-    .join('\n')
-    .toLowerCase();
-
   const activatedEntries: ActivatedRoleplayLoreEntry[] = [];
 
   for (const lorebook of lorebooks) {
@@ -78,24 +143,50 @@ function resolveActivatedLoreEntries(options: {
         continue;
       }
 
-      const shouldActivate =
-        entry.mode === 'always-on' || areKeywordsActive(entry.keywords, activationSource);
+      const activationSource = getLoreScanSource({
+        character,
+        persona,
+        historyMessages,
+        scanDepth: entry.scanDepth,
+      });
+      const primaryActive =
+        entry.mode === 'always-on' || areKeywordsActive(entry.keywords, activationSource, entry);
+      const secondaryActive =
+        !entry.selective ||
+        entry.secondaryKeywords.length === 0 ||
+        areKeywordsActive(entry.secondaryKeywords, activationSource, entry);
+      const shouldActivate = primaryActive && secondaryActive;
       if (!shouldActivate) {
         continue;
       }
+
+      const content = budgetLoreContent(entry.content, entry.tokenBudget);
 
       activatedEntries.push({
         lorebookId: lorebook.id,
         lorebookName: lorebook.name,
         entryId: entry.id,
         entryTitle: entry.title || 'Untitled Entry',
-        content: entry.content.trim(),
+        content,
         mode: entry.mode,
+        insertionOrder: entry.insertionOrder,
+        insertionPosition: entry.insertionPosition,
+        tokenEstimate: estimateTokens([content]),
       });
     }
   }
 
-  return activatedEntries.filter((entry) => entry.content);
+  return activatedEntries
+    .filter((entry) => entry.content)
+    .sort((left, right) => {
+      if (left.insertionPosition !== right.insertionPosition) {
+        return left.insertionPosition === 'before-history' ? -1 : 1;
+      }
+      if (left.insertionOrder !== right.insertionOrder) {
+        return left.insertionOrder - right.insertionOrder;
+      }
+      return left.entryTitle.localeCompare(right.entryTitle);
+    });
 }
 
 function buildMemoryBlock(session: RoleplayChatSession): string {
@@ -144,6 +235,23 @@ function estimateTokens(parts: string[]): number {
   return Math.ceil(combined.length / 4);
 }
 
+function expandPromptMacros(
+  content: string,
+  context: {
+    original: string;
+    character: RoleplayCharacter;
+    persona?: RoleplayPersona | null;
+  }
+): string {
+  return content
+    .replaceAll('{{original}}', context.original)
+    .replaceAll('{{char}}', context.character.name)
+    .replaceAll('{{user}}', context.persona?.name || 'User')
+    .replaceAll('{{persona}}', context.persona?.description || context.persona?.notes || '')
+    .replaceAll('{{scenario}}', context.character.scenario)
+    .replaceAll('{{greeting}}', context.character.openingRoleplayMessage || context.character.openingChatMessage);
+}
+
 export function compileRoleplayPrompt(options: {
   character: RoleplayCharacter;
   session: RoleplayChatSession;
@@ -164,10 +272,14 @@ export function compileRoleplayPrompt(options: {
   const historyMessages = (
     pendingMessages ??
     session.messages
-      .filter((message) => message.role === 'user' || message.role === 'assistant')
+      .filter(
+        (message): message is ChatMessage =>
+          (message.role === 'user' || message.role === 'assistant') &&
+          message.includedInPrompt !== false
+      )
       .map((message) => ({
         role: message.role as 'user' | 'assistant',
-        content: message.content,
+        content: getMessageContent(message),
       }))
   )
     .slice(-maxHistoryMessages)
@@ -186,11 +298,14 @@ export function compileRoleplayPrompt(options: {
   });
 
   const segments: CompiledRoleplayPromptSegment[] = [];
+  const originalMainPrompt = getEffectiveSystemPrompt(character);
+  const rawMainPrompt = getEffectiveSystemPrompt(character, session);
+  const macroContext = { original: originalMainPrompt, character, persona };
   appendSegment(
     segments,
     'main-prompt',
     'Main Prompt',
-    getEffectiveSystemPrompt(character, session)
+    expandPromptMacros(rawMainPrompt, macroContext)
   );
 
   if (session.promptStack.includePersona && persona) {
@@ -201,26 +316,42 @@ export function compileRoleplayPrompt(options: {
       [persona.name.trim(), persona.description.trim(), persona.notes.trim()]
         .filter(Boolean)
         .join('\n')
+        .replaceAll('{{user}}', persona.name.trim() || 'User')
     );
   }
 
   if (session.promptStack.includeCharacterDefinition) {
-    appendSegment(segments, 'character', 'Character Definition', character.description);
+    appendSegment(
+      segments,
+      'character',
+      'Character Definition',
+      expandPromptMacros(character.description, macroContext)
+    );
     appendSegment(
       segments,
       'personality',
       'Personality',
-      buildCharacterPersonalityBlock(character)
+      expandPromptMacros(buildCharacterPersonalityBlock(character), macroContext)
     );
-    appendSegment(segments, 'creator-notes', 'Creator Notes', character.creatorNotes);
+    appendSegment(
+      segments,
+      'creator-notes',
+      'Creator Notes',
+      expandPromptMacros(character.creatorNotes, macroContext)
+    );
   }
 
   if (session.promptStack.includeScenario) {
-    appendSegment(segments, 'scenario', 'Scenario', character.scenario);
+    appendSegment(segments, 'scenario', 'Scenario', expandPromptMacros(character.scenario, macroContext));
   }
 
   if (session.promptStack.includeExampleMessages) {
-    appendSegment(segments, 'examples', 'Example Messages', character.exampleMessages);
+    appendSegment(
+      segments,
+      'examples',
+      'Example Messages',
+      expandPromptMacros(character.exampleMessages, macroContext)
+    );
   }
 
   if (session.promptStack.includeMemory) {
@@ -228,17 +359,24 @@ export function compileRoleplayPrompt(options: {
   }
 
   if (session.promptStack.includeLore) {
-    for (const loreEntry of activatedLoreEntries) {
+    for (const loreEntry of activatedLoreEntries.filter(
+      (entry) => entry.insertionPosition === 'before-history'
+    )) {
       appendSegment(
         segments,
         `lore-${loreEntry.entryId}`,
         `Lore: ${loreEntry.lorebookName} / ${loreEntry.entryTitle}`,
-        loreEntry.content
+        expandPromptMacros(loreEntry.content, macroContext)
       );
     }
   }
 
-  appendSegment(segments, 'author-note', 'Author Note', session.promptStack.authorNote);
+  appendSegment(
+    segments,
+    'author-note',
+    'Author Note',
+    expandPromptMacros(session.promptStack.authorNote, macroContext)
+  );
 
   const systemPrompt = segments.map((segment) => segment.content).join('\n\n');
   const apiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
@@ -249,21 +387,44 @@ export function compileRoleplayPrompt(options: {
 
   apiMessages.push(...historyMessages);
 
-  const postHistoryNote = session.promptStack.postHistoryNote.trim();
-  if (postHistoryNote) {
-    apiMessages.push({ role: 'system', content: postHistoryNote });
+  const afterHistorySegments: CompiledRoleplayPromptSegment[] = [];
+  if (session.promptStack.includeLore) {
+    for (const loreEntry of activatedLoreEntries.filter(
+      (entry) => entry.insertionPosition === 'after-history'
+    )) {
+      appendSegment(
+        afterHistorySegments,
+        `lore-${loreEntry.entryId}`,
+        `Lore: ${loreEntry.lorebookName} / ${loreEntry.entryTitle}`,
+        expandPromptMacros(loreEntry.content, macroContext)
+      );
+    }
+  }
+
+  const postHistoryNote = expandPromptMacros(
+    session.promptStack.postHistoryNote.trim(),
+    macroContext
+  );
+  const afterHistoryPrompt = [
+    ...afterHistorySegments.map((segment) => segment.content),
+    postHistoryNote,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  if (afterHistoryPrompt) {
+    apiMessages.push({ role: 'system', content: afterHistoryPrompt });
   }
 
   return {
     systemPrompt,
-    segments,
+    segments: [...segments, ...afterHistorySegments],
     historyMessages,
     apiMessages,
     activatedLoreEntries,
     tokenEstimate: estimateTokens([
       ...segments.map((segment) => segment.content),
       ...historyMessages.map((message) => message.content),
-      postHistoryNote,
+      afterHistoryPrompt,
     ]),
   };
 }

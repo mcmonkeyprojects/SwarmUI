@@ -14,8 +14,9 @@
 import { useRef, useEffect, useLayoutEffect, createElement, type ComponentType } from 'react';
 import { profiler } from '../utils/performanceProfiler';
 import { usePerformanceStore } from '../stores/performanceStore';
+import { featureFlags } from '../config/featureFlags';
 
-const isDev = import.meta.env.DEV;
+const isProfilingEnabled = import.meta.env.DEV && featureFlags.devRenderProfiling;
 
 interface RenderProfilerOptions {
     /** Warn if render takes longer than this (ms). Default: 16ms (60fps budget) */
@@ -33,8 +34,6 @@ export function useRenderProfiler(
     componentName: string,
     options: RenderProfilerOptions = {}
 ): void {
-    if (!isDev) return;
-
     const { threshold = 16, verbose = false } = options;
 
     const renderCountRef = useRef<number>(0);
@@ -44,11 +43,17 @@ export function useRenderProfiler(
     // Use useLayoutEffect to capture timing at the start of commit phase
     // This runs synchronously after DOM mutations but before paint
     useLayoutEffect(() => {
+        if (!isProfilingEnabled) {
+            return;
+        }
         startTimeRef.current = performance.now();
         renderCountRef.current += 1;
     });
 
     useEffect(() => {
+        if (!isProfilingEnabled) {
+            return;
+        }
         // This runs after render completes
         const renderTime = performance.now() - startTimeRef.current;
         const renderCount = renderCountRef.current;
@@ -77,6 +82,9 @@ export function useRenderProfiler(
 
     // Initial mount log
     useEffect(() => {
+        if (!isProfilingEnabled) {
+            return;
+        }
         if (verbose) {
             console.debug(`[Render] ${componentName} mounted`);
         }
@@ -103,7 +111,7 @@ export function useRenderProfilerWithProps<P extends Record<string, unknown>>(
 
     // Use useEffect to track prop changes (runs after render, safe to access refs)
     useEffect(() => {
-        if (isDev && prevPropsRef.current) {
+        if (isProfilingEnabled && prevPropsRef.current) {
             const changed: string[] = [];
             for (const key of Object.keys(props)) {
                 if (prevPropsRef.current[key] !== props[key]) {
@@ -124,9 +132,8 @@ export function useRenderProfilerWithProps<P extends Record<string, unknown>>(
 
     useRenderProfiler(componentName, options);
 
-    // Return empty array during render (actual values only accessible via ref after effect runs)
-    // This avoids reading refs during render while still providing the API
-    return { changedProps: isDev ? changedPropsRef.current : [] };
+    // Actual values are tracked after commit; keep render phase free of ref reads.
+    return { changedProps: [] };
 }
 
 /**

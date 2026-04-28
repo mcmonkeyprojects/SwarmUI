@@ -720,6 +720,22 @@ export class WebSocketManager {
                 stageTaskIndex: typeof data.gen_progress.stage_task_index === 'number' ? data.gen_progress.stage_task_index : undefined,
                 stageTaskCount: typeof data.gen_progress.stage_task_count === 'number' ? data.gen_progress.stage_task_count : undefined,
                 stageTasksRemaining: typeof data.gen_progress.stage_tasks_remaining === 'number' ? data.gen_progress.stage_tasks_remaining : undefined,
+                backendPreview: data.gen_progress.backend_preview ? {
+                    previewMode: data.gen_progress.backend_preview.preview_mode,
+                    previewMethod: data.gen_progress.backend_preview.preview_method,
+                    warning: data.gen_progress.backend_preview.warning ?? null,
+                    promptQueuedMs: typeof data.gen_progress.backend_preview.prompt_queued_ms === 'number' ? data.gen_progress.backend_preview.prompt_queued_ms : undefined,
+                    executionStartMs: typeof data.gen_progress.backend_preview.execution_start_ms === 'number' ? data.gen_progress.backend_preview.execution_start_ms : undefined,
+                    firstProgressMs: typeof data.gen_progress.backend_preview.first_progress_ms === 'number' ? data.gen_progress.backend_preview.first_progress_ms : undefined,
+                    firstPreviewMs: typeof data.gen_progress.backend_preview.first_preview_ms === 'number' ? data.gen_progress.backend_preview.first_preview_ms : undefined,
+                    firstImageMs: typeof data.gen_progress.backend_preview.first_image_ms === 'number' ? data.gen_progress.backend_preview.first_image_ms : undefined,
+                    completeMs: typeof data.gen_progress.backend_preview.complete_ms === 'number' ? data.gen_progress.backend_preview.complete_ms : undefined,
+                    previewEventCount: typeof data.gen_progress.backend_preview.preview_event_count === 'number' ? data.gen_progress.backend_preview.preview_event_count : undefined,
+                    firstPreviewBytes: typeof data.gen_progress.backend_preview.first_preview_bytes === 'number' ? data.gen_progress.backend_preview.first_preview_bytes : undefined,
+                    averagePreviewBytes: typeof data.gen_progress.backend_preview.average_preview_bytes === 'number' ? data.gen_progress.backend_preview.average_preview_bytes : undefined,
+                    finalImageBytes: typeof data.gen_progress.backend_preview.final_image_bytes === 'number' ? data.gen_progress.backend_preview.final_image_bytes : undefined,
+                    isFinal: data.gen_progress.backend_preview.is_final === true,
+                } : undefined,
             };
             if (progressState) {
                 this.generationStates.set(connectionId, {

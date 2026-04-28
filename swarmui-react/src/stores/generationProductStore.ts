@@ -524,7 +524,7 @@ function generateRecipeId(): string {
 export const useGenerationProductStore = create<GenerationProductState>()(
     persist(
         (set, get) => ({
-            currentMode: 'guided',
+            currentMode: 'advanced',
             activeRecipeId: null,
             recipes: starterRecipes,
             lastSnapshot: null,
@@ -580,12 +580,15 @@ export const useGenerationProductStore = create<GenerationProductState>()(
             name: 'swarmui-generation-product',
             storage: createJSONStorage(() => createIndexedDbStorage('swarmui-generation-product')),
             version: 2,
-            migrate: (persistedState: any, version: number) => {
-                const state = { ...persistedState };
+            migrate: (persistedState: unknown, version: number) => {
+                const state = typeof persistedState === 'object' && persistedState !== null
+                    ? { ...persistedState } as Partial<GenerationProductState>
+                    : {};
                 if (version < 2 || !version) {
-                    const existingRecipeIds = new Set((state.recipes || []).map((r: any) => r.id));
+                    const existingRecipes = state.recipes || [];
+                    const existingRecipeIds = new Set(existingRecipes.map((recipe) => recipe.id));
                     const newStarters = starterRecipes.filter((r) => !existingRecipeIds.has(r.id));
-                    state.recipes = [...newStarters, ...(state.recipes || [])];
+                    state.recipes = [...newStarters, ...existingRecipes];
                 }
                 return state;
             },

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Accordion,
-  Badge,
   Card,
   Center,
   Checkbox,
@@ -16,11 +15,6 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../../api/client';
-import type {
-  RepoUpdateStatus,
-  UpdateAndRestartResponse,
-  UpdateCheckResponse,
-} from '../../api/types';
 import { useSessionStore } from '../../stores/session';
 import { SwarmButton } from '../../components/ui';
 
@@ -58,122 +52,15 @@ function extractApiError(data: unknown): string | null {
   return null;
 }
 
-function formatRepoPreview(repo: RepoUpdateStatus | null | undefined): string {
-  if (!repo) {
-    return 'No repository status available.';
-  }
-
-  const lines: string[] = [];
-  lines.push(repo.name);
-  lines.push(`branch: ${repo.branch || '(unknown)'}`);
-  lines.push(`upstream: ${repo.upstream || '(not configured)'}`);
-  lines.push(`commit: ${repo.current_commit || '(unknown)'}${repo.upstream_commit ? ` -> ${repo.upstream_commit}` : ''}`);
-  lines.push(`ahead/behind: ${repo.ahead_count}/${repo.behind_count}`);
-  lines.push(`safe auto-update: ${repo.can_fast_forward ? 'yes' : repo.has_updates ? 'no' : 'not needed'}`);
-
-  if (repo.local_changes_preview.length > 0) {
-    lines.push('local changes:');
-    for (const entry of repo.local_changes_preview) {
-      lines.push(`  ${entry}`);
-    }
-  }
-
-  if (repo.update_preview.length > 0) {
-    lines.push('incoming commits:');
-    for (const entry of repo.update_preview) {
-      lines.push(`  ${entry}`);
-    }
-  }
-
-  if (repo.warnings.length > 0) {
-    lines.push('warnings:');
-    for (const warning of repo.warnings) {
-      lines.push(`  ${warning}`);
-    }
-  }
-
-  return lines.join('\n');
-}
-
-function formatUpdatePreview(preview: UpdateCheckResponse | null): string {
-  if (!preview) {
-    return 'Run Check For Updates to load commit preview and safety diagnostics.';
-  }
-
-  const lines: string[] = [];
-  lines.push(`Checked: ${preview.checked_at_utc || '(unknown time)'}`);
-  lines.push(`SwarmUI updates: ${preview.server_updates_count}`);
-  lines.push(`Extensions with updates: ${preview.extension_updates.length}`);
-  lines.push(`Backend updates: ${preview.backend_updates.length}`);
-
-  if (preview.warnings && preview.warnings.length > 0) {
-    lines.push('Global warnings:');
-    for (const warning of preview.warnings) {
-      lines.push(`  ${warning}`);
-    }
-  }
-
-  lines.push('');
-  lines.push(formatRepoPreview(preview.server_repo));
-
-  const extensionRepos = (preview.extension_repos || []).filter((repo) => repo.has_updates || repo.warnings.length > 0);
-  if (extensionRepos.length > 0) {
-    for (const repo of extensionRepos) {
-      lines.push('');
-      lines.push(formatRepoPreview(repo));
-    }
-  }
-
-  return lines.join('\n').trim();
-}
-
-function buildUpdateConfirmMessage(
-  preview: UpdateCheckResponse | null,
-  updateExtensions: boolean,
-  updateBackends: boolean,
-  force: boolean
-): string {
-  const lines: string[] = ['Run UpdateAndRestart now?'];
-
-  if (preview?.checked_at_utc) {
-    lines.push(`Last preview: ${preview.checked_at_utc}`);
-  }
-
-  if (preview?.warnings && preview.warnings.length > 0) {
-    lines.push('Preview warnings:');
-    for (const warning of preview.warnings.slice(0, 4)) {
-      lines.push(`- ${warning}`);
-    }
-  }
-
-  if (updateExtensions) {
-    lines.push('Selected extensions will be fast-forwarded when safe.');
-  }
-
-  if (updateBackends) {
-    lines.push('Backend auto-update is not implemented yet and will be skipped.');
-  }
-
-  if (force) {
-    lines.push('Force restart is enabled.');
-  }
-
-  return lines.join('\n');
-}
-
 export function AdminToolsTab() {
   const isInitialized = useSessionStore((s) => s.isInitialized);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [result, setResult] = useState<string>('');
   const [wsLog, setWsLog] = useState<string>('');
-  const [updatePreview, setUpdatePreview] = useState<UpdateCheckResponse | null>(null);
   const socketsRef = useRef<WebSocket[]>([]);
 
   const [serverSettingsJson, setServerSettingsJson] = useState('{}');
   const [extensionName, setExtensionName] = useState('');
-  const [updateExtensions, setUpdateExtensions] = useState(false);
-  const [updateBackends, setUpdateBackends] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(false);
 
   const [wildcardCard, setWildcardCard] = useState('');
   const [wildcardOptions, setWildcardOptions] = useState('');
@@ -249,20 +136,6 @@ export function AdminToolsTab() {
           <Accordion.Panel>
             <Stack gap="sm">
               <Group>
-                <SwarmButton
-                  tone="secondary"
-                  size="xs"
-                  loading={busyAction === 'checkUpdates'}
-                  onClick={() =>
-                    runAction('checkUpdates', async () => {
-                      const response = await swarmClient.checkForUpdates();
-                      setUpdatePreview(response);
-                      return response;
-                    })
-                  }
-                >
-                  Check For Updates
-                </SwarmButton>
                 <SwarmButton
                   tone="secondary"
                   size="xs"
@@ -356,61 +229,8 @@ export function AdminToolsTab() {
                 </SwarmButton>
               </Group>
 
-              <Group className="swarm-admin-toggles">
-                <Checkbox
-                  label="Update Extensions"
-                  checked={updateExtensions}
-                  onChange={(e) => setUpdateExtensions(e.currentTarget.checked)}
-                />
-                <Checkbox
-                  label="Update Backends (not yet supported)"
-                  checked={updateBackends}
-                  disabled
-                  onChange={(e) => setUpdateBackends(e.currentTarget.checked)}
-                />
-                <Checkbox
-                  label="Force Restart"
-                  checked={forceUpdate}
-                  onChange={(e) => setForceUpdate(e.currentTarget.checked)}
-                />
-                <SwarmButton
-                  tone="danger"
-                  size="xs"
-                  loading={busyAction === 'updateAndRestart'}
-                  onClick={async () => {
-                    if (!window.confirm(buildUpdateConfirmMessage(updatePreview, updateExtensions, updateBackends, forceUpdate))) {
-                      return;
-                    }
-                    setBusyAction('updateAndRestart');
-                    try {
-                      const response: UpdateAndRestartResponse = await swarmClient.updateAndRestart({
-                        updateExtensions,
-                        updateBackends,
-                        force: forceUpdate,
-                      });
-                      setResult(stringifyResult(response));
-                      if (response.error) {
-                        notifications.show({ title: 'Update failed', message: response.error, color: 'red' });
-                      } else if (response.success) {
-                        notifications.show({
-                          title: 'Update accepted',
-                          message: response.result || 'Update scheduled successfully.',
-                          color: 'green',
-                        });
-                      }
-                    } catch (error) {
-                      const message = error instanceof Error ? error.message : String(error);
-                      notifications.show({ title: 'Update failed', message, color: 'red' });
-                    } finally {
-                      setBusyAction(null);
-                    }
-                  }}
-                >
-                  Update And Restart
-                </SwarmButton>
-              </Group>
               <Text size="xs" c="dimmed">
-                SwarmUI core updates are supported here. Separate backend package auto-update is still pending, so that path is intentionally disabled.
+                Update checks and safe restart updates now live in the dedicated Updates tab.
               </Text>
             </Stack>
           </Accordion.Panel>
@@ -857,24 +677,6 @@ export function AdminToolsTab() {
           </Accordion.Panel>
         </Accordion.Item>
       </Accordion>
-
-      <Card withBorder padding="sm" className="surface-glass swarm-server-card">
-        <Stack gap="xs">
-          <Group gap="xs">
-            <Text size="sm" fw={600}>Update Preview</Text>
-            {updatePreview && (
-              <>
-                <Badge color="blue" variant="light">{updatePreview.server_updates_count} core</Badge>
-                <Badge color="teal" variant="light">{updatePreview.extension_updates.length} extensions</Badge>
-                <Badge color={updatePreview.warnings?.length ? 'yellow' : 'gray'} variant="light">
-                  {updatePreview.warnings?.length || 0} warnings
-                </Badge>
-              </>
-            )}
-          </Group>
-          <Code block className="swarm-server-code">{formatUpdatePreview(updatePreview)}</Code>
-        </Stack>
-      </Card>
 
       <Card withBorder padding="sm" className="surface-glass swarm-server-card">
         <Stack gap="xs">

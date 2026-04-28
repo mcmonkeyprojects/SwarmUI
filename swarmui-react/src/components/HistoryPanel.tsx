@@ -43,7 +43,17 @@ export function HistoryPanel({ onLoad }: HistoryPanelProps) {
             <ScrollArea style={{ flex: 1 }} type="hover">
                 <Stack gap="sm" pb="md">
                     {entries.map((entry) => (
-                        <Card key={entry.id} withBorder padding="sm" radius="md" bg="var(--mantine-color-body)">
+                        <Card
+                            key={entry.id}
+                            withBorder
+                            padding="sm"
+                            radius="md"
+                            bg="var(--mantine-color-body)"
+                            style={{
+                                contentVisibility: 'auto',
+                                containIntrinsicSize: '1px 140px',
+                            }}
+                        >
                             <Group align="flex-start" wrap="nowrap">
                                 {/* Thumbnail */}
                                 {entry.imagePaths && entry.imagePaths.length > 0 && (

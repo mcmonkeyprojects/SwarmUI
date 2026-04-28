@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Card, Checkbox } from '@mantine/core';
 import { IconStar, IconStarFilled, IconTrash, IconCopy, IconPhoto, IconUpload, IconRotate, IconMaximize } from '@tabler/icons-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,6 +40,8 @@ interface ImageCardProps {
     onUpscale?: () => void;
     /** Called to copy image to clipboard */
     onCopyImage?: () => void;
+    /** Whether Framer Motion wrappers and hover animation should be enabled */
+    enableMotion?: boolean;
 }
 
 // Motion variants for the overlay
@@ -89,6 +91,7 @@ export const ImageCard = memo(function ImageCard({
     onReuseParams,
     onUpscale,
     onCopyImage,
+    enableMotion = true,
 }: ImageCardProps) {
     const contextMenu = useContextMenu();
     const previewSrc = image.preview_src || image.src;
@@ -185,72 +188,42 @@ export const ImageCard = memo(function ImageCard({
         }] : []),
     ];
 
-    return (
+    const card = (
         <>
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: animationDelay * 0.7, duration: 0.18 }}
-                onClick={handleClick}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-                style={{ width: '100%', cursor: 'pointer' }}
-                whileHover={{ scale: 1.02, y: -3 }}
-                whileTap={{ scale: 0.98 }}
-                onContextMenu={handleContextMenu}
+            <Card
+                p={0}
+                radius="sm"
+                className="swarm-gallery-image-card swarm-selectable-card"
+                data-selected={isSelected ? 'true' : undefined}
+                style={{
+                    overflow: 'hidden',
+                    position: 'relative',
+                    border: isSelected
+                        ? '2px solid var(--theme-selected-border)'
+                        : image.starred
+                            ? '2px solid var(--theme-brand)'
+                            : '1px solid var(--theme-border-subtle)',
+                    boxShadow: isSelected
+                        ? '0 0 0 2px color-mix(in srgb, var(--theme-selected-border) 35%, transparent), var(--elevation-shadow-md)'
+                        : isHovered
+                            ? 'var(--elevation-shadow-md)'
+                            : 'none',
+                    transition: 'box-shadow 200ms ease, border-color 150ms ease',
+                }}
             >
-                <Card
-                    p={0}
+                <LazyImage
+                    src={previewSrc}
+                    alt="Generated"
+                    height={height}
+                    fit="contain"
                     radius="sm"
-                    className="swarm-gallery-image-card swarm-selectable-card"
-                    data-selected={isSelected ? 'true' : undefined}
-                    style={{
-                        overflow: 'hidden',
-                        position: 'relative',
-                        border: isSelected
-                            ? '2px solid var(--theme-selected-border)'
-                            : image.starred
-                                ? '2px solid var(--theme-brand)'
-                                : '1px solid var(--theme-border-subtle)',
-                        boxShadow: isSelected
-                            ? '0 0 0 2px color-mix(in srgb, var(--theme-selected-border) 35%, transparent), var(--elevation-shadow-md)'
-                            : isHovered
-                                ? 'var(--elevation-shadow-md)'
-                                : 'none',
-                        transition: 'box-shadow 200ms ease, border-color 150ms ease',
-                    }}
-                >
-                    <LazyImage
-                        src={previewSrc}
-                        alt="Generated"
-                        height={height}
-                        fit="contain"
-                        radius="sm"
-                        rootMargin="200px"
-                    />
+                    rootMargin="200px"
+                />
 
-                    {/* Animated Hover Overlay */}
+                {enableMotion ? (
                     <AnimatePresence>
-                        {isHovered && overlayButtons.length > 0 && (
-                            <motion.div
-                                variants={overlayVariants}
-                                initial="hidden"
-                                animate="visible"
-                                exit="exit"
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    background: 'color-mix(in srgb, var(--theme-surface-app) 78%, transparent)',
-                                    backdropFilter: 'blur(2px)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '12px',
-                                }}
-                            >
+                        {isHovered && overlayButtons.length > 0 ? (
+                            <MotionOverlay>
                                 {overlayButtons.map((button, index) => (
                                     <motion.div
                                         key={button.key}
@@ -276,13 +249,33 @@ export const ImageCard = memo(function ImageCard({
                                         </SwarmActionIcon>
                                     </motion.div>
                                 ))}
-                            </motion.div>
-                        )}
+                            </MotionOverlay>
+                        ) : null}
                     </AnimatePresence>
+                ) : (
+                    isHovered && overlayButtons.length > 0 ? (
+                        <StaticOverlay>
+                            {overlayButtons.map((button) => (
+                                <SwarmActionIcon
+                                    key={button.key}
+                                    size="xl"
+                                    tone={button.key === 'delete' ? 'danger' : 'warning'}
+                                    emphasis="solid"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        button.onClick();
+                                    }}
+                                >
+                                    {button.icon}
+                                </SwarmActionIcon>
+                            ))}
+                        </StaticOverlay>
+                    ) : null
+                )}
 
-                    {/* Selection Checkbox (visible in selection mode) */}
+                {enableMotion ? (
                     <AnimatePresence>
-                        {isSelectable && (
+                        {isSelectable ? (
                             <motion.div
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
@@ -294,30 +287,33 @@ export const ImageCard = memo(function ImageCard({
                                     onSelectionToggle?.({ shiftKey: e.shiftKey });
                                 }}
                             >
-                                <Checkbox
-                                    checked={isSelected}
-                                    onChange={(event) => onSelectionToggle?.({ shiftKey: (event.nativeEvent as MouseEvent).shiftKey })}
-                                    size="md"
-                                    color="green"
-                                    styles={{
-                                        input: {
-                                            backgroundColor: isSelected
-                                                ? 'var(--theme-selected-border)'
-                                                : 'color-mix(in srgb, var(--theme-surface-raised) 88%, transparent)',
-                                            borderColor: isSelected
-                                                ? 'var(--theme-selected-border)'
-                                                : 'var(--theme-border-subtle)',
-                                            cursor: 'pointer',
-                                        },
-                                    }}
+                                <SelectionCheckbox
+                                    isSelected={isSelected}
+                                    onSelectionToggle={onSelectionToggle}
                                 />
                             </motion.div>
-                        )}
+                        ) : null}
                     </AnimatePresence>
+                ) : (
+                    isSelectable ? (
+                        <div
+                            style={{ position: 'absolute', top: 8, left: 8, zIndex: 5 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectionToggle?.({ shiftKey: e.shiftKey });
+                            }}
+                        >
+                            <SelectionCheckbox
+                                isSelected={isSelected}
+                                onSelectionToggle={onSelectionToggle}
+                            />
+                        </div>
+                    ) : null
+                )}
 
-                    {/* Animated Star Badge */}
+                {enableMotion ? (
                     <AnimatePresence>
-                        {image.starred && !isHovered && !isSelectable && (
+                        {image.starred && !isHovered && !isSelectable ? (
                             <motion.div
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
@@ -329,11 +325,21 @@ export const ImageCard = memo(function ImageCard({
                                     <IconStarFilled size={12} />
                                 </SwarmBadge>
                             </motion.div>
-                        )}
+                        ) : null}
                     </AnimatePresence>
+                ) : (
+                    image.starred && !isHovered && !isSelectable ? (
+                        <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                            <SwarmBadge tone="warning" emphasis="solid" size="sm">
+                                <IconStarFilled size={12} />
+                            </SwarmBadge>
+                        </div>
+                    ) : null
+                )}
 
+                {enableMotion ? (
                     <AnimatePresence>
-                        {mediaLabel && (
+                        {mediaLabel ? (
                             <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
@@ -344,18 +350,56 @@ export const ImageCard = memo(function ImageCard({
                                     {mediaLabel}
                                 </SwarmBadge>
                             </motion.div>
-                        )}
+                        ) : null}
                     </AnimatePresence>
-                </Card>
-            </motion.div>
+                ) : (
+                    mediaLabel ? (
+                        <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                            <SwarmBadge tone="primary" emphasis="solid" size="sm">
+                                {mediaLabel}
+                            </SwarmBadge>
+                        </div>
+                    ) : null
+                )}
+            </Card>
 
-            {/* Context Menu */}
             <ContextMenu
                 position={contextMenu.position}
                 items={contextMenuItems}
                 onClose={contextMenu.close}
             />
         </>
+    );
+
+    if (!enableMotion) {
+        return (
+            <div
+                onClick={handleClick}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+                style={{ width: '100%', cursor: 'pointer' }}
+                onContextMenu={handleContextMenu}
+            >
+                {card}
+            </div>
+        );
+    }
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: animationDelay * 0.7, duration: 0.18 }}
+            onClick={handleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            style={{ width: '100%', cursor: 'pointer' }}
+            whileHover={{ scale: 1.02, y: -3 }}
+            whileTap={{ scale: 0.98 }}
+            onContextMenu={handleContextMenu}
+        >
+            {card}
+        </motion.div>
     );
 }, (prevProps: ImageCardProps, nextProps: ImageCardProps) => {
     // Custom comparison for better memoization
@@ -366,8 +410,85 @@ export const ImageCard = memo(function ImageCard({
         prevProps.height === nextProps.height &&
         prevProps.animationDelay === nextProps.animationDelay &&
         prevProps.isSelectable === nextProps.isSelectable &&
-        prevProps.isSelected === nextProps.isSelected
+        prevProps.isSelected === nextProps.isSelected &&
+        prevProps.enableMotion === nextProps.enableMotion
     );
 });
+
+function MotionOverlay({ children }: { children: ReactNode }) {
+    return (
+        <motion.div
+            variants={overlayVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'color-mix(in srgb, var(--theme-surface-app) 78%, transparent)',
+                backdropFilter: 'blur(2px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+            }}
+        >
+            {children}
+        </motion.div>
+    );
+}
+
+function StaticOverlay({ children }: { children: ReactNode }) {
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'color-mix(in srgb, var(--theme-surface-app) 78%, transparent)',
+                backdropFilter: 'blur(2px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+            }}
+        >
+            {children}
+        </div>
+    );
+}
+
+function SelectionCheckbox({
+    isSelected,
+    onSelectionToggle,
+}: {
+    isSelected: boolean;
+    onSelectionToggle?: (event?: { shiftKey?: boolean }) => void;
+}) {
+    return (
+        <Checkbox
+            checked={isSelected}
+            onChange={(event) => onSelectionToggle?.({ shiftKey: (event.nativeEvent as MouseEvent).shiftKey })}
+            size="md"
+            color="green"
+            styles={{
+                input: {
+                    backgroundColor: isSelected
+                        ? 'var(--theme-selected-border)'
+                        : 'color-mix(in srgb, var(--theme-surface-raised) 88%, transparent)',
+                    borderColor: isSelected
+                        ? 'var(--theme-selected-border)'
+                        : 'var(--theme-border-subtle)',
+                    cursor: 'pointer',
+                },
+            }}
+        />
+    );
+}
 
 ImageCard.displayName = 'ImageCard';

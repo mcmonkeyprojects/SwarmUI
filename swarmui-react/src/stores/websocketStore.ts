@@ -13,6 +13,7 @@ import { swarmClient } from '../api/client';
 import { featureFlags } from '../config/featureFlags';
 import { logger } from '../utils/logger';
 import { summarizeDiagnosticValue, useGenerationDiagnosticsStore } from './generationDiagnosticsStore';
+import { usePerformanceSessionStore } from './performanceSessionStore';
 import {
     initWSManager,
     getWSManager,
@@ -274,11 +275,50 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             let pendingPreviewData: GenerationProgressData | null = null;
             let pendingPreviewSignature: string | null = null;
             let previewTimeoutId: ReturnType<typeof setTimeout> | null = null;
+            let pendingPreviewQueuedAt = 0;
+            let previewEventCount = 0;
+            let previewCommitCount = 0;
+            let previewDedupedCount = 0;
+            let previewSupersededCount = 0;
+            let firstPreviewEventRecorded = false;
+            let firstPreviewCommitRecorded = false;
+
+            const resetPreviewTelemetry = () => {
+                pendingPreviewQueuedAt = 0;
+                previewEventCount = 0;
+                previewCommitCount = 0;
+                previewDedupedCount = 0;
+                previewSupersededCount = 0;
+                firstPreviewEventRecorded = false;
+                firstPreviewCommitRecorded = false;
+            };
+
+            const emitPreviewSummary = (reason: 'complete' | 'error' | 'stop' | 'clear') => {
+                const generation = get().generation;
+                if (!generation.startTime) {
+                    return;
+                }
+                usePerformanceSessionStore.getState().recordSessionEvent(
+                    'generate:preview-summary',
+                    previewDedupedCount > 0 || previewSupersededCount > 0 ? 'warning' : 'info',
+                    {
+                        reason,
+                        generationId: generation.generationId ?? '',
+                        requestId: generation.requestId ?? '',
+                        previewEventCount,
+                        previewCommitCount,
+                        previewDedupedCount,
+                        previewSupersededCount,
+                        previewRevision: generation.previewRevision,
+                    }
+                );
+            };
 
             const resetPreviewBuffer = () => {
                 pendingPreviewData = null;
                 pendingPreviewSignature = null;
                 lastPreviewSignature = null;
+                pendingPreviewQueuedAt = 0;
                 lastPreviewCommitAt = 0;
                 if (previewTimeoutId !== null) {
                     clearTimeout(previewTimeoutId);
@@ -294,8 +334,10 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 const data = pendingPreviewData;
                 const nextPreview = data.previewImage ?? null;
                 const nextPreviewSignature = pendingPreviewSignature;
+                const queueDelay = pendingPreviewQueuedAt > 0 ? performance.now() - pendingPreviewQueuedAt : 0;
                 pendingPreviewData = null;
                 pendingPreviewSignature = null;
+                pendingPreviewQueuedAt = 0;
 
                 set((state) => {
                     if (isStaleGenerationEvent(state.generation.generationId, data.generationId)) {
@@ -314,8 +356,36 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     };
                 });
 
+                previewCommitCount += 1;
                 lastPreviewCommitAt = performance.now();
                 lastPreviewSignature = nextPreviewSignature;
+                usePerformanceSessionStore.getState().recordTiming(
+                    'ws:preview-queue-delay',
+                    queueDelay,
+                    {
+                        generationId: data.generationId ?? '',
+                        requestId: data.requestId ?? '',
+                        stageId: data.stageId ?? '',
+                        stageLabel: data.stageLabel ?? '',
+                    },
+                    queueDelay > 250 ? 'warning' : 'info'
+                );
+
+                const generationStartTime = get().generation.startTime;
+                if (generationStartTime && !firstPreviewCommitRecorded) {
+                    firstPreviewCommitRecorded = true;
+                    usePerformanceSessionStore.getState().recordTiming(
+                        'generate:first-preview-commit',
+                        Date.now() - generationStartTime,
+                        {
+                            generationId: data.generationId ?? '',
+                            requestId: data.requestId ?? '',
+                            stageId: data.stageId ?? '',
+                            stageLabel: data.stageLabel ?? '',
+                            queueDelayMs: queueDelay,
+                        }
+                    );
+                }
             };
 
             const schedulePreviewUpdate = (data: GenerationProgressData, force = false) => {
@@ -323,13 +393,35 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     return;
                 }
 
+                previewEventCount += 1;
+                const generationStartTime = get().generation.startTime;
+                if (generationStartTime && !firstPreviewEventRecorded) {
+                    firstPreviewEventRecorded = true;
+                    usePerformanceSessionStore.getState().recordTiming(
+                        'generate:first-preview-event',
+                        Date.now() - generationStartTime,
+                        {
+                            generationId: data.generationId ?? '',
+                            requestId: data.requestId ?? '',
+                            stageId: data.stageId ?? '',
+                            stageLabel: data.stageLabel ?? '',
+                        }
+                    );
+                }
+
                 const nextPreviewSignature = buildPreviewEventSignature(data);
                 if (nextPreviewSignature === lastPreviewSignature || nextPreviewSignature === pendingPreviewSignature) {
+                    previewDedupedCount += 1;
                     return;
+                }
+
+                if (pendingPreviewData && pendingPreviewSignature && pendingPreviewSignature !== nextPreviewSignature) {
+                    previewSupersededCount += 1;
                 }
 
                 pendingPreviewData = data;
                 pendingPreviewSignature = nextPreviewSignature;
+                pendingPreviewQueuedAt = performance.now();
 
                 if (previewTimeoutId !== null) {
                     clearTimeout(previewTimeoutId);
@@ -480,6 +572,26 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                             totalSteps: data.totalSteps,
                         });
                     }
+                    if (
+                        diagnosticGenerationId &&
+                        data.backendPreview &&
+                        (data.backendPreview.isFinal || data.backendPreview.previewEventCount === 1 || !!data.backendPreview.warning)
+                    ) {
+                        diagnostics.appendEvent(diagnosticGenerationId, {
+                            type: data.backendPreview.isFinal ? 'backend_preview_summary' : 'backend_preview_telemetry',
+                            level: data.backendPreview.warning ? 'warn' : 'info',
+                            message: data.backendPreview.isFinal
+                                ? 'Received final backend preview telemetry summary.'
+                                : 'Received backend preview telemetry update.',
+                            details: data.backendPreview,
+                        });
+                        usePerformanceSessionStore.getState().recordSessionEvent(
+                            'backend:preview-telemetry',
+                            data.backendPreview.warning ? 'warning' : 'info',
+                            data.backendPreview,
+                            undefined,
+                        );
+                    }
 
                     // Always update on significant changes or first update
                     const significantChange =
@@ -619,6 +731,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                                     },
                         };
                     });
+                    emitPreviewSummary('complete');
                 });
 
                 manager.on('generation:error', (event) => {
@@ -684,6 +797,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                             },
                         };
                     });
+                    emitPreviewSummary('error');
                 });
 
                 // Subscribe to model loading events
@@ -1027,8 +1141,9 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             // Generation Actions
             // ========================================================================
 
-                startGeneration: (params: GenerateParams, providedGenerationId?: string) => {
+            startGeneration: (params: GenerateParams, providedGenerationId?: string) => {
                 resetPreviewBuffer();
+                resetPreviewTelemetry();
                 const parsedSteps = Number(params.steps);
                 const totalSteps = Number.isFinite(parsedSteps) && parsedSteps > 0 ? parsedSteps : 20;
                 const parsedImages = Number(params.images);
@@ -1160,10 +1275,14 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         lastEventAt: Date.now(),
                     },
                 }));
+                emitPreviewSummary('stop');
+                resetPreviewTelemetry();
             },
 
             clearGeneration: () => {
                 resetPreviewBuffer();
+                emitPreviewSummary('clear');
+                resetPreviewTelemetry();
                 set({ generation: initialGenerationState });
             },
 

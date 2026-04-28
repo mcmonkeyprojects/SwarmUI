@@ -9,6 +9,7 @@ import {
   Select,
   Slider,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Textarea,
@@ -142,6 +143,7 @@ export function ControlsPanel({
   const [personaModalOpen, setPersonaModalOpen] = useState(false);
   const [lorebookModalOpen, setLorebookModalOpen] = useState(false);
   const [promptInspectorOpen, setPromptInspectorOpen] = useState(false);
+  const [activeDirectorTab, setActiveDirectorTab] = useState<string | null>('roleplay');
   const [openSections, setOpenSections] = useState<string[]>([
     'connection',
     'roleplay',
@@ -306,6 +308,7 @@ export function ControlsPanel({
         : null,
     [activeCharacter, activePersona, activeSession, lorebooks]
   );
+  const compiledPromptSegments = compiledPrompt?.segments ?? [];
 
   const { data: sdModels, isLoading: loadingModels } = useModels('Stable-Diffusion');
   const { isLoading: isLoadingModel, progress: modelLoadProgress, loadModel } = useModelLoading();
@@ -648,6 +651,12 @@ export function ControlsPanel({
     setOpenSections((current) =>
       areStringListsEqual(current, nextSections) ? current : nextSections
     );
+    setActiveDirectorTab(nextSections[nextSections.length - 1] ?? null);
+  };
+
+  const handleDirectorTabChange = (value: string | null) => {
+    setActiveDirectorTab(value);
+    setOpenSections(value ? [value] : []);
   };
 
   const handleEjectImageModel = async () => {
@@ -684,6 +693,29 @@ export function ControlsPanel({
   return (
     <>
       <Stack h="100%" gap={0} p="xs" style={{ overflow: 'auto' }}>
+        <Tabs
+          value={activeDirectorTab}
+          onChange={handleDirectorTabChange}
+          className="roleplay-director-tabs"
+        >
+          <Tabs.List grow>
+            <Tabs.Tab value="generation" leftSection={<IconPhotoSpark size={14} />}>
+              Scene
+            </Tabs.Tab>
+            <Tabs.Tab value="roleplay" leftSection={<IconUserCircle size={14} />}>
+              Prompt
+            </Tabs.Tab>
+            <Tabs.Tab value="memory" leftSection={<IconBrain size={14} />}>
+              Memory
+            </Tabs.Tab>
+            <Tabs.Tab value="library" leftSection={<IconBook2 size={14} />}>
+              Lore
+            </Tabs.Tab>
+            <Tabs.Tab value="connection" leftSection={<IconPlugConnected size={14} />}>
+              Link
+            </Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
         <Accordion
           variant="separated"
           radius="sm"
@@ -860,6 +892,23 @@ export function ControlsPanel({
                       <Text size="xs" fw={600}>
                         Prompt Stack
                       </Text>
+                      <Stack gap={6} className="roleplay-prompt-block-list">
+                        {compiledPromptSegments.slice(0, 8).map((segment) => (
+                          <Group key={segment.key} justify="space-between" wrap="nowrap">
+                            <Text size="xs" c="dimmed" truncate>
+                              {segment.label}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              ~{Math.ceil(segment.content.length / 4)}
+                            </Text>
+                          </Group>
+                        ))}
+                        {compiledPromptSegments.length === 0 ? (
+                          <Text size="xs" c="dimmed">
+                            No active prompt blocks.
+                          </Text>
+                        ) : null}
+                      </Stack>
                       <Textarea
                         label="Main Prompt Override"
                         description="Leave blank to use the character's active system prompt."

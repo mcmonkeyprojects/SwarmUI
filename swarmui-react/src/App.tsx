@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy, useState, type ReactNode } from 'react';
+import { useEffect, Suspense, lazy, useRef, useState, type ReactNode } from 'react';
 import { MantineProvider, AppShell, Loader, Center } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { notifications } from '@mantine/notifications';
@@ -35,7 +35,10 @@ import { useNavigationStore, type AppPage, type AppRoute } from './stores/naviga
 import { AppHeader } from './components/layout/AppHeader';
 import { useCanvasWorkflowStore } from './stores/canvasWorkflowStore';
 import { usePromptCacheStore } from './stores/promptCacheStore';
+import { usePerformanceSessionStore } from './stores/performanceSessionStore';
 import { isWebRuntimeTarget } from './config/runtimeTarget';
+import { featureFlags } from './config/featureFlags';
+import type { BackendBootstrapSnapshot } from './api/types';
 
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
@@ -161,12 +164,24 @@ function AppContent() {
     setCurrentPage: state.setCurrentPage,
     syncFromLocation: state.syncFromLocation,
   })));
+  const { isSessionInitialized, isSessionInitializing } = useSessionStore(
+    useShallow((state) => ({
+      isSessionInitialized: state.isInitialized,
+      isSessionInitializing: state.isInitializing,
+    }))
+  );
+  const startNavigation = usePerformanceSessionStore((state) => state.startNavigation);
+  const completeNavigation = usePerformanceSessionStore((state) => state.completeNavigation);
+  const markSessionBootstrapped = usePerformanceSessionStore((state) => state.markSessionBootstrapped);
+  const recordEventLoopLag = usePerformanceSessionStore((state) => state.recordEventLoopLag);
+  const recordSessionEvent = usePerformanceSessionStore((state) => state.recordSessionEvent);
   const { startTransition } = useViewTransition();
   const electronAPI = (window as Window & { electronAPI?: ElectronAPI }).electronAPI;
   const [modelDownloaderOpen, setModelDownloaderOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [assetCatalogOpen, setAssetCatalogOpen] = useState(false);
   const isCanvasWorkflowActive = useCanvasWorkflowStore((state) => state.isOpen || state.upscalerOpen);
+  const appStartRef = useRef(0);
 
   // Get theme store state and sync function
   const { _hasHydrated, syncThemeCSS, currentTheme, resolvedColorScheme, customAccent } = useThemeStore(useShallow((state) => ({
@@ -194,6 +209,10 @@ function AppContent() {
   useAdaptiveAccentPipeline();
 
   // Preload only Generate-adjacent data on idle to keep startup responsive.
+  useEffect(() => {
+    appStartRef.current = performance.now();
+  }, []);
+
   useEffect(() => {
     if (shouldSkipStartupPrefetch()) {
       return;
@@ -240,6 +259,8 @@ function AppContent() {
   // Handle page changes with View Transitions API
   const handlePageChange = (newPage: AppPage) => {
     if (newPage === currentPage) return;
+
+    startNavigation(newPage);
 
     // Use View Transitions if supported, otherwise just set directly
     startTransition(() => {
@@ -325,14 +346,10 @@ function AppContent() {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: queryKeys.models.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.backends.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.vaes.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.controlnets.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.embeddings.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.wildcards.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.server.status });
-      queryClient.invalidateQueries({ queryKey: queryKeys.server.info });
+      const snapshot = event.data as BackendBootstrapSnapshot;
+
+      queryClient.setQueryData(queryKeys.backend.bootstrap, snapshot);
+      queryClient.setQueryData(queryKeys.backends.list(), snapshot.backendStatus);
     });
   }, []);
 
@@ -347,6 +364,75 @@ function AppContent() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    if (!isSessionInitialized) {
+      return;
+    }
+
+    markSessionBootstrapped(performance.now() - appStartRef.current);
+  }, [isSessionInitialized, markSessionBootstrapped]);
+
+  useEffect(() => {
+    if (!isSessionInitialized) {
+      return;
+    }
+
+    const routeName = route.page;
+    const startedAt = performance.now();
+    const settleTimer = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        completeNavigation(routeName, performance.now() - startedAt);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(settleTimer);
+    };
+  }, [completeNavigation, isSessionInitialized, route.page]);
+
+  useEffect(() => {
+    if (!isSessionInitialized) {
+      return;
+    }
+
+    const intervalMs = 5000;
+    let expected = performance.now() + intervalMs;
+    const intervalId = window.setInterval(() => {
+      const now = performance.now();
+      const lagMs = Math.max(0, now - expected);
+      expected = now + intervalMs;
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+      if (lagMs > intervalMs * 3) {
+        recordSessionEvent('event-loop:discarded-resume-sample', 'info', {
+          lagMs,
+          intervalMs,
+          reason: 'visibility-or-sleep-resume',
+        });
+        return;
+      }
+      recordEventLoopLag(lagMs);
+    }, intervalMs);
+
+    const handleVisibilityChange = () => {
+      expected = performance.now() + intervalMs;
+      recordSessionEvent(
+        document.visibilityState === 'visible'
+          ? 'app:visibility-visible'
+          : 'app:visibility-hidden',
+        'info'
+      );
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isSessionInitialized, recordEventLoopLag, recordSessionEvent]);
 
   return (
     <>
@@ -383,7 +469,16 @@ function AppContent() {
         </AppShell.Header>
 
         <AppShell.Main>
-          <AppRouteOutlet currentPage={currentPage} route={route} />
+          {isSessionInitialized ? (
+            <AppRouteOutlet currentPage={currentPage} route={route} />
+          ) : (
+            <Center h="100%">
+              <Loader size="lg" />
+              {!isSessionInitializing && (
+                <span style={{ marginLeft: 12 }}>Connecting to SwarmUI...</span>
+              )}
+            </Center>
+          )}
         </AppShell.Main>
       </AppShell>
 
@@ -406,7 +501,7 @@ function AppContent() {
       </Suspense>
 
       {/* Performance Dashboard - development only */}
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && featureFlags.devPerformanceDashboard && (
         <Suspense fallback={null}>
           <PerformanceDashboard />
         </Suspense>

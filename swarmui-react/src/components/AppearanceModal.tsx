@@ -1,11 +1,10 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Collapse, ColorPicker, Group, Modal, ScrollArea, Select, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Box, Collapse, ColorPicker, Group, Modal, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown, IconChevronUp, IconDeviceDesktop, IconMoon, IconPlus, IconSun, IconUpload } from '@tabler/icons-react';
 import { useShallow } from 'zustand/react/shallow';
-import { CURATED_DARK_THEMES, CURATED_LIGHT_THEMES, type ResolvedColorScheme, type ThemeControlShape, type ThemeIconShape, type ThemeMode, type ThemePalette, useThemeStore } from '../store/themeStore';
+import { type ResolvedColorScheme, type ThemeControlShape, type ThemeIconShape, type ThemeMode, type ThemePalette, useThemeStore } from '../store/themeStore';
 import { useAnimationStore, type EffectsIntensity, type MotionPreset } from '../store/animationStore';
 import { ThemeCatalogBrowser } from './ThemeCatalogBrowser';
-import { ThemePreview } from './ThemePreview';
 import { SwarmButton, SwarmSegmentedControl, SwarmSwitch } from './ui';
 
 const ThemeBuilder = lazy(() => import('./ThemeBuilder').then((module) => ({ default: module.ThemeBuilder })));
@@ -14,7 +13,6 @@ const ThemeImporter = lazy(() => import('./ThemeImporter').then((module) => ({ d
 interface AppearanceModalProps { opened: boolean; onClose: () => void; }
 interface ExportThemeInput { light: ThemePalette; dark: ThemePalette; customAccent: string | null; }
 
-const buildOptions = (ids: readonly string[], themes: ThemePalette[]) => ids.map((id) => ({ value: id, label: themes.find((theme) => theme.id === id)?.name || id }));
 const loadBoolean = (key: string, fallback: boolean) => {
     if (typeof window === 'undefined') return fallback;
     try {
@@ -98,15 +96,13 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
     const [pairApplyEnabled, setPairApplyEnabled] = useState(loadBoolean('swarmui.appearance.pairApply', true));
     const [biasUnvisited, setBiasUnvisited] = useState(loadBoolean('swarmui.appearance.biasUnvisited', true));
     const [systemScheme, setSystemScheme] = useState<ResolvedColorScheme>(getLocalScheme());
+    const [catalogScheme, setCatalogScheme] = useState<ResolvedColorScheme>(getLocalScheme());
 
     const allThemes = useMemo(() => getAllThemes(), [getAllThemes]);
     const lightTheme = allThemes.find((theme) => theme.id === lightThemeId) || allThemes[0];
     const darkTheme = allThemes.find((theme) => theme.id === darkThemeId) || allThemes[0];
     const activeScheme = themeMode === 'system' ? systemScheme : themeMode;
     const activeTheme = activeScheme === 'light' ? lightTheme : darkTheme;
-
-    const lightOptions = useMemo(() => buildOptions(CURATED_LIGHT_THEMES, allThemes), [allThemes]);
-    const darkOptions = useMemo(() => buildOptions(CURATED_DARK_THEMES, allThemes), [allThemes]);
 
     useEffect(() => { saveBoolean('swarmui.appearance.pairApply', pairApplyEnabled); }, [pairApplyEnabled]);
     useEffect(() => { saveBoolean('swarmui.appearance.biasUnvisited', biasUnvisited); }, [biasUnvisited]);
@@ -136,7 +132,7 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
     }, [applyThemePair, pairApplyEnabled, setThemeForScheme]);
 
     const selectTheme = useCallback((themeId: string) => setSchemeTheme(activeScheme, themeId), [activeScheme, setSchemeTheme]);
-    const handleBrowseAllThemes = () => { setAdvancedOpen(true); requestAnimationFrame(() => document.getElementById('appearance-advanced-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); };
+    const catalogThemeId = catalogScheme === 'light' ? lightThemeId : darkThemeId;
 
     const pickTheme = useCallback((preferUnvisited: boolean) => {
         const visited = new Set(visitedThemeIds);
@@ -152,7 +148,7 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
 
     return (
         <>
-            <Modal opened={opened} onClose={onClose} title="Appearance" size="xl" centered scrollAreaComponent={ScrollArea.Autosize} styles={{ body: { padding: '16px 20px 20px' }, header: { borderBottom: '1px solid var(--theme-gray-5)' }, title: { fontWeight: 700 } }} aria-label="Appearance settings">
+            <Modal opened={opened} onClose={onClose} title="Appearance" size={1120} centered scrollAreaComponent={ScrollArea.Autosize} className="appearance-modal" styles={{ body: { padding: '16px 20px 20px' }, header: { borderBottom: '1px solid var(--theme-gray-5)' }, title: { fontWeight: 700 } }} aria-label="Appearance settings">
                 <Stack gap="lg">
                     <Stack gap={6}>
                         <Text size="xs" fw={700} tt="uppercase" c="dimmed">Mode</Text>
@@ -163,12 +159,42 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
                         ]} aria-label="Color scheme mode" />
                     </Stack>
 
-                    <Stack gap={6}>
-                        <Text size="xs" fw={700} tt="uppercase" c="dimmed">Theme presets</Text>
-                        <Group gap="md" align="stretch" wrap="wrap" className="appearance-presets">
-                            <PresetCard scheme="light" theme={lightTheme} options={lightOptions} selectedThemeId={lightThemeId} onSelect={(id) => setSchemeTheme('light', id)} onBrowseAll={handleBrowseAllThemes} />
-                            <PresetCard scheme="dark" theme={darkTheme} options={darkOptions} selectedThemeId={darkThemeId} onSelect={(id) => setSchemeTheme('dark', id)} onBrowseAll={handleBrowseAllThemes} />
+                    <Stack gap={8}>
+                        <Group justify="space-between" align="flex-end" wrap="wrap">
+                            <Stack gap={2}>
+                                <Text size="xs" fw={700} tt="uppercase" c="dimmed">Theme library</Text>
+                                <Text size="xs" c="dimmed">Browse, preview, and apply themes directly from the modern catalog.</Text>
+                            </Stack>
+                            <Box className="appearance-scheme-target">
+                                <SwarmSegmentedControl
+                                    value={catalogScheme}
+                                    onChange={(value) => setCatalogScheme(value as ResolvedColorScheme)}
+                                    data={[
+                                        { value: 'light', label: <Group gap={6} justify="center" wrap="nowrap"><IconSun size={14} /><span>Light slot</span></Group> },
+                                        { value: 'dark', label: <Group gap={6} justify="center" wrap="nowrap"><IconMoon size={14} /><span>Dark slot</span></Group> },
+                                    ]}
+                                    aria-label="Theme slot to edit"
+                                />
+                            </Box>
                         </Group>
+                        <Group gap="xs" wrap="wrap">
+                            <Text size="xs" c="dimmed">Current:</Text>
+                            <SwarmButton size="xs" tone={catalogScheme === 'light' ? 'brand' : 'secondary'} emphasis="ghost" onClick={() => setCatalogScheme('light')}>
+                                Light: {lightTheme.name}
+                            </SwarmButton>
+                            <SwarmButton size="xs" tone={catalogScheme === 'dark' ? 'brand' : 'secondary'} emphasis="ghost" onClick={() => setCatalogScheme('dark')}>
+                                Dark: {darkTheme.name}
+                            </SwarmButton>
+                        </Group>
+                        <Box className="appearance-theme-library">
+                            <ThemeCatalogBrowser
+                                targetScheme={catalogScheme}
+                                selectedThemeId={catalogThemeId}
+                                onOpenImporter={() => setImporterOpen(true)}
+                                onOpenBuilder={() => setBuilderOpen(true)}
+                                onSelected={() => undefined}
+                            />
+                        </Box>
                     </Stack>
 
                     <Stack gap={8}>
@@ -229,14 +255,6 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
                                     <SwarmButton size="sm" tone="secondary" emphasis="outline" leftSection={<IconUpload size={14} />} onClick={() => setImporterOpen(true)}>Import JSON</SwarmButton>
                                     <SwarmButton size="sm" tone="primary" emphasis="soft" leftSection={<IconPlus size={14} />} onClick={() => setBuilderOpen(true)}>Create custom theme</SwarmButton>
                                 </Group>
-
-                                <Stack gap={6} id="appearance-advanced-catalog">
-                                    <Text size="sm" fw={600}>Browse all themes</Text>
-                                    <Text size="xs" c="dimmed">Selecting a theme below saves it to the <strong>{themeMode === 'light' ? 'light' : themeMode === 'dark' ? 'dark' : 'currently active'}</strong> scheme slot. Switch the segmented control above first to assign a theme to a different slot.</Text>
-                                    <Box style={{ border: '1px solid var(--theme-gray-5)', borderRadius: 8, overflow: 'hidden' }}>
-                                        <ThemeCatalogBrowser targetScheme={activeScheme} selectedThemeId={activeScheme === 'light' ? lightThemeId : darkThemeId} onOpenImporter={() => setImporterOpen(true)} onOpenBuilder={() => setBuilderOpen(true)} onSelected={() => undefined} />
-                                    </Box>
-                                </Stack>
                             </Stack>
                         </Collapse>
                     </Stack>
@@ -246,27 +264,5 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
             {builderOpen && <Suspense fallback={null}><ThemeBuilder opened={builderOpen} onClose={() => setBuilderOpen(false)} /></Suspense>}
             {importerOpen && <Suspense fallback={null}><ThemeImporter opened={importerOpen} onClose={() => setImporterOpen(false)} /></Suspense>}
         </>
-    );
-}
-
-interface PresetCardProps {
-    scheme: ResolvedColorScheme;
-    theme: ThemePalette;
-    options: { value: string; label: string }[];
-    selectedThemeId: string;
-    onSelect: (themeId: string) => void;
-    onBrowseAll: () => void;
-}
-
-function PresetCard({ scheme, theme, options, selectedThemeId, onSelect, onBrowseAll }: PresetCardProps) {
-    return (
-        <Box className="appearance-preset-card" data-scheme={scheme} style={{ flex: '1 1 280px', minWidth: 260, border: '1px solid var(--theme-gray-5)', borderRadius: 12, padding: 12, background: 'var(--theme-surface-card)' }}>
-            <Stack gap={10}>
-                <Group justify="space-between" align="center" wrap="nowrap"><Group gap={6} wrap="nowrap">{scheme === 'light' ? <IconSun size={16} /> : <IconMoon size={16} />}<Text size="sm" fw={700}>{scheme === 'light' ? 'Light theme' : 'Dark theme'}</Text></Group></Group>
-                <ThemePreview theme={theme} />
-                <Select size="sm" value={selectedThemeId} onChange={(value) => value && onSelect(value)} data={options} searchable nothingFoundMessage="No matching theme" />
-                <SwarmButton size="xs" tone="secondary" emphasis="ghost" onClick={onBrowseAll}>Browse all themes</SwarmButton>
-            </Stack>
-        </Box>
     );
 }

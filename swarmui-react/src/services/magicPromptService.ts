@@ -55,6 +55,21 @@ interface ChatCompletionResponse {
     }>;
 }
 
+interface ResponsesApiContentPart {
+    type?: string;
+    text?: string;
+}
+
+interface ResponsesApiOutputItem {
+    type?: string;
+    role?: string;
+    content?: ResponsesApiContentPart[];
+}
+
+interface ResponsesApiResponse {
+    output?: ResponsesApiOutputItem[];
+}
+
 const JSON_RESPONSE_INSTRUCTION = [
     'Respond with valid JSON only.',
     'Use this exact shape:',
@@ -223,6 +238,92 @@ function extractTextContent(content: ChatCompletionMessage['content']): string {
     return '';
 }
 
+function getChatUrl(base: string, serverMode: AssistantServerMode): string {
+    if (serverMode === 'legacy-lmstudio') {
+        return `${base}/api/v1/chat`;
+    }
+    if (serverMode === 'openai-responses') {
+        return `${base}/v1/responses`;
+    }
+    return `${base}/v1/chat/completions`;
+}
+
+function buildChatBody(
+    serverMode: AssistantServerMode,
+    modelId: string,
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+): string {
+    if (serverMode === 'openai-responses') {
+        return JSON.stringify({
+            model: modelId,
+            input: messages,
+            temperature: 0.7,
+            max_output_tokens: 2048,
+        });
+    }
+
+    return JSON.stringify({
+        model: modelId,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2048,
+    });
+}
+
+function isInputRequiredError(errorText: string): boolean {
+    try {
+        const parsed = JSON.parse(errorText);
+        return parsed?.error?.param === 'input'
+            && typeof parsed?.error?.message === 'string'
+            && parsed.error.message.includes("'input' is required");
+    } catch {
+        return errorText.includes("'input' is required");
+    }
+}
+
+function extractResponsesText(data: ResponsesApiResponse): string {
+    const output = Array.isArray(data.output) ? data.output : [];
+    for (const item of output) {
+        if (item.type !== 'message' || item.role !== 'assistant' || !Array.isArray(item.content)) {
+            continue;
+        }
+        for (const part of item.content) {
+            if ((part.type === 'output_text' || part.type === 'text') && typeof part.text === 'string') {
+                const text = part.text.trim();
+                if (text) {
+                    return text;
+                }
+            }
+        }
+    }
+
+    for (const item of output) {
+        if (!Array.isArray(item.content)) {
+            continue;
+        }
+        for (const part of item.content) {
+            if (typeof part.text === 'string') {
+                const text = part.text.trim();
+                if (text) {
+                    return text;
+                }
+            }
+        }
+    }
+
+    return '';
+}
+
+async function extractAssistantResponse(response: Response, serverMode: AssistantServerMode): Promise<string> {
+    if (serverMode === 'openai-responses') {
+        const data = (await response.json()) as ResponsesApiResponse;
+        return extractResponsesText(data);
+    }
+
+    const data = (await response.json()) as ChatCompletionResponse;
+    return extractTextContent(data.choices?.[0]?.message?.content);
+}
+
 async function requestChatCompletion(input: {
     endpointUrl: string;
     serverMode: AssistantServerMode;
@@ -230,24 +331,46 @@ async function requestChatCompletion(input: {
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
 }): Promise<EnhanceResponse> {
     const base = normalizeUrl(input.endpointUrl);
-    const url = input.serverMode === 'legacy-lmstudio'
-        ? `${base}/api/v1/chat`
-        : `${base}/v1/chat/completions`;
+    const url = getChatUrl(base, input.serverMode);
+    const body = buildChatBody(input.serverMode, input.modelId, input.messages);
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: input.modelId,
-                messages: input.messages,
-                temperature: 0.7,
-                max_tokens: 2048,
-            }),
+            body,
         });
 
         if (!response.ok) {
             const errText = await readErrorText(response);
+            if (response.status === 400 && input.serverMode !== 'openai-responses' && isInputRequiredError(errText)) {
+                const retryResponse = await fetch(getChatUrl(base, 'openai-responses'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: buildChatBody('openai-responses', input.modelId, input.messages),
+                });
+
+                if (!retryResponse.ok) {
+                    const retryErrText = await readErrorText(retryResponse);
+                    return {
+                        success: false,
+                        response: '',
+                        error: `Assistant server error ${retryResponse.status}: ${retryErrText}`,
+                    };
+                }
+
+                const retryContent = await extractAssistantResponse(retryResponse, 'openai-responses');
+                if (!retryContent) {
+                    return {
+                        success: false,
+                        response: '',
+                        error: 'Assistant server returned an empty response',
+                    };
+                }
+
+                return { success: true, response: retryContent };
+            }
+
             return {
                 success: false,
                 response: '',
@@ -255,8 +378,7 @@ async function requestChatCompletion(input: {
             };
         }
 
-        const data = (await response.json()) as ChatCompletionResponse;
-        const content = extractTextContent(data.choices?.[0]?.message?.content);
+        const content = await extractAssistantResponse(response, input.serverMode);
 
         if (!content) {
             return {

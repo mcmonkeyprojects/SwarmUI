@@ -13,7 +13,7 @@ import { RegionSyntaxModal } from './modals/RegionSyntaxModal';
 import { HeadlessAutocomplete, type HeadlessAutocompleteHandle } from './headless/HeadlessAutocomplete';
 import { type AutoCompleteEntry } from '../stores/autoCompleteStore';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from './ContextMenu';
-import { usePromptEnhanceStore, PROMPT_STYLE_PRESETS } from '../stores/promptEnhanceStore';
+import { usePromptEnhanceStore, PROMPT_STYLE_PRESETS, type PromptPresetKey } from '../stores/promptEnhanceStore';
 import { enhancePrompt as enhancePromptApi, probeAssistantConnection } from '../services/magicPromptService';
 import { useAssistantStore } from '../stores/assistantStore';
 import { SwarmActionIcon as ActionIcon } from './ui';
@@ -584,6 +584,13 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
         }
     }, [autocompleteEnabled]);
 
+    const handleFocus = useCallback(() => {
+        setActivePromptTarget(targetIdRef.current);
+        if (autocompleteEnabled) {
+            autocompleteRef.current?.ensureLoaded();
+        }
+    }, [autocompleteEnabled]);
+
     // Token counting: immediate local estimate, then accurate server count
     const { tokenCount, isEstimate } = useTokenCount(localValue, { debounceMs: 500, skipPromptSyntax: true });
     const tokenWarning = useMemo(() => getTokenWarning(tokenCount, 'sdxl'), [tokenCount]);
@@ -615,6 +622,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
             <Textarea
                 ref={textareaRef}
                 spellCheck={true}
+                onFocus={handleFocus}
                 label={
                     <Group justify="space-between" mb={4} style={{ width: '100%' }}>
                         <Group gap="xs">
@@ -638,6 +646,9 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                     onClick={() => {
                                         const newState = !autocompleteEnabled;
                                         setAutocompleteEnabled(newState);
+                                        if (newState) {
+                                            autocompleteRef.current?.ensureLoaded();
+                                        }
                                         if (!newState) {
                                             autocompleteRef.current?.close();
                                         }
@@ -749,7 +760,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                                 value={activePresetKey || ''}
                                                 onChange={(val) => {
                                                     if (val && typeof val === 'string') {
-                                                        applyPreset(val as any);
+                                                        applyPreset(val as PromptPresetKey);
                                                     }
                                                 }}
                                             >
@@ -802,7 +813,6 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 onContextMenu={handleContextMenu}
-                onFocus={() => setActivePromptTarget(targetIdRef.current)}
                 onBlur={() => setActivePromptTarget(null)}
                 minRows={minRows}
                 maxRows={maxRows}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Accordion, Box, Group, ScrollArea, Stack, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
+import { Accordion, Box, Group, ScrollArea, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconCheck, IconPlus, IconSearch, IconUpload } from '@tabler/icons-react';
+import { IconCheck, IconPlus, IconUpload } from '@tabler/icons-react';
 import { getThemePersonalityLabel, resolveThemeStyle, type ResolvedColorScheme, type ThemeCategory, type ThemeControlMode, type ThemePalette, type ThemeStyleFamily, type ThemeStyleMotif, type ThemeSurfaceMode, useThemeStore } from '../store/themeStore';
 import { logger } from '../utils/logger';
 import { ThemePreview } from './ThemePreview';
@@ -30,32 +30,8 @@ interface ThemeCatalogBrowserProps {
 }
 
 const themeMeta = (theme: ThemePalette) => (theme as ExtendedTheme).meta || {};
-const splitTags = (themes: ThemePalette[]) => Array.from(new Set(themes.flatMap((theme) => {
-    const meta = themeMeta(theme);
-    const style = resolveThemeStyle(theme);
-    const tags = [...(meta.tags || []), theme.category, style.family, style.surfaceMode];
-    if (style.motif && style.motif !== 'none') tags.push(style.motif);
-    if (meta.themeSet) tags.push(`set:${meta.themeSet}`);
-    return tags.map((tag) => tag.toLowerCase());
-}))).sort();
-const matchesTags = (theme: ThemePalette, selectedTags: string[]) => {
-    if (!selectedTags.length) return true;
-    const meta = themeMeta(theme);
-    const derived = new Set([
-        theme.category.toLowerCase(),
-        ...((meta.tags || []).map((tag) => tag.toLowerCase())),
-        resolveThemeStyle(theme).family.toLowerCase(),
-        resolveThemeStyle(theme).surfaceMode.toLowerCase(),
-        ...(resolveThemeStyle(theme).motif && resolveThemeStyle(theme).motif !== 'none' ? [resolveThemeStyle(theme).motif.toLowerCase()] : []),
-        ...(meta.themeSet ? [`set:${meta.themeSet.toLowerCase()}`] : []),
-    ]);
-    return selectedTags.every((tag) => derived.has(tag));
-};
-
 export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImporter, onOpenBuilder, onSelected }: ThemeCatalogBrowserProps) {
     const { setThemeForScheme, getAllThemes, getThemeRecommendations, applyThemePair, controlShapeOverride, iconShapeOverride } = useThemeStore();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [previewThemeId, setPreviewThemeId] = useState<string | null>(null);
 
     const allThemes = getAllThemes();
@@ -63,7 +39,6 @@ export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImpor
     const previewTheme = allThemes.find((theme) => theme.id === (previewThemeId || selectedThemeId)) || selectedThemeData;
     const previewStyle = resolveThemeStyle(previewTheme);
     const previewThemePersonality = getThemePersonalityLabel(previewTheme);
-    const availableTags = useMemo(() => splitTags(allThemes), [allThemes]);
     const previewRecommendations = useMemo(
         () => getThemeRecommendations(previewTheme.id).slice(0, 3),
         [getThemeRecommendations, previewTheme.id]
@@ -77,32 +52,6 @@ export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImpor
         }
         return groups;
     }, [allThemes]);
-
-    const filteredThemesByCategory = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
-        const filtered = new Map<ThemeCategory, ThemePalette[]>();
-        for (const [category, themes] of themesByCategory.entries()) {
-            const matches = themes.filter((theme) => {
-                const meta = themeMeta(theme);
-                const searchable = [
-                    theme.id,
-                    theme.name,
-                    theme.category,
-                    CATEGORY_LABELS[theme.category],
-                    meta.themeSet || '',
-                    meta.pairedModeThemeId || '',
-                    ...(meta.recommendationIds || []),
-                    ...(meta.tags || []),
-                    ...Object.values(resolveThemeStyle(theme)),
-                ]
-                    .join(' ')
-                    .toLowerCase();
-                return (!query || searchable.includes(query)) && matchesTags(theme, selectedTags);
-            });
-            if (matches.length) filtered.set(category, matches);
-        }
-        return filtered;
-    }, [selectedTags, searchQuery, themesByCategory]);
 
     const applyTheme = (themeId: string) => {
         setThemeForScheme(targetScheme, themeId);
@@ -133,20 +82,14 @@ export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImpor
     };
 
     return (
-        <Stack gap={0} className="swarm-theme-catalog">
-            <Box p="xs" style={{ borderBottom: '1px solid var(--theme-gray-5)' }}>
-                <Stack gap="xs">
-                    <Group gap="xs">
-                        <TextInput
-                            size="xs"
-                            placeholder="Search themes, tags, sets, IDs..."
-                            leftSection={<IconSearch size={14} />}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                            styles={{ input: { backgroundColor: 'var(--theme-gray-7)', border: '1px solid var(--theme-gray-5)' } }}
-                            style={{ flex: 1 }}
-                            aria-label="Search themes"
-                        />
+        <Stack gap={0} className="swarm-theme-catalog swarm-theme-catalog--viewer">
+            <Box p="sm" className="swarm-theme-catalog__viewer-header">
+                <Group justify="space-between" gap="sm" wrap="wrap">
+                    <Stack gap={2}>
+                        <Text size="sm" fw={700}>{targetScheme === 'light' ? 'Light theme viewer' : 'Dark theme viewer'}</Text>
+                        <Text size="xs" c="dimmed">Hover to preview. Click a theme to apply it to this slot.</Text>
+                    </Stack>
+                    <Group gap="xs" wrap="nowrap">
                         <Tooltip label="Import theme from JSON">
                             <SwarmActionIcon size="md" tone="secondary" emphasis="ghost" label="Import theme from JSON" onClick={onOpenImporter}>
                                 <IconUpload size={14} />
@@ -158,86 +101,42 @@ export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImpor
                             </SwarmActionIcon>
                         </Tooltip>
                     </Group>
-                    <ScrollArea type="never" offsetScrollbars>
-                        <Group gap={6} wrap="nowrap">
-                            {availableTags.slice(0, 40).map((tag) => {
-                                const active = selectedTags.includes(tag);
-                                return (
-                                    <UnstyledButton
-                                        key={tag}
-                                        onClick={() => setSelectedTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag])}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <SwarmBadge size="xs" tone={active ? 'primary' : 'secondary'} emphasis={active ? 'solid' : 'outline'}>
-                                            {tag}
-                                        </SwarmBadge>
-                                    </UnstyledButton>
-                                );
-                            })}
-                            {selectedTags.length > 0 && (
-                                <SwarmButton size="xs" tone="secondary" emphasis="ghost" onClick={() => setSelectedTags([])}>
-                                    Clear filters
-                                </SwarmButton>
-                            )}
-                        </Group>
-                    </ScrollArea>
-                </Stack>
+                </Group>
             </Box>
 
-            <Group gap={0} align="stretch" wrap="nowrap" style={{ width: '100%' }}>
-                <ScrollArea h={400} type="auto" style={{ flex: '0 0 310px' }}>
-                    {searchQuery.trim() || selectedTags.length ? (
-                        <Stack gap={0} p="xs">
-                            {Array.from(filteredThemesByCategory.entries()).flatMap(([, themes]) =>
-                                themes.map((theme) => (
-                                    <ThemeItem
-                                        key={theme.id}
-                                        theme={theme as ExtendedTheme}
-                                        isActive={theme.id === selectedThemeId}
-                                        onClick={() => applyTheme(theme.id)}
-                                        onApplyPair={() => applyPair(theme)}
-                                        onMouseEnter={() => setPreviewThemeId(theme.id)}
-                                        onMouseLeave={() => setPreviewThemeId(selectedThemeId)}
-                                    />
-                                ))
-                            )}
-                            {filteredThemesByCategory.size === 0 && (
-                                <Text size="xs" c="dimmed" ta="center" py="xl">No themes found matching "{searchQuery}"</Text>
-                            )}
-                        </Stack>
-                    ) : (
-                        <Accordion multiple defaultValue={['default', 'color-scheme']} variant="separated" styles={{ item: { border: 'none', borderBottom: '1px solid var(--theme-gray-6)' }, control: { padding: '8px 12px' }, content: { padding: 0 } }}>
-                            {CATEGORY_ORDER.map((category) => {
-                                const themes = themesByCategory.get(category);
-                                if (!themes?.length) return null;
-                                return (
-                                    <Accordion.Item key={category} value={category}>
-                                        <Accordion.Control>
-                                            <Group gap="xs"><Text size="xs" fw={600}>{CATEGORY_LABELS[category]}</Text><SwarmBadge size="xs" tone="secondary" emphasis="soft">{themes.length}</SwarmBadge></Group>
-                                        </Accordion.Control>
-                                        <Accordion.Panel>
-                                            <Stack gap={0}>
-                                                {themes.map((theme) => (
-                                                    <ThemeItem
-                                                        key={theme.id}
-                                                        theme={theme as ExtendedTheme}
-                                                        isActive={theme.id === selectedThemeId}
-                                                        onClick={() => applyTheme(theme.id)}
-                                                        onApplyPair={() => applyPair(theme)}
-                                                        onMouseEnter={() => setPreviewThemeId(theme.id)}
-                                                        onMouseLeave={() => setPreviewThemeId(selectedThemeId)}
-                                                    />
-                                                ))}
-                                            </Stack>
-                                        </Accordion.Panel>
-                                    </Accordion.Item>
-                                );
-                            })}
-                        </Accordion>
-                    )}
+            <Group gap={0} align="stretch" wrap="nowrap" className="swarm-theme-catalog__body">
+                <ScrollArea h={400} type="auto" className="swarm-theme-catalog__list">
+                    <Accordion multiple defaultValue={['default', 'color-scheme']} variant="separated" styles={{ item: { border: 'none', borderBottom: '1px solid var(--theme-gray-6)' }, control: { padding: '8px 12px' }, content: { padding: 0 } }}>
+                        {CATEGORY_ORDER.map((category) => {
+                            const themes = themesByCategory.get(category);
+                            if (!themes?.length) return null;
+                            return (
+                                <Accordion.Item key={category} value={category}>
+                                    <Accordion.Control>
+                                        <Group gap="xs"><Text size="xs" fw={600}>{CATEGORY_LABELS[category]}</Text><SwarmBadge size="xs" tone="secondary" emphasis="soft">{themes.length}</SwarmBadge></Group>
+                                    </Accordion.Control>
+                                    <Accordion.Panel>
+                                        <Stack gap={0}>
+                                            {themes.map((theme) => (
+                                                <ThemeItem
+                                                    key={theme.id}
+                                                    theme={theme as ExtendedTheme}
+                                                    isActive={theme.id === selectedThemeId}
+                                                    onClick={() => applyTheme(theme.id)}
+                                                    onApplyPair={() => applyPair(theme)}
+                                                    onMouseEnter={() => setPreviewThemeId(theme.id)}
+                                                    onMouseLeave={() => setPreviewThemeId(selectedThemeId)}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </Accordion.Panel>
+                                </Accordion.Item>
+                            );
+                        })}
+                    </Accordion>
                 </ScrollArea>
 
-                <Box p="xs" style={{ flex: 1, minWidth: 0, borderLeft: '1px solid var(--theme-gray-5)', backgroundColor: 'var(--theme-gray-8)' }}>
+                <Box p="xs" className="swarm-theme-catalog__preview">
                     <Stack gap="xs">
                         <ThemePreview theme={previewTheme} styleOverride={{ controlShape: controlShapeOverride, iconShape: iconShapeOverride }} />
                         <Box className="surface-paper" style={{ padding: 10, borderRadius: 10 }}>
@@ -249,8 +148,8 @@ export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImpor
                                     <SwarmBadge size="xs" tone="secondary" emphasis="outline">{CONTROL_LABELS[previewStyle.controlMode]}</SwarmBadge>
                                     {themeMeta(previewTheme).themeSet && <SwarmBadge size="xs" tone="primary" emphasis="soft">Set: {themeMeta(previewTheme).themeSet}</SwarmBadge>}
                                 </Group>
-                                <Text size="xs" fw={600}>{previewTheme.name}</Text>
-                                <Text size="xs" c="dimmed">{previewTheme.colors.fontHeading || previewTheme.colors.fontFamily || 'System heading'} heading paired with {previewTheme.colors.fontFamily || 'system UI'} UI text and {previewTheme.colors.fontMono || 'system mono'} mono accents.</Text>
+                                <Text size="xs" fw={600} className="swarm-theme-catalog__preview-title">{previewTheme.name}</Text>
+                                <Text size="xs" c="dimmed" className="swarm-theme-catalog__preview-copy">{previewTheme.colors.fontHeading || previewTheme.colors.fontFamily || 'System heading'} heading paired with {previewTheme.colors.fontFamily || 'system UI'} UI text and {previewTheme.colors.fontMono || 'system mono'} mono accents.</Text>
                                 {themeMeta(previewTheme).pairedModeThemeId && (
                                     <Group gap={6} wrap="wrap">
                                         <SwarmBadge size="xs" tone="secondary" emphasis="outline">Paired with {themeMeta(previewTheme).pairedModeThemeId}</SwarmBadge>

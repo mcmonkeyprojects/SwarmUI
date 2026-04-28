@@ -137,8 +137,12 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
     const modelsQuery = useQuery({
         queryKey: queryKeys.models.browser('', 'Stable-Diffusion'),
         queryFn: () => swarmClient.listModelsWithFolders(),
-        staleTime: 5 * 60 * 1000,
+        staleTime: 30 * 60 * 1000,
+        gcTime: 60 * 60 * 1000,
         enabled: opened,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
     const loadedModelsQuery = useQuery({
         queryKey: queryKeys.models.loaded(),

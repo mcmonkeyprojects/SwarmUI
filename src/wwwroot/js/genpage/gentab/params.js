@@ -878,10 +878,6 @@ function toggle_advanced_checkbox_manual() {
 function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     let input = JSON.parse(JSON.stringify(input_preoverrides));
     let extraMetadata = {};
-    let outputFolderInput = document.getElementById('current_generation_output_folder');
-    if (outputFolderInput && outputFolderInput.value.trim().length > 0) {
-        extraMetadata['batch_output_folder'] = outputFolderInput.value.trim();
-    }
     paramLoop: for (let type of gen_param_types) {
         if (type.toggleable && !getRequiredElementById(`input_${type.id}_toggle`).checked) {
             continue;

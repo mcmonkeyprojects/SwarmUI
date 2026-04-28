@@ -1,6 +1,10 @@
 export type RoleplayInteractionStyle = 'storyteller' | 'personal-chat';
 export type RoleplayMemoryStatus = 'idle' | 'updating' | 'stale' | 'error';
 export type RoleplayLorebookEntryMode = 'always-on' | 'keyword';
+export type RoleplayLoreKeywordMode = 'plain' | 'regex';
+export type RoleplayLoreActivationLogic = 'any' | 'all';
+export type RoleplayLoreInsertionPosition = 'before-history' | 'after-history';
+export type RoleplayCharacterSourceFormat = 'native' | 'catalog' | 'swarm-bundle' | 'tavern-v1' | 'tavern-v2';
 
 export interface RoleplayModelCompatibilitySettings {
   forceFinalUserTurn: boolean;
@@ -59,7 +63,16 @@ export interface RoleplayLorebookEntry {
   title: string;
   content: string;
   keywords: string[];
+  secondaryKeywords: string[];
   mode: RoleplayLorebookEntryMode;
+  keywordMode: RoleplayLoreKeywordMode;
+  activationLogic: RoleplayLoreActivationLogic;
+  selective: boolean;
+  caseSensitive: boolean;
+  scanDepth: number;
+  insertionOrder: number;
+  insertionPosition: RoleplayLoreInsertionPosition;
+  tokenBudget: number | null;
   enabled: boolean;
   createdAt: number;
   updatedAt: number;
@@ -89,6 +102,14 @@ export interface RoleplayPersona {
 export interface RoleplayCharacter {
   id: string;
   name: string;
+  favorite: boolean;
+  creator: string;
+  characterVersion: string;
+  sourceFormat: RoleplayCharacterSourceFormat;
+  sourceUrl: string;
+  catalogTemplateId: string | null;
+  catalogCategory: string | null;
+  cardExtensions: Record<string, unknown> | null;
   avatar: string | null;
   interactionStyle: RoleplayInteractionStyle;
   /** Visual description for consistent image generation: hair, eyes, clothing, art style, etc. */
@@ -145,10 +166,21 @@ export interface RoleplayCharacter {
   updatedAt: number;
 }
 
+export interface ChatMessageVariant {
+  id: string;
+  content: string;
+  timestamp: number;
+  sceneImageUrl: string | null;
+  suggestedImagePrompt: string | null;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  includedInPrompt: boolean;
+  variants: ChatMessageVariant[];
+  activeVariantId: string | null;
   timestamp: number;
   sceneImageUrl: string | null;
   /**
@@ -177,6 +209,9 @@ export interface ActivatedRoleplayLoreEntry {
   entryTitle: string;
   content: string;
   mode: RoleplayLorebookEntryMode;
+  insertionOrder: number;
+  insertionPosition: RoleplayLoreInsertionPosition;
+  tokenEstimate: number;
 }
 
 export interface CompiledRoleplayPromptSegment {
@@ -195,3 +230,34 @@ export interface CompiledRoleplayPrompt {
 }
 
 export type RoleplayConnectionState = 'idle' | 'connecting' | 'connected' | 'error';
+
+export interface RoleplayCatalogTemplate {
+  id: string;
+  name: string;
+  category: string;
+  tags: string[];
+  shortDescription: string;
+  description: string;
+  personality: string;
+  personalityProfile: RoleplayPersonalityProfile;
+  systemPrompt: string;
+  chatSystemPrompt: string;
+  roleplaySystemPrompt: string;
+  openingChatMessage: string;
+  openingRoleplayMessage: string;
+  alternateGreetings: string[];
+  scenario: string;
+  exampleMessages: string;
+  creatorNotes: string;
+  appearancePrompt: string;
+  thumbnail: string;
+  lorebook?: {
+    name: string;
+    description: string;
+    entries: Array<{
+      title: string;
+      content: string;
+      keywords: string[];
+    }>;
+  };
+}

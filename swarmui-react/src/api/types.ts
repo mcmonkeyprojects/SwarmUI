@@ -145,6 +145,22 @@ export interface GenerationProgress {
   stage_tasks_remaining?: number;
   stage_current_step?: number;
   stage_total_steps?: number;
+  backend_preview?: {
+    preview_mode?: string;
+    preview_method?: string;
+    warning?: string | null;
+    prompt_queued_ms?: number;
+    execution_start_ms?: number;
+    first_progress_ms?: number;
+    first_preview_ms?: number;
+    first_image_ms?: number;
+    complete_ms?: number;
+    preview_event_count?: number;
+    first_preview_bytes?: number;
+    average_preview_bytes?: number;
+    final_image_bytes?: number;
+    is_final?: boolean;
+  };
 }
 
 export interface GeneratedImage {
@@ -561,6 +577,7 @@ export interface UpdateCheckResponse {
   extension_repos?: RepoUpdateStatus[];
   extension_updates: string[];
   backend_updates: string[];
+  backend_repos?: RepoUpdateStatus[];
   warnings?: string[];
   can_auto_update?: boolean;
 }
@@ -769,6 +786,16 @@ export type BackendBootstrapReason =
   | 'manual'
   | 'unknown';
 
+export type BackendBootstrapSource =
+  | 'session-init'
+  | 'session-change'
+  | 'websocket-open'
+  | 'websocket-reconnect'
+  | 'websocket-session-recovered'
+  | 'query'
+  | 'preload'
+  | 'unknown';
+
 export interface BackendSessionSnapshot {
   sessionId: string;
   userId: string;
@@ -808,6 +835,9 @@ export interface ConnectionHealthSnapshot {
 export interface BackendBootstrapSnapshot {
   refreshedAt: number;
   refreshReason: BackendBootstrapReason;
+  refreshSource: BackendBootstrapSource;
+  servedFromCache: boolean;
+  cacheAgeMs: number;
   session: BackendSessionSnapshot | null;
   serverVersion: string | null;
   transport: {

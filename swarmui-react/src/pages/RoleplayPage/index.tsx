@@ -14,6 +14,7 @@ import { CharacterSidebar } from './CharacterSidebar';
 import { CharacterSelectionPanel } from './CharacterSelectionPanel';
 import { ChatPanel } from './ChatPanel';
 import { ControlsPanel } from './ControlsPanel';
+import './roleplay.css';
 
 interface RoleplayPageProps {
     routeState?: RoleplayRouteState;
@@ -21,13 +22,20 @@ interface RoleplayPageProps {
 
 export function RoleplayPage({ routeState }: RoleplayPageProps) {
     const [controlsPanelOpen, setControlsPanelOpen] = useState(true);
-    const [showCharacterPicker, setShowCharacterPicker] = useState(true);
+    const [showCharacterPicker, setShowCharacterPicker] = useState(
+        () => !useRoleplayStore.getState().activeCharacterId
+    );
     const generateSceneRef = useRef<(() => void) | null>(null);
     const generateSceneWithPromptRef = useRef<((prompt: string) => void) | null>(null);
     const navigateToRoleplay = useNavigationStore((state) => state.navigateToRoleplay);
 
     const {
         activeCharacterId,
+        activeSessionId,
+        characters,
+        chatSessions,
+        connectionStatus,
+        selectedModelId,
         lmStudioEndpoint,
         setConnectionStatus,
         setConnectionMessage,
@@ -38,6 +46,11 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
     } = useRoleplayStore(
         useShallow((s) => ({
             activeCharacterId: s.activeCharacterId,
+            activeSessionId: s.activeSessionId,
+            characters: s.characters,
+            chatSessions: s.chatSessions,
+            connectionStatus: s.connectionStatus,
+            selectedModelId: s.selectedModelId,
             lmStudioEndpoint: s.lmStudioEndpoint,
             setConnectionStatus: s.setConnectionStatus,
             setConnectionMessage: s.setConnectionMessage,
@@ -93,15 +106,26 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
         if (!routeState?.characterId || routeState.characterId === activeCharacterId) {
             return;
         }
+        if (!characters.some((character) => character.id === routeState.characterId)) {
+            return;
+        }
         setActiveCharacter(routeState.characterId);
-        setShowCharacterPicker(false);
-    }, [activeCharacterId, routeState?.characterId, setActiveCharacter]);
+        queueMicrotask(() =>
+            setShowCharacterPicker((current) => (current ? false : current))
+        );
+    }, [activeCharacterId, characters, routeState?.characterId, setActiveCharacter]);
 
     useEffect(() => {
+        const routeCharacterId = routeState?.characterId ?? null;
+        if (routeCharacterId === activeCharacterId) {
+            return;
+        }
         navigateToRoleplay({ characterId: activeCharacterId });
-    }, [activeCharacterId, navigateToRoleplay]);
+    }, [activeCharacterId, navigateToRoleplay, routeState?.characterId]);
 
     const isShowingCharacterPicker = showCharacterPicker || !activeCharacterId;
+    const activeCharacter = characters.find((character) => character.id === activeCharacterId) ?? null;
+    const activeSession = chatSessions.find((session) => session.id === activeSessionId) ?? null;
 
     return (
         <PageScaffold
@@ -134,17 +158,25 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                 />
             }
         >
-            <div
-                style={{
-                    display: 'flex',
-                    height: 'var(--app-content-height, calc(100vh - 140px))',
-                    overflow: 'hidden',
-                }}
-            >
+            <div className="roleplay-workspace-shell">
+                <Group className="roleplay-status-bar" justify="space-between" wrap="nowrap">
+                    <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                        <span className={`roleplay-status-dot roleplay-status-${connectionStatus}`} />
+                        <span>{connectionStatus === 'connected' ? 'Connected' : 'Local assistant link'}</span>
+                        <span className="roleplay-status-divider" />
+                        <span>{selectedModelId || 'No chat model selected'}</span>
+                    </Group>
+                    <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                        <span>{activeCharacter?.name ?? 'No character'}</span>
+                        <span className="roleplay-status-divider" />
+                        <span>{activeSession?.title ?? 'No session'}</span>
+                    </Group>
+                </Group>
+            <div className="roleplay-workspace">
                 {!isShowingCharacterPicker && (
                     <>
                         {/* Character Sidebar */}
-                        <div style={{ width: sidebar.size, flexShrink: 0, overflow: 'hidden' }}>
+                        <div className="roleplay-deck-panel" style={{ width: sidebar.size }}>
                             <CharacterSidebar />
                         </div>
 
@@ -158,7 +190,7 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                 )}
 
                 {/* Main Panel */}
-                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <div className="roleplay-stage-panel">
                     {isShowingCharacterPicker ? (
                         <CharacterSelectionPanel onSelectCharacter={() => setShowCharacterPicker(false)} />
                     ) : (
@@ -173,11 +205,9 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                 {controlsPanelOpen && (
                     <>
                         <div
+                            className="roleplay-director-panel"
                             style={{
                                 width: 320,
-                                flexShrink: 0,
-                                overflow: 'hidden',
-                                borderLeft: '1px solid var(--theme-gray-5)',
                             }}
                         >
                             <ControlsPanel
@@ -188,6 +218,7 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                         </div>
                     </>
                 )}
+            </div>
             </div>
         </PageScaffold>
     );

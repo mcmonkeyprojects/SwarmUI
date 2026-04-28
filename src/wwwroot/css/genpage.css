@@ -853,43 +853,6 @@ body {
     padding-bottom: 3rem;
     white-space: normal;
 }
-.gen-save-folder-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-    margin: 0.45rem 0 0 2.1rem;
-}
-.gen-save-folder-label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-}
-.gen-save-folder-input {
-    min-width: 16rem;
-    max-width: 24rem;
-}
-.gen-save-folder-status {
-    color: var(--text-soft);
-    font-size: 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: min(28rem, 100%);
-}
-.browser-header-action-button {
-    margin-left: 0.35rem;
-}
-.small-window .gen-save-folder-bar {
-    margin-left: 0;
-}
-.small-window .gen-save-folder-input {
-    min-width: 11rem;
-    flex: 1 1 11rem;
-}
-.small-window .gen-save-folder-status {
-    max-width: 100%;
-    white-space: normal;
-}
 .browser_container {
     display: block;
     height: 100%;

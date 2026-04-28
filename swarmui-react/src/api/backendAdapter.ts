@@ -1,19 +1,26 @@
 import { swarmClient } from './client';
 import type {
   BackendBootstrapReason,
+  BackendBootstrapSource,
   BackendBootstrapSnapshot,
   BackendCapabilitySnapshot,
   BackendSessionSnapshot,
   ConnectionHealthSnapshot,
   SessionResponse,
   SwarmEventEnvelope,
-  T2IParam,
-  T2IParamsResponse,
   UserDataResponse,
 } from './types';
 import type { WSEvent, WebSocketManager } from './ws';
+import { featureFlags } from '../config/featureFlags';
+import { usePerformanceSessionStore } from '../stores/performanceSessionStore';
 
 type BackendAdapterListener = (event: SwarmEventEnvelope) => void;
+
+interface BootstrapRequestOptions {
+  force?: boolean;
+  source?: BackendBootstrapSource;
+  cooldownMs?: number;
+}
 
 function toSessionSnapshot(session: SessionResponse | null): BackendSessionSnapshot | null {
   if (!session) {
@@ -28,49 +35,9 @@ function toSessionSnapshot(session: SessionResponse | null): BackendSessionSnaps
   };
 }
 
-function readParamValues(param: T2IParam): string[] {
-  if (!Array.isArray(param.values)) {
-    return [];
-  }
-
-  const values: string[] = [];
-  for (const value of param.values as unknown[]) {
-    if (typeof value === 'string') {
-      values.push(value);
-      continue;
-    }
-    if (value && typeof value === 'object' && 'name' in value && typeof value.name === 'string') {
-      values.push(value.name);
-    }
-  }
-  return values;
-}
-
-function buildCapabilityMap(t2iParams: T2IParamsResponse | null, userData: UserDataResponse | null): Record<string, BackendCapabilitySnapshot> {
+function buildCapabilityMap(userData: UserDataResponse | null): Record<string, BackendCapabilitySnapshot> {
   const capabilityMap: Record<string, BackendCapabilitySnapshot> = {};
   const updatedAt = Date.now();
-
-  for (const param of t2iParams?.list || []) {
-    capabilityMap[param.id] = {
-      id: param.id,
-      name: param.name || param.id,
-      source: 't2i-param',
-      available: true,
-      type: param.type ?? null,
-      subtype: param.subtype ?? null,
-      values: readParamValues(param),
-      defaultValue: (param as T2IParam & { default?: string | number | boolean | null }).default ?? null,
-      toggleable: param.toggleable ?? false,
-      advanced: param.advanced ?? false,
-      priority: typeof param.priority === 'number' ? param.priority : undefined,
-      featureFlag: null,
-      updatedAt,
-      metadata: {
-        group: param.group ?? null,
-        viewType: param.view_type ?? null,
-      },
-    };
-  }
 
   if (userData) {
     capabilityMap.user_presets = {
@@ -157,14 +124,14 @@ class SwarmBackendAdapter {
 
     watch('open', () => {
       if (!this.currentBootstrap) {
-        void this.refreshCapabilities('startup');
+        void this.refreshCapabilities('startup', { source: 'websocket-open' });
       }
     });
     watch('reconnect', () => {
-      void this.refreshCapabilities('reconnect');
+      void this.refreshCapabilities('reconnect', { source: 'websocket-reconnect' });
     });
     watch('session:recovered', () => {
-      void this.refreshCapabilities('session-refresh');
+      void this.refreshCapabilities('session-refresh', { source: 'websocket-session-recovered' });
     });
   }
 
@@ -176,37 +143,88 @@ class SwarmBackendAdapter {
     return this.currentBootstrap ? { ...this.currentBootstrap } : null;
   }
 
-  getBootstrap(reason: BackendBootstrapReason = 'manual'): Promise<BackendBootstrapSnapshot> {
+  getBootstrap(
+    reason: BackendBootstrapReason = 'manual',
+    options: BootstrapRequestOptions = {}
+  ): Promise<BackendBootstrapSnapshot> {
+    const source = options.source ?? 'unknown';
+    const force = options.force ?? false;
+    const cooldownMs = options.cooldownMs ?? featureFlags.generateBootstrapCooldownMs;
+
     if (this.bootstrapPromise) {
+      usePerformanceSessionStore.getState().recordBootstrapEvent({
+        action: 'inflight-reuse',
+        reason,
+        source,
+        forced: force,
+      });
       return this.bootstrapPromise;
     }
 
-    this.bootstrapPromise = this.loadBootstrap(reason).finally(() => {
+    const cachedBootstrap = this.getReusableBootstrap(reason, source, force, cooldownMs);
+    if (cachedBootstrap) {
+      return Promise.resolve(cachedBootstrap);
+    }
+
+    this.bootstrapPromise = this.loadBootstrap(reason, source, force).finally(() => {
       this.bootstrapPromise = null;
     });
     return this.bootstrapPromise;
   }
 
-  refreshCapabilities(reason: BackendBootstrapReason = 'capability-refresh'): Promise<BackendBootstrapSnapshot> {
-    return this.getBootstrap(reason);
+  refreshCapabilities(
+    reason: BackendBootstrapReason = 'capability-refresh',
+    options: BootstrapRequestOptions = {}
+  ): Promise<BackendBootstrapSnapshot> {
+    return this.getBootstrap(reason, options);
   }
 
-  private async loadBootstrap(reason: BackendBootstrapReason): Promise<BackendBootstrapSnapshot> {
+  private getReusableBootstrap(
+    reason: BackendBootstrapReason,
+    source: BackendBootstrapSource,
+    force: boolean,
+    cooldownMs: number
+  ): BackendBootstrapSnapshot | null {
+    if (force || !this.currentBootstrap || cooldownMs <= 0) {
+      return null;
+    }
+
+    const cacheAgeMs = Date.now() - this.currentBootstrap.refreshedAt;
+    if (cacheAgeMs > cooldownMs) {
+      return null;
+    }
+
+    usePerformanceSessionStore.getState().recordBootstrapEvent({
+      action: 'skip',
+      reason,
+      source,
+      forced: force,
+      cacheAgeMs,
+    });
+
+    return {
+      ...this.currentBootstrap,
+      refreshSource: source,
+      servedFromCache: true,
+      cacheAgeMs,
+    };
+  }
+
+  private async loadBootstrap(
+    reason: BackendBootstrapReason,
+    source: BackendBootstrapSource,
+    force: boolean
+  ): Promise<BackendBootstrapSnapshot> {
+    const startedAt = performance.now();
     const runtime = swarmClient.getRuntimeEndpoints();
     const errors: string[] = [];
-    const [t2iParamsResult, modelsResult, vaesResult, backendsResult, userDataResult, statusResult] = await Promise.allSettled([
-      swarmClient.listT2IParams(),
+    const [modelsResult, vaesResult, backendsResult, userDataResult, statusResult] = await Promise.allSettled([
       swarmClient.listModels('', 'Stable-Diffusion'),
       swarmClient.listVAEs(),
       swarmClient.listBackends({ fullData: true }),
       swarmClient.getMyUserData() as Promise<UserDataResponse>,
       swarmClient.getCurrentStatus(),
     ]);
-
-    const t2iParams = t2iParamsResult.status === 'fulfilled' ? t2iParamsResult.value : null;
-    if (t2iParamsResult.status === 'rejected') {
-      errors.push(`ListT2IParams: ${String(t2iParamsResult.reason)}`);
-    }
 
     const modelCatalog = {
       'Stable-Diffusion': modelsResult.status === 'fulfilled' ? modelsResult.value : [],
@@ -229,11 +247,6 @@ class SwarmBackendAdapter {
       errors.push(`GetMyUserData: ${String(userDataResult.reason)}`);
     }
 
-    const samplerCatalog = (() => {
-      const samplerParam = t2iParams?.list?.find((param) => param.id === 'sampler' || param.id === 'scheduler');
-      return samplerParam ? readParamValues(samplerParam) : [];
-    })();
-
     const serverVersion = this.currentSession?.version
       || (statusResult.status === 'fulfilled' && statusResult.value && typeof statusResult.value === 'object' && 'version' in statusResult.value
         ? String((statusResult.value as Record<string, unknown>).version ?? '')
@@ -243,6 +256,9 @@ class SwarmBackendAdapter {
     const snapshot: BackendBootstrapSnapshot = {
       refreshedAt: Date.now(),
       refreshReason: reason,
+      refreshSource: source,
+      servedFromCache: false,
+      cacheAgeMs: 0,
       session: this.currentSession,
       serverVersion,
       transport: {
@@ -251,15 +267,24 @@ class SwarmBackendAdapter {
         mode: runtime.mode,
       },
       connectionHealth: this.getConnectionHealth(),
-      capabilityMap: buildCapabilityMap(t2iParams, userData),
+      capabilityMap: buildCapabilityMap(userData),
       modelCatalog,
-      samplerCatalog,
+      samplerCatalog: [],
       extensionCatalog: backendStatus,
       backendStatus,
-      t2iParams,
+      t2iParams: null,
       userData,
       errors,
     };
+
+    usePerformanceSessionStore.getState().recordBootstrapEvent({
+      action: 'refresh',
+      reason,
+      source,
+      forced: force,
+      duration: performance.now() - startedAt,
+      errorCount: errors.length,
+    });
 
     this.currentBootstrap = snapshot;
     this.currentHealth = {

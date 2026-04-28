@@ -12,6 +12,7 @@ import {
     IconCpu,
     IconUser,
     IconTools,
+    IconRefresh,
 } from '@tabler/icons-react';
 import { PageScaffold } from '../../components/layout/PageScaffold';
 import { SectionHero } from '../../components/ui';
@@ -23,6 +24,7 @@ const LogsTab = lazy(() => import('./LogsTab').then(m => ({ default: m.LogsTab }
 const ResourcesTab = lazy(() => import('./ResourcesTab').then(m => ({ default: m.ResourcesTab })));
 const AccountTab = lazy(() => import('./AccountTab').then(m => ({ default: m.AccountTab })));
 const AdminToolsTab = lazy(() => import('./AdminToolsTab').then(m => ({ default: m.AdminToolsTab })));
+const UpdatesTab = lazy(() => import('./UpdatesTab').then(m => ({ default: m.UpdatesTab })));
 
 const TabFallback = () => (
     <Center h={300}><Loader size="lg" /></Center>
@@ -39,13 +41,15 @@ export function ServerPage({ routeState }: ServerPageProps) {
         ? 'Backends'
         : activeTab === 'logs'
             ? 'Logs'
-            : activeTab === 'resources'
-                ? 'Resources'
-                : activeTab === 'account'
-                    ? 'Account'
-                    : activeTab === 'trainer'
-                        ? 'Trainer'
-                    : 'Admin Tools';
+            : activeTab === 'updates'
+                ? 'Updates'
+                : activeTab === 'resources'
+                    ? 'Resources'
+                    : activeTab === 'account'
+                        ? 'Account'
+                        : activeTab === 'trainer'
+                            ? 'Trainer'
+                            : 'Admin Tools';
 
     useEffect(() => {
         if (!routeState?.tab) {
@@ -85,6 +89,9 @@ export function ServerPage({ routeState }: ServerPageProps) {
                         <Tabs.Tab value="backends" leftSection={<IconServer size={16} />}>
                             Backends
                         </Tabs.Tab>
+                        <Tabs.Tab value="updates" leftSection={<IconRefresh size={16} />}>
+                            Updates
+                        </Tabs.Tab>
                         <Tabs.Tab value="logs" leftSection={<IconFileText size={16} />}>
                             Logs
                         </Tabs.Tab>
@@ -104,6 +111,12 @@ export function ServerPage({ routeState }: ServerPageProps) {
 
                     <Tabs.Panel value="backends" className="swarm-server-panel">
                         <BackendsTab />
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="updates" className="swarm-server-panel">
+                        <Suspense fallback={<TabFallback />}>
+                            <UpdatesTab />
+                        </Suspense>
                     </Tabs.Panel>
 
                     <Tabs.Panel value="logs" className="swarm-server-panel">

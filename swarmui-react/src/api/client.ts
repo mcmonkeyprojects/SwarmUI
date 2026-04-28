@@ -26,6 +26,7 @@ import type {
   LogType,
   LogMessage,
   ServerResourceInfo,
+  RepoUpdateStatus,
   UpdateCheckResponse,
   UpdateAndRestartResponse,
   KohyaDatasetInfo,
@@ -50,6 +51,7 @@ import {
   type RuntimeEndpoints,
 } from '../config/runtimeEndpoints';
 import { recordApiCall } from '../utils/perfDiagnostics';
+import { featureFlags } from '../config/featureFlags';
 
 const ENABLE_VERBOSE_LOGS = import.meta.env.DEV;
 
@@ -94,6 +96,104 @@ function normalizeHistoryDepth(depth: unknown): number | null {
   }
 
   return parsed;
+}
+
+interface UpstreamUpdateBucket {
+  count: number;
+  preview: string[];
+}
+
+function readUpdateBucket(value: unknown): UpstreamUpdateBucket {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { count: 0, preview: [] };
+  }
+
+  const record = value as Record<string, unknown>;
+  const count = typeof record.count === 'number' && Number.isFinite(record.count)
+    ? record.count
+    : 0;
+  const preview = Array.isArray(record.preview)
+    ? record.preview.map((item) => String(item))
+    : [];
+
+  return { count, preview };
+}
+
+function readUpdateBucketEntries(value: unknown): [string, UpstreamUpdateBucket][] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return [];
+  }
+
+  return Object.entries(value as Record<string, unknown>)
+    .map(([name, bucket]): [string, UpstreamUpdateBucket] => [name, readUpdateBucket(bucket)]);
+}
+
+function buildUpdateDetails(preview: string[]): RepoUpdateStatus['update_details'] {
+  return preview.map((line, index) => {
+    const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}):\s*(.*)$/);
+    return {
+      commit: `preview-${index}`,
+      short_commit: '',
+      date_utc: match ? match[1] : '',
+      subject: match ? match[2] : line,
+    };
+  });
+}
+
+function repoStatusFromUpdateBucket(name: string, bucket: UpstreamUpdateBucket): RepoUpdateStatus {
+  return {
+    name,
+    branch: '',
+    upstream: 'origin',
+    current_commit: '',
+    has_local_changes: false,
+    local_changes_preview: [],
+    ahead_count: 0,
+    behind_count: bucket.count,
+    has_updates: bucket.count > 0,
+    is_detached: false,
+    is_diverged: false,
+    can_auto_update: true,
+    can_fast_forward: true,
+    update_preview: bucket.preview,
+    update_details: buildUpdateDetails(bucket.preview),
+    warnings: [],
+  };
+}
+
+function normalizeUpdateCheckResponse(response: unknown): UpdateCheckResponse {
+  const record = response && typeof response === 'object'
+    ? response as Record<string, unknown>
+    : {};
+
+  if ('server_updates_count' in record || 'server_repo' in record) {
+    const rich = record as unknown as UpdateCheckResponse;
+    return {
+      ...rich,
+      server_updates_count: rich.server_updates_count ?? 0,
+      server_updates_preview: rich.server_updates_preview ?? [],
+      extension_updates: rich.extension_updates ?? [],
+      backend_updates: rich.backend_updates ?? [],
+      warnings: rich.warnings ?? [],
+    };
+  }
+
+  const server = readUpdateBucket(record.server);
+  const extensions = readUpdateBucketEntries(record.extensions);
+  const backends = readUpdateBucketEntries(record.backends);
+
+  return {
+    checked_at_utc: new Date().toISOString(),
+    server_updates_count: server.count,
+    server_updates_preview: server.preview,
+    server_repo: repoStatusFromUpdateBucket('SwarmUI', server),
+    extension_repos: extensions.map(([name, bucket]) => repoStatusFromUpdateBucket(name, bucket)),
+    backend_repos: backends.map(([name, bucket]) => repoStatusFromUpdateBucket(name, bucket)),
+    extension_updates: extensions.filter(([, bucket]) => bucket.count > 0).map(([name]) => name),
+    backend_updates: backends.filter(([, bucket]) => bucket.count > 0).map(([name]) => name),
+    warnings: [],
+    can_auto_update: true,
+  };
 }
 
 function sanitizeApiParams(params: any): any {
@@ -289,17 +389,24 @@ function sortLegacyHistoryItems(items: HistoryImageItem[], sortBy: HistorySortBy
 }
 
 export class SwarmUIClient {
+  private static readonly SESSIONLESS_ENDPOINTS = new Set([
+    'GetNewSession',
+    'Login',
+    'RegisterBasic',
+    'RegisterOAuth',
+  ]);
+
   private baseUrl: string;
   private wsBaseUrl: string;
   private runtimeEndpoints: RuntimeEndpoints;
   private sessionId: string | null = null;
   private userId: string | null = null;
   private sessionListeners: Set<SessionChangedListener> = new Set();
+  private sessionInitPromise: Promise<void> | null = null;
 
   // Cache for TriggerRefresh results (shared by listVAEs, listControlNets, etc.)
   private triggerRefreshCache: { data: any; timestamp: number } | null = null;
   private triggerRefreshPromise: Promise<any> | null = null;
-  private static readonly TRIGGER_REFRESH_CACHE_TTL = 5000; // 5 seconds
 
   constructor(baseUrl?: string) {
     this.runtimeEndpoints = resolveRuntimeEndpoints(baseUrl);
@@ -358,11 +465,12 @@ export class SwarmUIClient {
    */
   private async getCachedTriggerRefresh(): Promise<any> {
     const now = Date.now();
+    const cacheTtlMs = featureFlags.generateTriggerRefreshCacheMs;
 
     // Return cached data if still valid
     if (
       this.triggerRefreshCache &&
-      now - this.triggerRefreshCache.timestamp < SwarmUIClient.TRIGGER_REFRESH_CACHE_TTL
+      now - this.triggerRefreshCache.timestamp < cacheTtlMs
     ) {
       this.log('debug', 'Using cached TriggerRefresh data');
       return this.triggerRefreshCache.data;
@@ -440,6 +548,25 @@ export class SwarmUIClient {
     return resolveApiUrl('/ComfyBackendDirect/', this.runtimeEndpoints);
   }
 
+  private async ensureSession(): Promise<void> {
+    if (this.sessionId) {
+      return;
+    }
+
+    if (this.sessionInitPromise) {
+      await this.sessionInitPromise;
+      return;
+    }
+
+    this.sessionInitPromise = this.initSession('init')
+      .then(() => undefined)
+      .finally(() => {
+        this.sessionInitPromise = null;
+      });
+
+    await this.sessionInitPromise;
+  }
+
   private async getJson<T>(path: string): Promise<T> {
     const response = await fetch(resolveApiUrl(path, this.runtimeEndpoints), {
       method: 'GET',
@@ -475,6 +602,9 @@ export class SwarmUIClient {
     recordApiCall(endpoint);
 
     const cleanedParams = sanitizeApiParams(params);
+    if (!SwarmUIClient.SESSIONLESS_ENDPOINTS.has(endpoint) && !this.sessionId) {
+      await this.ensureSession();
+    }
     const body = this.sessionId ? { session_id: this.sessionId, ...cleanedParams } : cleanedParams;
 
     const timer = profiler.startTimer(`api:${endpoint}`);
@@ -526,10 +656,15 @@ export class SwarmUIClient {
       });
 
       // Handle session expiration
-      if (data && data.error_id === 'invalid_session_id') {
+      const sessionMissing =
+        response.status === 400
+        && typeof data?.error === 'string'
+        && data.error.toLowerCase().includes('missing session id');
+
+      if (data && (data.error_id === 'invalid_session_id' || sessionMissing)) {
         this.log('debug', 'Session expired, refreshing...');
         await this.initSession('refresh');
-        return this.executePost<T>(endpoint, params);
+        return this.executePost<T>(endpoint, params, options);
       }
 
       // If response is not ok but we have logical error in JSON
@@ -1628,18 +1763,29 @@ export class SwarmUIClient {
   }
 
   async checkForUpdates(): Promise<UpdateCheckResponse> {
-    const response = await this.post<UpdateCheckResponse>('CheckForUpdates', {});
-    return response as UpdateCheckResponse;
+    const response = await this.post<unknown>('CheckForUpdates', {});
+    return normalizeUpdateCheckResponse(response);
   }
 
   async updateAndRestart(params?: {
     updateExtensions?: boolean;
     updateBackends?: boolean;
+    extensionsToUpdate?: string[];
+    backendsToUpdate?: string[];
+    doUpdateServer?: boolean;
+    aggressive?: boolean;
     force?: boolean;
   }): Promise<UpdateAndRestartResponse> {
+    const request = {
+      extensionsToUpdate: params?.extensionsToUpdate ?? [],
+      backendsToUpdate: params?.backendsToUpdate ?? [],
+      doUpdateServer: params?.doUpdateServer ?? true,
+      aggressive: params?.aggressive ?? false,
+      force: params?.force ?? false,
+    };
     const response = await this.post<UpdateAndRestartResponse>(
       'UpdateAndRestart',
-      params ?? {}
+      request
     );
     return response as UpdateAndRestartResponse;
   }

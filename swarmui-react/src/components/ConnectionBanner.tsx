@@ -4,6 +4,7 @@ import { IconCheck, IconX, IconRefresh, IconWifiOff, IconAlertTriangle } from '@
 import { useSessionStore } from '../stores/session';
 import { useWebSocketStore } from '../stores/websocketStore';
 import { SwarmActionIcon as ActionIcon } from './ui';
+import { useShallow } from 'zustand/react/shallow';
 
 type ConnectionState = 'connecting' | 'connected' | 'failed' | 'retrying' | 'degraded' | 'unhealthy';
 
@@ -18,7 +19,12 @@ interface ConnectionBannerProps {
  * Also monitors WebSocket connection health via heartbeat.
  */
 export function ConnectionBanner({ autoHideDelay = 3000 }: ConnectionBannerProps) {
-    const { isInitialized, initializeSession } = useSessionStore();
+    const { isInitialized, initializeSession } = useSessionStore(
+        useShallow((state) => ({
+            isInitialized: state.isInitialized,
+            initializeSession: state.initializeSession,
+        }))
+    );
     const wsHealth = useWebSocketStore((state) => state.connectionHealth);
     const connectionIssue = useWebSocketStore((state) => state.connectionIssue);
     const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
@@ -28,6 +34,7 @@ export function ConnectionBanner({ autoHideDelay = 3000 }: ConnectionBannerProps
     // Initialize session on mount
     useEffect(() => {
         let mounted = true;
+        let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
         const connect = async () => {
             if (!mounted) return;
@@ -41,7 +48,7 @@ export function ConnectionBanner({ autoHideDelay = 3000 }: ConnectionBannerProps
 
                     // Auto-hide after successful connection
                     if (autoHideDelay > 0) {
-                        setTimeout(() => {
+                        hideTimer = setTimeout(() => {
                             if (mounted) setVisible(false);
                         }, autoHideDelay);
                     }
@@ -58,6 +65,9 @@ export function ConnectionBanner({ autoHideDelay = 3000 }: ConnectionBannerProps
 
         return () => {
             mounted = false;
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+            }
         };
     }, [initializeSession, retryCount, autoHideDelay]);
 

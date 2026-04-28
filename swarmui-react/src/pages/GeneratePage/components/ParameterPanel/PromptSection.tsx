@@ -1,13 +1,14 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Stack, Group, Badge, Text, Box, Tooltip } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
-import { IconRefresh, IconX } from '@tabler/icons-react';
+import { IconRefresh, IconUsers, IconX } from '@tabler/icons-react';
 import { PresetLibrary } from '../../../../components/presetLibrary/PresetLibrary';
 import { PromptWizard } from '../../../../components/PromptWizard';
 import { PromptInput } from '../../../../components/PromptInput';
 import { QuickModeIndicator } from '../../../../components/QuickModeIndicator';
-import { SwarmActionIcon } from '../../../../components/ui';
+import { CharacterRegionsBuilderModal } from '../../../../components/CharacterRegionsBuilderModal';
+import { SwarmActionIcon, SwarmButton } from '../../../../components/ui';
 import { usePromptBuilderStore } from '../../../../stores/promptBuilderStore';
 import {
   compilePromptBuilder,
@@ -17,7 +18,11 @@ import {
   stripManagedBlocks,
   upsertManagedBlock,
 } from '../../../../features/promptBuilder';
-import { prependPromptText } from '../../../../utils/promptTextTools';
+import {
+  appendPresetSectionsToPrompt,
+  formatPresetSectionsForPrompt,
+  prependPromptText,
+} from '../../../../utils/promptTextTools';
 
 export interface PromptSectionProps {
   /** Form instance */
@@ -28,10 +33,12 @@ export interface PromptSectionProps {
  * Prompt section with prompt presets, main prompt, and negative prompt.
  */
 export const PromptSection = memo(function PromptSection({ form }: PromptSectionProps) {
+  const [characterRegionsOpen, setCharacterRegionsOpen] = useState(false);
   const regions = usePromptBuilderStore((state) => state.regions);
   const segments = usePromptBuilderStore((state) => state.segments);
   const syncState = usePromptBuilderStore((state) => state.syncState);
   const lastCompiledBlockHash = usePromptBuilderStore((state) => state.lastCompiledBlockHash);
+  const setRegions = usePromptBuilderStore((state) => state.setRegions);
   const markManualOverride = usePromptBuilderStore((state) => state.markManualOverride);
   const markSynced = usePromptBuilderStore((state) => state.markSynced);
   const clearManagedBlock = usePromptBuilderStore((state) => state.clearManagedBlock);
@@ -68,6 +75,18 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
     clearManagedBlock();
   };
 
+  const handleApplyCharacterRegions = (characterRegions: typeof regions) => {
+    const nextRegions = [
+      ...regions.filter((region) => region.source !== 'character'),
+      ...characterRegions,
+    ];
+    const compiled = compilePromptBuilder({ regions: nextRegions, segments });
+    const nextPrompt = upsertManagedBlock(form.values.prompt || '', compiled.managedBlock);
+    setRegions(nextRegions);
+    form.setFieldValue('prompt', nextPrompt);
+    markSynced(compiled.managedBlock, compiled.blockHash);
+  };
+
   return (
     <Stack gap="sm" className="generate-studio__prompt-section">
       {/* Prompt tools */}
@@ -95,14 +114,34 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
       </Box>
 
       <Box className="generate-studio__prompt-library-trigger">
+        <SwarmButton
+          size="xs"
+          emphasis="soft"
+          tone="secondary"
+          leftSection={<IconUsers size={14} />}
+          onClick={() => setCharacterRegionsOpen(true)}
+        >
+          Character Regions
+        </SwarmButton>
+      </Box>
+
+      <Box className="generate-studio__prompt-library-trigger">
         <PresetLibrary
           compact
           currentPromptText={form.values.prompt || ''}
-          onApplyToPrompt={(text, mode) => {
+          onApplyToPrompt={(text, mode, sections) => {
             if (mode === 'replace') {
-              form.setFieldValue('prompt', text);
+              form.setFieldValue(
+                'prompt',
+                sections ? formatPresetSectionsForPrompt(sections) : text
+              );
             } else {
-              form.setFieldValue('prompt', prependPromptText(form.values.prompt, text));
+              form.setFieldValue(
+                'prompt',
+                sections
+                  ? appendPresetSectionsToPrompt(form.values.prompt, sections)
+                  : prependPromptText(form.values.prompt, text)
+              );
             }
           }}
         />
@@ -197,6 +236,15 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
           compact={false}
         />
       </Box>
+
+      {characterRegionsOpen && (
+        <CharacterRegionsBuilderModal
+          opened={characterRegionsOpen}
+          existingRegions={regions}
+          onClose={() => setCharacterRegionsOpen(false)}
+          onApply={handleApplyCharacterRegions}
+        />
+      )}
     </Stack>
   );
 });

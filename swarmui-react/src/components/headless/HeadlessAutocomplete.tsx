@@ -21,6 +21,8 @@ export interface HeadlessAutocompleteHandle {
     getReplacementText: (entry: AutoCompleteEntry) => { newText: string; newCursorPos: number };
     /** Close the dropdown */
     close: () => void;
+    /** Load autocomplete data on demand */
+    ensureLoaded: () => void;
     /** Whether data is loaded */
     isLoaded: boolean;
 }
@@ -45,31 +47,35 @@ export const HeadlessAutocomplete = forwardRef<HeadlessAutocompleteHandle, Headl
     ({ onSelect, options = {}, style }, ref) => {
         const dropdownRef = useRef<HTMLDivElement>(null);
 
-        const handleItemSelect = useCallback(
-            (entry: AutoCompleteEntry) => {
-                const replacement = autocomplete.getReplacementText(entry);
-                onSelect(entry, replacement);
-                autocomplete.closeMenu();
-            },
-            [onSelect]
-        );
-
         const autocomplete = useHeadlessAutocomplete({
             ...options,
-            onSelect: handleItemSelect,
+            onSelect: undefined,
         });
 
         const {
             suggestions,
             isOpen,
             highlightedIndex,
+            currentWord,
             isLoaded,
             handleTextChange,
             getReplacementText,
             closeMenu,
+            loadAutocompletions,
+            getInputProps,
             getMenuProps,
             getItemProps,
+            setHighlightedIndex,
         } = autocomplete;
+
+        const handleItemSelect = useCallback(
+            (entry: AutoCompleteEntry) => {
+                const replacement = getReplacementText(entry);
+                onSelect(entry, replacement);
+                closeMenu();
+            },
+            [closeMenu, getReplacementText, onSelect]
+        );
 
         // Handle keyboard for selection and navigation
         const handleKeyDown = useCallback(
@@ -78,13 +84,13 @@ export const HeadlessAutocomplete = forwardRef<HeadlessAutocompleteHandle, Headl
 
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    autocomplete.setHighlightedIndex((highlightedIndex + 1) % suggestions.length);
+                    setHighlightedIndex((highlightedIndex + 1) % suggestions.length);
                     return true;
                 }
 
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    autocomplete.setHighlightedIndex(
+                    setHighlightedIndex(
                         (highlightedIndex - 1 + suggestions.length) % suggestions.length
                     );
                     return true;
@@ -104,7 +110,7 @@ export const HeadlessAutocomplete = forwardRef<HeadlessAutocompleteHandle, Headl
 
                 return false;
             },
-            [isOpen, suggestions, highlightedIndex, handleItemSelect, closeMenu, autocomplete, highlightedIndex]
+            [closeMenu, handleItemSelect, highlightedIndex, isOpen, setHighlightedIndex, suggestions]
         );
 
         // Scroll highlighted item into view
@@ -126,15 +132,34 @@ export const HeadlessAutocomplete = forwardRef<HeadlessAutocompleteHandle, Headl
                 handleKeyDown,
                 getReplacementText,
                 close: closeMenu,
+                ensureLoaded: () => {
+                    void loadAutocompletions();
+                },
                 isLoaded,
             }),
-            [handleTextChange, handleKeyDown, getReplacementText, closeMenu, isLoaded]
+            [closeMenu, getReplacementText, handleKeyDown, handleTextChange, isLoaded, loadAutocompletions]
         );
 
         // Always render the menu element to satisfy Downshift's requirement that getMenuProps is always called
         const shouldShow = isOpen && suggestions.length > 0;
 
         return (
+            <>
+            <input
+                {...getInputProps({
+                    value: currentWord,
+                    readOnly: true,
+                    tabIndex: -1,
+                    'aria-hidden': true,
+                })}
+                style={{
+                    position: 'absolute',
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    pointerEvents: 'none',
+                }}
+            />
             <Paper
                 ref={dropdownRef}
                 shadow="md"
@@ -243,6 +268,7 @@ export const HeadlessAutocomplete = forwardRef<HeadlessAutocompleteHandle, Headl
                     </Text>
                 </Box>
             </Paper>
+            </>
         );
     }
 );

@@ -52,6 +52,24 @@ function applySessionState(
   });
 }
 
+function shouldRefreshBootstrapOnSessionChange(
+  previousSessionId: string | null,
+  previousUserId: string | null,
+  nextSessionId: string,
+  nextUserId: string,
+  reason: SessionChangeReason
+): boolean {
+  if (!swarmBackendAdapter.getLatestBootstrap()) {
+    return true;
+  }
+
+  if (reason === 'auth') {
+    return true;
+  }
+
+  return previousSessionId !== nextSessionId || previousUserId !== nextUserId;
+}
+
 export const useSessionStore = create<SessionState>()(
   devtools(
     (set, get) => ({
@@ -74,7 +92,9 @@ export const useSessionStore = create<SessionState>()(
           swarmBackendAdapter.setSession(response);
           applySessionState(response);
           syncSessionToWebSocket(response.session_id, 'init');
-          await swarmBackendAdapter.getBootstrap('startup');
+          await swarmBackendAdapter.getBootstrap('startup', {
+            source: 'session-init',
+          });
           console.debug('[SessionStore] Session and WebSocket initialized');
         } catch (error) {
           set({ isInitializing: false });
@@ -106,6 +126,7 @@ if (
 ) {
   (globalThis as Record<string, unknown>)[SESSION_LISTENER_KEY] = true;
   swarmClient.onSessionChanged((session, reason) => {
+    const previousSession = useSessionStore.getState();
     applySessionState(session);
     if (session?.session_id) {
       swarmBackendAdapter.setSession({
@@ -123,6 +144,21 @@ if (
       return;
     }
     syncSessionToWebSocket(session.session_id, reason);
-    void swarmBackendAdapter.getBootstrap(reason === 'refresh' ? 'session-refresh' : 'manual');
+    if (!shouldRefreshBootstrapOnSessionChange(
+      previousSession.sessionId,
+      previousSession.userId,
+      session.session_id,
+      session.user_id,
+      reason
+    )) {
+      return;
+    }
+    void swarmBackendAdapter.getBootstrap(
+      reason === 'refresh' ? 'session-refresh' : 'manual',
+      {
+        source: 'session-change',
+        force: reason === 'auth',
+      }
+    );
   });
 }

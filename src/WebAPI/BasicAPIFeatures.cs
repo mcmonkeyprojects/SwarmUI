@@ -51,11 +51,10 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(CreateAuthToken, true, Permissions.EditUserSettings);
         T2IAPI.Register();
         ModelsAPI.Register();
+        ReactBridgeAPI.Register();
         BackendAPI.Register();
         AdminAPI.Register();
         UtilAPI.Register();
-        LoraPipelineAPI.Register();
-        LoraTrainingAPI.Register();
     }
 
     /// <summary>Rate limiter for <see cref="Login(HttpContext, string, string)"/> to prevent spamming it, limited by IP address.</summary>

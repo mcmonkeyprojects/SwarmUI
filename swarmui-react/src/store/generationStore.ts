@@ -3,15 +3,6 @@ import { persist, devtools } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { GenerateParams } from '../api/types';
 
-function normalizeBatchOutputFolder(folder: string | null | undefined): string {
-    return (folder || '')
-        .replace(/\\/g, '/')
-        .split('/')
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .join('/');
-}
-
 interface GenerationState {
     // Generation Params
     params: GenerateParams;
@@ -23,7 +14,6 @@ interface GenerationState {
     activeEmbeddings: string[];
     activeWildcards: string[];
     wildcardText: string;
-    batchOutputFolder: string;
 
     // Session Gallery - persists across tab switches but NOT on page refresh
     sessionImages: string[];
@@ -51,8 +41,6 @@ interface GenerationState {
     setEmbeddings: (embeddings: string[]) => void;
     setWildcards: (wildcards: string[]) => void;
     setWildcardText: (text: string) => void;
-    setBatchOutputFolder: (folder: string) => void;
-    clearBatchOutputFolder: () => void;
 
     // Session Gallery Actions
     addSessionImage: (url: string) => void;
@@ -104,7 +92,6 @@ export const useGenerationStore = create<GenerationState>()(
                 activeEmbeddings: [],
                 activeWildcards: [],
                 wildcardText: '',
-                batchOutputFolder: '',
                 sessionImages: [],
 
                 // Canvas state - session only
@@ -138,8 +125,6 @@ export const useGenerationStore = create<GenerationState>()(
                 setEmbeddings: (embeddings) => set({ activeEmbeddings: embeddings }),
                 setWildcards: (wildcards) => set({ activeWildcards: wildcards }),
                 setWildcardText: (text) => set({ wildcardText: text }),
-                setBatchOutputFolder: (folder) => set({ batchOutputFolder: normalizeBatchOutputFolder(folder) }),
-                clearBatchOutputFolder: () => set({ batchOutputFolder: '' }),
 
                 // Session Gallery Actions - NOT persisted to localStorage
                 addSessionImage: (url) => set((state) => ({
@@ -184,7 +169,6 @@ export const useGenerationStore = create<GenerationState>()(
                     activeEmbeddings: [],
                     activeWildcards: [],
                     wildcardText: '',
-                    batchOutputFolder: '',
                     sessionImages: [],
                     previewImage: null,
                     currentImageIndex: 0,
@@ -285,14 +269,6 @@ export const useActiveWildcards = () => useGenerationStore(
         wildcardText: state.wildcardText,
         setWildcards: state.setWildcards,
         setWildcardText: state.setWildcardText,
-    }))
-);
-
-export const useBatchOutputFolder = () => useGenerationStore(
-    useShallow((state) => ({
-        batchOutputFolder: state.batchOutputFolder,
-        setBatchOutputFolder: state.setBatchOutputFolder,
-        clearBatchOutputFolder: state.clearBatchOutputFolder,
     }))
 );
 

@@ -31,6 +31,7 @@ describe('presetLibrary staging helpers', () => {
   it('stages preset words without duplicates', () => {
     const nextState = stagePresetInCart(createEmptyPresetCartState(), {
       id: 'pl-heroic-knight',
+      category: 'characters',
       words: ['Knight', 'Armor', 'Knight'],
     });
 
@@ -43,10 +44,12 @@ describe('presetLibrary staging helpers', () => {
   it('keeps shared words staged until all contributors are removed', () => {
     const firstState = stagePresetInCart(createEmptyPresetCartState(), {
       id: 'pl-heroic-knight',
+      category: 'characters',
       words: ['Knight', 'Sword'],
     });
     const stackedState = stagePresetInCart(firstState, {
       id: 'pl-sword-master',
+      category: 'styles',
       words: ['Sword', 'Cape'],
     });
 
@@ -61,10 +64,12 @@ describe('presetLibrary staging helpers', () => {
   it('removes a word and prunes presets with no remaining contributions', () => {
     const firstState = stagePresetInCart(createEmptyPresetCartState(), {
       id: 'pl-heroic-knight',
+      category: 'characters',
       words: ['Knight'],
     });
     const stackedState = stagePresetInCart(firstState, {
       id: 'pl-sword-master',
+      category: 'styles',
       words: ['Sword'],
     });
 
@@ -76,6 +81,7 @@ describe('presetLibrary staging helpers', () => {
   it('removes a shared word regardless of input case', () => {
     const stagedState = stagePresetInCart(createEmptyPresetCartState(), {
       id: 'pl-heroic-knight',
+      category: 'characters',
       words: ['Knight'],
     });
 

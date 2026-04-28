@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Accordion, Box, ColorInput, Divider, Group, Modal, NumberInput, ScrollArea, Select, Stack, Text, Textarea, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconCopy, IconDeviceFloppy, IconDownload, IconX } from '@tabler/icons-react';
@@ -138,7 +138,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
         setRecommendationIds(joinCsv(theme.meta?.recommendationIds)); setTags(joinCsv(theme.meta?.tags));
     };
 
-    const makeTheme = (id: string): ExtendedThemePalette => {
+    const makeTheme = useCallback((id: string): ExtendedThemePalette => {
         const effects: ThemeEffectsBlock = {};
         if (noiseIntensity !== '') effects.noiseIntensity = noiseIntensity;
         if (scanlineIntensity !== '') effects.scanlineIntensity = scanlineIntensity;
@@ -162,9 +162,9 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
         if (fontHeading) colors.fontHeading = fontHeading;
         if (fontMono) colors.fontMono = fontMono;
         return { id, name: themeName || 'Preview', category, style: styleSeed, colors, ...(Object.keys(effects).length ? { effects } : {}), ...(Object.keys(adaptive).length ? { adaptive } : {}), ...(Object.keys(meta).length ? { meta } : {}) };
-    };
+    }, [accent, brand, category, contrastGuard, error, fontFamily, fontHeading, fontMono, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, imageReactiveStrength, meshAnimated, meshIntensity, noiseIntensity, overlayBlend, overlayColor, pairedModeThemeId, recommendationIds, scanlineIntensity, styleSeed, success, tags, textPrimary, textSecondary, themeName, themeSet, timeOfDayStrength, warning]);
 
-    const previewTheme = useMemo(() => makeTheme(editThemeId || 'preview'), [accent, brand, category, contrastGuard, editThemeId, fontFamily, fontHeading, fontMono, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, imageReactiveStrength, meshAnimated, meshIntensity, noiseIntensity, overlayBlend, overlayColor, pairedModeThemeId, recommendationIds, scanlineIntensity, styleSeed, tags, success, themeName, themeSet, textPrimary, textSecondary, timeOfDayStrength, warning, error]);
+    const previewTheme = useMemo(() => makeTheme(editThemeId || 'preview'), [editThemeId, makeTheme]);
     const handleBaseThemeChange = (value: string | null) => { if (!value) return; setBaseThemeId(value); const theme = getAllThemes().find((item) => item.id === value) as ExtendedThemePalette | undefined; if (theme) applyBaseTheme(theme); };
     const handleSave = () => {
         if (!themeName.trim()) return void notifications.show({ title: 'Validation Error', message: 'Please enter a theme name', color: 'red' });
@@ -234,7 +234,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
                         <Group gap="xs"><SwarmButton tone="secondary" emphasis="ghost" onClick={onClose} leftSection={<IconX size={14} />}>Cancel</SwarmButton><SwarmButton tone="primary" emphasis="solid" onClick={handleSave} leftSection={<IconDeviceFloppy size={14} />}>{editThemeId ? 'Update' : 'Save'} Theme</SwarmButton></Group>
                     </Group>
                 </Stack>
-                <Box style={{ flex: '0 0 220px' }}><Stack gap="xs"><Text size="xs" fw={600} c="dimmed">Live Preview</Text><ThemePreview theme={previewTheme} /><Text size="8px" c="dimmed" ta="center">Preview updates in real time as you edit colors, effects, adaptive values, metadata, and control shapes.</Text></Stack></Box>
+                <Box style={{ flex: '0 0 220px' }}><Stack gap="xs"><Text size="xs" fw={600} c="dimmed">Live Preview</Text><ThemePreview theme={previewTheme} /><Text size="xs" c="dimmed" ta="center" className="theme-builder-preview-copy">Preview updates in real time as you edit colors, effects, adaptive values, metadata, and control shapes.</Text></Stack></Box>
             </Group>
         </Modal>
     );

@@ -32,7 +32,7 @@ export interface WorkflowRouteState {
 }
 
 export interface ServerRouteState {
-    tab?: 'backends' | 'logs' | 'resources' | 'account' | 'admin-tools' | 'trainer';
+    tab?: 'backends' | 'updates' | 'logs' | 'resources' | 'account' | 'admin-tools' | 'trainer';
 }
 
 export interface RoleplayRouteState {
@@ -52,7 +52,7 @@ export interface AppRoute {
 const DEFAULT_ROUTE: AppRoute = {
     page: 'generate',
     generate: {
-        mode: 'guided',
+        mode: 'advanced',
     },
 };
 
@@ -163,7 +163,7 @@ export function serializeRoute(routeInput: Partial<AppRoute> | null | undefined)
     const params = new URLSearchParams();
 
     if (route.page === 'generate') {
-        if (route.generate?.mode && route.generate.mode !== 'guided') {
+        if (route.generate?.mode && route.generate.mode !== 'advanced') {
             params.set('mode', route.generate.mode);
         }
         if (route.generate?.recipe) {

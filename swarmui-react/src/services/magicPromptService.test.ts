@@ -147,4 +147,80 @@ describe('magicPromptService', () => {
             expect.objectContaining({ method: 'POST' })
         );
     });
+
+    it('retries prompt enhancement with Responses API format when input is required', async () => {
+        fetchMock
+            .mockResolvedValueOnce(jsonResponse({ data: [{ id: 'gpt-oss' }] }))
+            .mockResolvedValueOnce(new Response(JSON.stringify({
+                error: {
+                    message: "'input' is required",
+                    param: 'input',
+                },
+            }), { status: 400 }))
+            .mockResolvedValueOnce(jsonResponse({
+                output: [{
+                    type: 'message',
+                    role: 'assistant',
+                    content: [{ type: 'output_text', text: 'responses enhanced prompt' }],
+                }],
+            }));
+
+        const result = await enhancePrompt(
+            'a castle on a hill',
+            'gpt-oss',
+            'Rewrite only the prompt.',
+            'http://localhost:1234',
+            'openai-compatible'
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.response).toBe('responses enhanced prompt');
+        expect(fetchMock).toHaveBeenNthCalledWith(
+            2,
+            'http://localhost:1234/v1/chat/completions',
+            expect.objectContaining({
+                method: 'POST',
+                body: expect.stringContaining('"messages"'),
+            })
+        );
+        expect(fetchMock).toHaveBeenNthCalledWith(
+            3,
+            'http://localhost:1234/v1/responses',
+            expect.objectContaining({
+                method: 'POST',
+                body: expect.stringContaining('"input"'),
+            })
+        );
+    });
+
+    it('sends prompt enhancement directly to Responses API when that mode is selected', async () => {
+        fetchMock
+            .mockResolvedValueOnce(jsonResponse({ data: [{ id: 'gpt-oss' }] }))
+            .mockResolvedValueOnce(jsonResponse({
+                output: [{
+                    type: 'message',
+                    role: 'assistant',
+                    content: [{ type: 'output_text', text: 'direct responses prompt' }],
+                }],
+            }));
+
+        const result = await enhancePrompt(
+            'a castle on a hill',
+            'gpt-oss',
+            'Rewrite only the prompt.',
+            'http://localhost:1234',
+            'openai-responses'
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.response).toBe('direct responses prompt');
+        expect(fetchMock).toHaveBeenNthCalledWith(
+            2,
+            'http://localhost:1234/v1/responses',
+            expect.objectContaining({
+                method: 'POST',
+                body: expect.stringContaining('"max_output_tokens"'),
+            })
+        );
+    });
 });

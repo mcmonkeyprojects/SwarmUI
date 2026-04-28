@@ -7,12 +7,7 @@
   <link rel="preconnect" href="http://localhost:7801" crossorigin>
   <link rel="dns-prefetch" href="http://localhost:7801">
 
-  <!-- Google Fonts preconnect and loading -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:*; media-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:*; connect-src 'self' http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127.0.0.1:*; worker-src 'self' blob:; font-src 'self' data:;">
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SwarmUI</title>
@@ -28,7 +23,7 @@
       height: 100%;
       background-color: #0b0f14;
       color: #ffffff;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: "Segoe UI", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     }
 
     /* Loading container - positioned absolutely so it doesn't affect app layout */

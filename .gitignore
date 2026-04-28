@@ -35,10 +35,12 @@ venv/
 *.pth
 
 # React frontend (swarmui-react)
+/node_modules/
 swarmui-react/node_modules/
 swarmui-react/dist/
 swarmui-react/.vite/
 swarmui-react/.claude/
+swarmui-react/.codex-cache/
 swarmui-react/electron/
 
 # Claude worktrees

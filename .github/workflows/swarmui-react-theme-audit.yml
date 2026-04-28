@@ -1,0 +1,42 @@
+name: SwarmUI React Theme Audit
+
+on:
+  pull_request:
+    paths:
+      - 'swarmui-react/**'
+      - '.github/workflows/swarmui-react-theme-audit.yml'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'swarmui-react/**'
+      - '.github/workflows/swarmui-react-theme-audit.yml'
+  workflow_dispatch:
+
+jobs:
+  react-theme-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: swarmui-react
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: swarmui-react/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint React frontend
+        run: npm run lint
+
+      - name: Run theme contrast audit
+        run: npm run theme:contrast-audit

@@ -81,11 +81,11 @@
   </div>
 
   <script>
-    const { ipcRenderer } = require('electron');
-
-    ipcRenderer.on('loading-progress', (event, message) => {
-      document.getElementById('progress').textContent = message;
-    });
+    if (window.loadingBridge?.onProgress) {
+      window.loadingBridge.onProgress((message) => {
+        document.getElementById('progress').textContent = message;
+      });
+    }
   </script>
 </body>
 </html>

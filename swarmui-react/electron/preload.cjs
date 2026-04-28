@@ -111,6 +111,10 @@ const electronBridge = {
   shutdownApp: () => ipcRenderer.invoke('shutdown-app'),
   reloadWrapper: () => ipcRenderer.invoke('reload-wrapper'),
   selectFolder: (startPath) => ipcRenderer.invoke('select-folder', startPath),
+  getPerformanceMetricsPath: () => ipcRenderer.invoke('get-performance-metrics-path'),
+  readPerformanceMetrics: () => ipcRenderer.invoke('read-performance-metrics'),
+  writePerformanceMetrics: (payload) => ipcRenderer.invoke('write-performance-metrics', payload),
+  version: process.versions.electron,
 
   // Platform info
   platform: process.platform,

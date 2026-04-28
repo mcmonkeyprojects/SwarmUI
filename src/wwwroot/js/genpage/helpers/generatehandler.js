@@ -319,9 +319,6 @@ class GenerateHandler {
             let discardable = {};
             let timeLastGenHit = [Date.now()];
             let actualInput = this.getGenInput(input_overrides, input_preoverrides);
-            if (typeof clearCurrentGenerationOutputFolderAfterGenerate == 'function' && actualInput.extra_metadata && actualInput.extra_metadata.batch_output_folder) {
-                clearCurrentGenerationOutputFolderAfterGenerate();
-            }
             let socket = null;
             let handleError = e => {
                 console.log(`Error in GenerateText2ImageWS:`, e, this.interrupted, batch_id);
