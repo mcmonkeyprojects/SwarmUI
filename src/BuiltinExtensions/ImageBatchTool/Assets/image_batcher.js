@@ -12,7 +12,8 @@ class ImageBatcherClass {
             'revision': getRequiredElementById('ext_image_batcher_use_as_revision').checked,
             'controlnet': getRequiredElementById('ext_image_batcher_use_as_controlnet').checked,
             'append_filename_to_prompt': getRequiredElementById('ext_image_batcher_append_filename_to_prompt').checked,
-            'resMode': getRequiredElementById('ext_image_batcher_res_mode').value
+            'resMode': getRequiredElementById('ext_image_batcher_res_mode').value,
+            'side_length': parseInt(getRequiredElementById('ext_image_batcher_side_length').value) || 1024
         };
         let timeLastGenHit = [Date.now()];
         let images = {};
@@ -40,7 +41,31 @@ class ImageBatcherClass {
             + makeCheckboxInput(null, 'ext_image_batcher_use_as_controlnet', '', 'Use As ControlNet Input', 'Whether to use the image as input to ControlNet (only applies if a ControlNet model is enabled).', true, false, true, true)
             + makeCheckboxInput(null, 'ext_image_batcher_use_as_revision', '', 'Use As Image Prompt', 'Whether to use the image as an Image Prompting input.', false, false, true, true)
             + makeCheckboxInput(null, 'ext_image_batcher_append_filename_to_prompt', '', 'Append Filename to Prompt', 'Whether to append the filename to the prompt.', false, false, true, true)
-            + `Resolution: <select id="ext_image_batcher_res_mode"><option>From Parameter</option><option>From Image</option><option>Scale To Model</option><option>Scale To Model Or Above</option></select>`;
+            + `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                Resolution:
+                <select id="ext_image_batcher_res_mode">
+                    <option>From Parameter</option>
+                    <option>From Image</option>
+                    <option>Scale To Model</option>
+                    <option>Scale To Model Or Above</option>
+                    <option>Scale To Side Length</option>
+                </select>
+                <span id="ext_image_batcher_side_length_wrap" style="display:none;align-items:center;gap:4px;">
+                    Side Length:
+                    <input type="range" id="ext_image_batcher_side_length" min="64" max="4096" step="64" value="1024" style="width:240px;">
+                    <input type="number" id="ext_image_batcher_side_length_display" min="64" max="4096" step="64" value="1024" style="width:72px;">
+                </span>
+            </span>`;
+        document.getElementById('ext_image_batcher_res_mode').addEventListener('change', () => {
+            let isSideLength = document.getElementById('ext_image_batcher_res_mode').value == 'Scale To Side Length';
+            document.getElementById('ext_image_batcher_side_length_wrap').style.display = isSideLength ? 'inline-flex' : 'none';
+        });
+        document.getElementById('ext_image_batcher_side_length').addEventListener('input', () => {
+            document.getElementById('ext_image_batcher_side_length_display').value = document.getElementById('ext_image_batcher_side_length').value;
+        });
+        document.getElementById('ext_image_batcher_side_length_display').addEventListener('input', () => {
+            document.getElementById('ext_image_batcher_side_length').value = document.getElementById('ext_image_batcher_side_length_display').value;
+        });
         toolSelector.addEventListener('change', () => {
             if (toolSelector.value == 'image_batcher') {
                 showRevisionInputs();
