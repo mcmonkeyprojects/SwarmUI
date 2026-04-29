@@ -30,7 +30,7 @@ public class ImageBatchToolExtension : Extension
     }
 
     /// <summary>API route to generate images with WebSocket updates.</summary>
-    public static async Task<JObject> ImageBatchRun(WebSocket socket, Session session, JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string resMode, bool append_filename_to_prompt)
+    public static async Task<JObject> ImageBatchRun(WebSocket socket, Session session, JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string resMode, bool append_filename_to_prompt, int side_length = 1024)
     {
         // TODO: Strict path validation / user permission confirmation.
         if (input_folder.Length < 5 || output_folder.Length < 5)
@@ -62,16 +62,16 @@ public class ImageBatchToolExtension : Extension
             return null;
         }
         Directory.CreateDirectory(output_folder);
-        await API.RunWebsocketHandlerCallWS(GenBatchRun_Internal, session, (rawInput, input_folder, output_folder, init_image, revision, controlnet, imageFiles, resMode, append_filename_to_prompt), socket);
+        await API.RunWebsocketHandlerCallWS(GenBatchRun_Internal, session, (rawInput, input_folder, output_folder, init_image, revision, controlnet, imageFiles, resMode, append_filename_to_prompt, side_length), socket);
         Logs.Info("Image Batcher completed successfully");
         await socket.SendJson(new JObject() { ["success"] = "complete" }, API.WebsocketTimeout);
         return null;
     }
 
-    public static async Task GenBatchRun_Internal(Session session, (JObject, string, string, bool, bool, bool, string[], string, bool) input, Action<JObject> output, bool isWS)
+    public static async Task GenBatchRun_Internal(Session session, (JObject, string, string, bool, bool, bool, string[], string, bool, int) input, Action<JObject> output, bool isWS)
     {
         // TODO: This is a silly way of passing data, time for a struct?
-        (JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string[] imageFiles, string resMode, bool appendFilenameToPrompt) = input;
+        (JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string[] imageFiles, string resMode, bool appendFilenameToPrompt, int sideLength) = input;
         using Session.GenClaim claim = session.Claim(gens: imageFiles.Length);
         async Task sendStatus()
         {
@@ -163,6 +163,12 @@ public class ImageBatchToolExtension : Extension
                     {
                         setRes(width, height);
                     }
+                    break;
+                case "Scale To Side Length":
+                    (int slWidth, int slHeight) = Utilities.ResToModelFit(imgData.Width, imgData.Height, sideLength * sideLength, 16);
+                    setRes(slWidth, slHeight);
+                    image = (Image)((ImageFile)image).Resize(slWidth, slHeight);
+                    imgData = image.ToIS;
                     break;
                 default:
                     throw new SwarmUserErrorException("Invalid resolution mode");
