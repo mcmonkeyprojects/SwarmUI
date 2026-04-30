@@ -862,9 +862,7 @@ class GenPageBrowserClass {
     clearBrowserMultiSelection() {
         this.multiSelectedKeys.clear();
         this.syncBrowserMultiSelectHeader();
-        if (this.contentDiv) {
-            this.applyBrowserMultiSelectVisuals();
-        }
+        this.applyBrowserMultiSelectVisuals();
     }
 
     /**
@@ -879,16 +877,16 @@ class GenPageBrowserClass {
             this.multiSelectedKeys.clear();
         }
         this.syncBrowserMultiSelectHeader();
-        if (this.contentDiv) {
-            this.applyBrowserMultiSelectVisuals();
-        }
+        this.applyBrowserMultiSelectVisuals();
     }
 
     /**
      * Toggles whether a file row is selected for bulk actions.
      */
-    toggleBrowserMultiSelectForFile(file, div) {
-        let key = file.name;
+    toggleBrowserMultiSelectForKey(key) {
+        if (!key) {
+            return;
+        }
         if (this.multiSelectedKeys.has(key)) {
             this.multiSelectedKeys.delete(key);
         }
@@ -897,6 +895,13 @@ class GenPageBrowserClass {
         }
         this.applyBrowserMultiSelectVisuals();
         this.syncBrowserMultiSelectHeader();
+    }
+
+    /**
+     * Toggles whether a file row is selected for bulk actions.
+     */
+    toggleBrowserMultiSelectForFile(file, div) {
+        this.toggleBrowserMultiSelectForKey(file.name);
     }
 
     handleBrowserMultiSelectTileClick(file, div, event = null) {
@@ -915,16 +920,17 @@ class GenPageBrowserClass {
      * Returns files in the current listing that are multi-selected.
      */
     getMultiSelectedFiles() {
-        if (!this.lastFiles) {
-            return [];
-        }
+        let seen = new Set();
         let out = [];
-        for (let file of this.lastFiles) {
-            if (this.multiSelectedKeys.has(file.name)) {
-                out.push(file);
+        if (this.lastFiles) {
+            for (let file of this.lastFiles) {
+                if (this.multiSelectedKeys.has(file.name)) {
+                    out.push(file);
+                    seen.add(file.name);
+                }
             }
         }
-        return out;
+        return out.concat(this.getExtraMultiSelectedFiles(seen));
     }
 
     /**
@@ -1065,18 +1071,31 @@ class GenPageBrowserClass {
     }
 
     /**
+     * Applies multi-select visuals outside the browser content list.
+     */
+    applyExtraMultiSelectVisuals() {
+    }
+
+    /**
+     * Returns extra multi-selected files outside the current browser listing.
+     */
+    getExtraMultiSelectedFiles(seen) {
+        return [];
+    }
+
+    /**
      * Applies multi-select highlight classes to visible rows.
      */
     applyBrowserMultiSelectVisuals() {
-        if (!this.contentDiv) {
-            return;
-        }
-        for (let child of this.contentDiv.children) {
-            if (!child.dataset || !child.dataset.name) {
-                continue;
+        if (this.contentDiv) {
+            for (let child of this.contentDiv.children) {
+                if (!child.dataset || !child.dataset.name) {
+                    continue;
+                }
+                let on = this.multiSelectActive && this.multiSelectedKeys.has(child.dataset.name);
+                child.classList.toggle('browser-multiselect-entry-selected', on);
             }
-            let on = this.multiSelectActive && this.multiSelectedKeys.has(child.dataset.name);
-            child.classList.toggle('browser-multiselect-entry-selected', on);
         }
+        this.applyExtraMultiSelectVisuals();
     }
 }

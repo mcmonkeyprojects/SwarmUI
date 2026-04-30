@@ -250,6 +250,49 @@ function selectOutputInHistory(image, div) {
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
     `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
 imageHistoryBrowser.enableBrowserMultiSelect = true;
+imageHistoryBrowser.applyExtraMultiSelectVisuals = function() {
+    let currentImageBatchDiv = getRequiredElementById('current_image_batch');
+    for (let block of currentImageBatchDiv.querySelectorAll('.image-block:not(.image-block-placeholder)')) {
+        let blockKey = getImageFullSrc(block.dataset.src);
+        if (!blockKey) {
+            continue;
+        }
+        let on = this.multiSelectActive && this.multiSelectedKeys.has(blockKey);
+        block.classList.toggle('browser-multiselect-entry-selected', on);
+    }
+};
+
+imageHistoryBrowser.getExtraMultiSelectedFiles = function(seen) {
+    let out = [];
+    let currentImageBatchDiv = getRequiredElementById('current_image_batch');
+    for (let key of this.multiSelectedKeys) {
+        if (seen.has(key)) {
+            continue;
+        }
+        seen.add(key);
+        let block = null;
+        for (let candidate of currentImageBatchDiv.querySelectorAll('.image-block:not(.image-block-placeholder)')) {
+            if (getImageFullSrc(candidate.dataset.src) == key) {
+                block = candidate;
+                break;
+            }
+        }
+        let slash = key.lastIndexOf('/');
+        let baseName = slash >= 0 ? key.substring(slash + 1) : key;
+        let src = block && block.dataset.src ? block.dataset.src : `${getImageOutPrefix()}/${key}`;
+        let metadata = block && block.dataset.metadata ? block.dataset.metadata : '{}';
+        out.push({
+            name: key,
+            data: {
+                src,
+                fullsrc: key,
+                name: baseName,
+                metadata
+            }
+        });
+    }
+    return out;
+};
 
 function storeImageToHistoryWithCurrentParams(img) {
     let data = getGenInput();
