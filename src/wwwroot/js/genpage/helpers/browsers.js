@@ -478,13 +478,21 @@ class GenPageBrowserClass {
                 let textBlock = createDiv(null, 'model-descblock');
                 textBlock.tabIndex = 0;
                 textBlock.innerHTML = desc.description;
-                textBlock.addEventListener('click', (e) => {
-                    if (this.handleBrowserMultiSelectTileClick(file, div, e)) {
+                div.appendChild(textBlock);
+                div.addEventListener('click', (e) => {
+                    if (!this.enableBrowserMultiSelect || !this.multiSelectActive) {
                         return;
                     }
-                    this.select(file, div);
+                    if (e.target.closest('.model-block-menu-button')) {
+                        return;
+                    }
+                    if (e.target.closest('img.image-block-img-inner')) {
+                        return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.toggleBrowserMultiSelectForFile(file, div);
                 });
-                div.appendChild(textBlock);
             }
             else if (this.format.includes('Thumbnails')) {
                 div.className += ' image-block image-block-legacy';
