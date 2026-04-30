@@ -168,6 +168,11 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
                     if (div) {
                         removeImageBlockFromBatch(div);
                     }
+                    if (imageHistoryBrowser.enableBrowserMultiSelect) {
+                        imageHistoryBrowser.multiSelectedKeys.delete(fullsrc);
+                        imageHistoryBrowser.applyBrowserMultiSelectVisuals();
+                        imageHistoryBrowser.syncBrowserMultiSelectHeader();
+                    }
                 });
             },
             // TODO: Only ask once for the multi-set rather than once per each
@@ -250,15 +255,27 @@ function selectOutputInHistory(image, div) {
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
     `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
 imageHistoryBrowser.enableBrowserMultiSelect = true;
+imageHistoryBrowser.keepBrowserMultiSelectKeyAfterPrune = function(key, namesInCurrentList) {
+    if (namesInCurrentList.has(key)) {
+        return true;
+    }
+    let currentImageBatchDiv = getRequiredElementById('current_image_batch');
+    for (let candidate of currentImageBatchDiv.querySelectorAll('.image-block:not(.image-block-placeholder)')) {
+        if (getImageFullSrc(candidate.dataset.src) == key) {
+            return true;
+        }
+    }
+    return false;
+};
 imageHistoryBrowser.applyExtraMultiSelectVisuals = function() {
     let currentImageBatchDiv = getRequiredElementById('current_image_batch');
-    for (let block of currentImageBatchDiv.querySelectorAll('.image-block:not(.image-block-placeholder)')) {
-        let blockKey = getImageFullSrc(block.dataset.src);
+    for (let candidate of currentImageBatchDiv.querySelectorAll('.image-block:not(.image-block-placeholder)')) {
+        let blockKey = getImageFullSrc(candidate.dataset.src);
         if (!blockKey) {
             continue;
         }
         let on = this.multiSelectActive && this.multiSelectedKeys.has(blockKey);
-        block.classList.toggle('browser-multiselect-entry-selected', on);
+        candidate.classList.toggle('browser-multiselect-entry-selected', on);
     }
 };
 

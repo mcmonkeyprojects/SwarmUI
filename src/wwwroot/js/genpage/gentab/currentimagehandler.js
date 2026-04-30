@@ -791,6 +791,9 @@ function toggleStar(path, rawSrc) {
             imageFullView.showImage(rawSrc, JSON.stringify(newMetadata), imageFullView.currentBatchId);
             imageFullView.pasteState(state);
         }
+        if (imageHistoryBrowser.enableBrowserMultiSelect && imageHistoryBrowser.multiSelectActive) {
+            imageHistoryBrowser.syncBrowserMultiSelectHeader();
+        }
     });
 }
 

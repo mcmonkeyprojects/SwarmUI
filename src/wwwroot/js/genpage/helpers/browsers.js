@@ -934,7 +934,14 @@ class GenPageBrowserClass {
     }
 
     /**
-     * Drops multi-select keys that no longer exist in the current lastFiles listing.
+     * Returns true if this multi-selected key should remain after pruning.
+     */
+    keepBrowserMultiSelectKeyAfterPrune(key, namesInCurrentList) {
+        return namesInCurrentList.has(key);
+    }
+
+    /**
+     * Removes multi-selected keys for which keepBrowserMultiSelectKeyAfterPrune returns false.
      */
     pruneBrowserMultiSelectionToCurrentList() {
         if (!this.lastFiles) {
@@ -942,7 +949,7 @@ class GenPageBrowserClass {
         }
         let names = new Set(this.lastFiles.map(f => f.name));
         for (let key of [...this.multiSelectedKeys]) {
-            if (!names.has(key)) {
+            if (!this.keepBrowserMultiSelectKeyAfterPrune(key, names)) {
                 this.multiSelectedKeys.delete(key);
             }
         }
