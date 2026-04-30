@@ -2,8 +2,8 @@
 let registeredMediaButtons = [];
 
 /** Registers a media button for extensions. 'mediaTypes' filters by type eg ['audio'], null means all. 'isDefault' promotes to visible (vs More dropdown). 'showInHistory' controls whether button appears in the History panel. */
-function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false, showInHistory = true, href = null, is_download = false, can_multi = false, multi_only = false) {
-    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault, showInHistory, href, is_download, can_multi, multi_only });
+function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false, showInHistory = true, href = null, is_download = false, can_multi = false, multi_only = false, max_selected = null) {
+    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault, showInHistory, href, is_download, can_multi, multi_only, max_selected });
 }
 
 function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
@@ -72,7 +72,8 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             className: (metadata && metaParsed.is_starred) ? ' star-button button-starred-image' : ' star-button',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
-            }
+            },
+            can_multi: true
         });
         buttons.push({
             label: 'Enable Starred',
@@ -182,6 +183,7 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
                 is_download: reg.is_download,
                 can_multi: reg.can_multi,
                 multi_only: reg.multi_only,
+                max_selected: reg.max_selected,
                 onclick: () => reg.action(src)
             });
         }
@@ -247,6 +249,7 @@ function selectOutputInHistory(image, div) {
 
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
     `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
+imageHistoryBrowser.enableBrowserMultiSelect = true;
 
 function storeImageToHistoryWithCurrentParams(img) {
     let data = getGenInput();
