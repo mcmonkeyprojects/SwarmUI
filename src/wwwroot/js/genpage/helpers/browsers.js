@@ -957,6 +957,9 @@ class GenPageBrowserClass {
                 if (!button.can_multi && !button.multi_only) {
                     continue;
                 }
+                if (button.max_selected != null && selCount > button.max_selected) {
+                    continue;
+                }
                 labels.add(button.label);
             }
             eligiblePerFile.push(labels);
