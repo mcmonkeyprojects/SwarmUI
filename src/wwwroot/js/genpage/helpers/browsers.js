@@ -870,9 +870,6 @@ class GenPageBrowserClass {
         if (!active) {
             this.multiSelectedKeys.clear();
         }
-        if (this.multiSelectToggleButton) {
-            this.multiSelectToggleButton.classList.toggle('browser-multiselect-toggle-active', active);
-        }
         this.syncBrowserMultiSelectHeader();
         if (this.contentDiv) {
             this.applyBrowserMultiSelectVisuals();
@@ -976,9 +973,22 @@ class GenPageBrowserClass {
     }
 
     /**
-     * Refreshes the bulk action dropdown from the current selection.
+     * Off: ✓ &#10003;
+     * On: ☑ &#9745;
+     */
+    syncBrowserMultiSelectToggleAppearance() {
+        if (!this.multiSelectToggleButton) {
+            return;
+        }
+        this.multiSelectToggleButton.classList.toggle('browser-multiselect-toggle-active', this.multiSelectActive);
+        this.multiSelectToggleButton.innerHTML = this.multiSelectActive ? '&#9745;' : '&#10003;';
+    }
+
+    /**
+     * Updates multi-select toggle state and bulk action dropdown.
      */
     syncBrowserMultiSelectHeader() {
+        this.syncBrowserMultiSelectToggleAppearance();
         if (!this.multiSelectActionSelect) {
             return;
         }
@@ -1055,7 +1065,7 @@ class GenPageBrowserClass {
                 continue;
             }
             let on = this.multiSelectActive && this.multiSelectedKeys.has(child.dataset.name);
-            child.classList.toggle('browser-entry-multiselect-selected', on);
+            child.classList.toggle('browser-multiselect-entry-selected', on);
         }
     }
 }

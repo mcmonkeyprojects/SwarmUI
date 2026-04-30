@@ -835,18 +835,15 @@ body {
     margin-left: 0.5rem;
     opacity: 0.8;
 }
-.browser-multiselect-toggle-active {
-    outline: 2px solid var(--emphasis);
+.browser-multiselect-toggle-active,
+.browser-multiselect-entry-selected {
+    outline: 2px solid var(--emphasis) !important;
     outline-offset: 1px;
 }
 .browser-multiselect-action-select {
     max-width: 11rem;
     margin-left: 0.15rem;
     vertical-align: middle;
-}
-.browser-entry-multiselect-selected {
-    outline: 2px solid var(--emphasis);
-    outline-offset: 1px;
 }
 .browser-fullcontent-container {
     margin-left: 0.2rem;
