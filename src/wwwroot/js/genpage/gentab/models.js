@@ -465,6 +465,7 @@ class ModelBrowserWrapper {
         let format = subType == 'Wildcards' ? 'Small Cards' : 'Cards';
         extraHeader += `<label for="models_${subType}_sort_by">Sort:</label> <select id="models_${subType}_sort_by"><option>Name</option><option>Title</option><option>DateCreated</option><option>DateModified</option></select> <input type="checkbox" id="models_${subType}_sort_reverse"> <label for="models_${subType}_sort_reverse">Reverse</label>`;
         this.browser = new GenPageBrowserClass(container, this.listModelFolderAndFiles.bind(this), id, format, this.describeModel.bind(this), this.selectModel.bind(this), extraHeader);
+        this.browser.enableBrowserMultiSelect = true;
         this.promptBox = getRequiredElementById('alt_prompt_textbox');
         this.models = {};
         this.browser.refreshHandler = (callback) => {
@@ -717,7 +718,7 @@ class ModelBrowserWrapper {
             }, can_multi: true }];
         }
         let isStarred = this.isStarred(model.data.name);
-        let starButton = { label: isStarred ? 'Unstar' : 'Star', onclick: () => { this.toggleStar(model.data.name); } };
+        let starButton = { label: isStarred ? 'Unstar' : 'Star', onclick: () => { this.toggleStar(model.data.name); }, can_multi: true };
         buttons.push(starButton);
         let name = cleanModelName(model.data.name);
         let display = (model.data.display || name).replaceAll('/', ' / ');

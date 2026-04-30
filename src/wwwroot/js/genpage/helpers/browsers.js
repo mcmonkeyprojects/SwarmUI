@@ -107,6 +107,11 @@ class GenPageBrowserClass {
         this.runAfterUpdate = [];
         this.refreshHandler = (callback) => callback();
         this.checkIsSmall();
+        this.enableBrowserMultiSelect = false;
+        this.multiSelectActive = false;
+        this.multiSelectedKeys = new Set();
+        this.multiSelectToggleButton = null;
+        this.multiSelectActionSelect = null;
     }
 
     /**
@@ -138,6 +143,10 @@ class GenPageBrowserClass {
         this.chunksRendered = 0;
         this.folder = folder;
         this.selected = null;
+        if (this.enableBrowserMultiSelect) {
+            this.multiSelectedKeys.clear();
+            this.syncBrowserMultiSelectHeader();
+        }
         this.update(false, callback);
     }
 
@@ -455,6 +464,9 @@ class GenPageBrowserClass {
             }
             let img = document.createElement('img');
             img.addEventListener('click', () => {
+                if (this.handleBrowserMultiSelectTileClick(file, div)) {
+                    return;
+                }
                 this.select(file, div);
             });
             img.classList.add('image-block-img-inner');
@@ -466,6 +478,12 @@ class GenPageBrowserClass {
                 let textBlock = createDiv(null, 'model-descblock');
                 textBlock.tabIndex = 0;
                 textBlock.innerHTML = desc.description;
+                textBlock.addEventListener('click', (e) => {
+                    if (this.handleBrowserMultiSelectTileClick(file, div, e)) {
+                        return;
+                    }
+                    this.select(file, div);
+                });
                 div.appendChild(textBlock);
             }
             else if (this.format.includes('Thumbnails')) {
@@ -495,6 +513,12 @@ class GenPageBrowserClass {
                 else {
                     textBlock.classList.add('image-preview-text-large');
                 }
+                textBlock.addEventListener('click', (e) => {
+                    if (this.handleBrowserMultiSelectTileClick(file, div, e)) {
+                        return;
+                    }
+                    this.select(file, div);
+                });
                 div.appendChild(textBlock);
             }
             else if (this.format == 'List') {
@@ -502,6 +526,9 @@ class GenPageBrowserClass {
                 let textBlock = createSpan(null, 'browser-list-entry-text');
                 textBlock.innerText = desc.display || desc.name;
                 textBlock.addEventListener('click', () => {
+                    if (this.handleBrowserMultiSelectTileClick(file, div)) {
+                        return;
+                    }
                     this.select(file, div);
                 });
                 div.appendChild(textBlock);
@@ -520,6 +547,9 @@ class GenPageBrowserClass {
                     textBlock.style.width = `calc(${percent}% - ${imgAdj}rem)`;
                     textBlock.innerHTML = detail;
                     textBlock.addEventListener('click', () => {
+                        if (this.handleBrowserMultiSelectTileClick(file, div)) {
+                            return;
+                        }
                         this.select(file, div);
                     });
                     div.appendChild(textBlock);
@@ -704,6 +734,37 @@ class GenPageBrowserClass {
             this.headerBar.appendChild(formatSelector);
             this.headerBar.appendChild(buttons);
             refreshButton.onclick = this.refresh.bind(this);
+            if (this.enableBrowserMultiSelect) {
+                this.multiSelectToggleButton = document.createElement('button');
+                this.multiSelectToggleButton.type = 'button';
+                this.multiSelectToggleButton.id = `${this.id}_multiselect_toggle`;
+                this.multiSelectToggleButton.className = 'refresh-button translate translate-no-text browser-multiselect-toggle';
+                this.multiSelectToggleButton.title = 'Toggle multi-select mode';
+                this.multiSelectToggleButton.innerHTML = '&#10003;';
+                this.multiSelectToggleButton.addEventListener('click', () => {
+                    this.setBrowserMultiSelectActive(!this.multiSelectActive);
+                });
+                this.multiSelectActionSelect = document.createElement('select');
+                this.multiSelectActionSelect.id = `${this.id}_multiselect_action`;
+                this.multiSelectActionSelect.className = 'browser-format-selector browser-multiselect-action-select';
+                this.multiSelectActionSelect.title = 'Bulk action';
+                let placeholderOpt = document.createElement('option');
+                placeholderOpt.value = '';
+                placeholderOpt.className = 'translate';
+                placeholderOpt.innerText = translate('Actions...');
+                this.multiSelectActionSelect.appendChild(placeholderOpt);
+                this.multiSelectActionSelect.style.display = 'none';
+                this.multiSelectActionSelect.addEventListener('change', () => {
+                    let choice = this.multiSelectActionSelect.value;
+                    if (!choice) {
+                        return;
+                    }
+                    this.runBrowserMultiSelectAction(choice);
+                    this.multiSelectActionSelect.value = '';
+                });
+                this.upButton.insertAdjacentElement('afterend', this.multiSelectToggleButton);
+                this.multiSelectToggleButton.insertAdjacentElement('afterend', this.multiSelectActionSelect);
+            }
             this.fullContentDiv.appendChild(this.headerBar);
             this.contentDiv = createDiv(`${this.id}-content`, 'browser-content-container');
             this.contentDiv.addEventListener('scroll', () => {
@@ -768,7 +829,10 @@ class GenPageBrowserClass {
         this.buildTreeElements(this.folderTreeDiv, '', this.tree);
         applyTranslations(this.headerBar);
         if (!this.noContentUpdates) {
+            this.pruneBrowserMultiSelectionToCurrentList();
             this.buildContentList(this.contentDiv, files);
+            this.applyBrowserMultiSelectVisuals();
+            this.syncBrowserMultiSelectHeader();
             browserUtil.makeVisible(this.contentDiv);
             if (scrollOffset) {
                 this.contentDiv.scrollTop = scrollOffset;
@@ -781,6 +845,217 @@ class GenPageBrowserClass {
         this.everLoaded = true;
         if (this.builtEvent) {
             this.builtEvent();
+        }
+    }
+
+    /**
+     * Removes all browser multi-select keys.
+     */
+    clearBrowserMultiSelection() {
+        this.multiSelectedKeys.clear();
+        this.syncBrowserMultiSelectHeader();
+        if (this.contentDiv) {
+            this.applyBrowserMultiSelectVisuals();
+        }
+    }
+
+    /**
+     * Turns browser multi-select mode on or off; exiting clears the selection.
+     */
+    setBrowserMultiSelectActive(active) {
+        if (!this.enableBrowserMultiSelect || this.multiSelectActive == active) {
+            return;
+        }
+        this.multiSelectActive = active;
+        if (!active) {
+            this.multiSelectedKeys.clear();
+        }
+        if (this.multiSelectToggleButton) {
+            this.multiSelectToggleButton.classList.toggle('browser-multiselect-toggle-active', active);
+        }
+        this.syncBrowserMultiSelectHeader();
+        if (this.contentDiv) {
+            this.applyBrowserMultiSelectVisuals();
+        }
+    }
+
+    /**
+     * Toggles whether a file row is selected for bulk actions.
+     */
+    toggleBrowserMultiSelectForFile(file, div) {
+        let key = file.name;
+        if (this.multiSelectedKeys.has(key)) {
+            this.multiSelectedKeys.delete(key);
+        }
+        else {
+            this.multiSelectedKeys.add(key);
+        }
+        this.applyBrowserMultiSelectVisuals();
+        this.syncBrowserMultiSelectHeader();
+    }
+
+    handleBrowserMultiSelectTileClick(file, div, event = null) {
+        if (!this.multiSelectActive || !this.enableBrowserMultiSelect) {
+            return false;
+        }
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        this.toggleBrowserMultiSelectForFile(file, div);
+        return true;
+    }
+
+    /**
+     * Returns files in the current listing that are multi-selected.
+     */
+    getMultiSelectedFiles() {
+        if (!this.lastFiles) {
+            return [];
+        }
+        let out = [];
+        for (let file of this.lastFiles) {
+            if (this.multiSelectedKeys.has(file.name)) {
+                out.push(file);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Drops multi-select keys that no longer exist in the current lastFiles listing.
+     */
+    pruneBrowserMultiSelectionToCurrentList() {
+        if (!this.lastFiles) {
+            return;
+        }
+        let names = new Set(this.lastFiles.map(f => f.name));
+        for (let key of [...this.multiSelectedKeys]) {
+            if (!names.has(key)) {
+                this.multiSelectedKeys.delete(key);
+            }
+        }
+    }
+
+    /**
+     * Labels for bulk actions shared by every selected item, respecting `can_multi` / `multi_only`.
+     */
+    collectCommonBulkActionLabels() {
+        let files = this.getMultiSelectedFiles();
+        let selCount = files.length;
+        if (selCount == 0) {
+            return [];
+        }
+        let eligiblePerFile = [];
+        for (let file of files) {
+            let desc = this.describe(file);
+            let labels = new Set();
+            for (let button of desc.buttons) {
+                if (!button.onclick) {
+                    continue;
+                }
+                if (button.multi_only && selCount < 2) {
+                    continue;
+                }
+                if (!button.can_multi && !button.multi_only) {
+                    continue;
+                }
+                labels.add(button.label);
+            }
+            eligiblePerFile.push(labels);
+        }
+        let first = eligiblePerFile[0];
+        let common = [];
+        for (let label of first) {
+            if (eligiblePerFile.every(s => s.has(label))) {
+                common.push(label);
+            }
+        }
+        common.sort((a, b) => a.localeCompare(b));
+        return common;
+    }
+
+    /**
+     * Refreshes the bulk action dropdown from the current selection.
+     */
+    syncBrowserMultiSelectHeader() {
+        if (!this.multiSelectActionSelect) {
+            return;
+        }
+        let show = this.multiSelectActive && this.multiSelectedKeys.size > 0;
+        this.multiSelectActionSelect.style.display = show ? '' : 'none';
+        if (!show) {
+            return;
+        }
+        while (this.multiSelectActionSelect.options.length > 1) {
+            this.multiSelectActionSelect.remove(1);
+        }
+        let labels = this.collectCommonBulkActionLabels();
+        for (let label of labels) {
+            let opt = document.createElement('option');
+            opt.value = label;
+            opt.className = 'translate';
+            opt.innerText = translate(label);
+            this.multiSelectActionSelect.appendChild(opt);
+        }
+        applyTranslations(this.multiSelectActionSelect);
+    }
+
+    /**
+     * Runs a named bulk action (card popover label) once per selected item.
+     */
+    runBrowserMultiSelectAction(label) {
+        let files = this.getMultiSelectedFiles();
+        let failed = 0;
+        for (let file of files) {
+            let div = this.getVisibleEntry(file.name);
+            let desc = this.describe(file);
+            let button = null;
+            for (let b of desc.buttons) {
+                if (b.label == label && b.onclick) {
+                    button = b;
+                    break;
+                }
+            }
+            if (!button) {
+                failed++;
+                console.error(`No bulk action '${label}' for ${file.name}`);
+                continue;
+            }
+            try {
+                if (div) {
+                    button.onclick(div);
+                }
+                else {
+                    button.onclick(null);
+                }
+            }
+            catch (err) {
+                console.error('Browser bulk action error:', err);
+                failed++;
+            }
+        }
+        if (failed > 0) {
+            showError(`Bulk action finished: ${failed} of ${files.length} failed — see console for details.`);
+        }
+        this.pruneBrowserMultiSelectionToCurrentList();
+        this.applyBrowserMultiSelectVisuals();
+        this.syncBrowserMultiSelectHeader();
+    }
+
+    /**
+     * Applies multi-select highlight classes to visible rows.
+     */
+    applyBrowserMultiSelectVisuals() {
+        if (!this.contentDiv) {
+            return;
+        }
+        for (let child of this.contentDiv.children) {
+            if (!child.dataset || !child.dataset.name) {
+                continue;
+            }
+            let on = this.multiSelectActive && this.multiSelectedKeys.has(child.dataset.name);
+            child.classList.toggle('browser-entry-multiselect-selected', on);
         }
     }
 }

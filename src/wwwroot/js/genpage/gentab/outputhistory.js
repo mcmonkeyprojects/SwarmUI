@@ -72,7 +72,8 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             className: (metadata && metaParsed.is_starred) ? ' star-button button-starred-image' : ' star-button',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
-            }
+            },
+            can_multi: true
         });
         buttons.push({
             label: 'Enable Starred',
@@ -247,6 +248,7 @@ function selectOutputInHistory(image, div) {
 
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
     `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
+imageHistoryBrowser.enableBrowserMultiSelect = true;
 
 function storeImageToHistoryWithCurrentParams(img) {
     let data = getGenInput();

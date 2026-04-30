@@ -626,18 +626,18 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
 function describePreset(preset) {
     let buttons = [
         { label: 'Toggle', onclick: () => selectPreset(preset) },
-        { label: 'Direct Apply', onclick: () => applyOnePreset(preset.data) },
-        { label: preset.data.is_starred ? 'Unstar' : 'Star', onclick: () => togglePresetStar(preset) },
+        { label: 'Direct Apply', onclick: () => applyOnePreset(preset.data), can_multi: true },
+        { label: preset.data.is_starred ? 'Unstar' : 'Star', onclick: () => togglePresetStar(preset), can_multi: true },
         { label: 'Edit Preset', onclick: () => editPreset(preset.data) },
         { label: 'Duplicate Preset', onclick: () => duplicatePreset(preset.data) },
-        { label: 'Export Preset', onclick: () => exportOnePresetButton(preset.data) },
+        { label: 'Export Preset', onclick: () => exportOnePresetButton(preset.data), can_multi: true },
         { label: 'Delete Preset', onclick: () => {
             if (confirm("Are you sure want to delete that preset?")) {
                 genericRequest('DeletePreset', { preset: preset.data.title }, data => {
                     loadUserData();
                 });
             }
-        } }
+        }, can_multi: true }
     ];
     let paramText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`);
     let description = `${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
@@ -696,6 +696,7 @@ let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFi
     <button id="preset_list_import_button translate" class="basic-button" onclick="importPresetsButton()">Import</button>
     <button id="preset_list_export_button translate" class="basic-button" onclick="exportPresetsButton()">Export All</button>
     <button id="preset_list_apply_button translate" class="basic-button" onclick="apply_presets()" title="Apply all current presets directly to your parameter list.">Apply</button>`);
+presetBrowser.enableBrowserMultiSelect = true;
 
 function importPresetsButton() {
     getRequiredElementById('import_presets_textarea').value = '';
