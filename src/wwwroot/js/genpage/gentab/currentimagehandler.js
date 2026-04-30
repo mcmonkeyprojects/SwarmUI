@@ -365,9 +365,8 @@ class ImageFullViewHelper {
 let imageFullView = new ImageFullViewHelper();
 
 /** Central helper class to handle the image compare modal across multiple compare modes. */
-class ImageCompareHelper extends MultiSelectTool {
+class ImageCompareHelper {
     constructor() {
-        super('compare', 'Compare', 'Compare exactly 2 images or 2 videos.');
         this.zoomRate = 1.1;
         this.modal = getRequiredElementById('image_compare_modal');
         this.modalJq = $('#image_compare_modal');
@@ -419,7 +418,6 @@ class ImageCompareHelper extends MultiSelectTool {
         this.modeOrder = Object.keys(this.modeDefinitions);
         this.modeButtonMap = {};
         this.renderModeButtons();
-        this.register(multiSelectManager);
     }
 
     getImgOrContainer() {
@@ -695,6 +693,35 @@ class ImageCompareHelper extends MultiSelectTool {
         else {
             this.modalJq.modal('show');
         }
+    }
+
+    openFromHistoryBulkSelection(files) {
+        if (!files || files.length != 2) {
+            return;
+        }
+        let left = this.historyFileToCompareMedia(files[0]);
+        let right = this.historyFileToCompareMedia(files[1]);
+        let validation = this.validateCompareMedia(left, right);
+        if (!validation.ok) {
+            doNoticePopover(validation.reason, validation.severe ? 'notice-pop-red' : '');
+            return;
+        }
+        this.showComparison(left, right);
+    }
+
+    historyFileToCompareMedia(file) {
+        let src = file.data.src;
+        return { src: src, metadata: file.data.metadata || '', mediaType: getMediaType(src) };
+    }
+
+    validateCompareMedia(left, right) {
+        if (left.mediaType == 'audio' || right.mediaType == 'audio') {
+            return { ok: false, reason: 'Compare only supports images and videos.', severe: true };
+        }
+        if (left.mediaType != right.mediaType) {
+            return { ok: false, reason: 'Compare requires 2 items of the same media type.', severe: true };
+        }
+        return { ok: true };
     }
 
     close() {
@@ -1132,45 +1159,6 @@ class ImageCompareHelper extends MultiSelectTool {
     hasSelection() {
         return this.left && this.right;
     }
-
-    getSelectionHint(items, context) {
-        return 'Works with exactly 2 images or 2 videos.';
-    }
-
-    evaluateSelection(items, context) {
-        if (items.length == 0) {
-            return { state: 'partial', reason: 'Select 2 images or 2 videos to compare.' };
-        }
-        if (items.length == 1) {
-            return { state: 'partial', reason: 'Select 1 more image or video to compare.' };
-        }
-        if (items.length > 2) {
-            return { state: 'invalid', reason: 'Compare only supports exactly 2 selected items.' };
-        }
-        if (items[0].mediaType == 'audio' || items[1].mediaType == 'audio') {
-            return { state: 'invalid', reason: 'Compare only supports images and videos.' };
-        }
-        if (items[0].mediaType != items[1].mediaType) {
-            return { state: 'invalid', reason: 'Compare requires 2 items of the same media type.' };
-        }
-        return { state: 'ready', reason: 'Compare the selected items.' };
-    }
-
-    normalizeSelection(items, context) {
-        return items.slice(0, 2);
-    }
-
-    execute(items, context) {
-        if (this.evaluateSelection(items, context).state != 'ready') {
-            return;
-        }
-        this.reset();
-        this.showComparison(items[0], items[1]);
-    }
-
-    cleanup(context) {
-        this.close();
-    }
 }
 
 let imageCompareHelper = new ImageCompareHelper();
@@ -1203,7 +1191,6 @@ function clearBatch() {
     let currentImageBatchDiv = getRequiredElementById('current_image_batch');
     currentImageBatchDiv.innerHTML = '';
     currentImageBatchDiv.dataset.numImages = 0;
-    multiSelectManager.onBatchCleared();
 }
 
 /** Reference to the auto-clear-batch toggle checkbox. */
@@ -1247,9 +1234,6 @@ function toggleSeparateBatches() {
 }
 
 function clickImageInBatch(div) {
-    if (multiSelectManager.handleBatchClick(div)) {
-        return;
-    }
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
         imageFullView.showImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id);
@@ -1260,9 +1244,6 @@ function clickImageInBatch(div) {
 
 /** Removes a preview thumbnail and moves to either previous or next image. */
 function removeImageBlockFromBatch(div, shift = false) {
-    if (div.classList.contains('image-block-multiselect-selected')) {
-        multiSelectManager.clearSelection();
-    }
     if (!div.classList.contains('image-block-current')) {
         div.remove();
         return;
@@ -2104,7 +2085,6 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     srcTarget.src = imageSrc;
     img.classList.add('image-block-img-inner');
     div.appendChild(img);
-    div.appendChild(createDiv(null, 'image-block-multiselect-checkbox'));
     if (type == 'legacy') {
         let textBlock = createDiv(null, 'image-preview-text');
         textBlock.innerText = textPreview;

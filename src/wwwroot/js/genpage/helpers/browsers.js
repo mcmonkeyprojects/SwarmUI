@@ -1019,6 +1019,18 @@ class GenPageBrowserClass {
      */
     runBrowserMultiSelectAction(label) {
         let files = this.getMultiSelectedFiles();
+        if (files.length > 0) {
+            for (let b of this.describe(files[0]).buttons) {
+                if (b.label == label && b.onclick && b.bulk_once) {
+                    b.onclick({ files: files, browser: this, label });
+                    this.pruneBrowserMultiSelectionToCurrentList();
+                    this.applyBrowserMultiSelectVisuals();
+                    this.syncBrowserMultiSelectHeader();
+                    return;
+                }
+            }
+        }
+
         let failed = 0;
         for (let file of files) {
             let div = this.getVisibleEntry(file.name);

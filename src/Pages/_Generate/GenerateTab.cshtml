@@ -84,18 +84,6 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="multiselect-tools-panel" id="multiselect_tools_panel">
-                            <div class="multiselect-tools-header">
-                                <span class="translate">Multi-Select</span>
-                                <div class="multiselect-tools-actions">
-                                    <button class="basic-button translate" type="button" onclick="clearMultiSelectSelection()">Clear</button>
-                                    <button class="basic-button translate" type="button" onclick="toggleMultiSelectMode()">Done</button>
-                                </div>
-                            </div>
-                            <div class="multiselect-tools-summary" id="multiselect_tools_summary"></div>
-                            <div class="multiselect-tools-hint" id="multiselect_tools_hint"></div>
-                            <div class="multiselect-tools-list" id="multiselect_tools_list"></div>
-                        </div>
                         <div id="current_image_batch" class="current_image_batch_core"></div>
                     </div>
                 </div>
@@ -152,7 +140,6 @@
             <div class="sui_popover_model_button translate" onclick="genTabLayout.resetLayout()">Reset Page Layout</div>
             <div class="sui_popover_model_button translate" onclick="refreshParameterValues(true)">Reload Parameter Values</div>
             <div class="sui_popover_model_button translate" onclick="resetParamsToDefault()">Reset Params to Default</div>
-            <div class="sui_popover_model_button translate" onclick="toggleMultiSelectMode()">Multi-Select</div>
             <div class="sui_popover_model_button translate" onclick="openEmptyEditor()">Open Empty Image Editor</div>
             <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
             <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>

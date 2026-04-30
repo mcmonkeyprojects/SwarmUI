@@ -174,6 +174,21 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             can_multi: true
         });
     }
+    if (!isCurrentImage && !isDataImage) {
+        buttons.push({
+            label: 'Compare',
+            title: 'Compare images',
+            can_multi: true,
+            multi_only: true,
+            max_selected: 2,
+            bulk_once: true,
+            onclick: function (ctx) {
+                if (ctx && ctx.files) {
+                    imageCompareHelper.openFromHistoryBulkSelection(ctx.files);
+                }
+            }
+        });
+    }
     for (let reg of registeredMediaButtons) {
         if ((isCurrentImage || reg.showInHistory) && (!reg.mediaTypes || reg.mediaTypes.includes(mediaType))) {
             buttons.push({
