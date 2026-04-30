@@ -197,6 +197,19 @@
                 <span class="text_button translate" onclick="imageFullView.close()">[Close]</span><br>
             </div>
         </div>
+        <div class="modal modal-fullscreen imageview_popup_modal_background" id="image_compare_modal" data-bs-keyboard="false">
+            <div class="modal-dialog" style="display:none"></div>
+            <div class="imageview_modal_inner_div image-compare-modal-inner">
+                <div class="imageview_modal_imagewrap image-compare-modal-imagewrap">
+                    <div class="image-compare-stage image-compare-stage-side" id="image_compare_stage"></div>
+                </div>
+                <div class="imageview_popup_modal_undertext image-compare-undertext">
+                    <div class="image_fullview_extra_buttons image-compare-controls">
+                        <div class="image-compare-mode-buttons" id="image_compare_mode_buttons"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="tab-pane genpage-bottom-tab" id="Presets-Tab" role="tabpanel">
             <div class="browser_container preset_list_container" id="preset_list"></div>
             <div class="sui-popover sui_popover_model" id="popover_presetmenu">
