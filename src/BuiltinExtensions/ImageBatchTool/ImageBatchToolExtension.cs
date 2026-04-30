@@ -63,6 +63,7 @@ public class ImageBatchToolExtension : Extension
             await socket.SendAndReportError($"ImageBatchRun request from {session.User.UserID}, for folder '{input_folder}'", "Image batch needs to supply the images to at least one parameter.", API.WebsocketTimeout);
             return null;
         }
+        // In case someone tries to leverage the websocket API directly, not possible from UI
         if (input_side_length <= 0 || output_side_length <= 0)
         {
             await socket.SendAndReportError($"ImageBatchRun request from {session.User.UserID}", "Side lengths must be positive values.", API.WebsocketTimeout);
@@ -136,6 +137,7 @@ public class ImageBatchToolExtension : Extension
             }
             Image image = new(File.ReadAllBytes(file), MediaType.GetByExtension(file.AfterLast('.')));
             ISImage imgData = image.ToIS;
+            // Check EXIF to make sure we have the correct orientation
             if (imgData.Metadata?.ExifProfile?.TryGetValue(ExifTag.Orientation, out IExifValue<ushort> orientationValue) ?? false)
             {
                 ushort orientation = orientationValue.Value;
