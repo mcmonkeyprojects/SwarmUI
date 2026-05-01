@@ -32,7 +32,7 @@ public class ImageBatchToolExtension : Extension
     }
 
     /// <summary>API route to generate images with WebSocket updates.</summary>
-    public static async Task<JObject> ImageBatchRun(WebSocket socket, Session session, JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string resMode, bool append_filename_to_prompt, bool use_same_side_length = true, int input_side_length = 1024, int output_side_length = 1024)
+    public static async Task<JObject> ImageBatchRun(WebSocket socket, Session session, JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string resMode, bool append_filename_to_prompt, int side_length = 1024)
     {
         // TODO: Strict path validation / user permission confirmation.
         if (input_folder.Length < 5 || output_folder.Length < 5)
@@ -64,22 +64,22 @@ public class ImageBatchToolExtension : Extension
             return null;
         }
         // In case someone tries to leverage the websocket API directly, not possible from UI
-        if (input_side_length <= 0 || output_side_length <= 0)
+        if (side_length <= 0)
         {
-            await socket.SendAndReportError($"ImageBatchRun request from {session.User.UserID}", "Side lengths must be positive values.", API.WebsocketTimeout);
+            await socket.SendAndReportError($"ImageBatchRun request from {session.User.UserID}", "Side length must be a positive value.", API.WebsocketTimeout);
             return null;
         }
         Directory.CreateDirectory(output_folder);
-        await API.RunWebsocketHandlerCallWS(GenBatchRun_Internal, session, (rawInput, input_folder, output_folder, init_image, revision, controlnet, imageFiles, resMode, append_filename_to_prompt, use_same_side_length, input_side_length, output_side_length), socket);
+        await API.RunWebsocketHandlerCallWS(GenBatchRun_Internal, session, (rawInput, input_folder, output_folder, init_image, revision, controlnet, imageFiles, resMode, append_filename_to_prompt, side_length), socket);
         Logs.Info("Image Batcher completed successfully");
         await socket.SendJson(new JObject() { ["success"] = "complete" }, API.WebsocketTimeout);
         return null;
     }
 
-    public static async Task GenBatchRun_Internal(Session session, (JObject, string, string, bool, bool, bool, string[], string, bool, bool, int, int) input, Action<JObject> output, bool isWS)
+    public static async Task GenBatchRun_Internal(Session session, (JObject, string, string, bool, bool, bool, string[], string, bool, int) input, Action<JObject> output, bool isWS)
     {
         // TODO: This is a silly way of passing data, time for a struct?
-        (JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string[] imageFiles, string resMode, bool appendFilenameToPrompt, bool useSameSideLength, int inputSideLength, int outputSideLength) = input;
+        (JObject rawInput, string input_folder, string output_folder, bool init_image, bool revision, bool controlnet, string[] imageFiles, string resMode, bool appendFilenameToPrompt, int sideLength) = input;
         using Session.GenClaim claim = session.Claim(gens: imageFiles.Length);
         async Task sendStatus()
         {
@@ -183,19 +183,11 @@ public class ImageBatchToolExtension : Extension
                         setRes(width, height);
                     }
                     break;
-                case "Scale Input To Side Length":
-                    (int scaledInputWidth, int scaledInputHeight) = Utilities.ResToModelFit(imgData.Width, imgData.Height, inputSideLength * inputSideLength, 16);
-                    image = (Image)((ImageFile)image).Resize(scaledInputWidth, scaledInputHeight);
+                case "Scale To Side Length":
+                    (int scaledWidth, int scaledHeight) = Utilities.ResToModelFit(imgData.Width, imgData.Height, sideLength * sideLength, 16);
+                    image = (Image)((ImageFile)image).Resize(scaledWidth, scaledHeight);
                     imgData = image.ToIS;
-                    if (useSameSideLength)
-                    {
-                        setRes(scaledInputWidth, scaledInputHeight);
-                    }
-                    else
-                    {
-                        (int scaledOutputWidth, int scaledOutputHeight) = Utilities.ResToModelFit(imgData.Width, imgData.Height, outputSideLength * outputSideLength, 16);
-                        setRes(scaledOutputWidth, scaledOutputHeight);
-                    }
+                    setRes(scaledWidth, scaledHeight);
                     break;
                 default:
                     throw new SwarmUserErrorException("Invalid resolution mode");

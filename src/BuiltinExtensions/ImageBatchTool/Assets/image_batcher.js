@@ -2,10 +2,8 @@
 class ImageBatcherClass {
 
     updateSideLengthModeVisibility() {
-        let isSideLength = getRequiredElementById('ext_image_batcher_res_mode').value == 'Scale Input To Side Length';
-        let useSameSideLength = getRequiredElementById('ext_image_batcher_use_same_side_length').checked;
+        let isSideLength = getRequiredElementById('ext_image_batcher_res_mode').value == 'Scale To Side Length';
         getRequiredElementById('ext_image_batcher_side_length_wrap').style.display = isSideLength ? 'flex' : 'none';
-        getRequiredElementById('ext_image_batcher_output_side_length_wrap').style.display = isSideLength && !useSameSideLength ? 'block' : 'none';
     }
 
     doGenerate() {
@@ -20,9 +18,7 @@ class ImageBatcherClass {
             'controlnet': getRequiredElementById('ext_image_batcher_use_as_controlnet').checked,
             'append_filename_to_prompt': getRequiredElementById('ext_image_batcher_append_filename_to_prompt').checked,
             'resMode': getRequiredElementById('ext_image_batcher_res_mode').value,
-            'use_same_side_length': getRequiredElementById('ext_image_batcher_use_same_side_length').checked,
-            'input_side_length': parseInt(getRequiredElementById('ext_image_batcher_input_side_length').value) || 1024,
-            'output_side_length': parseInt(getRequiredElementById('ext_image_batcher_output_side_length').value) || 1024
+            'side_length': parseInt(getRequiredElementById('ext_image_batcher_side_length').value) || 1024
         };
         let timeLastGenHit = [Date.now()];
         let images = {};
@@ -50,20 +46,14 @@ class ImageBatcherClass {
             + makeCheckboxInput(null, 'ext_image_batcher_use_as_controlnet', '', 'Use As ControlNet Input', 'Whether to use the image as input to ControlNet (only applies if a ControlNet model is enabled).', true, false, true, true)
             + makeCheckboxInput(null, 'ext_image_batcher_use_as_revision', '', 'Use As Image Prompt', 'Whether to use the image as an Image Prompting input.', false, false, true, true)
             + makeCheckboxInput(null, 'ext_image_batcher_append_filename_to_prompt', '', 'Append Filename to Prompt', 'Whether to append the filename to the prompt.', false, false, true, true)
-            + makeGenericPopover('ext_image_batcher_res_mode', 'Resolution', 'Dropdown', `Choose how the batcher sets generation resolution.<ul><li><b>From Parameter:</b> Keep the current width and height from the main parameter panel.</li><li><b>From Image:</b> Use each input image's current resolution directly.</li><li><b>Scale To Model:</b> Resize the output resolution to fit the selected model's preferred pixel count while keeping aspect ratio.</li><li><b>Scale To Model Or Above:</b> Like Scale To Model, but never shrink below the input image's current size.</li><li><b>Scale Input To Side Length:</b> Resize the input image so its total pixel count approximates side length squared (e.g. ~1024x1024 pixels at side length 1024), maintaining the original aspect ratio.</li></ul>`, '')
-            + makeDropdownInput(null, 'ext_image_batcher_res_mode', '', 'Resolution', '', ['From Parameter', 'From Image', 'Scale To Model', 'Scale To Model Or Above', 'Scale Input To Side Length'], 'From Parameter', false, true)
+            + makeGenericPopover('ext_image_batcher_res_mode', 'Resolution', 'Dropdown', `Choose how the batcher sets generation resolution.<ul><li><b>From Parameter:</b> Keep the current width and height from the main parameter panel.</li><li><b>From Image:</b> Use each input image's current resolution directly.</li><li><b>Scale To Model:</b> Resize the output resolution to fit the selected model's preferred pixel count while keeping aspect ratio.</li><li><b>Scale To Model Or Above:</b> Like Scale To Model, but never shrink below the input image's current size.</li><li><b>Scale To Side Length:</b> Resize the image so its total pixel count approximates side length squared (e.g. ~1024x1024 pixels at side length 1024), maintaining the original aspect ratio.</li></ul>`, '')
+            + makeDropdownInput(null, 'ext_image_batcher_res_mode', '', 'Resolution', '', ['From Parameter', 'From Image', 'Scale To Model', 'Scale To Model Or Above', 'Scale To Side Length'], 'From Parameter', false, true)
             + `<span id="ext_image_batcher_side_length_wrap" style="display:none;flex-direction:column;align-items:flex-start;">`
-            + makeCheckboxInput(null, 'ext_image_batcher_use_same_side_length', '', 'Use same side length for input and output', 'When checked, the output resolution matches the scaled input resolution exactly. When unchecked, the output resolution is independently scaled to the Output Side Length squared, maintaining the same aspect ratio.', true, false, true, true)
             + `<div style="width:100%;max-width:512px;">`
-            + makeSliderInput(null, 'ext_image_batcher_input_side_length', '', 'Input Side Length', '', 1024, 64, 4096, 64, 4096, 64, false, false, false)
+            + makeSliderInput(null, 'ext_image_batcher_side_length', '', 'Side Length', '', 1024, 64, 4096, 64, 4096, 64, false, false, false)
             + `</div>`
-            + `<span id="ext_image_batcher_output_side_length_wrap" style="display:none;width:100%;max-width:512px;">`
-            + makeSliderInput(null, 'ext_image_batcher_output_side_length', '', 'Output Side Length', '', 1024, 64, 4096, 64, 4096, 64, false, false, false)
-            + `</span></span>`;
+            + `</span>`;
         document.getElementById('ext_image_batcher_res_mode').addEventListener('change', () => {
-            this.updateSideLengthModeVisibility();
-        });
-        document.getElementById('ext_image_batcher_use_same_side_length').addEventListener('change', () => {
             this.updateSideLengthModeVisibility();
         });
         enableSlidersIn(this.mainDiv);
