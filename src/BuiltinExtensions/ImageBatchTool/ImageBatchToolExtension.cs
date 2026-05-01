@@ -10,7 +10,6 @@ using SwarmUI.WebAPI;
 using System;
 using System.IO;
 using System.Net.WebSockets;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using SixLabors.ImageSharp.Processing;
 using ISImage = SixLabors.ImageSharp.Image;
 
@@ -63,7 +62,6 @@ public class ImageBatchToolExtension : Extension
             await socket.SendAndReportError($"ImageBatchRun request from {session.User.UserID}, for folder '{input_folder}'", "Image batch needs to supply the images to at least one parameter.", API.WebsocketTimeout);
             return null;
         }
-        // In case someone tries to leverage the websocket API directly, not possible from UI
         if (side_length <= 0)
         {
             await socket.SendAndReportError($"ImageBatchRun request from {session.User.UserID}", "Side length must be a positive value.", API.WebsocketTimeout);
@@ -137,17 +135,6 @@ public class ImageBatchToolExtension : Extension
             }
             Image image = new(File.ReadAllBytes(file), MediaType.GetByExtension(file.AfterLast('.')));
             ISImage imgData = image.ToIS;
-            // Check EXIF to make sure we have the correct orientation
-            if (imgData.Metadata?.ExifProfile?.TryGetValue(ExifTag.Orientation, out IExifValue<ushort> orientationValue) ?? false)
-            {
-                ushort orientation = orientationValue.Value;
-                if (orientation != 1)
-                {
-                    using ISImage oriented = imgData.Clone(x => x.AutoOrient());
-                    image = new Image(ImageFile.ISImgToPngBytes(oriented), MediaType.ImagePng);
-                    imgData = image.ToIS;
-                }
-            }
             T2IParamInput param = baseParams.Clone();
             void setRes(int width, int height)
             {
