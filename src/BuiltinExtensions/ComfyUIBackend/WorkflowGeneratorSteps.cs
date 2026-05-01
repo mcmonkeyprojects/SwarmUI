@@ -1098,6 +1098,16 @@ public class WorkflowGeneratorSteps
                     {
                         throw new SwarmUserErrorException("Cannot use ControlNet without a model selected.");
                     }
+                    if (imageNodeActual.DataType == WGNodeData.DT_VIDEO && !g.IsVideoModel())
+                    {
+                        string singleFrame = g.CreateNode("ImageFromBatch", new JObject()
+                        {
+                            ["image"] = imageNodeActual.Path,
+                            ["batch_index"] = 0,
+                            ["length"] = 1
+                        });
+                        imageNodeActual = imageNodeActual.WithPath([singleFrame, 0], WGNodeData.DT_IMAGE);
+                    }
                     if (controlModel.ModelClass?.ID?.EndsWith("/control-diffpatch") ?? false)
                     {
                         string modelPatchLoader = g.CreateNode("ModelPatchLoader", new JObject()
