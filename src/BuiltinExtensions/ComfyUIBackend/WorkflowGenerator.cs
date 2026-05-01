@@ -2146,6 +2146,16 @@ public partial class WorkflowGenerator
                 }
             }
         });
+        if (imageNode.DataType == WGNodeData.DT_VIDEO)
+        {
+            string singleFrame = CreateNode("ImageFromBatch", new JObject()
+            {
+                ["image"] = new JArray(preProcNode, 0),
+                ["batch_index"] = 0,
+                ["length"] = 1
+            });
+            return [singleFrame, 0];
+        }
         return [preProcNode, 0];
     }
 
