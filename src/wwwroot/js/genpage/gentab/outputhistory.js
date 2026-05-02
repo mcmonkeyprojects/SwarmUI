@@ -65,7 +65,15 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
     let mediaType = getMediaType(src);
     buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
-        let metaParsed = metadata ? (JSON.parse(metadata) || {}) : {};
+        let getMeta = (metadata) => metadata ? (JSON.parse(metadata) || {}) : {};
+        let metaParsed = getMeta(metadata);
+        let isStarred = (e) => {
+            let currentMeta = e && e.dataset ? getMeta(e.dataset.metadata) : {};
+            if (Object.keys(currentMeta).length == 0) {
+                currentMeta = metaParsed;
+            }
+            return currentMeta.is_starred;
+        };
         buttons.push({
             label: (metadata && metaParsed.is_starred) ? 'Unstar' : 'Star',
             title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
@@ -78,7 +86,7 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             label: 'Enable Starred',
             title: 'Marks all selected images as starred if they are not already',
             onclick: (e) => {
-                if (!metaParsed.is_starred) {
+                if (!isStarred(e)) {
                     toggleStar(fullsrc, src);
                 }
             },
@@ -86,10 +94,10 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             multi_only: true
         });
         buttons.push({
-            label: 'Disabled Starred',
+            label: 'Disable Starred',
             title: 'Marks all selected images as NOT starred if they are currently starred',
             onclick: (e) => {
-                if (metaParsed.is_starred) {
+                if (isStarred(e)) {
                     toggleStar(fullsrc, src);
                 }
             },
