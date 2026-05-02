@@ -294,7 +294,6 @@ AltTriggerPhraseBtn:
     description: Changes the appearance of the trigger phrase copy button. 
     url: https://github.com/mrblomblo/AltTriggerPhraseBtn
     license: MIT
-    ci-test: true
     tags:
     - conflicts
     - ui
