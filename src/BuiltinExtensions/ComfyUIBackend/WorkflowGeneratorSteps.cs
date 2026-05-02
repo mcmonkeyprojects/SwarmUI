@@ -1084,6 +1084,17 @@ public class WorkflowGeneratorSteps
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
                             g.CurrentMedia = imageNodeActual.WithPath(preprocActual);
+                            if (g.CurrentMedia.DataType == WGNodeData.DT_VIDEO)
+                            {
+                                string resized = g.CreateNode("ResizeImageMaskNode", new JObject()
+                                {
+                                    ["input"] = g.CurrentMedia.Path,
+                                    ["resize_type"] = "scale to multiple",
+                                    ["resize_type.multiple"] = 2,
+                                    ["scale_method"] = "lanczos"
+                                });
+                                g.CurrentMedia = g.CurrentMedia.WithPath([resized, 0]);
+                            }
                             g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: "9");
                             g.SkipFurtherSteps = true;
                             return;
