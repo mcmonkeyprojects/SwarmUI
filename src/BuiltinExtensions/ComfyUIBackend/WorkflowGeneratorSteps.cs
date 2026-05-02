@@ -1090,7 +1090,7 @@ public class WorkflowGeneratorSteps
                                 {
                                     ["input"] = g.CurrentMedia.Path,
                                     ["resize_type"] = "scale to multiple",
-                                    ["resize_type.multiple"] = 2,
+                                    ["resize_type.multiple"] = 8,
                                     ["scale_method"] = "lanczos"
                                 });
                                 g.CurrentMedia = g.CurrentMedia.WithPath([resized, 0]);
