@@ -1081,25 +1081,22 @@ public class WorkflowGeneratorSteps
                     {
                         JArray preprocActual = g.CreatePreprocessor(preprocessor, imageNodeActual);
                         g.NodeHelpers["controlnet_preprocessor"] = $"{preprocActual[0]}";
+                        imageNodeActual = imageNodeActual.WithPath(preprocActual);
+                        string multipleOf8 = g.CreateNode("ResizeImageMaskNode", new JObject()
+                        {
+                            ["input"] = imageNodeActual.Path,
+                            ["resize_type"] = "scale to multiple",
+                            ["resize_type.multiple"] = 8,
+                            ["scale_method"] = "lanczos"
+                        });
+                        imageNodeActual = imageNodeActual.WithPath([multipleOf8, 0]);
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
-                            g.CurrentMedia = imageNodeActual.WithPath(preprocActual);
-                            if (g.CurrentMedia.DataType == WGNodeData.DT_VIDEO)
-                            {
-                                string resized = g.CreateNode("ResizeImageMaskNode", new JObject()
-                                {
-                                    ["input"] = g.CurrentMedia.Path,
-                                    ["resize_type"] = "scale to multiple",
-                                    ["resize_type.multiple"] = 8,
-                                    ["scale_method"] = "lanczos"
-                                });
-                                g.CurrentMedia = g.CurrentMedia.WithPath([resized, 0]);
-                            }
+                            g.CurrentMedia = imageNodeActual;
                             g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: "9");
                             g.SkipFurtherSteps = true;
                             return;
                         }
-                        imageNodeActual = imageNodeActual.WithPath(preprocActual);
                     }
                     else if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                     {
