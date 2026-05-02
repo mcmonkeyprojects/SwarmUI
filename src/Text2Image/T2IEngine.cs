@@ -289,6 +289,18 @@ namespace SwarmUI.Text2Image
                 backend?.Dispose();
                 return;
             }
+            if (user_input.Get(T2IParamTypes.ControlNetPreviewOnly, false))
+            {
+                string controlNetInputFolder = $"inputs/_comfy{backend.Data.ID}/";
+                if (!UserImageHistoryHelper.SharedSpecialFolders.ContainsKey(controlNetInputFolder) && backend.Data.Parent is not null)
+                {
+                    controlNetInputFolder = $"inputs/_comfy{backend.Data.Parent.ID}/";
+                }
+                if (UserImageHistoryHelper.SharedSpecialFolders.ContainsKey(controlNetInputFolder))
+                {
+                    user_input.ExtraMeta["controlnet_preview_input_folder"] = controlNetInputFolder;
+                }
+            }
             try
             {
                 claim.Extend(liveGens: 1);
