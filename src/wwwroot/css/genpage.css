@@ -836,7 +836,7 @@ body {
     opacity: 0.8;
 }
 .browser-multiselect-toggle-active,
-.browser-multiselect-entry-selected {
+.browser-multiselect-item-selected {
     outline: 2px solid var(--emphasis) !important;
     outline-offset: 1px;
 }

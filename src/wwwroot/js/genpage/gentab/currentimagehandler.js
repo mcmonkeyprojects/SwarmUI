@@ -436,11 +436,6 @@ function toggleSeparateBatches() {
 
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
-    let multiSelectKey = getImageFullSrc(div.dataset.src);
-    if (imageHistoryBrowser.enableBrowserMultiSelect && imageHistoryBrowser.multiSelectActive && multiSelectKey && !div.classList.contains('image-block-placeholder')) {
-        imageHistoryBrowser.toggleBrowserMultiSelectForKey(multiSelectKey);
-        return;
-    }
     if (currentImgSrc == div.dataset.src) {
         imageFullView.showImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id);
         return;
@@ -790,9 +785,6 @@ function toggleStar(path, rawSrc) {
             let state = imageFullView.copyState();
             imageFullView.showImage(rawSrc, JSON.stringify(newMetadata), imageFullView.currentBatchId);
             imageFullView.pasteState(state);
-        }
-        if (imageHistoryBrowser.enableBrowserMultiSelect && imageHistoryBrowser.multiSelectActive) {
-            imageHistoryBrowser.syncBrowserMultiSelectHeader();
         }
     });
 }
