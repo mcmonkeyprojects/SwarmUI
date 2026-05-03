@@ -850,13 +850,7 @@ class GenPageBrowserClass {
         if (!this.contentDiv) {
             return [];
         }
-        let items = [];
-        for (let child of this.contentDiv.children) {
-            if (child.dataset && child.dataset.name && child.classList.contains('browser-multiselect-item-selected')) {
-                items.push(child);
-            }
-        }
-        return items;
+        return [...this.contentDiv.querySelectorAll(':scope > .browser-multiselect-item-selected[data-name]')];
     }
 
     /**
