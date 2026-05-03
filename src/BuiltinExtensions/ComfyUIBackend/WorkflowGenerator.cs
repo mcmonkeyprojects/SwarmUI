@@ -2138,6 +2138,10 @@ public partial class WorkflowGenerator
                         {
                             n["inputs"]["resolution"] = (int)Math.Round(Math.Sqrt(UserInput.GetImageWidth() * UserInput.GetImageHeight()) / 64) * 64;
                         }
+                        else if (key == "bbox_detector" && preprocessor == "DWPreprocessor")
+                        {
+                            n["inputs"]["bbox_detector"] = "yolox_l.torchscript.pt";
+                        }
                         else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
                         {
                             n["inputs"][key] = defaultValue;

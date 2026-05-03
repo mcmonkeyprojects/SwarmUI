@@ -1218,7 +1218,7 @@ body {
     height: 2px;
     background-color: var(--green);
 }
-.controlnet-preview-result img {
+.controlnet-preview-result img, .controlnet-preview-result video {
     max-width: 200px;
     max-height: 200px;
     margin-left: 2rem;
