@@ -72,13 +72,9 @@ public class ExtensionsManager
     /// <summary>List of known online available extensions.</summary>
     public List<ExtensionInfo> KnownExtensions = [];
 
-    /// <summary>Per-extension load contexts, keyed by extension DLL name. Each extension gets its own <see cref="SwarmExtensionLoadContext"/> so private dependencies stay isolated from other extensions.</summary>
-    public ConcurrentDictionary<string, SwarmExtensionLoadContext> ExtensionLoadContexts = new();
-
     private Assembly LoadInExtensionContext(string dllName, string targetPath)
     {
-        SwarmExtensionLoadContext ctx = ExtensionLoadContexts.GetOrAdd(dllName, n => new SwarmExtensionLoadContext(n, Path.GetDirectoryName(targetPath)));
-        return ctx.LoadFromAssemblyPath(targetPath);
+        return new SwarmExtensionLoadContext(dllName, Path.GetDirectoryName(targetPath)).LoadFromAssemblyPath(targetPath);
     }
 
     public static string ReferenceCsproj =
