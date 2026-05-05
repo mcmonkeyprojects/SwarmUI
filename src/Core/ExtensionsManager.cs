@@ -20,7 +20,8 @@ public class SwarmExtensionLoadContext : AssemblyLoadContext
     protected override Assembly Load(AssemblyName name)
     {
         // If the host already has this assembly (SwarmUI itself, ASP.NET Core, NuGet deps SwarmUI loaded), return null so the runtime resolves it from the default ALC. This preserves type identity for shared types.
-        try {
+        try
+        {
             Default.LoadFromAssemblyName(name);
             return null;
         }
