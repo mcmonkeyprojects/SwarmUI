@@ -4,8 +4,30 @@ using Microsoft.AspNetCore.Html;
 using SwarmUI.Utils;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Loader;
 
 namespace SwarmUI.Core;
+
+public class SwarmExtensionLoadContext : AssemblyLoadContext
+{
+    private readonly string ExtensionDir;
+
+    public SwarmExtensionLoadContext(string name, string extensionDir)
+        : base(name, isCollectible: false)
+    {
+        ExtensionDir = extensionDir;
+    }
+
+    protected override Assembly Load(AssemblyName name)
+    {
+        // If the host already has this assembly (SwarmUI itself, ASP.NET Core, NuGet deps SwarmUI loaded), return null so the runtime resolves it from the default ALC. This preserves type identity for shared types.
+        try { Default.LoadFromAssemblyName(name); return null; }
+        catch (FileNotFoundException) { }
+        // Otherwise probe the extension's own output folder. Extensions ship private deps as <Reference Private=true> with a HintPath, which MSBuild copies next to the extension DLL.
+        string candidate = Path.Combine(ExtensionDir, name.Name + ".dll");
+        return File.Exists(candidate) ? LoadFromAssemblyPath(candidate) : null;
+    }
+}
 
 public class ExtensionsManager
 {
@@ -44,6 +66,16 @@ public class ExtensionsManager
 
     /// <summary>List of known online available extensions.</summary>
     public List<ExtensionInfo> KnownExtensions = [];
+
+    /// <summary>Per-extension load contexts, keyed by extension DLL name. Each extension gets its own <see cref="SwarmExtensionLoadContext"/> so private dependencies stay isolated from other extensions.</summary>
+    public ConcurrentDictionary<string, SwarmExtensionLoadContext> ExtensionLoadContexts = new();
+
+    private Assembly LoadInExtensionContext(string dllName, string targetPath)
+    {
+        SwarmExtensionLoadContext ctx = ExtensionLoadContexts.GetOrAdd(dllName,
+            n => new SwarmExtensionLoadContext(n, Path.GetDirectoryName(targetPath)));
+        return ctx.LoadFromAssemblyPath(targetPath);
+    }
 
     public static string ReferenceCsproj =
         """
@@ -181,7 +213,7 @@ public class ExtensionsManager
         if (File.Exists(target) && !Program.IsDevMode)
         {
             Logs.Debug($"Don't need to rebuild extension {projFile}, already built.");
-            return Assembly.LoadFile(Path.GetFullPath(target));
+            return LoadInExtensionContext(dllName, Path.GetFullPath(target));
         }
         Logs.Debug($"Building extension project: {projFile}...");
         string buildParam = $"-p:BaseIntermediateOutputPath={Path.GetFullPath($"./src/obj/extensions/{dllName}/")};TargetName={dllName}-{hash}";
@@ -195,7 +227,7 @@ public class ExtensionsManager
         {
             Logs.Debug($"Successful build output for extension project {projFile}:\n{output}");
         }
-        return Assembly.LoadFile(Path.GetFullPath(target));
+        return LoadInExtensionContext(dllName, Path.GetFullPath(target));
     }
 
     public void PrepExtension(Type extType, bool isCore, string[] possible)
