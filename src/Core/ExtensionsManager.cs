@@ -23,7 +23,7 @@ public class SwarmExtensionLoadContext : AssemblyLoadContext
         try {
             Default.LoadFromAssemblyName(name);
             return null;
-            }
+        }
         catch (FileNotFoundException)
         {
             // Ignore the exception, we want to load the assembly from the extension's own output folder.
