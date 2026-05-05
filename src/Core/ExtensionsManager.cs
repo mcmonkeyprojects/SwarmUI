@@ -8,30 +8,29 @@ using System.Runtime.Loader;
 
 namespace SwarmUI.Core;
 
-public class SwarmExtensionLoadContext : AssemblyLoadContext
+public class SwarmExtensionLoadContext(string name, string extensionDir) : AssemblyLoadContext(name, isCollectible: false)
 {
-    private readonly string ExtensionDir;
-
-    public SwarmExtensionLoadContext(string name, string extensionDir) : base(name, isCollectible: false)
-    {
-        ExtensionDir = extensionDir;
-    }
-
+    /// <summary>Host wins, then we probe the extension's folder for private deps.</summary>
     protected override Assembly Load(AssemblyName name)
     {
-        // If the host already has this assembly (SwarmUI itself, ASP.NET Core, NuGet deps SwarmUI loaded), return null so the runtime resolves it from the default ALC. This preserves type identity for shared types.
+        string candidate = Path.Combine(extensionDir, name.Name + ".dll");
+        // Host wins to keep type identity intact. If the extension also shipped its own copy, that's almost always a csproj misconfig (missing Private=false), so warn.
         try
         {
             Default.LoadFromAssemblyName(name);
+            if (File.Exists(candidate))
+            {
+                Logs.Warning($"Extension {Name} ships {name.Name}.dll but host already has it; using host copy. Set Private=false on that reference.");
+            }
             return null;
         }
-        catch (FileNotFoundException)
+        catch (FileNotFoundException) { }
+        if (!File.Exists(candidate))
         {
-            // Ignore the exception, we want to load the assembly from the extension's own output folder.
+            return null;
         }
-        // Otherwise probe the extension's own output folder. Extensions ship private deps as <Reference Private=true> with a HintPath, which MSBuild copies next to the extension DLL.
-        string candidate = Path.Combine(ExtensionDir, name.Name + ".dll");
-        return File.Exists(candidate) ? LoadFromAssemblyPath(candidate) : null;
+        Logs.Debug($"Extension {Name} loading private dep {name.Name} from {candidate}");
+        return LoadFromAssemblyPath(candidate);
     }
 }
 
