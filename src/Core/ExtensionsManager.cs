@@ -12,8 +12,7 @@ public class SwarmExtensionLoadContext : AssemblyLoadContext
 {
     private readonly string ExtensionDir;
 
-    public SwarmExtensionLoadContext(string name, string extensionDir)
-        : base(name, isCollectible: false)
+    public SwarmExtensionLoadContext(string name, string extensionDir) : base(name, isCollectible: false)
     {
         ExtensionDir = extensionDir;
     }
@@ -21,8 +20,14 @@ public class SwarmExtensionLoadContext : AssemblyLoadContext
     protected override Assembly Load(AssemblyName name)
     {
         // If the host already has this assembly (SwarmUI itself, ASP.NET Core, NuGet deps SwarmUI loaded), return null so the runtime resolves it from the default ALC. This preserves type identity for shared types.
-        try { Default.LoadFromAssemblyName(name); return null; }
-        catch (FileNotFoundException) { }
+        try {
+            Default.LoadFromAssemblyName(name);
+            return null;
+            }
+        catch (FileNotFoundException)
+        {
+            // Ignore the exception, we want to load the assembly from the extension's own output folder.
+        }
         // Otherwise probe the extension's own output folder. Extensions ship private deps as <Reference Private=true> with a HintPath, which MSBuild copies next to the extension DLL.
         string candidate = Path.Combine(ExtensionDir, name.Name + ".dll");
         return File.Exists(candidate) ? LoadFromAssemblyPath(candidate) : null;
@@ -72,8 +77,7 @@ public class ExtensionsManager
 
     private Assembly LoadInExtensionContext(string dllName, string targetPath)
     {
-        SwarmExtensionLoadContext ctx = ExtensionLoadContexts.GetOrAdd(dllName,
-            n => new SwarmExtensionLoadContext(n, Path.GetDirectoryName(targetPath)));
+        SwarmExtensionLoadContext ctx = ExtensionLoadContexts.GetOrAdd(dllName, n => new SwarmExtensionLoadContext(n, Path.GetDirectoryName(targetPath)));
         return ctx.LoadFromAssemblyPath(targetPath);
     }
 
