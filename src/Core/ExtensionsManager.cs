@@ -8,32 +8,6 @@ using System.Runtime.Loader;
 
 namespace SwarmUI.Core;
 
-public class SwarmExtensionLoadContext(string name, string extensionDir) : AssemblyLoadContext(name, isCollectible: false)
-{
-    /// <summary>Host wins, then we probe the extension's folder for private deps.</summary>
-    protected override Assembly Load(AssemblyName name)
-    {
-        string candidate = Path.Combine(extensionDir, name.Name + ".dll");
-        // Host wins to keep type identity intact. If the extension also shipped its own copy, that's almost always a csproj misconfig (missing Private=false), so warn.
-        try
-        {
-            Default.LoadFromAssemblyName(name);
-            if (File.Exists(candidate))
-            {
-                Logs.Warning($"Extension {Name} ships {name.Name}.dll but host already has it; using host copy. Set Private=false on that reference.");
-            }
-            return null;
-        }
-        catch (FileNotFoundException) { }
-        if (!File.Exists(candidate))
-        {
-            return null;
-        }
-        Logs.Debug($"Extension {Name} loading private dep {name.Name} from {candidate}");
-        return LoadFromAssemblyPath(candidate);
-    }
-}
-
 public class ExtensionsManager
 {
     /// <summary>All extensions currently loaded.</summary>
@@ -42,9 +16,38 @@ public class ExtensionsManager
     /// <summary>Hashset of folder names of all extensions currently loaded.</summary>
     public HashSet<string> LoadedExtensionFolders = [];
 
+    /// <summary>Hashset of dependency names that are considered "core" and should not be loaded from the extension's folder.</summary>
+    public HashSet<string> CoreDependencyNames = [];
+
     /// <summary>Simple holder of information about extensions available online.</summary>
     public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string OldURL, string[] Tags, string[] FolderNames)
     {
+    }
+
+    private class SwarmExtensionLoadContext(ExtensionsManager manager, string name, string extensionDir) : AssemblyLoadContext(name, isCollectible: false)
+    {
+        /// <summary>Host wins, then we probe the extension's folder for private deps.</summary>
+        protected override Assembly Load(AssemblyName name)
+        {
+            string dependency = Path.Combine(extensionDir, name.Name + ".dll");
+            try
+            {
+                Default.LoadFromAssemblyName(name);
+                // We only get here if host successfully loads the assembly.
+                if (File.Exists(dependency) && !manager.CoreDependencyNames.Contains(name.Name))
+                {
+                    Logs.Warning($"Extension {Name} ships {name.Name}.dll but host already has it loaded; using host copy.");
+                }
+                return null;
+            }
+            catch (FileNotFoundException) { }
+            if (!File.Exists(dependency))
+            {
+                return null;
+            }
+            Logs.Debug($"Extension {Name} loading private dep {name.Name} from {dependency}");
+            return LoadFromAssemblyPath(dependency);
+        }
     }
 
     public static HtmlString HtmlTags(string[] tags)
@@ -74,7 +77,7 @@ public class ExtensionsManager
 
     private Assembly LoadInExtensionContext(string dllName, string targetPath)
     {
-        return new SwarmExtensionLoadContext(dllName, Path.GetDirectoryName(targetPath)).LoadFromAssemblyPath(targetPath);
+        return new SwarmExtensionLoadContext(this, dllName, Path.GetDirectoryName(targetPath)).LoadFromAssemblyPath(targetPath);
     }
 
     public static string ReferenceCsproj =
@@ -90,6 +93,11 @@ public class ExtensionsManager
     /// <summary>Initial call that prepares the extensions list.</summary>
     public async Task PrepExtensions()
     {
+        CoreDependencyNames =
+        [
+            .. AssemblyLoadContext.Default.Assemblies.Select(a => a.GetName().Name).Where(n => n is not null),
+            .. Directory.EnumerateFiles(AppContext.BaseDirectory, "*.dll").Select(Path.GetFileNameWithoutExtension)
+        ];
         await BuildPublicExtensionList();
         string[] builtins = [.. Directory.EnumerateDirectories("./src/BuiltinExtensions").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))];
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))] : [];
