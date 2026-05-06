@@ -1451,15 +1451,6 @@ function debugShowHiddenParams() {
     }
 }
 
-/** Clears any shown or stored ControlNet preview. */
-function controlnetClearPreview(previewArea) {
-    for (let result of previewArea.querySelectorAll('.controlnet-preview-result, .controlnet-save-result')) {
-        result.remove();
-    }
-    delete previewArea.dataset.controlnetPreviewImage;
-    delete previewArea.dataset.controlnetPreviewMetadata;
-}
-
 /** Loads and shows a preview of ControlNet preprocessing to the user. */
 function controlnetShowPreview(callback) {
     let toggler = getRequiredElementById('input_group_content_controlnet_toggle');
@@ -1473,12 +1464,18 @@ function controlnetShowPreview(callback) {
             return;
         }
         let previewArea = getRequiredElementById('controlnet_button_preview');
-        controlnetClearPreview(previewArea);
+        let clearPreview = () => {
+            for (let result of previewArea.querySelectorAll('.controlnet-preview-result, .controlnet-save-result')) {
+                result.remove();
+            }
+            delete previewArea.dataset.controlnetPreviewImage;
+        };
+        clearPreview();
         let imgInput = getRequiredElementById('input_controlnetimageinput');
         if (!imgInput || !imgInput.dataset.filedata) {
             let secondaryImageOption = getRequiredElementById('input_initimage');
             if (!secondaryImageOption || !secondaryImageOption.dataset.filedata) {
-                controlnetClearPreview(previewArea);
+                clearPreview();
                 previewArea.append(createDiv(null, 'controlnet-preview-result', 'Must select an image.'));
                 return;
             }
@@ -1512,9 +1509,8 @@ function controlnetShowPreview(callback) {
                 imgElem.src = data.image;
                 resultBox.append(imgElem);
             }
-            controlnetClearPreview(previewArea);
+            clearPreview();
             previewArea.dataset.controlnetPreviewImage = data.image;
-            previewArea.dataset.controlnetPreviewMetadata = data.metadata ?? '';
             previewArea.append(resultBox);
             if (callback) {
                 callback(data);
@@ -1523,54 +1519,17 @@ function controlnetShowPreview(callback) {
     });
 }
 
-/** Gets the target input folder for saved ControlNet previews. */
-function controlnetGetPreviewInputFolder(metadata) {
-    if (metadata) {
-        try {
-            let parsed = JSON.parse(metadata);
-            let extraData = parsed.sui_extra_data;
-            if (extraData && extraData.controlnet_preview_input_folder) {
-                return `${extraData.controlnet_preview_input_folder}`.replace(/\/$/, '');
-            }
-        }
-        catch (ex) {
-        }
-    }
-    let exactBackendInput = document.getElementById('input_exactbackendid');
-    let exactBackendToggle = document.getElementById('input_exactbackendid_toggle');
-    if (exactBackendInput && (!exactBackendToggle || exactBackendToggle.checked)) {
-        let parsedId = parseInt(exactBackendInput.value);
-        if (!Number.isNaN(parsedId)) {
-            return `inputs/_comfy${parsedId}`;
-        }
-    }
-    return 'inputs';
-}
-
-/** Gets a timestamped base file name for a saved ControlNet preview. */
-function controlnetGetPreviewSaveName() {
+/** Saves a ControlNet preview data URL through the existing history save route. */
+function controlnetSavePreviewDataToServer(image) {
     let now = new Date();
     let pad = (val) => `${val}`.padStart(2, '0');
     let millis = `${now.getMilliseconds()}`.padStart(3, '0');
-    return `controlnet-preview-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}-${millis}`;
-}
-
-/** Saves a ControlNet preview data URL through the existing history save route. */
-function controlnetSavePreviewDataToServer(image, metadata) {
-    let targetFolder = `${controlnetGetPreviewInputFolder(metadata)}/controlnet`;
+    let name = `controlnet-preview-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}-${millis}`;
     let data = {
         image: image,
-        ['Override Outpath Format']: `${targetFolder}/${controlnetGetPreviewSaveName()}`.replaceAll('[', '')
+        ['Override Outpath Format']: `inputs/controlnet/${name}`
     };
-    let imageFormatsByMimeType = { 'image/png': 'PNG', 'image/jpeg': 'JPG', 'image/webp': 'WEBP' };
-    let mimeType = guessMimeTypeForExtension(image);
-    if (mimeType in imageFormatsByMimeType) {
-        data['Image Format'] = imageFormatsByMimeType[mimeType];
-    }
     genericRequest('AddImageToHistory', data, res => {
-        if (inputBrowserHelper.inputImageBrowser) {
-            inputBrowserHelper.inputImageBrowser.lightRefresh();
-        }
         let previewArea = getRequiredElementById('controlnet_button_preview');
         let oldSaveResult = previewArea.querySelector('.controlnet-save-result');
         if (oldSaveResult) {
@@ -1588,16 +1547,15 @@ function controlnetSavePreviewDataToServer(image, metadata) {
 function controlnetSavePreviewToServer() {
     let previewArea = getRequiredElementById('controlnet_button_preview');
     let image = previewArea.dataset.controlnetPreviewImage;
-    let metadata = previewArea.dataset.controlnetPreviewMetadata ?? '';
     if (image) {
-        controlnetSavePreviewDataToServer(image, metadata);
+        controlnetSavePreviewDataToServer(image);
         return;
     }
     controlnetShowPreview(data => {
         if (!data || !data.image) {
             return;
         }
-        controlnetSavePreviewDataToServer(data.image, data.metadata ?? '');
+        controlnetSavePreviewDataToServer(data.image);
     });
 }
 
