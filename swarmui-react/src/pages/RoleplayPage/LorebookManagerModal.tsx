@@ -44,6 +44,7 @@ interface LorebookManagerModalProps {
 interface LorebookDraft {
   name: string;
   description: string;
+  global: boolean;
   entries: RoleplayLorebookEntry[];
 }
 
@@ -51,16 +52,18 @@ function lorebookToDraft(lorebook: RoleplayLorebook): LorebookDraft {
   return {
     name: lorebook.name,
     description: lorebook.description,
+    global: lorebook.global,
     entries: lorebook.entries.map((entry) => ({
       ...entry,
       keywords: [...entry.keywords],
       secondaryKeywords: [...entry.secondaryKeywords],
+      negativeKeywords: [...entry.negativeKeywords],
     })),
   };
 }
 
 function emptyDraft(): LorebookDraft {
-  return { name: '', description: '', entries: [] };
+  return { name: '', description: '', global: false, entries: [] };
 }
 
 function createEmptyEntry(): RoleplayLorebookEntry {
@@ -71,6 +74,7 @@ function createEmptyEntry(): RoleplayLorebookEntry {
     content: '',
     keywords: [],
     secondaryKeywords: [],
+    negativeKeywords: [],
     mode: 'keyword',
     keywordMode: 'plain',
     activationLogic: 'any',
@@ -79,7 +83,9 @@ function createEmptyEntry(): RoleplayLorebookEntry {
     scanDepth: 4,
     insertionOrder: 100,
     insertionPosition: 'before-history',
+    insertionDepth: 4,
     tokenBudget: 220,
+    recursive: false,
     enabled: true,
     createdAt: now,
     updatedAt: now,
@@ -100,6 +106,7 @@ const ACTIVATION_LOGIC_OPTIONS: Array<{ value: RoleplayLoreActivationLogic; labe
 ];
 const INSERTION_POSITION_OPTIONS: Array<{ value: RoleplayLoreInsertionPosition; label: string }> = [
   { value: 'before-history', label: 'Before history' },
+  { value: 'in-history', label: 'In history depth' },
   { value: 'after-history', label: 'After history' },
 ];
 
@@ -153,6 +160,7 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
     const current = lorebookToDraft(existingLorebook);
     if (current.name !== draft.name) return true;
     if (current.description !== draft.description) return true;
+    if (current.global !== draft.global) return true;
     if (current.entries.length !== draft.entries.length) return true;
     for (let index = 0; index < current.entries.length; index += 1) {
       const a = current.entries[index];
@@ -172,7 +180,10 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
         a.tokenBudget !== b.tokenBudget ||
         a.enabled !== b.enabled ||
         a.keywords.join('|') !== b.keywords.join('|') ||
-        a.secondaryKeywords.join('|') !== b.secondaryKeywords.join('|')
+        a.secondaryKeywords.join('|') !== b.secondaryKeywords.join('|') ||
+        a.negativeKeywords.join('|') !== b.negativeKeywords.join('|') ||
+        a.insertionDepth !== b.insertionDepth ||
+        a.recursive !== b.recursive
       ) {
         return true;
       }
@@ -240,6 +251,7 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
     const payload = {
       name,
       description: draft.description,
+      global: draft.global,
       entries: draft.entries,
       updatedAt: now,
     };
@@ -349,6 +361,14 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                 value={draft.description}
                 onChange={(event) =>
                   setDraft((prev) => ({ ...prev, description: event.currentTarget.value }))
+                }
+              />
+              <Switch
+                label="Global lorebook"
+                description="Global lorebooks are scanned for every roleplay chat without binding them to a character, persona, or session."
+                checked={draft.global}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, global: event.currentTarget.checked }))
                 }
               />
 
@@ -482,6 +502,14 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                         }
                         disabled={selectedEntry.mode === 'always-on'}
                       />
+                      <TagsInput
+                        label="Negative Keywords"
+                        description="Prevents activation when any negative keyword is found."
+                        value={selectedEntry.negativeKeywords}
+                        onChange={(value) =>
+                          updateEntry(selectedEntry.id, { negativeKeywords: value })
+                        }
+                      />
                       <Grid gutter="xs">
                         <Grid.Col span={{ base: 12, sm: 6 }}>
                           <Select
@@ -542,6 +570,20 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                         </Grid.Col>
                         <Grid.Col span={{ base: 12, sm: 6 }}>
                           <NumberInput
+                            label="History Depth"
+                            description="Used when insertion is set to in-history."
+                            min={0}
+                            value={selectedEntry.insertionDepth}
+                            onChange={(value) =>
+                              updateEntry(selectedEntry.id, {
+                                insertionDepth:
+                                  typeof value === 'number' ? value : selectedEntry.insertionDepth,
+                              })
+                            }
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <NumberInput
                             label="Scan Depth"
                             min={0}
                             value={selectedEntry.scanDepth}
@@ -596,6 +638,16 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                           })
                         }
                         disabled={selectedEntry.mode === 'always-on'}
+                      />
+                      <Switch
+                        label="Recursive activation source"
+                        description="Activated content can trigger later recursive lore passes."
+                        checked={selectedEntry.recursive}
+                        onChange={(event) =>
+                          updateEntry(selectedEntry.id, {
+                            recursive: event.currentTarget.checked,
+                          })
+                        }
                       />
                       <Switch
                         label="Enabled"

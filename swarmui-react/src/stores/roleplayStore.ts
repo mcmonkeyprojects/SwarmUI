@@ -6,9 +6,18 @@ import type {
   ChatMessageVariant,
   RoleplayCatalogTemplate,
   RoleplayCharacter,
+  RoleplayCharacterExpressionSprite,
+  RoleplayCharacterGalleryImage,
+  RoleplayCharacterGalleryReferenceRole,
+  RoleplayCharacterVisualProfile,
+  RoleplayChatBranch,
+  RoleplayChatCheckpoint,
   RoleplayChatSession,
+  RoleplayCharacterImportMode,
+  RoleplayCharacterSourceMetadata,
   RoleplayConnectionState,
   RoleplayContinuityState,
+  RoleplayChatProvider,
   RoleplayLorebook,
   RoleplayLorebookEntry,
   RoleplayMemoryFact,
@@ -16,13 +25,25 @@ import type {
   RoleplayModelCompatibilitySettings,
   RoleplayPersona,
   RoleplayPromptStack,
+  RoleplaySessionVisualState,
+  RoleplayVisualCharacterState,
 } from '../types/roleplay';
+import type { TavernImportResult } from '../features/roleplay/tavernCard';
 import type { AssistantModel, AssistantServerMode } from '../types/assistant';
 import {
   DEFAULT_ROLEPLAY_INTERACTION_STYLE,
   LEGACY_ROLEPLAY_INTERACTION_STYLE,
   getRoleplayInteractionStyleConfig,
 } from '../data/roleplayInteractionStyles';
+import {
+  getRoleplayPresetStack,
+  ROLEPLAY_PRESET_NONE_ID,
+} from '../data/roleplayPresetStacks';
+import {
+  createRoleplayCompatibilityFromProfile,
+  getRoleplayLocalModelProfile,
+  ROLEPLAY_LOCAL_MODEL_PROFILE_DEFAULT_ID,
+} from '../data/roleplayLocalModelProfiles';
 import {
   ROLEPLAY_MAX_MEMORY_FACTS,
   createEmptyRoleplayMemoryState,
@@ -42,6 +63,12 @@ type LegacyRoleplayCharacter = Partial<RoleplayCharacter> & {
   name: string;
 };
 
+interface RoleplayCharacterImportOptions {
+  mode?: RoleplayCharacterImportMode;
+  targetCharacterId?: string;
+  sourceMetadata?: RoleplayCharacterSourceMetadata;
+}
+
 type LegacyRoleplayState = Partial<RoleplayStoreState> & {
   characters?: LegacyRoleplayCharacter[];
   chatSessions?: RoleplayChatSession[];
@@ -51,9 +78,23 @@ type LegacyRoleplayState = Partial<RoleplayStoreState> & {
 };
 
 function createDefaultModelCompatibilitySettings(): RoleplayModelCompatibilitySettings {
+  return createRoleplayCompatibilityFromProfile(ROLEPLAY_LOCAL_MODEL_PROFILE_DEFAULT_ID);
+}
+
+function normalizeModelCompatibilitySettings(
+  value?: Partial<RoleplayModelCompatibilitySettings>
+): RoleplayModelCompatibilitySettings {
+  const profile = getRoleplayLocalModelProfile(value?.localProfileId);
   return {
-    forceFinalUserTurn: false,
-    inlineSystemPrompt: false,
+    ...createRoleplayCompatibilityFromProfile(profile.id),
+    ...value,
+    localProfileId: profile.id,
+    maxContextTokens: Math.max(
+      1024,
+      value?.maxContextTokens ?? profile.recommendedContextTokens
+    ),
+    loreEntryLimit: Math.max(0, value?.loreEntryLimit ?? profile.loreEntryLimit),
+    maxHistoryMessages: Math.max(1, value?.maxHistoryMessages ?? profile.maxHistoryMessages),
   };
 }
 
@@ -69,6 +110,86 @@ function normalizeStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === 'string')
     : [];
+}
+
+function normalizeVisualCharacterState(value: unknown): RoleplayVisualCharacterState {
+  const record = value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Partial<RoleplayVisualCharacterState>)
+    : {};
+  return {
+    attire: normalizeString(record.attire),
+    condition: normalizeString(record.condition),
+    mood: normalizeString(record.mood),
+    poseCue: normalizeString(record.poseCue),
+    referenceImageId: normalizeNullableString(record.referenceImageId),
+  };
+}
+
+function createEmptyVisualCharacterState(): RoleplayVisualCharacterState {
+  return {
+    attire: '',
+    condition: '',
+    mood: '',
+    poseCue: '',
+    referenceImageId: null,
+  };
+}
+
+function normalizeVisualCharacterStateMap(
+  value: unknown
+): Record<string, RoleplayVisualCharacterState> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  const normalized: Record<string, RoleplayVisualCharacterState> = {};
+  for (const [characterId, characterState] of Object.entries(value as Record<string, unknown>)) {
+    if (!characterId.trim()) {
+      continue;
+    }
+    normalized[characterId] = normalizeVisualCharacterState(characterState);
+  }
+  return normalized;
+}
+
+function normalizeCharacterVisualProfile(
+  value: unknown,
+  appearancePrompt?: string | null
+): RoleplayCharacterVisualProfile {
+  const record = value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Partial<RoleplayCharacterVisualProfile>)
+    : {};
+  return {
+    permanentAnchor: normalizeString(record.permanentAnchor, appearancePrompt ?? ''),
+    defaultAttire: normalizeString(record.defaultAttire),
+    styleAnchor: normalizeString(record.styleAnchor),
+    negativeAnchor: normalizeString(record.negativeAnchor),
+  };
+}
+
+function normalizeSessionVisualState(
+  value: unknown,
+  session: Partial<RoleplayChatSession>
+): RoleplaySessionVisualState {
+  const record = value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Partial<RoleplaySessionVisualState>)
+    : {};
+  const characterStates = normalizeVisualCharacterStateMap(record.characterStates);
+  const activeCharacterId = normalizeNullableString(session.activeSpeakerCharacterId) || session.characterId || '';
+  if (activeCharacterId && !characterStates[activeCharacterId]) {
+    characterStates[activeCharacterId] = {
+      ...createEmptyVisualCharacterState(),
+      poseCue: normalizeString(session.activeExpression),
+    };
+  }
+  return {
+    location: normalizeString(record.location, session.continuity?.currentLocation ?? ''),
+    timeOfDay: normalizeString(record.timeOfDay),
+    lighting: normalizeString(record.lighting, normalizeString(session.ambiencePrompt)),
+    sceneAnchor: normalizeString(record.sceneAnchor, normalizeString(session.sceneBackgroundPrompt)),
+    persistentObjects: normalizeString(record.persistentObjects),
+    negativePrompt: normalizeString(record.negativePrompt),
+    characterStates,
+  };
 }
 
 function normalizeBoolean(value: unknown, fallback: boolean): boolean {
@@ -87,6 +208,26 @@ function normalizeRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? { ...(value as Record<string, unknown>) }
     : null;
+}
+
+function applySourceMetadata(
+  character: Partial<RoleplayCharacter>,
+  metadata?: RoleplayCharacterSourceMetadata
+): Partial<RoleplayCharacter> {
+  if (!metadata) {
+    return character;
+  }
+  return {
+    ...character,
+    sourceUrl: metadata.sourceUrl ?? character.sourceUrl,
+    sourceDownloadUrl: metadata.sourceDownloadUrl ?? character.sourceDownloadUrl,
+    sourceProviderId: metadata.sourceProviderId ?? character.sourceProviderId,
+    sourceExternalId: metadata.sourceExternalId ?? character.sourceExternalId,
+    sourceImportedAt: metadata.sourceImportedAt ?? character.sourceImportedAt,
+    sourceLastCheckedAt: metadata.sourceLastCheckedAt ?? character.sourceLastCheckedAt,
+    sourceLicense: metadata.sourceLicense ?? character.sourceLicense,
+    sourceContentRating: metadata.sourceContentRating ?? character.sourceContentRating,
+  };
 }
 
 function normalizeMessageVariant(
@@ -126,8 +267,70 @@ function normalizeChatMessage(message: Partial<ChatMessage> & Pick<ChatMessage, 
   };
 }
 
+function normalizeChatMessages(messages: ChatMessage[] | undefined): ChatMessage[] {
+  return (messages ?? []).map((message) => normalizeChatMessage(message));
+}
+
+function normalizeChatBranch(
+  branch: Partial<RoleplayChatBranch> & { id: string; name?: string }
+): RoleplayChatBranch {
+  const now = Date.now();
+  return {
+    id: branch.id,
+    name: normalizeString(branch.name, 'Main'),
+    parentBranchId: normalizeNullableString(branch.parentBranchId),
+    forkMessageId: normalizeNullableString(branch.forkMessageId),
+    messages: normalizeChatMessages(branch.messages),
+    createdAt: branch.createdAt ?? now,
+    updatedAt: branch.updatedAt ?? now,
+  };
+}
+
+function normalizeChatCheckpoint(
+  checkpoint: Partial<RoleplayChatCheckpoint> & { id: string; name?: string; branchId?: string }
+): RoleplayChatCheckpoint {
+  const now = Date.now();
+  const emptyMemoryState = createEmptyRoleplayMemoryState();
+  return {
+    id: checkpoint.id,
+    name: normalizeString(checkpoint.name, 'Checkpoint'),
+    branchId: normalizeString(checkpoint.branchId, ''),
+    forkMessageId: normalizeNullableString(checkpoint.forkMessageId),
+    messages: normalizeChatMessages(checkpoint.messages),
+    memoryState: {
+      conversationSummary: normalizeString(
+        checkpoint.memoryState?.conversationSummary,
+        emptyMemoryState.conversationSummary
+      ),
+      continuity: checkpoint.memoryState?.continuity ?? emptyMemoryState.continuity,
+      memoryFacts: checkpoint.memoryState?.memoryFacts ?? emptyMemoryState.memoryFacts,
+      memoryStatus: checkpoint.memoryState?.memoryStatus ?? emptyMemoryState.memoryStatus,
+      messagesSinceMemoryRefresh:
+        checkpoint.memoryState?.messagesSinceMemoryRefresh ??
+        emptyMemoryState.messagesSinceMemoryRefresh,
+      lastMemoryUpdatedAt:
+        checkpoint.memoryState?.lastMemoryUpdatedAt ?? emptyMemoryState.lastMemoryUpdatedAt,
+      lastVisitedAt: checkpoint.memoryState?.lastVisitedAt ?? emptyMemoryState.lastVisitedAt,
+    },
+    createdAt: checkpoint.createdAt ?? now,
+  };
+}
+
+function getSessionMemoryState(session: RoleplayChatSession): RoleplayChatCheckpoint['memoryState'] {
+  return {
+    conversationSummary: session.conversationSummary,
+    continuity: session.continuity,
+    memoryFacts: session.memoryFacts,
+    memoryStatus: session.memoryStatus,
+    messagesSinceMemoryRefresh: session.messagesSinceMemoryRefresh,
+    lastMemoryUpdatedAt: session.lastMemoryUpdatedAt,
+    lastVisitedAt: session.lastVisitedAt,
+  };
+}
+
 function createDefaultPromptStack(): RoleplayPromptStack {
   return {
+    roleplayPresetId: 'none',
     mainPromptOverride: '',
     authorNote: '',
     postHistoryNote: '',
@@ -137,13 +340,154 @@ function createDefaultPromptStack(): RoleplayPromptStack {
     includeExampleMessages: true,
     includeMemory: true,
     includeLore: true,
+    promptBlockSettings: {},
+    promptBlockSettingsByPresetId: {},
   };
+}
+
+function normalizePromptBlockSettings(
+  settings: RoleplayPromptStack['promptBlockSettings'] | undefined
+): RoleplayPromptStack['promptBlockSettings'] {
+  if (!settings || typeof settings !== 'object') {
+    return {};
+  }
+
+  const normalizedSettings: RoleplayPromptStack['promptBlockSettings'] = {};
+  for (const [blockId, blockSettings] of Object.entries(settings)) {
+    if (!blockId || !blockSettings || typeof blockSettings !== 'object') {
+      continue;
+    }
+
+    normalizedSettings[blockId] = {
+      enabled:
+        typeof blockSettings.enabled === 'boolean' ? blockSettings.enabled : undefined,
+      order: typeof blockSettings.order === 'number' ? blockSettings.order : undefined,
+      role:
+        blockSettings.role === 'system' ||
+        blockSettings.role === 'user' ||
+        blockSettings.role === 'assistant'
+          ? blockSettings.role
+          : undefined,
+      position:
+        blockSettings.position === 'before-history' ||
+        blockSettings.position === 'after-history' ||
+        blockSettings.position === 'in-history'
+          ? blockSettings.position
+          : undefined,
+      depth:
+        typeof blockSettings.depth === 'number' || blockSettings.depth === null
+          ? blockSettings.depth
+          : undefined,
+      triggerModes: Array.isArray(blockSettings.triggerModes)
+        ? blockSettings.triggerModes.filter(
+            (mode) =>
+              mode === 'normal' ||
+              mode === 'swipe' ||
+              mode === 'regenerate' ||
+              mode === 'continue' ||
+              mode === 'impersonate' ||
+              mode === 'quiet'
+          )
+        : undefined,
+      tokenBudget:
+        typeof blockSettings.tokenBudget === 'number' || blockSettings.tokenBudget === null
+          ? blockSettings.tokenBudget
+          : undefined,
+    };
+  }
+
+  return normalizedSettings;
+}
+
+function normalizePromptBlockSettingsByPresetId(
+  settingsByPresetId: RoleplayPromptStack['promptBlockSettingsByPresetId'] | undefined
+): RoleplayPromptStack['promptBlockSettingsByPresetId'] {
+  if (!settingsByPresetId || typeof settingsByPresetId !== 'object') {
+    return {};
+  }
+
+  const normalizedSettingsByPresetId: RoleplayPromptStack['promptBlockSettingsByPresetId'] = {};
+  for (const [presetId, presetSettings] of Object.entries(settingsByPresetId)) {
+    if (!presetId || !presetSettings || typeof presetSettings !== 'object') {
+      continue;
+    }
+    normalizedSettingsByPresetId[presetId] = normalizePromptBlockSettings(presetSettings);
+  }
+  return normalizedSettingsByPresetId;
 }
 
 function normalizeInteractionStyle(value: unknown): RoleplayCharacter['interactionStyle'] {
   return value === 'personal-chat' || value === 'storyteller'
     ? value
     : LEGACY_ROLEPLAY_INTERACTION_STYLE;
+}
+
+function normalizeExpressionSprites(value: unknown): RoleplayCharacterExpressionSprite[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((sprite, index) => {
+      const source = sprite as Partial<RoleplayCharacterExpressionSprite>;
+      const label = normalizeString(source.label).trim();
+      const prompt = normalizeString(source.prompt).trim();
+      if (!label && !prompt) {
+        return null;
+      }
+      return {
+        id: normalizeString(source.id, `expression-${index}`),
+        label: label || prompt || `Expression ${index + 1}`,
+        prompt: prompt || label,
+        imageUrl: normalizeNullableString(source.imageUrl),
+      };
+    })
+    .filter((sprite): sprite is RoleplayCharacterExpressionSprite => sprite !== null);
+}
+
+function normalizeGalleryReferenceRole(value: unknown): RoleplayCharacterGalleryReferenceRole | null {
+  return value === 'portrait' ||
+    value === 'face' ||
+    value === 'body' ||
+    value === 'outfit' ||
+    value === 'expression' ||
+    value === 'scene' ||
+    value === 'other'
+    ? value
+    : null;
+}
+
+function normalizeGalleryImages(value: unknown): RoleplayCharacterGalleryImage[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((image, index) => {
+      const source = image as Partial<RoleplayCharacterGalleryImage>;
+      const imageUrl = normalizeString(source.imageUrl).trim();
+      if (!imageUrl) {
+        return null;
+      }
+      const imageSource =
+        source.source === 'portrait' ||
+        source.source === 'scene' ||
+        source.source === 'upload' ||
+        source.source === 'import'
+          ? source.source
+          : 'import';
+      return {
+        id: normalizeString(source.id, `gallery-${index}`),
+        imageUrl,
+        source: imageSource,
+        referenceRole: normalizeGalleryReferenceRole(source.referenceRole),
+        isPrimaryReference: normalizeBoolean(source.isPrimaryReference, false),
+        prompt: normalizeString(source.prompt),
+        negativePrompt: normalizeNullableString(source.negativePrompt),
+        sessionId: normalizeNullableString(source.sessionId),
+        messageId: normalizeNullableString(source.messageId),
+        createdAt: normalizeNumber(source.createdAt, Date.now()),
+      };
+    })
+    .filter((image): image is RoleplayCharacterGalleryImage => image !== null);
 }
 
 function normalizeCharacter(character: LegacyRoleplayCharacter): RoleplayCharacter {
@@ -156,6 +500,7 @@ function normalizeCharacter(character: LegacyRoleplayCharacter): RoleplayCharact
   const roleplaySystemPrompt =
     normalizeString(character.roleplaySystemPrompt) ||
     (interactionStyle === 'storyteller' ? legacySystemPrompt : '');
+  const appearancePrompt = normalizeNullableString(character.appearancePrompt);
 
   return {
     id: character.id,
@@ -165,12 +510,23 @@ function normalizeCharacter(character: LegacyRoleplayCharacter): RoleplayCharact
     characterVersion: normalizeString(character.characterVersion),
     sourceFormat: character.sourceFormat ?? 'native',
     sourceUrl: normalizeString(character.sourceUrl),
+    sourceDownloadUrl: normalizeString(character.sourceDownloadUrl),
+    sourceProviderId: normalizeString(character.sourceProviderId),
+    sourceExternalId: normalizeString(character.sourceExternalId),
+    sourceImportedAt: normalizeNullableNumber(character.sourceImportedAt),
+    sourceLastCheckedAt: normalizeNullableNumber(character.sourceLastCheckedAt),
+    sourceLicense: normalizeString(character.sourceLicense),
+    sourceContentRating: normalizeString(character.sourceContentRating),
     catalogTemplateId: normalizeNullableString(character.catalogTemplateId),
     catalogCategory: normalizeNullableString(character.catalogCategory),
     cardExtensions: normalizeRecord(character.cardExtensions),
     avatar: normalizeNullableString(character.avatar),
+    headshotUrl: normalizeNullableString(character.headshotUrl),
     interactionStyle,
-    appearancePrompt: normalizeNullableString(character.appearancePrompt),
+    appearancePrompt,
+    visualProfile: normalizeCharacterVisualProfile(character.visualProfile, appearancePrompt),
+    expressionSprites: normalizeExpressionSprites(character.expressionSprites),
+    galleryImages: normalizeGalleryImages(character.galleryImages),
     imageModelId: normalizeNullableString(character.imageModelId),
     personalityProfile: normalizeRoleplayPersonalityProfile(character.personalityProfile),
     personality: normalizeString(character.personality),
@@ -193,6 +549,15 @@ function normalizeCharacter(character: LegacyRoleplayCharacter): RoleplayCharact
     exampleMessages: normalizeString(character.exampleMessages),
     tags: normalizeStringArray(character.tags),
     creatorNotes: normalizeString(character.creatorNotes),
+    postHistoryInstructions: normalizeString(character.postHistoryInstructions),
+    characterNote: normalizeString(character.characterNote),
+    characterNoteRole:
+      character.characterNoteRole === 'user' || character.characterNoteRole === 'assistant'
+        ? character.characterNoteRole
+        : 'system',
+    characterNoteDepth:
+      typeof character.characterNoteDepth === 'number' ? character.characterNoteDepth : null,
+    tavernV2Data: normalizeRecord(character.tavernV2Data),
     boundLorebookIds: normalizeStringArray(character.boundLorebookIds),
     characterLora: normalizeNullableString(character.characterLora),
     characterLoraWeight: character.characterLoraWeight ?? 0.8,
@@ -241,12 +606,14 @@ function normalizeLorebook(
     id: lorebook.id,
     name: normalizeString(lorebook.name, 'Untitled Lorebook'),
     description: normalizeString(lorebook.description),
+    global: normalizeBoolean(lorebook.global, false),
     entries: (lorebook.entries ?? []).map((entry) => ({
       id: entry.id,
       title: normalizeString(entry.title),
       content: normalizeString(entry.content),
       keywords: normalizeStringArray(entry.keywords),
       secondaryKeywords: normalizeStringArray(entry.secondaryKeywords),
+      negativeKeywords: normalizeStringArray(entry.negativeKeywords),
       mode: entry.mode ?? 'keyword',
       keywordMode: entry.keywordMode ?? 'plain',
       activationLogic: entry.activationLogic ?? 'any',
@@ -255,7 +622,9 @@ function normalizeLorebook(
       scanDepth: normalizeNumber(entry.scanDepth, 4),
       insertionOrder: normalizeNumber(entry.insertionOrder, 100),
       insertionPosition: entry.insertionPosition ?? 'before-history',
+      insertionDepth: normalizeNumber(entry.insertionDepth, 4),
       tokenBudget: normalizeNullableNumber(entry.tokenBudget),
+      recursive: normalizeBoolean(entry.recursive, false),
       enabled: entry.enabled ?? true,
       createdAt: entry.createdAt ?? now,
       updatedAt: entry.updatedAt ?? now,
@@ -271,16 +640,76 @@ function normalizeSession(
   const now = Date.now();
   const emptyMemoryState = createEmptyRoleplayMemoryState();
   const normalizedPromptStack = (session.promptStack ?? {}) as Partial<RoleplayPromptStack>;
+  const roleplayPresetId = normalizeString(
+    normalizedPromptStack.roleplayPresetId,
+    ROLEPLAY_PRESET_NONE_ID
+  );
+  const promptBlockSettings = normalizePromptBlockSettings(
+    normalizedPromptStack.promptBlockSettings
+  );
+  const promptBlockSettingsByPresetId = normalizePromptBlockSettingsByPresetId(
+    normalizedPromptStack.promptBlockSettingsByPresetId
+  );
+  const activePreset = getRoleplayPresetStack(roleplayPresetId);
+  if (activePreset.id !== ROLEPLAY_PRESET_NONE_ID) {
+    const activePresetSettings = { ...(promptBlockSettingsByPresetId[activePreset.id] ?? {}) };
+    for (const presetBlock of activePreset.blocks) {
+      const legacyPresetBlockSettings = promptBlockSettings[presetBlock.id];
+      if (!legacyPresetBlockSettings) {
+        continue;
+      }
+      activePresetSettings[presetBlock.id] = {
+        ...legacyPresetBlockSettings,
+        ...(activePresetSettings[presetBlock.id] ?? {}),
+      };
+      delete promptBlockSettings[presetBlock.id];
+    }
+    promptBlockSettingsByPresetId[activePreset.id] = activePresetSettings;
+  }
+  const normalizedMessages = normalizeChatMessages(session.messages);
+  const activeBranchId = normalizeString(session.activeBranchId, 'main');
+  const normalizedBranches =
+    session.branches && session.branches.length > 0
+      ? session.branches.map((branch) => normalizeChatBranch(branch))
+      : [
+          normalizeChatBranch({
+            id: activeBranchId,
+            name: 'Main',
+            parentBranchId: null,
+            forkMessageId: null,
+            messages: normalizedMessages,
+            createdAt: session.createdAt ?? now,
+            updatedAt: session.updatedAt ?? now,
+          }),
+        ];
+  const branchExists = normalizedBranches.some((branch) => branch.id === activeBranchId);
+  const effectiveActiveBranchId = branchExists ? activeBranchId : normalizedBranches[0].id;
+  const branches = normalizedBranches.map((branch) =>
+    branch.id === effectiveActiveBranchId
+      ? normalizeChatBranch({ ...branch, messages: normalizedMessages })
+      : branch
+  );
 
   return {
     id: session.id,
     characterId: session.characterId,
     title: normalizeString(session.title, 'Main Chat'),
     activePersonaId: normalizeString(session.activePersonaId, DEFAULT_PERSONA_ID),
+    participantCharacterIds:
+      normalizeStringArray(session.participantCharacterIds).length > 0
+        ? normalizeStringArray(session.participantCharacterIds)
+        : [session.characterId],
+    activeSpeakerCharacterId: normalizeNullableString(session.activeSpeakerCharacterId),
+    sceneBackgroundPrompt: normalizeString(session.sceneBackgroundPrompt),
+    ambiencePrompt: normalizeString(session.ambiencePrompt),
+    activeExpression: normalizeString(session.activeExpression),
+    visualState: normalizeSessionVisualState(session.visualState, session),
+    chatBackgroundImage: normalizeNullableString(session.chatBackgroundImage),
     boundLorebookIds: normalizeStringArray(session.boundLorebookIds),
     promptStack: {
       ...createDefaultPromptStack(),
       ...normalizedPromptStack,
+      roleplayPresetId,
       mainPromptOverride: normalizeString(normalizedPromptStack.mainPromptOverride),
       authorNote: normalizeString(normalizedPromptStack.authorNote),
       postHistoryNote: normalizeString(normalizedPromptStack.postHistoryNote),
@@ -308,8 +737,18 @@ function normalizeSession(
         typeof normalizedPromptStack.includeLore === 'boolean'
           ? normalizedPromptStack.includeLore
           : true,
+      promptBlockSettings,
+      promptBlockSettingsByPresetId,
     },
-    messages: (session.messages ?? []).map((message) => normalizeChatMessage(message)),
+    messages: normalizedMessages,
+    activeBranchId: effectiveActiveBranchId,
+    branches,
+    checkpoints: (session.checkpoints ?? []).map((checkpoint) =>
+      normalizeChatCheckpoint({
+        ...checkpoint,
+        branchId: checkpoint.branchId || effectiveActiveBranchId,
+      })
+    ),
     conversationSummary: session.conversationSummary ?? emptyMemoryState.conversationSummary,
     continuity: session.continuity ?? emptyMemoryState.continuity,
     memoryFacts: session.memoryFacts ?? emptyMemoryState.memoryFacts,
@@ -333,6 +772,12 @@ function createSessionFromCharacter(
     characterId: character.id,
     title,
     activePersonaId: DEFAULT_PERSONA_ID,
+    participantCharacterIds: [character.id],
+    activeSpeakerCharacterId: character.id,
+    sceneBackgroundPrompt: '',
+    ambiencePrompt: '',
+    activeExpression: '',
+    chatBackgroundImage: null,
     boundLorebookIds: [],
     promptStack: createDefaultPromptStack(),
     messages,
@@ -373,6 +818,7 @@ function createLorebookFromTemplate(template: RoleplayCatalogTemplate): Roleplay
       content: entry.content,
       keywords: entry.keywords,
       secondaryKeywords: [],
+      negativeKeywords: [],
       mode: entry.keywords.length > 0 ? 'keyword' : 'always-on',
       keywordMode: 'plain',
       activationLogic: 'any',
@@ -381,7 +827,9 @@ function createLorebookFromTemplate(template: RoleplayCatalogTemplate): Roleplay
       scanDepth: 6,
       insertionOrder: 100 + index,
       insertionPosition: 'before-history',
+      insertionDepth: 4,
       tokenBudget: 180,
+      recursive: false,
       enabled: true,
       createdAt: now,
       updatedAt: now,
@@ -401,6 +849,13 @@ function createCharacterFromCatalogTemplate(template: RoleplayCatalogTemplate): 
     characterVersion: '1.0',
     sourceFormat: 'catalog',
     sourceUrl: '',
+    sourceDownloadUrl: '',
+    sourceProviderId: 'local-catalog',
+    sourceExternalId: template.id,
+    sourceImportedAt: now,
+    sourceLastCheckedAt: now,
+    sourceLicense: '',
+    sourceContentRating: '',
     catalogTemplateId: template.id,
     catalogCategory: template.category,
     cardExtensions: null,
@@ -422,6 +877,11 @@ function createCharacterFromCatalogTemplate(template: RoleplayCatalogTemplate): 
     exampleMessages: template.exampleMessages,
     tags: template.tags,
     creatorNotes: template.creatorNotes,
+    postHistoryInstructions: '',
+    characterNote: '',
+    characterNoteRole: 'system',
+    characterNoteDepth: null,
+    tavernV2Data: null,
     boundLorebookIds: [],
     characterLora: null,
     characterLoraWeight: 0.8,
@@ -455,6 +915,11 @@ const DEFAULT_CHARACTERS: RoleplayCharacter[] = [
     alternateGreetings: [],
     tags: ['starter'],
     creatorNotes: '',
+    postHistoryInstructions: '',
+    characterNote: '',
+    characterNoteRole: 'system',
+    characterNoteDepth: null,
+    tavernV2Data: null,
     boundLorebookIds: [],
     characterLora: null,
     characterLoraWeight: 0.8,
@@ -501,6 +966,52 @@ function updateSessionInList(
   return sessions.map((session) => (session.id === sessionId ? updater(session) : session));
 }
 
+function updateActiveBranchMessages(
+  session: RoleplayChatSession,
+  messages: ChatMessage[],
+  updatedAt: number = Date.now()
+): RoleplayChatSession {
+  const normalizedMessages = normalizeChatMessages(messages);
+  const activeBranchId = session.activeBranchId || 'main';
+  const hasActiveBranch = session.branches.some((branch) => branch.id === activeBranchId);
+  const branches = (
+    hasActiveBranch
+      ? session.branches
+      : [
+          ...session.branches,
+          normalizeChatBranch({
+            id: activeBranchId,
+            name: 'Main',
+            parentBranchId: null,
+            forkMessageId: null,
+            messages: [],
+            createdAt: session.createdAt,
+            updatedAt,
+          }),
+        ]
+  ).map((branch) =>
+    branch.id === activeBranchId
+      ? normalizeChatBranch({
+          ...branch,
+          messages: normalizedMessages,
+          updatedAt,
+        })
+      : branch
+  );
+
+  return {
+    ...session,
+    activeBranchId,
+    messages: normalizedMessages,
+    branches,
+    updatedAt,
+  };
+}
+
+function getDefaultBranchName(session: RoleplayChatSession): string {
+  return `Branch ${session.branches.length + 1}`;
+}
+
 function areStringArraysEqual(left: string[] | undefined, right: string[] | undefined): boolean {
   if (left === right) {
     return true;
@@ -539,10 +1050,13 @@ function areLorebookEntriesEqual(
       left[index].scanDepth !== right[index].scanDepth ||
       left[index].insertionOrder !== right[index].insertionOrder ||
       left[index].insertionPosition !== right[index].insertionPosition ||
+      left[index].insertionDepth !== right[index].insertionDepth ||
       left[index].tokenBudget !== right[index].tokenBudget ||
+      left[index].recursive !== right[index].recursive ||
       left[index].enabled !== right[index].enabled ||
       !areStringArraysEqual(left[index].keywords, right[index].keywords) ||
-      !areStringArraysEqual(left[index].secondaryKeywords, right[index].secondaryKeywords)
+      !areStringArraysEqual(left[index].secondaryKeywords, right[index].secondaryKeywords) ||
+      !areStringArraysEqual(left[index].negativeKeywords, right[index].negativeKeywords)
     ) {
       return false;
     }
@@ -594,6 +1108,9 @@ function lorebookHasChanges(
   if (Object.hasOwn(updates, 'description') && updates.description !== lorebook.description) {
     return true;
   }
+  if (Object.hasOwn(updates, 'global') && updates.global !== lorebook.global) {
+    return true;
+  }
   if (
     Object.hasOwn(updates, 'entries') &&
     !areLorebookEntriesEqual(updates.entries, lorebook.entries)
@@ -613,6 +1130,12 @@ function promptStackHasChanges(
   promptStack: RoleplayPromptStack,
   updates: Partial<RoleplayPromptStack>
 ): boolean {
+  if (
+    Object.hasOwn(updates, 'roleplayPresetId') &&
+    updates.roleplayPresetId !== promptStack.roleplayPresetId
+  ) {
+    return true;
+  }
   if (
     Object.hasOwn(updates, 'mainPromptOverride') &&
     updates.mainPromptOverride !== promptStack.mainPromptOverride
@@ -659,6 +1182,20 @@ function promptStackHasChanges(
     return true;
   }
   if (Object.hasOwn(updates, 'includeLore') && updates.includeLore !== promptStack.includeLore) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'promptBlockSettings') &&
+    JSON.stringify(updates.promptBlockSettings ?? {}) !==
+      JSON.stringify(promptStack.promptBlockSettings ?? {})
+  ) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'promptBlockSettingsByPresetId') &&
+    JSON.stringify(updates.promptBlockSettingsByPresetId ?? {}) !==
+      JSON.stringify(promptStack.promptBlockSettingsByPresetId ?? {})
+  ) {
     return true;
   }
   return false;
@@ -708,6 +1245,8 @@ export interface RoleplayStoreState {
   streamingContent: string;
   connectionStatus: RoleplayConnectionState;
   connectionMessage: string | null;
+  chatProvider: RoleplayChatProvider;
+  chatApiKey: string;
   lmStudioEndpoint: string;
   selectedModelId: string;
   detectedServerMode: AssistantServerMode | null;
@@ -724,13 +1263,28 @@ export interface RoleplayStoreState {
   generatingPortraitForId: string | null;
   addCharacter: (character: RoleplayCharacter) => void;
   addCharacterWithLorebooks: (character: RoleplayCharacter, lorebooks?: RoleplayLorebook[]) => void;
+  importCharacterCard: (result: TavernImportResult, options?: RoleplayCharacterImportOptions) => void;
+  replaceCharacterFromCard: (
+    characterId: string,
+    result: TavernImportResult,
+    sourceMetadata?: RoleplayCharacterSourceMetadata
+  ) => void;
+  setCharacterSourceMetadata: (
+    characterId: string,
+    metadata: RoleplayCharacterSourceMetadata
+  ) => void;
   createCharacterFromTemplate: (template: RoleplayCatalogTemplate) => void;
   duplicateCharacter: (id: string) => void;
   setCharacterFavorite: (id: string, favorite?: boolean) => void;
   updateCharacter: (id: string, updates: Partial<Omit<RoleplayCharacter, 'id'>>) => void;
   removeCharacter: (id: string) => void;
   setActiveCharacter: (id: string | null) => void;
-  updateCharacterAvatar: (id: string, avatarUrl: string) => void;
+  updateCharacterAvatar: (id: string, avatarUrl: string, headshotUrl?: string) => void;
+  addCharacterGalleryImage: (
+    characterId: string,
+    image: Omit<RoleplayCharacterGalleryImage, 'id' | 'createdAt'>
+  ) => void;
+  removeCharacterGalleryImage: (characterId: string, imageId: string) => void;
   addPersona: (persona: RoleplayPersona) => void;
   updatePersona: (id: string, updates: Partial<Omit<RoleplayPersona, 'id'>>) => void;
   removePersona: (id: string) => void;
@@ -745,6 +1299,21 @@ export interface RoleplayStoreState {
   setActiveSession: (sessionId: string | null) => void;
   updateSessionPromptStack: (sessionId: string, updates: Partial<RoleplayPromptStack>) => void;
   setSessionBoundLorebooks: (sessionId: string, lorebookIds: string[]) => void;
+  setSessionParticipants: (sessionId: string, characterIds: string[]) => void;
+  setSessionActiveSpeaker: (sessionId: string, characterId: string | null) => void;
+  updateSessionVisualState: (
+    sessionId: string,
+    updates: Partial<
+      Pick<
+        RoleplayChatSession,
+        | 'sceneBackgroundPrompt'
+        | 'ambiencePrompt'
+        | 'activeExpression'
+        | 'visualState'
+        | 'chatBackgroundImage'
+      >
+    >
+  ) => void;
   addMessage: (sessionId: string, message: ChatMessage) => void;
   updateMessage: (
     sessionId: string,
@@ -762,6 +1331,17 @@ export interface RoleplayStoreState {
   ) => void;
   selectMessageVariant: (sessionId: string, messageId: string, variantId: string | null) => void;
   deleteMessagesFrom: (sessionId: string, messageId: string) => void;
+  branchFromMessage: (
+    sessionId: string,
+    messageId: string,
+    options?: { name?: string; replacementMessage?: ChatMessage }
+  ) => void;
+  switchBranch: (sessionId: string, branchId: string) => void;
+  returnToParentBranch: (sessionId: string) => void;
+  renameBranch: (sessionId: string, branchId: string, name: string) => void;
+  createCheckpoint: (sessionId: string, name: string) => void;
+  restoreCheckpoint: (sessionId: string, checkpointId: string) => void;
+  removeCheckpoint: (sessionId: string, checkpointId: string) => void;
   clearConversation: (sessionId: string) => void;
   setStreamingChat: (streaming: boolean) => void;
   setStreamingContent: (content: string) => void;
@@ -788,6 +1368,8 @@ export interface RoleplayStoreState {
   markSessionVisited: (sessionId: string, visitedAt?: number) => void;
   setConnectionStatus: (status: RoleplayConnectionState) => void;
   setConnectionMessage: (message: string | null) => void;
+  setChatProvider: (provider: RoleplayChatProvider) => void;
+  setChatApiKey: (apiKey: string) => void;
   setLmStudioEndpoint: (endpoint: string) => void;
   setSelectedModelId: (modelId: string) => void;
   setDetectedServerMode: (mode: AssistantServerMode | null) => void;
@@ -826,6 +1408,8 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
         streamingContent: '',
         connectionStatus: 'idle',
         connectionMessage: null,
+        chatProvider: 'local',
+        chatApiKey: '',
         lmStudioEndpoint: 'http://localhost:1234',
         selectedModelId: '',
         detectedServerMode: null,
@@ -870,6 +1454,108 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               activeSessionId: nextSession.id,
             };
           }),
+        importCharacterCard: (result, options = {}) => {
+          if (options.mode === 'replace' && options.targetCharacterId) {
+            get().replaceCharacterFromCard(
+              options.targetCharacterId,
+              result,
+              options.sourceMetadata
+            );
+            return;
+          }
+          set((state) => {
+            const now = Date.now();
+            const importedLorebooks = result.lorebooks.map((lorebook) =>
+              normalizeLorebook(lorebook)
+            );
+            const importedLorebookIds = importedLorebooks.map((lorebook) => lorebook.id);
+            const sourceMetadata: RoleplayCharacterSourceMetadata = {
+              sourceImportedAt: now,
+              sourceLastCheckedAt: now,
+              ...options.sourceMetadata,
+            };
+            const normalizedCharacter = normalizeCharacter(
+              applySourceMetadata(
+                {
+                  ...result.character,
+                  id: crypto.randomUUID(),
+                  name:
+                    options.mode === 'duplicate'
+                      ? `${result.character.name} Copy`
+                      : result.character.name,
+                  boundLorebookIds: [
+                    ...new Set([...result.character.boundLorebookIds, ...importedLorebookIds]),
+                  ],
+                  createdAt: now,
+                  updatedAt: now,
+                },
+                sourceMetadata
+              ) as RoleplayCharacter
+            );
+            const nextSession = createSessionFromCharacter(normalizedCharacter);
+            return {
+              characters: [...state.characters, normalizedCharacter],
+              lorebooks: [...state.lorebooks, ...importedLorebooks],
+              chatSessions: [...state.chatSessions, nextSession],
+              activeCharacterId: normalizedCharacter.id,
+              activeSessionId: nextSession.id,
+            };
+          });
+        },
+        replaceCharacterFromCard: (characterId, result, sourceMetadata) =>
+          set((state) => {
+            const existingCharacter = state.characters.find((character) => character.id === characterId);
+            if (!existingCharacter) {
+              return {};
+            }
+            const now = Date.now();
+            const importedLorebooks = result.lorebooks.map((lorebook) =>
+              normalizeLorebook(lorebook)
+            );
+            const importedLorebookIds = importedLorebooks.map((lorebook) => lorebook.id);
+            const normalizedCharacter = normalizeCharacter(
+              applySourceMetadata(
+                {
+                  ...result.character,
+                  id: existingCharacter.id,
+                  favorite: existingCharacter.favorite,
+                  boundLorebookIds: [
+                    ...new Set([...result.character.boundLorebookIds, ...importedLorebookIds]),
+                  ],
+                  createdAt: existingCharacter.createdAt,
+                  updatedAt: now,
+                },
+                {
+                  sourceImportedAt: existingCharacter.sourceImportedAt ?? now,
+                  sourceLastCheckedAt: now,
+                  ...sourceMetadata,
+                }
+              ) as RoleplayCharacter
+            );
+            return {
+              characters: state.characters.map((character) =>
+                character.id === characterId ? normalizedCharacter : character
+              ),
+              lorebooks: [...state.lorebooks, ...importedLorebooks],
+              activeCharacterId: normalizedCharacter.id,
+            };
+          }),
+        setCharacterSourceMetadata: (characterId, metadata) =>
+          set((state) => ({
+            characters: state.characters.map((character) =>
+              character.id === characterId
+                ? normalizeCharacter(
+                    applySourceMetadata(
+                      {
+                        ...character,
+                        updatedAt: Date.now(),
+                      },
+                      metadata
+                    ) as RoleplayCharacter
+                  )
+                : character
+            ),
+          })),
         createCharacterFromTemplate: (template) =>
           set((state) => {
             const lorebook = createLorebookFromTemplate(template);
@@ -900,7 +1586,17 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               name: `${sourceCharacter.name} Copy`,
               favorite: false,
               sourceFormat: 'native',
+              sourceUrl: '',
+              sourceDownloadUrl: '',
+              sourceProviderId: '',
+              sourceExternalId: '',
+              sourceImportedAt: null,
+              sourceLastCheckedAt: null,
+              sourceLicense: '',
+              sourceContentRating: '',
               catalogTemplateId: null,
+              catalogCategory: null,
+              tavernV2Data: null,
               createdAt: Date.now(),
               updatedAt: Date.now(),
             });
@@ -972,13 +1668,56 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               isStreamingChat: false,
             };
           }),
-        updateCharacterAvatar: (id, avatarUrl) =>
+  updateCharacterAvatar: (id, avatarUrl, headshotUrl?) =>
+    set((state) => ({
+      characters: state.characters.map((character) =>
+        character.id === id
+          ? normalizeCharacter({
+              ...character,
+              avatar: avatarUrl || null,
+              ...(headshotUrl !== undefined && { headshotUrl: headshotUrl || null }),
+              updatedAt: Date.now(),
+            })
+          : character
+      ),
+    })),
+        addCharacterGalleryImage: (characterId, image) =>
+          set((state) => ({
+            characters: state.characters.map((character) => {
+              if (character.id !== characterId) {
+                return character;
+              }
+              const normalizedImage = normalizeGalleryImages([
+                {
+                  ...image,
+                  id: crypto.randomUUID(),
+                  createdAt: Date.now(),
+                },
+              ])[0];
+              if (!normalizedImage) {
+                return character;
+              }
+              if (
+                character.galleryImages.some(
+                  (galleryImage) => galleryImage.imageUrl === normalizedImage.imageUrl
+                )
+              ) {
+                return character;
+              }
+              return normalizeCharacter({
+                ...character,
+                galleryImages: [normalizedImage, ...character.galleryImages].slice(0, 200),
+                updatedAt: Date.now(),
+              });
+            }),
+          })),
+        removeCharacterGalleryImage: (characterId, imageId) =>
           set((state) => ({
             characters: state.characters.map((character) =>
-              character.id === id
+              character.id === characterId
                 ? normalizeCharacter({
                     ...character,
-                    avatar: avatarUrl || null,
+                    galleryImages: character.galleryImages.filter((image) => image.id !== imageId),
                     updatedAt: Date.now(),
                   })
                 : character
@@ -1086,6 +1825,8 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               activePersonaId:
                 state.chatSessions.find((session) => session.characterId === characterId)
                   ?.activePersonaId ?? DEFAULT_PERSONA_ID,
+              participantCharacterIds: [characterId],
+              activeSpeakerCharacterId: characterId,
               boundLorebookIds: [],
               promptStack: createDefaultPromptStack(),
               messages: [],
@@ -1107,6 +1848,9 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               ...sourceSession,
               id: crypto.randomUUID(),
               title: `${sourceSession.title} Copy`,
+              activeBranchId: 'main',
+              branches: [],
+              checkpoints: [],
               messages: sourceSession.messages.map((message) => ({
                 ...message,
                 id: crypto.randomUUID(),
@@ -1153,6 +1897,8 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
                       characterId: targetSession.characterId,
                       title: 'Main Chat',
                       activePersonaId: targetSession.activePersonaId,
+                      participantCharacterIds: [targetSession.characterId],
+                      activeSpeakerCharacterId: targetSession.characterId,
                       boundLorebookIds: [],
                       promptStack: createDefaultPromptStack(),
                       messages: [],
@@ -1189,18 +1935,22 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
           }),
         updateSessionPromptStack: (sessionId, updates) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
-              promptStackHasChanges(session.promptStack, updates)
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const currentPromptStack = {
+                ...createDefaultPromptStack(),
+                ...session.promptStack,
+              };
+              return promptStackHasChanges(currentPromptStack, updates)
                 ? {
                     ...session,
                     promptStack: {
-                      ...session.promptStack,
+                      ...currentPromptStack,
                       ...updates,
                     },
                     updatedAt: Date.now(),
                   }
-                : session
-            ),
+                : session;
+            }),
           })),
         setSessionBoundLorebooks: (sessionId, lorebookIds) =>
           set((state) => ({
@@ -1214,62 +1964,143 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
                   }
             ),
           })),
+        setSessionParticipants: (sessionId, characterIds) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const nextParticipantIds = [
+                ...new Set([session.characterId, ...characterIds.filter(Boolean)]),
+              ];
+              const nextActiveSpeakerId =
+                session.activeSpeakerCharacterId &&
+                nextParticipantIds.includes(session.activeSpeakerCharacterId)
+                  ? session.activeSpeakerCharacterId
+                  : session.characterId;
+              if (
+                areStringArraysEqual(session.participantCharacterIds, nextParticipantIds) &&
+                session.activeSpeakerCharacterId === nextActiveSpeakerId
+              ) {
+                return session;
+              }
+              return {
+                ...session,
+                participantCharacterIds: nextParticipantIds,
+                activeSpeakerCharacterId: nextActiveSpeakerId,
+                updatedAt: Date.now(),
+              };
+            }),
+          })),
+        setSessionActiveSpeaker: (sessionId, characterId) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const nextSpeakerId =
+                characterId && session.participantCharacterIds.includes(characterId)
+                  ? characterId
+                  : session.characterId;
+              return session.activeSpeakerCharacterId === nextSpeakerId
+                ? session
+                : {
+                    ...session,
+                    activeSpeakerCharacterId: nextSpeakerId,
+                    updatedAt: Date.now(),
+                  };
+            }),
+          })),
+        updateSessionVisualState: (sessionId, updates) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const nextSession = {
+                ...session,
+                ...updates,
+                sceneBackgroundPrompt:
+                  updates.sceneBackgroundPrompt ?? session.sceneBackgroundPrompt,
+                ambiencePrompt: updates.ambiencePrompt ?? session.ambiencePrompt,
+                activeExpression: updates.activeExpression ?? session.activeExpression,
+                visualState:
+                  updates.visualState !== undefined
+                    ? normalizeSessionVisualState(updates.visualState, {
+                        ...session,
+                        ...updates,
+                      })
+                    : session.visualState,
+                chatBackgroundImage:
+                  updates.chatBackgroundImage !== undefined
+                    ? updates.chatBackgroundImage
+                    : session.chatBackgroundImage,
+              };
+              if (
+                nextSession.sceneBackgroundPrompt === session.sceneBackgroundPrompt &&
+                nextSession.ambiencePrompt === session.ambiencePrompt &&
+                nextSession.activeExpression === session.activeExpression &&
+                JSON.stringify(nextSession.visualState) === JSON.stringify(session.visualState) &&
+                nextSession.chatBackgroundImage === session.chatBackgroundImage
+              ) {
+                return session;
+              }
+              return {
+                ...nextSession,
+                updatedAt: Date.now(),
+              };
+            }),
+          })),
         addMessage: (sessionId, message) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: [...session.messages, normalizeChatMessage(message)],
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(session, [...session.messages, normalizeChatMessage(message)])
+            ),
           })),
         updateMessage: (sessionId, messageId, updates) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: session.messages.map((message) =>
-                message.id === messageId ? normalizeChatMessage({ ...message, ...updates }) : message
-              ),
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(
+                session,
+                session.messages.map((message) =>
+                  message.id === messageId
+                    ? normalizeChatMessage({ ...message, ...updates })
+                    : message
+                )
+              )
+            ),
           })),
         replaceMessageContent: (sessionId, messageId, content) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: session.messages.map((message) => {
-                if (message.id !== messageId) {
-                  return message;
-                }
-                if (!message.activeVariantId) {
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(
+                session,
+                session.messages.map((message) => {
+                  if (message.id !== messageId) {
+                    return message;
+                  }
+                  if (!message.activeVariantId) {
+                    return normalizeChatMessage({
+                      ...message,
+                      content,
+                    });
+                  }
+                  const variants = message.variants.map((variant) =>
+                    variant.id === message.activeVariantId
+                      ? {
+                          ...variant,
+                          content,
+                          timestamp: Date.now(),
+                        }
+                      : variant
+                  );
                   return normalizeChatMessage({
                     ...message,
-                    content,
+                    variants,
                   });
-                }
-                const variants = message.variants.map((variant) =>
-                  variant.id === message.activeVariantId
-                    ? {
-                        ...variant,
-                        content,
-                        timestamp: Date.now(),
-                      }
-                    : variant
-                );
-                return normalizeChatMessage({
-                  ...message,
-                  variants,
-                });
-              }),
-              updatedAt: Date.now(),
-            })),
+                })
+              )
+            ),
           })),
         deleteMessage: (sessionId, messageId) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: session.messages.filter((message) => message.id !== messageId),
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(
+                session,
+                session.messages.filter((message) => message.id !== messageId)
+              )
+            ),
           })),
         moveMessage: (sessionId, messageId, direction) =>
           set((state) => ({
@@ -1286,69 +2117,68 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               const messages = [...session.messages];
               const [movedMessage] = messages.splice(sourceIndex, 1);
               messages.splice(targetIndex, 0, movedMessage);
-              return {
-                ...session,
-                messages,
-                updatedAt: Date.now(),
-              };
+              return updateActiveBranchMessages(session, messages);
             }),
           })),
         setMessageIncluded: (sessionId, messageId, included) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: session.messages.map((message) =>
-                message.id === messageId
-                  ? normalizeChatMessage({ ...message, includedInPrompt: included })
-                  : message
-              ),
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(
+                session,
+                session.messages.map((message) =>
+                  message.id === messageId
+                    ? normalizeChatMessage({ ...message, includedInPrompt: included })
+                    : message
+                )
+              )
+            ),
           })),
         addAssistantMessageVariant: (sessionId, messageId, variant) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: session.messages.map((message) => {
-                if (message.id !== messageId || message.role !== 'assistant') {
-                  return message;
-                }
-                const nextVariant: ChatMessageVariant = {
-                  id: crypto.randomUUID(),
-                  timestamp: Date.now(),
-                  ...variant,
-                };
-                return normalizeChatMessage({
-                  ...message,
-                  variants: [...message.variants, nextVariant],
-                  activeVariantId: nextVariant.id,
-                });
-              }),
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(
+                session,
+                session.messages.map((message) => {
+                  if (message.id !== messageId || message.role !== 'assistant') {
+                    return message;
+                  }
+                  const nextVariant: ChatMessageVariant = {
+                    id: crypto.randomUUID(),
+                    timestamp: Date.now(),
+                    ...variant,
+                  };
+                  return normalizeChatMessage({
+                    ...message,
+                    variants: [...message.variants, nextVariant],
+                    activeVariantId: nextVariant.id,
+                  });
+                })
+              )
+            ),
           })),
         selectMessageVariant: (sessionId, messageId, variantId) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: session.messages.map((message) => {
-                if (message.id !== messageId) {
-                  return message;
-                }
-                if (!variantId) {
-                  return normalizeChatMessage({ ...message, activeVariantId: null });
-                }
-                const variant = message.variants.find((entry) => entry.id === variantId);
-                if (!variant) {
-                  return message;
-                }
-                return normalizeChatMessage({
-                  ...message,
-                  activeVariantId: variant.id,
-                });
-              }),
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(
+                session,
+                session.messages.map((message) => {
+                  if (message.id !== messageId) {
+                    return message;
+                  }
+                  if (!variantId) {
+                    return normalizeChatMessage({ ...message, activeVariantId: null });
+                  }
+                  const variant = message.variants.find((entry) => entry.id === variantId);
+                  if (!variant) {
+                    return message;
+                  }
+                  return normalizeChatMessage({
+                    ...message,
+                    activeVariantId: variant.id,
+                  });
+                })
+              )
+            ),
           })),
         deleteMessagesFrom: (sessionId, messageId) =>
           set((state) => ({
@@ -1358,20 +2188,163 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
                 return session;
               }
 
+              return updateActiveBranchMessages(session, session.messages.slice(0, deleteIndex));
+            }),
+          })),
+        branchFromMessage: (sessionId, messageId, options = {}) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const forkIndex = session.messages.findIndex((message) => message.id === messageId);
+              if (forkIndex === -1) {
+                return session;
+              }
+              const now = Date.now();
+              const nextBranchId = crypto.randomUUID();
+              const branchMessages = options.replacementMessage
+                ? [
+                    ...session.messages.slice(0, forkIndex),
+                    normalizeChatMessage(options.replacementMessage),
+                  ]
+                : session.messages.slice(0, forkIndex + 1);
+              const nextBranch = normalizeChatBranch({
+                id: nextBranchId,
+                name: options.name?.trim() || getDefaultBranchName(session),
+                parentBranchId: session.activeBranchId,
+                forkMessageId: messageId,
+                messages: branchMessages,
+                createdAt: now,
+                updatedAt: now,
+              });
+
               return {
                 ...session,
-                messages: session.messages.slice(0, deleteIndex),
+                activeBranchId: nextBranchId,
+                messages: nextBranch.messages,
+                branches: [...session.branches, nextBranch],
+                updatedAt: now,
+              };
+            }),
+          })),
+        switchBranch: (sessionId, branchId) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const branch = session.branches.find((entry) => entry.id === branchId);
+              if (!branch || branch.id === session.activeBranchId) {
+                return session;
+              }
+              return {
+                ...session,
+                activeBranchId: branch.id,
+                messages: normalizeChatMessages(branch.messages),
                 updatedAt: Date.now(),
               };
             }),
           })),
-        clearConversation: (sessionId) =>
+        returnToParentBranch: (sessionId) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const activeBranch = session.branches.find(
+                (branch) => branch.id === session.activeBranchId
+              );
+              if (!activeBranch?.parentBranchId) {
+                return session;
+              }
+              const parentBranch = session.branches.find(
+                (branch) => branch.id === activeBranch.parentBranchId
+              );
+              if (!parentBranch) {
+                return session;
+              }
+              return {
+                ...session,
+                activeBranchId: parentBranch.id,
+                messages: normalizeChatMessages(parentBranch.messages),
+                updatedAt: Date.now(),
+              };
+            }),
+          })),
+        renameBranch: (sessionId, branchId, name) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const trimmedName = name.trim();
+              if (!trimmedName) {
+                return session;
+              }
+              return {
+                ...session,
+                branches: session.branches.map((branch) =>
+                  branch.id === branchId
+                    ? normalizeChatBranch({ ...branch, name: trimmedName, updatedAt: Date.now() })
+                    : branch
+                ),
+                updatedAt: Date.now(),
+              };
+            }),
+          })),
+        createCheckpoint: (sessionId, name) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const trimmedName = name.trim() || `Checkpoint ${session.checkpoints.length + 1}`;
+              const now = Date.now();
+              return {
+                ...session,
+                checkpoints: [
+                  ...session.checkpoints,
+                  normalizeChatCheckpoint({
+                    id: crypto.randomUUID(),
+                    name: trimmedName,
+                    branchId: session.activeBranchId,
+                    forkMessageId: session.messages[session.messages.length - 1]?.id ?? null,
+                    messages: session.messages,
+                    memoryState: getSessionMemoryState(session),
+                    createdAt: now,
+                  }),
+                ],
+                updatedAt: now,
+              };
+            }),
+          })),
+        restoreCheckpoint: (sessionId, checkpointId) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+              const checkpoint = session.checkpoints.find((entry) => entry.id === checkpointId);
+              if (!checkpoint) {
+                return session;
+              }
+              const now = Date.now();
+              const branchId = crypto.randomUUID();
+              const restoredBranch = normalizeChatBranch({
+                id: branchId,
+                name: `${checkpoint.name} Restore`,
+                parentBranchId: session.activeBranchId,
+                forkMessageId: checkpoint.forkMessageId,
+                messages: checkpoint.messages,
+                createdAt: now,
+                updatedAt: now,
+              });
+              return {
+                ...session,
+                activeBranchId: branchId,
+                messages: restoredBranch.messages,
+                branches: [...session.branches, restoredBranch],
+                ...checkpoint.memoryState,
+                updatedAt: now,
+              };
+            }),
+          })),
+        removeCheckpoint: (sessionId, checkpointId) =>
           set((state) => ({
             chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
               ...session,
-              messages: [],
-              ...createEmptyRoleplayMemoryState(),
+              checkpoints: session.checkpoints.filter((checkpoint) => checkpoint.id !== checkpointId),
               updatedAt: Date.now(),
+            })),
+          })),
+        clearConversation: (sessionId) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
+              ...updateActiveBranchMessages(session, []),
+              ...createEmptyRoleplayMemoryState(),
             })),
           })),
         setStreamingChat: (streaming) => set({ isStreamingChat: streaming }),
@@ -1392,9 +2365,9 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
                 return session;
               }
 
-              return {
-                ...session,
-                messages: session.messages.map((message, index) => {
+              return updateActiveBranchMessages(
+                session,
+                session.messages.map((message, index) => {
                   if (index !== lastAssistantIndex) {
                     return message;
                   }
@@ -1409,33 +2382,33 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
                         : variant
                     ),
                   });
-                }),
-                updatedAt: Date.now(),
-              };
+                })
+              );
             }),
           })),
         dismissSuggestion: (sessionId, messageId) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              messages: session.messages.map((message) => {
-                if (message.id !== messageId) {
-                  return message;
-                }
-                if (!message.activeVariantId) {
-                  return normalizeChatMessage({ ...message, suggestedImagePrompt: null });
-                }
-                return normalizeChatMessage({
-                  ...message,
-                  variants: message.variants.map((variant) =>
-                    variant.id === message.activeVariantId
-                      ? { ...variant, suggestedImagePrompt: null }
-                      : variant
-                  ),
-                });
-              }),
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              updateActiveBranchMessages(
+                session,
+                session.messages.map((message) => {
+                  if (message.id !== messageId) {
+                    return message;
+                  }
+                  if (!message.activeVariantId) {
+                    return normalizeChatMessage({ ...message, suggestedImagePrompt: null });
+                  }
+                  return normalizeChatMessage({
+                    ...message,
+                    variants: message.variants.map((variant) =>
+                      variant.id === message.activeVariantId
+                        ? { ...variant, suggestedImagePrompt: null }
+                        : variant
+                    ),
+                  });
+                })
+              )
+            ),
           })),
         setSessionMemoryStatus: (sessionId, status) =>
           set((state) => ({
@@ -1614,6 +2587,8 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
           })),
         setConnectionStatus: (status) => set({ connectionStatus: status }),
         setConnectionMessage: (message) => set({ connectionMessage: message }),
+        setChatProvider: (provider) => set({ chatProvider: provider }),
+        setChatApiKey: (apiKey) => set({ chatApiKey: apiKey }),
         setLmStudioEndpoint: (endpoint) => set({ lmStudioEndpoint: endpoint }),
         setSelectedModelId: (modelId) => set({ selectedModelId: modelId }),
         setDetectedServerMode: (mode) => set({ detectedServerMode: mode }),
@@ -1624,15 +2599,23 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
             if (!normalizedModelId) {
               return {};
             }
+            const currentSettings = normalizeModelCompatibilitySettings(
+              state.modelCompatibilityByModelId[normalizedModelId]
+            );
+            const nextSettings = updates.localProfileId
+              ? {
+                  ...createRoleplayCompatibilityFromProfile(updates.localProfileId),
+                  ...updates,
+                }
+              : {
+                  ...currentSettings,
+                  ...updates,
+                };
 
             return {
               modelCompatibilityByModelId: {
                 ...state.modelCompatibilityByModelId,
-                [normalizedModelId]: {
-                  ...(state.modelCompatibilityByModelId[normalizedModelId] ??
-                    createDefaultModelCompatibilitySettings()),
-                  ...updates,
-                },
+                [normalizedModelId]: normalizeModelCompatibilitySettings(nextSettings),
               },
             };
           }),
@@ -1712,7 +2695,7 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
       {
         name: 'swarmui-roleplay-v2',
         storage: createJSONStorage(() => createIndexedDbStorage('swarmui-roleplay')),
-        version: 12,
+        version: 17,
         migrate: (persistedState) => {
           const state = persistedState as LegacyRoleplayState;
           const normalizedCharacters =
@@ -1767,13 +2750,31 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
             chatSessions,
             activeCharacterId,
             activeSessionId,
+            chatProvider:
+              state.chatProvider === 'openrouter' || state.chatProvider === 'openai-compatible'
+                ? state.chatProvider
+                : 'local',
+            chatApiKey: typeof state.chatApiKey === 'string' ? state.chatApiKey : '',
             chatMaxTokens:
               typeof state.chatMaxTokens === 'number'
                 ? state.chatMaxTokens === 2048
                   ? DEFAULT_CHAT_MAX_TOKENS
                   : state.chatMaxTokens
                 : DEFAULT_CHAT_MAX_TOKENS,
-            modelCompatibilityByModelId: state.modelCompatibilityByModelId ?? {},
+            lmStudioEndpoint:
+              typeof state.lmStudioEndpoint === 'string' && state.lmStudioEndpoint.trim()
+                ? state.lmStudioEndpoint
+                : 'http://localhost:1234',
+            selectedModelId:
+              typeof state.selectedModelId === 'string' ? state.selectedModelId : '',
+            chatTemperature:
+              typeof state.chatTemperature === 'number' ? state.chatTemperature : 0.8,
+            modelCompatibilityByModelId: Object.fromEntries(
+              Object.entries(state.modelCompatibilityByModelId ?? {}).map(([modelId, settings]) => [
+                modelId,
+                normalizeModelCompatibilitySettings(settings),
+              ])
+            ),
           } as RoleplayStoreState;
         },
         partialize: (state) => ({
@@ -1783,6 +2784,8 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
           chatSessions: state.chatSessions,
           activeCharacterId: state.activeCharacterId,
           activeSessionId: state.activeSessionId,
+          chatProvider: state.chatProvider,
+          chatApiKey: state.chatApiKey,
           lmStudioEndpoint: state.lmStudioEndpoint,
           selectedModelId: state.selectedModelId,
           modelCompatibilityByModelId: state.modelCompatibilityByModelId,

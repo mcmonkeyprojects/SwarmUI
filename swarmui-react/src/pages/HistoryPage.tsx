@@ -39,6 +39,7 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../api/client';
+import { ErrorBoundary, type ErrorBoundaryFallbackState } from '../components/ErrorBoundary';
 import { ImageCard } from '../components/ImageCard';
 import { useImageActions } from '../hooks/useImageActions';
 import { useImageSelection } from '../hooks/useImageSelection';
@@ -58,6 +59,7 @@ import { SectionHero, SwarmActionIcon, SwarmButton, SwarmSegmentedControl } from
 import { useDebouncedState } from '../hooks/useDebounce';
 import { useMotionPerformancePolicy } from '../hooks/useMotionPerformancePolicy';
 import { queryClient, queryKeys } from '../api/queryClient';
+import { isHistoryRouteStateEqual, normalizeHistoryRouteState, serializeHistoryRouteState } from '../routing/appRoute';
 import {
     DEFAULT_HISTORY_PREFERENCES,
     HISTORY_PAGE_SIZE,
@@ -73,6 +75,7 @@ import {
     type HistoryPreferences,
 } from '../features/history/historyUtils';
 import { useHistoryWorkspaceStore } from '../stores/historyWorkspaceStore';
+import { useCreativeWorkspaceStore } from '../stores/creativeWorkspaceStore';
 import { useWorkflowWorkspaceStore } from '../stores/workflowWorkspaceStore';
 
 const ImageUpscaler = lazy(() =>
@@ -89,7 +92,86 @@ interface HistoryPageProps {
     routeState?: HistoryRouteState;
 }
 
+interface HistoryRecoveryState {
+    title: string;
+    message: string;
+    tone: 'yellow' | 'orange';
+}
+
+interface HistoryPageContentProps extends HistoryPageProps {
+    recoveryKey: number;
+}
+
 export function HistoryPage({ routeState }: HistoryPageProps) {
+    const navigateToHistory = useNavigationStore((state) => state.navigateToHistory);
+    const [recoveryKey, setRecoveryKey] = useState(0);
+
+    const requestRemount = useCallback(() => {
+        setRecoveryKey((value) => value + 1);
+    }, []);
+
+    const handleResetHistoryView = useCallback(() => {
+        navigateToHistory({
+            path: null,
+            query: null,
+            sortBy: DEFAULT_HISTORY_PREFERENCES.sortBy,
+            sortReverse: DEFAULT_HISTORY_PREFERENCES.sortReverse,
+            starredOnly: DEFAULT_HISTORY_PREFERENCES.starredOnly,
+            mediaType: DEFAULT_HISTORY_PREFERENCES.mediaType,
+            currentFolderOnly: DEFAULT_HISTORY_PREFERENCES.currentFolderOnly,
+            image: null,
+            viewId: null,
+        });
+    }, [navigateToHistory]);
+
+    const renderHistoryFallback = useCallback((fallbackState: ErrorBoundaryFallbackState) => (
+        <Center h="100%" p="xl">
+            <Paper p="xl" radius="lg" withBorder maw={720}>
+                <Stack gap="md">
+                    <Stack gap="xs">
+                        <Text fw={700} size="lg">History needs to recover</Text>
+                        <Text c="dimmed" size="sm">
+                            History hit an unexpected render problem while restoring the current view. You can retry the page,
+                            reset the History filters and route, or reload the application if the same view keeps failing.
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                            {fallbackState.error?.toString() || 'Unknown History error'}
+                        </Text>
+                    </Stack>
+                    <Group gap="sm" wrap="wrap">
+                        <SwarmButton tone="primary" onClick={fallbackState.tryAgain}>
+                            Retry History
+                        </SwarmButton>
+                        <SwarmButton
+                            tone="secondary"
+                            emphasis="soft"
+                            onClick={() => {
+                                handleResetHistoryView();
+                                fallbackState.tryAgain();
+                            }}
+                        >
+                            Reset History View
+                        </SwarmButton>
+                        <SwarmButton tone="secondary" emphasis="ghost" onClick={fallbackState.copyDetails}>
+                            Copy Crash Details
+                        </SwarmButton>
+                        <SwarmButton tone="secondary" emphasis="ghost" onClick={fallbackState.reload}>
+                            Reload Application
+                        </SwarmButton>
+                    </Group>
+                </Stack>
+            </Paper>
+        </Center>
+    ), [handleResetHistoryView]);
+
+    return (
+        <ErrorBoundary onRecover={requestRemount} renderFallback={renderHistoryFallback}>
+            <HistoryPageContent key={recoveryKey} routeState={routeState} recoveryKey={recoveryKey} />
+        </ErrorBoundary>
+    );
+}
+
+function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps) {
     const { setParams } = useGenerationStore();
     const { setEnableInitImage } = useInitImageToggle();
     const openCanvasWorkflow = useCanvasWorkflowStore((state) => state.openSession);
@@ -100,14 +182,21 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     const generationPhase = useWebSocketStore((state) => state.generation.phase);
     const generatedImageCount = useWebSocketStore((state) => state.generation.images.length);
     const { savedViews, activeViewId, saveView, setActiveView, addToCollection } = useHistoryWorkspaceStore();
+    const { activeProjectId, ensureActiveProject, createReviewSet } = useCreativeWorkspaceStore();
+    const initialRouteState = normalizeHistoryRouteState(routeState);
 
     const [preferences, setPreferences] = useState<HistoryPreferences>(() => ({
         ...DEFAULT_HISTORY_PREFERENCES,
         ...readHistoryPreferences(),
+        sortBy: initialRouteState.sortBy ?? DEFAULT_HISTORY_PREFERENCES.sortBy,
+        sortReverse: initialRouteState.sortReverse ?? DEFAULT_HISTORY_PREFERENCES.sortReverse,
+        starredOnly: initialRouteState.starredOnly ?? DEFAULT_HISTORY_PREFERENCES.starredOnly,
+        mediaType: initialRouteState.mediaType ?? DEFAULT_HISTORY_PREFERENCES.mediaType,
+        currentFolderOnly: initialRouteState.currentFolderOnly ?? DEFAULT_HISTORY_PREFERENCES.currentFolderOnly,
     }));
-    const [currentPath, setCurrentPath] = useState('');
+    const [currentPath, setCurrentPath] = useState(initialRouteState.path || '');
     const [selectedImage, setSelectedImage] = useState<HistoryImageItem | null>(null);
-    const [searchQuery, setSearchQuery, debouncedSearchQuery] = useDebouncedState('', 250);
+    const [searchQuery, setSearchQuery, debouncedSearchQuery] = useDebouncedState(initialRouteState.query || '', 250);
     const [upscaleModal, setUpscaleModal] = useState(false);
     const [upscaleImage, setUpscaleImage] = useState('');
     const [upscaleImageMetadata, setUpscaleImageMetadata] = useState<string | Record<string, unknown> | null>(null);
@@ -115,9 +204,16 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     const [comparisonModal, setComparisonModal] = useState(false);
     const [comparisonImages, setComparisonImages] = useState<[HistoryImageItem | null, HistoryImageItem | null]>([null, null]);
     const [lineageModalOpen, setLineageModalOpen] = useState(false);
+    const [historyRecoveryState, setHistoryRecoveryState] = useState<HistoryRecoveryState | null>(null);
+    const [historyRecoveryNonce, setHistoryRecoveryNonce] = useState(0);
 
     const completedGenerationRef = useRef(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const lastHistoryStallNotificationRef = useRef(0);
+    const routeWriteSuppressedRef = useRef(false);
+    const routeWriteResumeTimeoutRef = useRef<number | null>(null);
+    const lastAppliedRouteStateKeyRef = useRef<string | null>(null);
+    const historyFetchStartedAtRef = useRef<number | null>(null);
 
     const {
         selectedIds,
@@ -171,7 +267,10 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
         preferences.mediaType,
     ]);
 
-    const historyListQueryKey = useMemo(() => ['history', 'list', historyQuery] as const, [historyQuery]);
+    const historyListQueryKey = useMemo(
+        () => ['history', 'list', historyQuery, recoveryKey, historyRecoveryNonce] as const,
+        [historyQuery, historyRecoveryNonce, recoveryKey]
+    );
 
     const historyQueryResult = useInfiniteQuery({
         queryKey: historyListQueryKey,
@@ -226,12 +325,56 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     }, [preferences]);
 
     const updatePreferences = useCallback((next: Partial<HistoryPreferences>) => {
-        setPreferences((prev) => ({ ...prev, ...next }));
+        setPreferences((prev) => {
+            for (const key of Object.keys(next) as Array<keyof HistoryPreferences>) {
+                if (next[key] !== undefined && next[key] !== prev[key]) {
+                    return { ...prev, ...next };
+                }
+            }
+            return prev;
+        });
     }, []);
 
+    const localRouteState = useMemo<HistoryRouteState>(() => ({
+        path: currentPath || null,
+        query: searchQuery || null,
+        sortBy: preferences.sortBy,
+        sortReverse: preferences.sortReverse,
+        starredOnly: preferences.starredOnly,
+        mediaType: preferences.mediaType,
+        currentFolderOnly: preferences.currentFolderOnly,
+        image: selectedImage ? getHistoryRelativePath(selectedImage) : null,
+        viewId: activeViewId,
+    }), [
+        activeViewId,
+        currentPath,
+        preferences.currentFolderOnly,
+        preferences.mediaType,
+        preferences.sortBy,
+        preferences.sortReverse,
+        preferences.starredOnly,
+        searchQuery,
+        selectedImage,
+    ]);
+    const normalizedRouteState = useMemo(() => normalizeHistoryRouteState(routeState), [routeState]);
+    const comparableLocalRouteState = useMemo<HistoryRouteState>(() => ({
+        ...localRouteState,
+        image: null,
+    }), [localRouteState]);
+    const comparableNormalizedRouteState = useMemo<HistoryRouteState>(() => ({
+        ...normalizedRouteState,
+        image: null,
+    }), [normalizedRouteState]);
+    const comparableNormalizedRouteStateKey = useMemo(
+        () => serializeHistoryRouteState(comparableNormalizedRouteState),
+        [comparableNormalizedRouteState]
+    );
+
     useEffect(() => {
-        clearSelection();
-        setSelectedImage(null);
+        queueMicrotask(() => {
+            clearSelection();
+            setSelectedImage(null);
+        });
     }, [clearSelection, historyListQueryKey]);
 
     useEffect(() => {
@@ -287,7 +430,9 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
 
         const match = visibleImages.find((image) => getHistoryRelativePath(image) === routeState.image || image.src === routeState.image);
         if (match && (!selectedImage || getHistorySelectionId(selectedImage) !== getHistorySelectionId(match))) {
-            setSelectedImage(match);
+            queueMicrotask(() => {
+                setSelectedImage(match);
+            });
         }
     }, [routeState?.image, selectedImage, visibleImages]);
 
@@ -309,48 +454,212 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     }, [navigateToHistory]);
 
     useEffect(() => {
-        if (!routeState) {
+        if (routeWriteResumeTimeoutRef.current !== null) {
+            window.clearTimeout(routeWriteResumeTimeoutRef.current);
+            routeWriteResumeTimeoutRef.current = null;
+        }
+
+        if (lastAppliedRouteStateKeyRef.current === comparableNormalizedRouteStateKey) {
+            return;
+        }
+        lastAppliedRouteStateKeyRef.current = comparableNormalizedRouteStateKey;
+
+        if (isHistoryRouteStateEqual(comparableNormalizedRouteState, comparableLocalRouteState)) {
+            routeWriteSuppressedRef.current = false;
             return;
         }
 
-        if (routeState.path !== undefined && routeState.path !== currentPath) {
-            setCurrentPath(routeState.path || '');
-        }
-        if (routeState.query !== undefined && routeState.query !== searchQuery) {
-            setSearchQuery(routeState.query || '');
-        }
-        if (routeState.viewId && routeState.viewId !== activeViewId) {
-            setActiveView(routeState.viewId);
-        }
-        if (
-            routeState.sortBy && routeState.sortBy !== preferences.sortBy
-            || routeState.sortReverse !== undefined && routeState.sortReverse !== preferences.sortReverse
-            || routeState.starredOnly !== undefined && routeState.starredOnly !== preferences.starredOnly
-            || routeState.mediaType && routeState.mediaType !== preferences.mediaType
-            || routeState.currentFolderOnly !== undefined && routeState.currentFolderOnly !== preferences.currentFolderOnly
-        ) {
-            setPreferences((prev) => ({
-                ...prev,
-                sortBy: routeState.sortBy ?? prev.sortBy,
-                sortReverse: routeState.sortReverse ?? prev.sortReverse,
-                starredOnly: routeState.starredOnly ?? prev.starredOnly,
-                mediaType: routeState.mediaType ?? prev.mediaType,
-                currentFolderOnly: routeState.currentFolderOnly ?? prev.currentFolderOnly,
-            }));
-        }
+        routeWriteSuppressedRef.current = true;
+        let cancelled = false;
+
+        queueMicrotask(() => {
+            if (cancelled) {
+                return;
+            }
+
+            if (normalizedRouteState.path !== (currentPath || null)) {
+                setCurrentPath(normalizedRouteState.path || '');
+            }
+            if (normalizedRouteState.query !== (searchQuery || null)) {
+                setSearchQuery(normalizedRouteState.query || '');
+            }
+            if ((normalizedRouteState.viewId || null) !== activeViewId) {
+                setActiveView(normalizedRouteState.viewId || null);
+            }
+
+            setPreferences((prev) => {
+                const nextPreferences = {
+                    ...prev,
+                    sortBy: normalizedRouteState.sortBy ?? prev.sortBy,
+                    sortReverse: normalizedRouteState.sortReverse ?? prev.sortReverse,
+                    starredOnly: normalizedRouteState.starredOnly ?? prev.starredOnly,
+                    mediaType: normalizedRouteState.mediaType ?? prev.mediaType,
+                    currentFolderOnly: normalizedRouteState.currentFolderOnly ?? prev.currentFolderOnly,
+                };
+                if (
+                    nextPreferences.sortBy === prev.sortBy
+                    && nextPreferences.sortReverse === prev.sortReverse
+                    && nextPreferences.starredOnly === prev.starredOnly
+                    && nextPreferences.mediaType === prev.mediaType
+                    && nextPreferences.currentFolderOnly === prev.currentFolderOnly
+                ) {
+                    return prev;
+                }
+                return nextPreferences;
+            });
+
+            routeWriteResumeTimeoutRef.current = window.setTimeout(() => {
+                routeWriteSuppressedRef.current = false;
+                routeWriteResumeTimeoutRef.current = null;
+            }, 0);
+        });
+
+        return () => {
+            cancelled = true;
+            if (routeWriteResumeTimeoutRef.current !== null) {
+                window.clearTimeout(routeWriteResumeTimeoutRef.current);
+                routeWriteResumeTimeoutRef.current = null;
+            }
+            routeWriteSuppressedRef.current = false;
+        };
     }, [
         activeViewId,
+        comparableLocalRouteState,
+        comparableNormalizedRouteState,
+        comparableNormalizedRouteStateKey,
         currentPath,
-        preferences.currentFolderOnly,
-        preferences.mediaType,
-        preferences.sortBy,
-        preferences.sortReverse,
-        preferences.starredOnly,
-        routeState,
-        searchQuery,
+        normalizedRouteState.currentFolderOnly,
+        normalizedRouteState.mediaType,
+        normalizedRouteState.path,
+        normalizedRouteState.query,
+        normalizedRouteState.sortBy,
+        normalizedRouteState.sortReverse,
+        normalizedRouteState.starredOnly,
+        normalizedRouteState.viewId,
         setActiveView,
         setSearchQuery,
+        searchQuery,
     ]);
+
+    useEffect(() => {
+        if (!historyQueryResult.isFetching) {
+            historyFetchStartedAtRef.current = null;
+            return;
+        }
+
+        if (historyFetchStartedAtRef.current === null) {
+            historyFetchStartedAtRef.current = performance.now();
+        }
+
+        const softTimeoutId = window.setTimeout(() => {
+            const startedAt = historyFetchStartedAtRef.current;
+            const elapsedSeconds = startedAt === null ? 8 : Math.max(8, Math.round((performance.now() - startedAt) / 1000));
+            const message = `History has been updating for ${elapsedSeconds} seconds. Retry the request if the list is stale, or reset sort if this started after changing direction.`;
+            setHistoryRecoveryState({
+                title: 'History is taking longer than expected',
+                message,
+                tone: 'yellow',
+            });
+            notifications.show({
+                title: 'History is still loading',
+                message,
+                color: 'yellow',
+            });
+        }, 8000);
+        const hardTimeoutId = window.setTimeout(() => {
+            const startedAt = historyFetchStartedAtRef.current;
+            const elapsedSeconds = startedAt === null ? 16 : Math.max(16, Math.round((performance.now() - startedAt) / 1000));
+            const message = `History still looks stuck after ${elapsedSeconds} seconds. A retry starts a fresh request, and Reset History View clears filters and route state if the current view keeps hanging.`;
+            setHistoryRecoveryState({
+                title: 'History may be stuck',
+                message,
+                tone: 'orange',
+            });
+        }, 16000);
+
+        return () => {
+            window.clearTimeout(softTimeoutId);
+            window.clearTimeout(hardTimeoutId);
+        };
+    }, [historyQueryResult.isFetching, historyListQueryKey]);
+
+    useEffect(() => {
+        if (historyQueryResult.isFetching || historyError) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => setHistoryRecoveryState(null), 0);
+        return () => window.clearTimeout(timeoutId);
+    }, [historyError, historyQueryResult.isFetching, historyListQueryKey]);
+
+    useEffect(() => {
+        let expected = performance.now() + 2000;
+
+        const intervalId = window.setInterval(() => {
+            const now = performance.now();
+            const delay = now - expected;
+            expected = now + 2000;
+
+            if (document.visibilityState !== 'visible' || delay < 5000) {
+                return;
+            }
+
+            const lastNotificationAt = lastHistoryStallNotificationRef.current;
+            if (now - lastNotificationAt < 30000) {
+                return;
+            }
+
+            lastHistoryStallNotificationRef.current = now;
+            const message = `History recovered after a ${Math.round(delay / 1000)} second UI pause. The list was refreshed in case the previous request was interrupted.`;
+            setHistoryRecoveryState({
+                title: 'History recovered after a long pause',
+                message,
+                tone: 'yellow',
+            });
+            notifications.show({
+                title: 'History recovered',
+                message,
+                color: 'yellow',
+            });
+            void refetchHistory();
+        }, 2000);
+
+        return () => window.clearInterval(intervalId);
+    }, [refetchHistory]);
+
+    const handleRetryHistory = useCallback(async () => {
+        setHistoryRecoveryState(null);
+        historyFetchStartedAtRef.current = performance.now();
+        await queryClient.cancelQueries({ queryKey: historyListQueryKey, exact: true });
+        queryClient.removeQueries({ queryKey: historyListQueryKey, exact: true });
+        setHistoryRecoveryNonce((value) => value + 1);
+    }, [historyListQueryKey]);
+
+    const handleResetHistorySort = useCallback(() => {
+        setHistoryRecoveryState(null);
+        setActiveView(null);
+        updatePreferences({
+            sortBy: DEFAULT_HISTORY_PREFERENCES.sortBy,
+            sortReverse: DEFAULT_HISTORY_PREFERENCES.sortReverse,
+        });
+        setHistoryRecoveryNonce((value) => value + 1);
+    }, [setActiveView, updatePreferences]);
+
+    const handleResetHistoryView = useCallback(async () => {
+        setHistoryRecoveryState(null);
+        setSelectedImage(null);
+        clearSelection();
+        setActiveView(null);
+        setCurrentPath('');
+        setSearchQuery('');
+        setPreferences((prev) => ({
+            ...DEFAULT_HISTORY_PREFERENCES,
+            viewMode: prev.viewMode,
+        }));
+        await queryClient.cancelQueries({ queryKey: historyListQueryKey, exact: true });
+        queryClient.removeQueries({ queryKey: historyListQueryKey, exact: true });
+        setHistoryRecoveryNonce((value) => value + 1);
+    }, [clearSelection, historyListQueryKey, setActiveView, setSearchQuery]);
 
     const handleFileSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -516,6 +825,45 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
             color: 'teal',
         });
     }, [addToCollection, selectedImages]);
+
+    const handleCreateReviewSet = useCallback(() => {
+        if (selectedImages.length === 0) {
+            return;
+        }
+        const projectId = activeProjectId ?? ensureActiveProject();
+        const name = window.prompt('Review set name:', 'History Review Set');
+        if (!name?.trim()) {
+            return;
+        }
+        createReviewSet({
+            name: name.trim(),
+            projectId,
+            description: 'Created from selected History items.',
+            items: selectedImages.map((image) => {
+                const summary = getHistoryMetadataSummary(image);
+                return {
+                    imageId: getHistorySelectionId(image),
+                    imageSrc: image.src,
+                    state: 'shortlisted' as const,
+                    rating: null,
+                    note: '',
+                    provenance: {
+                        source: 'history' as const,
+                        projectId,
+                        prompt: summary.prompt,
+                        model: summary.model,
+                        parentImageId: getHistorySelectionId(image),
+                        capturedAt: Date.now(),
+                    },
+                };
+            }),
+        });
+        notifications.show({
+            title: 'Review Set Created',
+            message: `${selectedImages.length} item(s) added to ${name.trim()}.`,
+            color: 'teal',
+        });
+    }, [activeProjectId, createReviewSet, ensureActiveProject, selectedImages]);
 
     const handleEdit = useCallback((image: HistoryImageItem) => {
         closeSelectedImage();
@@ -693,29 +1041,18 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     }, [selectedImage, selectedImages]);
 
     useEffect(() => {
-        navigateToHistory({
-            path: currentPath || null,
-            query: searchQuery || null,
-            sortBy: preferences.sortBy,
-            sortReverse: preferences.sortReverse,
-            starredOnly: preferences.starredOnly,
-            mediaType: preferences.mediaType,
-            currentFolderOnly: preferences.currentFolderOnly,
-            image: selectedImage ? getHistoryRelativePath(selectedImage) : null,
-            viewId: activeViewId,
-        });
-    }, [
-        activeViewId,
-        currentPath,
-        navigateToHistory,
-        preferences.currentFolderOnly,
-        preferences.mediaType,
-        preferences.sortBy,
-        preferences.sortReverse,
-        preferences.starredOnly,
-        searchQuery,
-        selectedImage,
-    ]);
+        if (normalizedRouteState.image && !selectedImage) {
+            return;
+        }
+        if (routeWriteSuppressedRef.current) {
+            return;
+        }
+        if (isHistoryRouteStateEqual(normalizedRouteState, localRouteState)) {
+            return;
+        }
+
+        navigateToHistory(localRouteState);
+    }, [localRouteState, navigateToHistory, normalizedRouteState, selectedImage]);
 
     const handleCompare = useCallback(() => {
         if (selectedImages.length !== 2) {
@@ -975,6 +1312,15 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                                     Add To Collection
                                 </SwarmButton>
                                 <SwarmButton
+                                    tone="primary"
+                                    emphasis="soft"
+                                    size="xs"
+                                    onClick={handleCreateReviewSet}
+                                    disabled={selectionCount === 0}
+                                >
+                                    Review Set
+                                </SwarmButton>
+                                <SwarmButton
                                     tone="secondary"
                                     emphasis="soft"
                                     size="xs"
@@ -1087,13 +1433,38 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                     <Center h="100%">
                         <Stack align="center" gap="sm">
                             <Text c="red.4">{historyError}</Text>
-                            <SwarmButton tone="secondary" onClick={() => void refetchHistory()}>
+                            <SwarmButton tone="secondary" onClick={() => void handleRetryHistory()}>
                                 Retry
                             </SwarmButton>
                         </Stack>
                     </Center>
                 ) : (
                     <Stack gap="md" style={{ height: '100%' }}>
+                        {historyRecoveryState && (
+                            <Paper p="sm" radius="md" withBorder>
+                                <Stack gap="sm">
+                                    <Stack gap={2}>
+                                        <Text size="sm" fw={600} c={historyRecoveryState.tone === 'orange' ? 'orange.3' : 'yellow.3'}>
+                                            {historyRecoveryState.title}
+                                        </Text>
+                                        <Text size="sm" c="dimmed">
+                                            {historyRecoveryState.message}
+                                        </Text>
+                                    </Stack>
+                                    <Group gap="xs" wrap="wrap">
+                                        <SwarmButton tone="secondary" emphasis="ghost" size="xs" onClick={() => void handleRetryHistory()}>
+                                            Retry Request
+                                        </SwarmButton>
+                                        <SwarmButton tone="secondary" emphasis="ghost" size="xs" onClick={handleResetHistorySort}>
+                                            Reset Sort
+                                        </SwarmButton>
+                                        <SwarmButton tone="secondary" emphasis="ghost" size="xs" onClick={() => void handleResetHistoryView()}>
+                                            Reset History View
+                                        </SwarmButton>
+                                    </Group>
+                                </Stack>
+                            </Paper>
+                        )}
                         {preferences.viewMode === 'folders' && historyFolders.length > 0 && (
                             <Stack gap="xs">
                                 <Text size="sm" fw={600} tt="uppercase" style={{ color: 'var(--theme-gray-1)' }}>

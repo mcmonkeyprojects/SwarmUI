@@ -161,6 +161,28 @@ function repoStatusFromUpdateBucket(name: string, bucket: UpstreamUpdateBucket):
   };
 }
 
+function repoStatusFromUpdateName(name: string): RepoUpdateStatus {
+  return repoStatusFromUpdateBucket(name, {
+    count: 1,
+    preview: ['Update available'],
+  });
+}
+
+function mergeMissingUpdateRepos(
+  repos: RepoUpdateStatus[] | undefined,
+  updateNames: string[] | undefined
+): RepoUpdateStatus[] {
+  const merged = [...(repos ?? [])];
+  const knownNames = new Set(merged.map((repo) => repo.name));
+  for (const name of updateNames ?? []) {
+    if (!knownNames.has(name)) {
+      merged.push(repoStatusFromUpdateName(name));
+      knownNames.add(name);
+    }
+  }
+  return merged;
+}
+
 function normalizeUpdateCheckResponse(response: unknown): UpdateCheckResponse {
   const record = response && typeof response === 'object'
     ? response as Record<string, unknown>
@@ -168,12 +190,20 @@ function normalizeUpdateCheckResponse(response: unknown): UpdateCheckResponse {
 
   if ('server_updates_count' in record || 'server_repo' in record) {
     const rich = record as unknown as UpdateCheckResponse;
+    const extensionUpdates = rich.extension_updates ?? [];
+    const backendUpdates = rich.backend_updates ?? [];
     return {
       ...rich,
       server_updates_count: rich.server_updates_count ?? 0,
       server_updates_preview: rich.server_updates_preview ?? [],
-      extension_updates: rich.extension_updates ?? [],
-      backend_updates: rich.backend_updates ?? [],
+      server_repo: rich.server_repo ?? repoStatusFromUpdateBucket('SwarmUI', {
+        count: rich.server_updates_count ?? 0,
+        preview: rich.server_updates_preview ?? [],
+      }),
+      extension_updates: extensionUpdates,
+      backend_updates: backendUpdates,
+      extension_repos: mergeMissingUpdateRepos(rich.extension_repos, extensionUpdates),
+      backend_repos: mergeMissingUpdateRepos(rich.backend_repos, backendUpdates),
       warnings: rich.warnings ?? [],
     };
   }
@@ -1776,9 +1806,13 @@ export class SwarmUIClient {
     aggressive?: boolean;
     force?: boolean;
   }): Promise<UpdateAndRestartResponse> {
+    const extensionsToUpdate = params?.extensionsToUpdate ?? [];
+    const backendsToUpdate = params?.backendsToUpdate ?? [];
     const request = {
-      extensionsToUpdate: params?.extensionsToUpdate ?? [],
-      backendsToUpdate: params?.backendsToUpdate ?? [],
+      updateExtensions: params?.updateExtensions ?? extensionsToUpdate.length > 0,
+      updateBackends: params?.updateBackends ?? backendsToUpdate.length > 0,
+      extensionsToUpdate,
+      backendsToUpdate,
       doUpdateServer: params?.doUpdateServer ?? true,
       aggressive: params?.aggressive ?? false,
       force: params?.force ?? false,

@@ -17,6 +17,7 @@ import { useAllModelData, useLoRAs } from '../hooks/useModels';
 import { useGenerationStore, useModeToggles } from '../store/generationStore';
 import { buildAssetCatalog, type AssetCatalogItem, type AssetCatalogKind } from '../features/assets/catalog';
 import { useNavigationStore } from '../stores/navigationStore';
+import { useCreativeWorkspaceStore } from '../stores/creativeWorkspaceStore';
 import { SwarmButton } from './ui';
 
 interface AssetCatalogModalProps {
@@ -43,6 +44,7 @@ export function AssetCatalogModal({ opened, onClose }: AssetCatalogModalProps) {
     const generationStore = useGenerationStore();
     const { enableControlNet, enableVideo } = useModeToggles();
     const navigate = useNavigationStore((state) => state.navigateToGenerate);
+    const { activeProjectId, ensureActiveProject, createAssetPack } = useCreativeWorkspaceStore();
 
     const items = useMemo(() => buildAssetCatalog({
         models,
@@ -112,6 +114,30 @@ export function AssetCatalogModal({ opened, onClose }: AssetCatalogModalProps) {
         onClose();
     };
 
+    const saveAssetPack = (item: AssetCatalogItem) => {
+        const projectId = activeProjectId ?? ensureActiveProject();
+        createAssetPack({
+            name: `${item.title} Pack`,
+            description: item.compatibility.reason,
+            projectId,
+            items: [
+                {
+                    id: item.id,
+                    kind: item.kind,
+                    name: item.name,
+                    title: item.title,
+                    compatibilityNote: item.compatibility.reason,
+                },
+            ],
+            recommendedParams: item.kind === 'model' ? { model: item.name } : {},
+        });
+        notifications.show({
+            title: 'Asset Pack Saved',
+            message: `${item.title} was saved to the active project.`,
+            color: 'teal',
+        });
+    };
+
     return (
         <Modal
             opened={opened}
@@ -154,7 +180,7 @@ export function AssetCatalogModal({ opened, onClose }: AssetCatalogModalProps) {
                                     </Group>
                                     <Group gap="xs" wrap="wrap">
                                         <Badge color={item.compatibility.status === 'recommended' ? 'teal' : item.compatibility.status === 'ready' ? 'blue' : 'yellow'}>
-                                            {item.compatibility.status}
+                                            {item.compatibility.status} {item.compatibility.score}
                                         </Badge>
                                         {item.capabilities.slice(0, 3).map((capability) => (
                                             <Badge key={capability} variant="outline">
@@ -176,6 +202,14 @@ export function AssetCatalogModal({ opened, onClose }: AssetCatalogModalProps) {
                                             onClick={() => applyItem(item)}
                                         >
                                             {item.kind === 'model' ? 'Use model' : 'Open generate'}
+                                        </SwarmButton>
+                                        <SwarmButton
+                                            size="xs"
+                                            tone="secondary"
+                                            emphasis="ghost"
+                                            onClick={() => saveAssetPack(item)}
+                                        >
+                                            Save pack
                                         </SwarmButton>
                                     </Group>
                                 </Stack>

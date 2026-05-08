@@ -25,6 +25,7 @@ import {
 import {
   IconCheck,
   IconDownload,
+  IconExternalLink,
   IconPhoto,
   IconRefresh,
   IconSparkles,
@@ -41,7 +42,13 @@ import { useModelLoading } from '../../hooks/useModelLoading';
 import { useModels } from '../../hooks/useModels';
 import { swarmClient } from '../../api/client';
 import { resolveAssetUrl } from '../../config/runtimeEndpoints';
-import type { RoleplayCharacter, RoleplayInteractionStyle } from '../../types/roleplay';
+import type {
+  RoleplayCharacter,
+  RoleplayCharacterExpressionSprite,
+  RoleplayCharacterVisualProfile,
+  RoleplayInteractionStyle,
+  RoleplayPromptBlockRole,
+} from '../../types/roleplay';
 import {
   CHAT_OPENING_MESSAGE_PRESET_MAP,
   CHAT_OPENING_MESSAGE_PRESETS,
@@ -64,6 +71,11 @@ import {
   normalizeRoleplayPersonalityProfile,
 } from '../../features/roleplay/roleplayCharacterPrompting';
 import { createEmptyRoleplayMemoryState } from '../../features/roleplay/roleplayMemory';
+import {
+  getRoleplayCharacterSourceOpenUrl,
+  getRoleplayCharacterSourceProvider,
+  reimportRoleplayCharacterCard,
+} from '../../features/roleplay/roleplayCharacterSources';
 import { CharacterAvatar } from './CharacterAvatar';
 
 const IP_ADAPTER_MODELS = [
@@ -100,6 +112,13 @@ async function fetchAsDataUrl(url: string): Promise<string> {
   });
 }
 
+function openExternalUrl(url: string) {
+  if (!url) {
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 function areStringListsEqual(left: string[], right: string[]) {
   if (left === right) {
     return true;
@@ -113,6 +132,35 @@ function areStringListsEqual(left: string[], right: string[]) {
     }
   }
   return true;
+}
+
+function labelsToExpressionSprites(
+  labels: string[],
+  currentSprites: RoleplayCharacterExpressionSprite[]
+): RoleplayCharacterExpressionSprite[] {
+  return labels
+    .map((label) => label.trim())
+    .filter((label) => label)
+    .map((label) => {
+      const existingSprite = currentSprites.find((sprite) => sprite.label === label);
+      return (
+        existingSprite ?? {
+          id: crypto.randomUUID(),
+          label,
+          prompt: label,
+          imageUrl: null,
+        }
+      );
+    });
+}
+
+function describeGalleryImage(
+  image: NonNullable<RoleplayCharacter['galleryImages']>[number],
+  index: number
+): string {
+  const role = image.referenceRole || image.source || 'image';
+  const prompt = image.prompt?.trim();
+  return prompt ? `${role} ${index + 1} - ${prompt.slice(0, 42)}` : `${role} ${index + 1}`;
 }
 
 function CharacterEditorForm({
@@ -131,6 +179,16 @@ function CharacterEditorForm({
 
   // ── Character text fields ─────────────────────────────────────────────
   const [name, setName] = useState(character?.name ?? '');
+  const [creator, setCreator] = useState(character?.creator ?? '');
+  const [characterVersion, setCharacterVersion] = useState(character?.characterVersion ?? '1.0');
+  const [sourceUrl, setSourceUrl] = useState(character?.sourceUrl ?? '');
+  const [sourceProviderId, setSourceProviderId] = useState(character?.sourceProviderId ?? '');
+  const [sourceExternalId, setSourceExternalId] = useState(character?.sourceExternalId ?? '');
+  const [sourceLicense, setSourceLicense] = useState(character?.sourceLicense ?? '');
+  const [sourceContentRating, setSourceContentRating] = useState(
+    character?.sourceContentRating ?? ''
+  );
+  const [isReimportingSource, setIsReimportingSource] = useState(false);
   const [interactionStyle, setInteractionStyle] =
     useState<RoleplayInteractionStyle>(initialInteractionStyle);
   const [personality, setPersonality] = useState(character?.personality ?? '');
@@ -154,11 +212,36 @@ function CharacterEditorForm({
   const [exampleMessages, setExampleMessages] = useState(character?.exampleMessages ?? '');
   const [tags, setTags] = useState(character?.tags ?? []);
   const [creatorNotes, setCreatorNotes] = useState(character?.creatorNotes ?? '');
+  const [postHistoryInstructions, setPostHistoryInstructions] = useState(
+    character?.postHistoryInstructions ?? ''
+  );
+  const [characterNote, setCharacterNote] = useState(character?.characterNote ?? '');
+  const [characterNoteRole, setCharacterNoteRole] = useState<RoleplayPromptBlockRole>(
+    character?.characterNoteRole ?? 'system'
+  );
+  const [characterNoteDepth, setCharacterNoteDepth] = useState<number | null>(
+    character?.characterNoteDepth ?? null
+  );
   const [boundLorebookIds, setBoundLorebookIds] = useState(character?.boundLorebookIds ?? []);
   const [openBuilderSections, setOpenBuilderSections] = useState<string[]>(['personality-details']);
 
   // ── Visual identity fields ────────────────────────────────────────────
   const [appearancePrompt, setAppearancePrompt] = useState(character?.appearancePrompt ?? '');
+  const [visualPermanentAnchor, setVisualPermanentAnchor] = useState(
+    character?.visualProfile?.permanentAnchor || character?.appearancePrompt || ''
+  );
+  const [visualDefaultAttire, setVisualDefaultAttire] = useState(
+    character?.visualProfile?.defaultAttire ?? ''
+  );
+  const [visualStyleAnchor, setVisualStyleAnchor] = useState(
+    character?.visualProfile?.styleAnchor ?? ''
+  );
+  const [visualNegativeAnchor, setVisualNegativeAnchor] = useState(
+    character?.visualProfile?.negativeAnchor ?? ''
+  );
+  const [expressionSprites, setExpressionSprites] = useState<RoleplayCharacterExpressionSprite[]>(
+    character?.expressionSprites ?? []
+  );
   const [characterImageModelId, setCharacterImageModelId] = useState(character?.imageModelId ?? '');
   const [characterLora, setCharacterLora] = useState(character?.characterLora ?? '');
   const [characterLoraWeight, setCharacterLoraWeight] = useState<number>(
@@ -194,21 +277,30 @@ function CharacterEditorForm({
     setPortraitCandidates((prev) => prev.slice(1));
     setIpAdapterEnabled(false);
     if (isEditing) {
-      updateCharacterAvatar(character.id, '');
+      updateCharacterAvatar(character.id, '', '');
     }
   };
 
   // ── Store ─────────────────────────────────────────────────────────────
-  const { addCharacter, updateCharacter, setActiveCharacter, updateCharacterAvatar, lorebooks } =
-    useRoleplayStore(
-      useShallow((s) => ({
-        addCharacter: s.addCharacter,
-        updateCharacter: s.updateCharacter,
-        setActiveCharacter: s.setActiveCharacter,
-        updateCharacterAvatar: s.updateCharacterAvatar,
-        lorebooks: s.lorebooks,
-      }))
-    );
+  const {
+    addCharacter,
+    importCharacterCard,
+    updateCharacter,
+    setActiveCharacter,
+    updateCharacterAvatar,
+    addCharacterGalleryImage,
+    lorebooks,
+  } = useRoleplayStore(
+    useShallow((s) => ({
+      addCharacter: s.addCharacter,
+      importCharacterCard: s.importCharacterCard,
+      updateCharacter: s.updateCharacter,
+      setActiveCharacter: s.setActiveCharacter,
+      updateCharacterAvatar: s.updateCharacterAvatar,
+      addCharacterGalleryImage: s.addCharacterGalleryImage,
+      lorebooks: s.lorebooks,
+    }))
+  );
 
   const lorebookOptions = useMemo(
     () =>
@@ -218,12 +310,55 @@ function CharacterEditorForm({
       })),
     [lorebooks]
   );
+  const sourceProvider = useMemo(
+    () => getRoleplayCharacterSourceProvider(sourceProviderId.trim()),
+    [sourceProviderId]
+  );
+  const sourceOpenUrl = useMemo(
+    () =>
+      getRoleplayCharacterSourceOpenUrl({
+        sourceProviderId: sourceProviderId.trim(),
+        sourceExternalId: sourceExternalId.trim(),
+        sourceUrl: sourceUrl.trim(),
+        sourceDownloadUrl: character?.sourceDownloadUrl ?? '',
+      }),
+    [character?.sourceDownloadUrl, sourceExternalId, sourceProviderId, sourceUrl]
+  );
+  const expressionImageOptions = useMemo(
+    () => [
+      { value: '', label: 'No sprite image' },
+      ...((character?.galleryImages ?? []).map((image, index) => ({
+        value: image.imageUrl,
+        label: describeGalleryImage(image, index),
+      }))),
+      ...(currentPortrait &&
+      !(character?.galleryImages ?? []).some((image) => image.imageUrl === currentPortrait)
+        ? [{ value: currentPortrait, label: 'Current portrait' }]
+        : []),
+    ],
+    [character?.galleryImages, currentPortrait]
+  );
 
   // ── Model selection ───────────────────────────────────────────────────
   const generatePageModel = useGenerationStore((s) => s.selectedModel);
   const effectiveModel = characterImageModelId || generatePageModel;
   const { data: sdModels, isLoading: loadingModels } = useModels('Stable-Diffusion');
   const { isLoading: isLoadingModel, progress: modelLoadProgress, loadModel } = useModelLoading();
+  const currentVisualProfile = useMemo<RoleplayCharacterVisualProfile>(
+    () => ({
+      permanentAnchor: visualPermanentAnchor.trim() || appearancePrompt.trim(),
+      defaultAttire: visualDefaultAttire.trim(),
+      styleAnchor: visualStyleAnchor.trim(),
+      negativeAnchor: visualNegativeAnchor.trim(),
+    }),
+    [
+      appearancePrompt,
+      visualDefaultAttire,
+      visualNegativeAnchor,
+      visualPermanentAnchor,
+      visualStyleAnchor,
+    ]
+  );
 
   // ── Avatar preview object (for CharacterAvatar component) ─────────────
   const avatarPreview: RoleplayCharacter = useMemo(
@@ -231,16 +366,42 @@ function CharacterEditorForm({
       id: character?.id ?? 'preview',
       name: name || '?',
       favorite: character?.favorite ?? false,
-      creator: character?.creator ?? '',
-      characterVersion: character?.characterVersion ?? '1.0',
+      creator: creator.trim(),
+      characterVersion: characterVersion.trim(),
       sourceFormat: character?.sourceFormat ?? 'native',
-      sourceUrl: character?.sourceUrl ?? '',
+      sourceUrl: sourceUrl.trim(),
+      sourceProviderId: sourceProviderId.trim(),
+      sourceExternalId: sourceExternalId.trim(),
+      sourceImportedAt: character?.sourceImportedAt ?? null,
+      sourceLastCheckedAt: character?.sourceLastCheckedAt ?? null,
+      sourceLicense: sourceLicense.trim(),
+      sourceContentRating: sourceContentRating.trim(),
       catalogTemplateId: character?.catalogTemplateId ?? null,
       catalogCategory: character?.catalogCategory ?? null,
       cardExtensions: character?.cardExtensions ?? null,
       avatar: currentPortrait,
+      headshotUrl: character?.headshotUrl ?? null,
       interactionStyle,
-      appearancePrompt: appearancePrompt.trim() || null,
+      appearancePrompt: currentVisualProfile.permanentAnchor || null,
+      visualProfile: currentVisualProfile,
+      expressionSprites,
+      galleryImages:
+        character?.galleryImages ??
+        (currentPortrait
+          ? [
+              {
+                id: crypto.randomUUID(),
+                imageUrl: currentPortrait,
+                source: 'portrait' as const,
+                referenceRole: 'portrait' as const,
+                isPrimaryReference: true,
+                prompt: currentVisualProfile.permanentAnchor,
+                sessionId: null,
+                messageId: null,
+                createdAt: character?.createdAt ?? 0,
+              },
+            ]
+          : []),
       imageModelId: characterImageModelId.trim() || null,
       personalityProfile,
       characterLora: characterLora.trim() || null,
@@ -266,6 +427,11 @@ function CharacterEditorForm({
       exampleMessages,
       tags,
       creatorNotes,
+      postHistoryInstructions,
+      characterNote,
+      characterNoteRole,
+      characterNoteDepth,
+      tavernV2Data: character?.tavernV2Data ?? null,
       boundLorebookIds,
       ...createEmptyRoleplayMemoryState(),
       createdAt: character?.createdAt ?? 0,
@@ -274,9 +440,17 @@ function CharacterEditorForm({
     [
       character,
       name,
+      creator,
+      characterVersion,
+      sourceUrl,
+      sourceProviderId,
+      sourceExternalId,
+      sourceLicense,
+      sourceContentRating,
       currentPortrait,
       interactionStyle,
-      appearancePrompt,
+      currentVisualProfile,
+      expressionSprites,
       characterImageModelId,
       personalityProfile,
       characterLora,
@@ -296,6 +470,10 @@ function CharacterEditorForm({
       exampleMessages,
       tags,
       creatorNotes,
+      postHistoryInstructions,
+      characterNote,
+      characterNoteRole,
+      characterNoteDepth,
       boundLorebookIds,
     ]
   );
@@ -333,6 +511,15 @@ function CharacterEditorForm({
     setTags((current) => (areStringListsEqual(current, nextTags) ? current : nextTags));
   };
 
+  const updateExpressionSprite = (
+    spriteId: string,
+    updates: Partial<RoleplayCharacterExpressionSprite>
+  ) => {
+    setExpressionSprites((current) =>
+      current.map((sprite) => (sprite.id === spriteId ? { ...sprite, ...updates } : sprite))
+    );
+  };
+
   const handleAlternateGreetingsChange = (nextGreetings: string[]) => {
     setAlternateGreetings((current) =>
       areStringListsEqual(current, nextGreetings) ? current : nextGreetings
@@ -361,6 +548,13 @@ function CharacterEditorForm({
     });
     const sharedFields = {
       name: name.trim(),
+      creator: creator.trim(),
+      characterVersion: characterVersion.trim() || '1.0',
+      sourceUrl: sourceUrl.trim(),
+      sourceProviderId: sourceProviderId.trim(),
+      sourceExternalId: sourceExternalId.trim(),
+      sourceLicense: sourceLicense.trim(),
+      sourceContentRating: sourceContentRating.trim(),
       interactionStyle,
       personalityProfile,
       personality: personality.trim(),
@@ -378,8 +572,32 @@ function CharacterEditorForm({
       exampleMessages: exampleMessages.trim(),
       tags: tags.map((tag) => tag.trim()).filter((tag) => tag),
       creatorNotes: creatorNotes.trim(),
+      postHistoryInstructions: postHistoryInstructions.trim(),
+      characterNote: characterNote.trim(),
+      characterNoteRole,
+      characterNoteDepth,
+      tavernV2Data: character?.tavernV2Data ?? null,
       boundLorebookIds,
-      appearancePrompt: appearancePrompt.trim() || null,
+      appearancePrompt: currentVisualProfile.permanentAnchor || null,
+      visualProfile: currentVisualProfile,
+      expressionSprites,
+      galleryImages:
+        character?.galleryImages ??
+        (currentPortrait
+          ? [
+              {
+                id: crypto.randomUUID(),
+                imageUrl: currentPortrait,
+                source: 'portrait' as const,
+                referenceRole: 'portrait' as const,
+                isPrimaryReference: true,
+                prompt: currentVisualProfile.permanentAnchor,
+                sessionId: null,
+                messageId: null,
+                createdAt: Date.now(),
+              },
+            ]
+          : []),
       imageModelId: characterImageModelId.trim() || null,
       characterLora: characterLora.trim() || null,
       characterLoraWeight,
@@ -394,14 +612,16 @@ function CharacterEditorForm({
       const newCharacter: RoleplayCharacter = {
         id: crypto.randomUUID(),
         favorite: false,
-        creator: '',
-        characterVersion: '1.0',
         sourceFormat: 'native',
-        sourceUrl: '',
+        sourceDownloadUrl: '',
+        sourceImportedAt: null,
+        sourceLastCheckedAt: null,
         catalogTemplateId: null,
         catalogCategory: null,
         cardExtensions: null,
+        tavernV2Data: null,
         avatar: currentPortrait,
+        headshotUrl: null,
         ...createEmptyRoleplayMemoryState(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -413,14 +633,59 @@ function CharacterEditorForm({
     onClose();
   };
 
+  const handleOpenSource = () => {
+    openExternalUrl(sourceOpenUrl);
+  };
+
+  const handleReimportSource = async () => {
+    if (!character) {
+      return;
+    }
+    setIsReimportingSource(true);
+    try {
+      const preview = await reimportRoleplayCharacterCard({
+        sourceProviderId: sourceProviderId.trim(),
+        sourceExternalId: sourceExternalId.trim(),
+        sourceUrl: sourceUrl.trim(),
+        sourceDownloadUrl: character.sourceDownloadUrl,
+      });
+      importCharacterCard(preview.result, {
+        mode: 'replace',
+        targetCharacterId: character.id,
+        sourceMetadata: preview.sourceMetadata,
+      });
+      notifications.show({
+        title: 'Character Re-imported',
+        message: `${preview.result.character.name} was refreshed from its source.`,
+        color: 'green',
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Re-import Failed',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Could not refresh this character from its source.',
+        color: 'red',
+      });
+    } finally {
+      setIsReimportingSource(false);
+    }
+  };
+
   // ── Portrait generation ───────────────────────────────────────────────
   const handleGeneratePortrait = () => {
-    if (!appearancePrompt.trim()) return;
+    const portraitAnchor = currentVisualProfile.permanentAnchor.trim();
+    if (!portraitAnchor) {
+      return;
+    }
     setIsGeneratingPortrait(true);
 
-    const prompt = `${appearancePrompt.trim()}, portrait, character art, detailed face, front facing, solo`;
+    const prompt = `${portraitAnchor}, portrait, character art, detailed face, front facing, solo`;
     const [portraitWidth, portraitHeight] = portraitResolution.split('x').map(Number);
+    const headshotSize = 512;
 
+    // Generate portrait
     swarmClient.generateImage(
       {
         prompt,
@@ -444,14 +709,33 @@ function CharacterEditorForm({
             .then((dataUrl) => {
               setPortraitCandidates((prev) => [dataUrl, ...prev]);
               if (isEditing) {
-                updateCharacterAvatar(character.id, dataUrl);
+                addCharacterGalleryImage(character.id, {
+                  imageUrl: dataUrl,
+                  source: 'portrait',
+                  referenceRole: 'portrait',
+                  isPrimaryReference: true,
+                  prompt,
+                  sessionId: null,
+                  messageId: null,
+                });
+                // Generate headshot after portrait is ready
+                generateHeadshot(prompt, headshotSize, character, dataUrl);
               }
             })
             .catch(() => {
               // Fallback to URL if conversion fails (e.g. CORS)
               setPortraitCandidates((prev) => [imageUrl, ...prev]);
               if (isEditing) {
-                updateCharacterAvatar(character.id, imageUrl);
+                addCharacterGalleryImage(character.id, {
+                  imageUrl,
+                  source: 'portrait',
+                  referenceRole: 'portrait',
+                  isPrimaryReference: true,
+                  prompt,
+                  sessionId: null,
+                  messageId: null,
+                });
+                generateHeadshot(prompt, headshotSize, character, imageUrl);
               }
             });
         },
@@ -476,6 +760,48 @@ function CharacterEditorForm({
     );
   };
 
+  // ── Headshot generation ──────────────────────────────────────────────
+  const generateHeadshot = (
+    basePrompt: string,
+    size: number,
+    char: RoleplayCharacter,
+    portraitUrl: string
+  ) => {
+    const headshotPrompt = `${basePrompt}, headshot, face close-up, portrait, square format`;
+    swarmClient.generateImage(
+      {
+        prompt: headshotPrompt,
+        ...(effectiveModel ? { model: effectiveModel } : {}),
+        width: size,
+        height: size,
+        images: 1,
+        steps: PORTRAIT_DEFAULT_STEPS,
+        cfgscale: PORTRAIT_DEFAULT_CFG,
+        ...(characterLora.trim()
+          ? { loras: characterLora.trim(), loraweights: String(characterLoraWeight) }
+          : {}),
+      },
+      {
+        onImage: (data: { image?: string }) => {
+          const imageUrl = resolveAssetUrl(
+            data.image?.startsWith('/') ? data.image : `/${data.image}`
+          );
+          fetchAsDataUrl(imageUrl)
+            .then((dataUrl) => {
+              updateCharacterAvatar(char.id, portraitUrl, dataUrl);
+            })
+            .catch(() => {
+              updateCharacterAvatar(char.id, portraitUrl, imageUrl);
+            });
+        },
+        onError: () => {
+          // Still update avatar even if headshot fails
+          updateCharacterAvatar(char.id, portraitUrl);
+        },
+      }
+    );
+  };
+
   // ── File upload ──────────────────────────────────────────────────────
   const handleFileUpload = (file: File | null) => {
     if (!file) return;
@@ -485,7 +811,16 @@ function CharacterEditorForm({
       if (dataUrl) {
         setPortraitCandidates((prev) => [dataUrl, ...prev]);
         if (isEditing) {
-          updateCharacterAvatar(character.id, dataUrl);
+          updateCharacterAvatar(character.id, dataUrl, dataUrl);
+          addCharacterGalleryImage(character.id, {
+            imageUrl: dataUrl,
+            source: 'upload',
+            referenceRole: 'portrait',
+            isPrimaryReference: true,
+            prompt: 'Uploaded portrait',
+            sessionId: null,
+            messageId: null,
+          });
         }
       }
     };
@@ -493,40 +828,26 @@ function CharacterEditorForm({
   };
 
   return (
-    <Grid gutter="lg" align="flex-start">
-      {/* ── LEFT COLUMN: Visual Identity ───────────────────────────── */}
-      <Grid.Col span={5}>
-        <Stack gap="sm">
-          {/* Portrait display */}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              aspectRatio: '1 / 1',
-              borderRadius: 'calc(10px * var(--theme-radius-multiplier))',
-              overflow: 'hidden',
-              backgroundColor: 'var(--elevation-floor)',
-              border: '1px solid var(--theme-gray-5)',
-            }}
-          >
+    <Grid gutter="lg" align="flex-start" className="roleplay-character-editor-grid">
+      <Grid.Col span={{ base: 12, md: 5 }}>
+        <Stack gap="sm" className="roleplay-portrait-studio">
+          <Stack gap={2}>
+            <Text size="sm" fw={700}>
+              Portrait Studio
+            </Text>
+            <Text size="xs" c="dimmed">
+              Build the image that appears on this character card and guides scene generation.
+            </Text>
+          </Stack>
+          <div className="roleplay-portrait-studio__frame">
             {currentPortrait ? (
               <img
                 src={currentPortrait}
                 alt="Character portrait"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                className="roleplay-portrait-studio__image"
               />
             ) : (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                }}
-              >
+              <div className="roleplay-portrait-studio__empty">
                 <CharacterAvatar character={avatarPreview} size={64} />
                 <Text size="xs" c="dimmed">
                   No portrait yet
@@ -536,18 +857,7 @@ function CharacterEditorForm({
 
             {/* Generating overlay */}
             {isGeneratingPortrait && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  backgroundColor: 'rgba(0,0,0,0.6)',
-                }}
-              >
+              <div className="roleplay-portrait-studio__overlay">
                 <Loader size="lg" color="white" />
                 <Text size="xs" c="white" fw={500}>
                   Generating...
@@ -562,7 +872,7 @@ function CharacterEditorForm({
                   variant="filled"
                   color="dark"
                   size="sm"
-                  style={{ position: 'absolute', top: 6, right: 6, opacity: 0.85 }}
+                  className="roleplay-portrait-studio__remove"
                   onClick={removeCurrentPortrait}
                 >
                   <IconTrash size={12} />
@@ -574,7 +884,7 @@ function CharacterEditorForm({
           {/* Portrait history thumbnails */}
           {portraitCandidates.length > 1 && (
             <ScrollArea scrollbarSize={4}>
-              <Group gap={6} wrap="nowrap" pb={4}>
+              <Group gap={8} wrap="nowrap" pb={4} className="roleplay-portrait-candidates">
                 {portraitCandidates.map((url, i) => (
                   <Tooltip
                     key={i}
@@ -582,45 +892,15 @@ function CharacterEditorForm({
                   >
                     <div
                       onClick={() => selectPortrait(i)}
-                      style={{
-                        position: 'relative',
-                        width: 52,
-                        height: 52,
-                        flexShrink: 0,
-                        borderRadius: 'calc(6px * var(--theme-radius-multiplier))',
-                        overflow: 'hidden',
-                        cursor: i === 0 ? 'default' : 'pointer',
-                        border:
-                          i === 0
-                            ? '2px solid var(--theme-brand)'
-                            : '2px solid var(--theme-gray-5)',
-                      }}
+                      className="roleplay-portrait-candidate"
+                      data-active={i === 0}
                     >
                       <img
                         src={url}
                         alt={`Portrait ${i + 1}`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: 'block',
-                        }}
                       />
                       {i === 0 && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            bottom: 2,
-                            right: 2,
-                            backgroundColor: 'var(--theme-brand)',
-                            borderRadius: '50%',
-                            width: 14,
-                            height: 14,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
+                        <div className="roleplay-portrait-candidate__check">
                           <IconCheck size={9} color="white" />
                         </div>
                       )}
@@ -696,7 +976,7 @@ function CharacterEditorForm({
               leftSection={hasPortrait ? <IconRefresh size={13} /> : <IconSparkles size={13} />}
               onClick={handleGeneratePortrait}
               loading={isGeneratingPortrait}
-              disabled={!appearancePrompt.trim() || isGeneratingPortrait}
+              disabled={!currentVisualProfile.permanentAnchor || isGeneratingPortrait}
             >
               {hasPortrait ? 'Regenerate' : 'Generate Portrait'}
             </SwarmButton>
@@ -725,7 +1005,7 @@ function CharacterEditorForm({
           {/* Appearance description */}
           <Textarea
             label="Appearance Description"
-            description="Used for portrait generation and prepended to every scene image"
+            description="Legacy field kept for older cards. The visual profile below is used for continuity prompts."
             placeholder="silver hair, violet eyes, leather armor, anime style, detailed illustration"
             value={appearancePrompt}
             onChange={(e) => setAppearancePrompt(e.currentTarget.value)}
@@ -736,6 +1016,49 @@ function CharacterEditorForm({
           />
 
           {/* ── Image Consistency ─────────────────────────────── */}
+          <Divider label="Visual Profile" labelPosition="center" mt={4} />
+          <Textarea
+            label="Permanent Visual Anchor"
+            description="Stable face, body, age range, hair, eyes, markings, and identity traits."
+            placeholder="adult woman, pale skin, sharp green eyes, heart-shaped face, long black hair with blunt fringe..."
+            value={visualPermanentAnchor}
+            onChange={(e) => setVisualPermanentAnchor(e.currentTarget.value)}
+            minRows={3}
+            maxRows={6}
+            autosize
+            size="sm"
+          />
+          <Textarea
+            label="Default Attire"
+            placeholder="black fitted turtleneck, long charcoal-grey wool coat, silver pendant..."
+            value={visualDefaultAttire}
+            onChange={(e) => setVisualDefaultAttire(e.currentTarget.value)}
+            minRows={2}
+            maxRows={4}
+            autosize
+            size="sm"
+          />
+          <Textarea
+            label="Style Anchor"
+            placeholder="cinematic semi-realistic anime, soft rim lighting, detailed eyes, high detail..."
+            value={visualStyleAnchor}
+            onChange={(e) => setVisualStyleAnchor(e.currentTarget.value)}
+            minRows={2}
+            maxRows={4}
+            autosize
+            size="sm"
+          />
+          <Textarea
+            label="Negative Anchor"
+            placeholder="different eye color, short hair, missing beauty mark, different face, inconsistent age..."
+            value={visualNegativeAnchor}
+            onChange={(e) => setVisualNegativeAnchor(e.currentTarget.value)}
+            minRows={2}
+            maxRows={4}
+            autosize
+            size="sm"
+          />
+
           <Divider label="Image Consistency" labelPosition="center" mt={4} />
 
           {/* LoRA */}
@@ -814,18 +1137,18 @@ function CharacterEditorForm({
       </Grid.Col>
 
       {/* ── RIGHT COLUMN: Character Definition ─────────────────────── */}
-      <Grid.Col span={7}>
-        <Stack gap="sm" h="100%">
-          <Tabs defaultValue="basics" keepMounted={false}>
-            <Tabs.List>
-              <Tabs.Tab value="basics">Basics</Tabs.Tab>
-              <Tabs.Tab value="prompting">Prompting</Tabs.Tab>
-              <Tabs.Tab value="greetings">Greetings</Tabs.Tab>
-              <Tabs.Tab value="lore">Lore</Tabs.Tab>
-              <Tabs.Tab value="visuals">Visuals</Tabs.Tab>
+      <Grid.Col span={{ base: 12, md: 7 }}>
+        <Stack gap="sm" h="100%" className="roleplay-character-definition-panel">
+          <Tabs defaultValue="profile" keepMounted={false} className="roleplay-character-editor-tabs">
+            <Tabs.List grow>
+              <Tabs.Tab value="profile">Profile</Tabs.Tab>
+              <Tabs.Tab value="personality">Personality</Tabs.Tab>
+              <Tabs.Tab value="opening">Opening</Tabs.Tab>
+              <Tabs.Tab value="advanced">Advanced</Tabs.Tab>
             </Tabs.List>
 
-            <Tabs.Panel value="basics" pt="sm">
+            <Tabs.Panel value="profile" pt="sm">
+              <Stack gap="sm">
               <TextInput
                 label="Name"
                 placeholder="Character name"
@@ -833,6 +1156,24 @@ function CharacterEditorForm({
                 onChange={(e) => setName(e.currentTarget.value)}
                 required
               />
+              <Grid gutter="xs">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                  <TextInput
+                    label="Creator"
+                    placeholder="Author name"
+                    value={creator}
+                    onChange={(e) => setCreator(e.currentTarget.value)}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                  <TextInput
+                    label="Character Version"
+                    placeholder="1.0"
+                    value={characterVersion}
+                    onChange={(e) => setCharacterVersion(e.currentTarget.value)}
+                  />
+                </Grid.Col>
+              </Grid>
               <Select
                 label="Interaction Style"
                 description={interactionStyleConfig.description}
@@ -844,20 +1185,33 @@ function CharacterEditorForm({
                 onChange={handleInteractionStyleChange}
                 allowDeselect={false}
               />
-              <Textarea
-                label="Description"
-                description="High-level character definition used in the compiled prompt."
-                value={description}
-                onChange={(e) => setDescription(e.currentTarget.value)}
-                minRows={4}
-                autosize
-              />
               <TagsInput
                 label="Tags"
                 value={tags}
                 onChange={handleTagsChange}
                 placeholder="Add character tags"
               />
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value="personality" pt="sm">
+              <Stack gap="sm">
+                <Textarea
+                  label="Description"
+                  description="Maps to Tavern card description."
+                  value={description}
+                  onChange={(e) => setDescription(e.currentTarget.value)}
+                  minRows={4}
+                  autosize
+                />
+                <Textarea
+                  label="Scenario"
+                  description="Maps to Tavern card scenario."
+                  value={scenario}
+                  onChange={(e) => setScenario(e.currentTarget.value)}
+                  minRows={4}
+                  autosize
+                />
               <Stack gap={4}>
                 <Group justify="space-between" align="center">
                   <Text size="sm" fw={500}>
@@ -989,9 +1343,10 @@ function CharacterEditorForm({
                   </Accordion.Item>
                 </Accordion>
               </Stack>
+              </Stack>
             </Tabs.Panel>
 
-            <Tabs.Panel value="prompting" pt="sm">
+            <Tabs.Panel value="advanced" pt="sm">
               <Stack gap={4}>
                 <Group justify="space-between" align="center">
                   <Text size="sm" fw={500}>
@@ -1065,33 +1420,243 @@ function CharacterEditorForm({
                   {interactionStyle === 'storyteller' ? 'Roleplay Prompt' : 'Chat Prompt'}
                 </Text>
                 <Textarea
-                  label="Scenario"
-                  description="Scene setup included in the compiled prompt."
-                  value={scenario}
-                  onChange={(e) => setScenario(e.currentTarget.value)}
-                  minRows={4}
-                  autosize
-                />
-                <Textarea
-                  label="Example Messages"
-                  description="Few-shot examples to steer the roleplay voice."
-                  value={exampleMessages}
-                  onChange={(e) => setExampleMessages(e.currentTarget.value)}
-                  minRows={5}
-                  autosize
-                />
-                <Textarea
                   label="Creator Notes"
-                  description="Private authoring notes included with the character definition."
+                  description="Maps to Tavern V2 creator_notes. Kept separate from post-history instructions."
                   value={creatorNotes}
                   onChange={(e) => setCreatorNotes(e.currentTarget.value)}
                   minRows={3}
                   autosize
                 />
+                <Textarea
+                  label="Post-History Instructions"
+                  description="Maps to Tavern V2 post_history_instructions and is inserted after chat history."
+                  value={postHistoryInstructions}
+                  onChange={(e) => setPostHistoryInstructions(e.currentTarget.value)}
+                  minRows={3}
+                  autosize
+                />
+                <Textarea
+                  label="Character Note"
+                  description="Optional Tavern-style note inserted as its own prompt block."
+                  value={characterNote}
+                  onChange={(e) => setCharacterNote(e.currentTarget.value)}
+                  minRows={2}
+                  autosize
+                />
+                <Grid gutter="xs">
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Character Note Role"
+                      data={[
+                        { value: 'system', label: 'System' },
+                        { value: 'user', label: 'User' },
+                        { value: 'assistant', label: 'Assistant' },
+                      ]}
+                      value={characterNoteRole}
+                      onChange={(value) =>
+                        value && setCharacterNoteRole(value as RoleplayPromptBlockRole)
+                      }
+                      allowDeselect={false}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <NumberInput
+                      label="Character Note Depth"
+                      description="Blank inserts before history."
+                      min={0}
+                      value={characterNoteDepth ?? ''}
+                      onChange={(value) =>
+                        setCharacterNoteDepth(typeof value === 'number' ? value : null)
+                      }
+                    />
+                  </Grid.Col>
+                </Grid>
+                <Accordion variant="separated" radius="sm">
+                  <Accordion.Item value="source">
+                    <Accordion.Control>
+                      <Text size="sm" fw={500}>
+                        Source & Compatibility
+                      </Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="xs">
+                        <Text size="xs" c="dimmed">
+                          Format: {character?.sourceFormat ?? 'native'}
+                          {character?.sourceImportedAt
+                            ? ` - Imported ${new Date(character.sourceImportedAt).toLocaleString()}`
+                            : ''}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          Provider: {sourceProvider?.label ?? (sourceProviderId.trim() || 'Manual')}
+                          {character?.sourceLastCheckedAt
+                            ? ` - Last checked ${new Date(character.sourceLastCheckedAt).toLocaleString()}`
+                            : ''}
+                        </Text>
+                        {character ? (
+                          <Group gap="xs">
+                            <SwarmButton
+                              tone="secondary"
+                              emphasis="soft"
+                              size="xs"
+                              leftSection={<IconRefresh size={12} />}
+                              disabled={
+                                isReimportingSource ||
+                                sourceProviderId.trim() === 'local-file' ||
+                                (!sourceUrl.trim() &&
+                                  !character.sourceDownloadUrl &&
+                                  !sourceExternalId.trim())
+                              }
+                              onClick={() => void handleReimportSource()}
+                            >
+                              {isReimportingSource ? 'Re-importing...' : 'Re-import Source'}
+                            </SwarmButton>
+                            <SwarmButton
+                              tone="secondary"
+                              emphasis="ghost"
+                              size="xs"
+                              leftSection={<IconExternalLink size={12} />}
+                              disabled={!sourceOpenUrl}
+                              onClick={handleOpenSource}
+                            >
+                              Open Source
+                            </SwarmButton>
+                          </Group>
+                        ) : null}
+                        <TextInput
+                          label="Source URL"
+                          placeholder="https://..."
+                          value={sourceUrl}
+                          onChange={(e) => setSourceUrl(e.currentTarget.value)}
+                        />
+                        <Grid gutter="xs">
+                          <Grid.Col span={{ base: 12, sm: 6 }}>
+                            <TextInput
+                              label="Provider"
+                              placeholder="direct-url, local-file, sillytavern-bridge"
+                              value={sourceProviderId}
+                              onChange={(e) => setSourceProviderId(e.currentTarget.value)}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={{ base: 12, sm: 6 }}>
+                            <TextInput
+                              label="External ID"
+                              value={sourceExternalId}
+                              onChange={(e) => setSourceExternalId(e.currentTarget.value)}
+                            />
+                          </Grid.Col>
+                        </Grid>
+                        <Grid gutter="xs">
+                          <Grid.Col span={{ base: 12, sm: 6 }}>
+                            <TextInput
+                              label="License"
+                              value={sourceLicense}
+                              onChange={(e) => setSourceLicense(e.currentTarget.value)}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={{ base: 12, sm: 6 }}>
+                            <TextInput
+                              label="Content Rating"
+                              value={sourceContentRating}
+                              onChange={(e) => setSourceContentRating(e.currentTarget.value)}
+                            />
+                          </Grid.Col>
+                        </Grid>
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+                <Divider label="Lore, Visuals & Examples" labelPosition="center" />
+                <MultiSelect
+                  label="Bound Lorebooks"
+                  description="These lorebooks are always available to this character."
+                  data={lorebookOptions}
+                  value={boundLorebookIds}
+                  onChange={handleBoundLorebooksChange}
+                  searchable
+                  placeholder="Choose lorebooks"
+                />
+                <Textarea
+                  label="Scene Suggestion Prompt"
+                  description="How the AI is asked to describe the current scene for image generation."
+                  placeholder="Describe the current visual scene in a single vivid sentence suitable as an image prompt..."
+                  value={sceneSuggestionPrompt}
+                  onChange={(e) => setSceneSuggestionPrompt(e.currentTarget.value)}
+                  minRows={2}
+                  maxRows={5}
+                  autosize
+                />
+                <TagsInput
+                  label="Expression / Sprite Slots"
+                  description="Named expression cues for chat staging. Each slot can carry its own prompt and optional gallery image."
+                  data={expressionSprites.map((sprite) => sprite.label)}
+                  value={expressionSprites.map((sprite) => sprite.label)}
+                  onChange={(labels) =>
+                    setExpressionSprites((current) => labelsToExpressionSprites(labels, current))
+                  }
+                  placeholder="smile, blush, angry, wounded, focused"
+                />
+                {expressionSprites.length > 0 ? (
+                  <Stack gap="xs" className="roleplay-expression-sprite-list">
+                    {expressionSprites.map((sprite) => (
+                      <div key={sprite.id} className="roleplay-expression-sprite-row">
+                        <Group align="flex-start" wrap="nowrap">
+                          <div className="roleplay-expression-sprite-thumb">
+                            {sprite.imageUrl ? (
+                              <img src={resolveAssetUrl(sprite.imageUrl)} alt={sprite.label} />
+                            ) : (
+                              <span>{sprite.label.slice(0, 2).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <Stack gap={6} style={{ flex: 1, minWidth: 0 }}>
+                            <Group grow align="flex-start">
+                              <Textarea
+                                label={`${sprite.label} Prompt`}
+                                value={sprite.prompt ?? ''}
+                                onChange={(event) =>
+                                  updateExpressionSprite(sprite.id, {
+                                    prompt: event.currentTarget.value,
+                                  })
+                                }
+                                minRows={2}
+                                autosize
+                                placeholder="facial expression, pose, sprite cue, emotion"
+                              />
+                              <Select
+                                label="Sprite Image"
+                                data={expressionImageOptions}
+                                value={sprite.imageUrl ?? ''}
+                                onChange={(value) =>
+                                  updateExpressionSprite(sprite.id, {
+                                    imageUrl: value || null,
+                                  })
+                                }
+                                searchable
+                                allowDeselect={false}
+                              />
+                            </Group>
+                            <Text size="xs" c="dimmed">
+                              Used by stage controls and image prompt continuity when this expression is active.
+                            </Text>
+                          </Stack>
+                        </Group>
+                      </div>
+                    ))}
+                  </Stack>
+                ) : null}
+                <Textarea
+                  label="Example Dialogues"
+                  description="Maps to Tavern card mes_example."
+                  placeholder="<START>\n{{user}}: Hello.\n{{char}}: Hello there."
+                  value={exampleMessages}
+                  onChange={(e) => setExampleMessages(e.currentTarget.value)}
+                  minRows={8}
+                  autosize
+                  styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
+                />
               </Stack>
             </Tabs.Panel>
 
-            <Tabs.Panel value="greetings" pt="sm">
+            <Tabs.Panel value="opening" pt="sm">
               <Stack gap={4}>
                 <Select
                   label="Chat Opening Preset"
@@ -1167,47 +1732,6 @@ function CharacterEditorForm({
               </Stack>
             </Tabs.Panel>
 
-            <Tabs.Panel value="lore" pt="sm">
-              <Stack gap="sm">
-                <MultiSelect
-                  label="Bound Lorebooks"
-                  description="These lorebooks are always available to this character."
-                  data={lorebookOptions}
-                  value={boundLorebookIds}
-                  onChange={handleBoundLorebooksChange}
-                  searchable
-                  placeholder="Choose lorebooks"
-                />
-                <Textarea
-                  label="Scene Suggestion Prompt"
-                  description="Optional — how the AI is asked to describe the current scene for image generation"
-                  placeholder="Describe the current visual scene in a single vivid sentence suitable as an image prompt..."
-                  value={sceneSuggestionPrompt}
-                  onChange={(e) => setSceneSuggestionPrompt(e.currentTarget.value)}
-                  minRows={2}
-                  maxRows={5}
-                  autosize
-                />
-              </Stack>
-            </Tabs.Panel>
-
-            <Tabs.Panel value="visuals" pt="sm">
-              <Stack gap="sm">
-                <Textarea
-                  label="Appearance Description"
-                  description="Used for portrait generation and prepended to every scene image."
-                  placeholder="silver hair, violet eyes, leather armor, anime style, detailed illustration"
-                  value={appearancePrompt}
-                  onChange={(e) => setAppearancePrompt(e.currentTarget.value)}
-                  minRows={4}
-                  autosize
-                />
-                <Text size="sm" c="dimmed">
-                  Portrait generation, image models, LoRA settings, and IP-Adapter controls live in
-                  the left column.
-                </Text>
-              </Stack>
-            </Tabs.Panel>
           </Tabs>
 
           <div style={{ flex: 1 }} />
@@ -1240,11 +1764,15 @@ export function CharacterEditor({ opened, onClose, character }: CharacterEditorP
       title={
         <Group gap="xs">
           <CharacterAvatar character={character} size={24} />
-          <span>{character ? `Edit — ${character.name}` : 'New Character'}</span>
+          <span>{character ? `Edit - ${character.name}` : 'New Character'}</span>
         </Group>
       }
-      size="xl"
+      size="min(1480px, calc(100vw - 32px))"
       scrollAreaComponent={ScrollArea.Autosize}
+      classNames={{
+        content: 'roleplay-character-editor-modal',
+        body: 'roleplay-character-editor-body',
+      }}
     >
       {opened && <CharacterEditorForm key={formKey} character={character} onClose={onClose} />}
     </Modal>

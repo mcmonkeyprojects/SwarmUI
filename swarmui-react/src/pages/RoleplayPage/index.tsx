@@ -1,6 +1,12 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { Group } from '@mantine/core';
-import { IconTheater } from '@tabler/icons-react';
+import {
+    IconLayoutSidebarLeftCollapse,
+    IconLayoutSidebarLeftExpand,
+    IconLayoutSidebarRightCollapse,
+    IconLayoutSidebarRightExpand,
+    IconTheater,
+} from '@tabler/icons-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PageScaffold } from '../../components/layout/PageScaffold';
 import { SectionHero } from '../../components/ui/SectionHero';
@@ -22,11 +28,11 @@ interface RoleplayPageProps {
 
 export function RoleplayPage({ routeState }: RoleplayPageProps) {
     const [controlsPanelOpen, setControlsPanelOpen] = useState(true);
-    const [showCharacterPicker, setShowCharacterPicker] = useState(
-        () => !useRoleplayStore.getState().activeCharacterId
-    );
+    const [deckPanelOpen, setDeckPanelOpen] = useState(true);
+    const [showCharacterPicker, setShowCharacterPicker] = useState(true);
     const generateSceneRef = useRef<(() => void) | null>(null);
     const generateSceneWithPromptRef = useRef<((prompt: string) => void) | null>(null);
+    const appliedRouteCharacterIdRef = useRef<string | null>(null);
     const navigateToRoleplay = useNavigationStore((state) => state.navigateToRoleplay);
 
     const {
@@ -36,6 +42,8 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
         chatSessions,
         connectionStatus,
         selectedModelId,
+        chatProvider,
+        chatApiKey,
         lmStudioEndpoint,
         setConnectionStatus,
         setConnectionMessage,
@@ -51,6 +59,8 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
             chatSessions: s.chatSessions,
             connectionStatus: s.connectionStatus,
             selectedModelId: s.selectedModelId,
+            chatProvider: s.chatProvider,
+            chatApiKey: s.chatApiKey,
             lmStudioEndpoint: s.lmStudioEndpoint,
             setConnectionStatus: s.setConnectionStatus,
             setConnectionMessage: s.setConnectionMessage,
@@ -72,7 +82,11 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
         setConnectionStatus('connecting');
         setConnectionMessage('Connecting...');
 
-        const result = await probeAssistantConnection(lmStudioEndpoint);
+        const result = await probeAssistantConnection(lmStudioEndpoint, {
+            provider: chatProvider,
+            apiKey: chatApiKey,
+            title: 'SwarmUI Roleplay',
+        });
 
         if (result.ok) {
             setConnectionStatus('connected');
@@ -91,6 +105,8 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
         }
     }, [
         lmStudioEndpoint,
+        chatProvider,
+        chatApiKey,
         setConnectionStatus,
         setConnectionMessage,
         setDetectedServerMode,
@@ -102,30 +118,54 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
         probeConnection();
     }, [probeConnection]);
 
-    useEffect(() => {
-        if (!routeState?.characterId || routeState.characterId === activeCharacterId) {
-            return;
-        }
-        if (!characters.some((character) => character.id === routeState.characterId)) {
-            return;
-        }
-        setActiveCharacter(routeState.characterId);
-        queueMicrotask(() =>
-            setShowCharacterPicker((current) => (current ? false : current))
-        );
-    }, [activeCharacterId, characters, routeState?.characterId, setActiveCharacter]);
+    const routeCharacterId = routeState?.characterId ?? null;
+    const characterById = useMemo(
+        () => new Map(characters.map((character) => [character.id, character])),
+        [characters]
+    );
+    const sessionById = useMemo(
+        () => new Map(chatSessions.map((session) => [session.id, session])),
+        [chatSessions]
+    );
+    const routeCharacterExists = routeCharacterId ? characterById.has(routeCharacterId) : false;
 
     useEffect(() => {
-        const routeCharacterId = routeState?.characterId ?? null;
+        if (
+            !routeCharacterId ||
+            routeCharacterId === appliedRouteCharacterIdRef.current ||
+            !routeCharacterExists
+        ) {
+            return;
+        }
+        appliedRouteCharacterIdRef.current = routeCharacterId;
         if (routeCharacterId === activeCharacterId) {
             return;
         }
+        setActiveCharacter(routeCharacterId);
+    }, [activeCharacterId, routeCharacterExists, routeCharacterId, setActiveCharacter]);
+
+    useEffect(() => {
+        if (routeCharacterId === activeCharacterId) {
+            return;
+        }
+        if (routeCharacterId && routeCharacterExists) {
+            return;
+        }
         navigateToRoleplay({ characterId: activeCharacterId });
-    }, [activeCharacterId, navigateToRoleplay, routeState?.characterId]);
+    }, [activeCharacterId, navigateToRoleplay, routeCharacterExists, routeCharacterId]);
+
+    const handleSelectCharacterFromLanding = useCallback(
+        (characterId: string) => {
+            appliedRouteCharacterIdRef.current = characterId;
+            navigateToRoleplay({ characterId });
+            setShowCharacterPicker(false);
+        },
+        [navigateToRoleplay]
+    );
 
     const isShowingCharacterPicker = showCharacterPicker || !activeCharacterId;
-    const activeCharacter = characters.find((character) => character.id === activeCharacterId) ?? null;
-    const activeSession = chatSessions.find((session) => session.id === activeSessionId) ?? null;
+    const activeCharacter = activeCharacterId ? (characterById.get(activeCharacterId) ?? null) : null;
+    const activeSession = activeSessionId ? (sessionById.get(activeSessionId) ?? null) : null;
 
     return (
         <PageScaffold
@@ -137,22 +177,26 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                     icon={<IconTheater size={24} />}
                     rightSection={
                         <Group gap="xs">
-                            <SwarmButton
-                                tone="brand"
-                                emphasis={isShowingCharacterPicker ? 'solid' : 'ghost'}
-                                size="xs"
-                                onClick={() => setShowCharacterPicker((value) => !value)}
-                            >
-                                {isShowingCharacterPicker ? 'Back To Chat' : 'Choose Character'}
-                            </SwarmButton>
-                            <SwarmButton
-                                tone="brand"
-                                emphasis="ghost"
-                                size="xs"
-                                onClick={() => setControlsPanelOpen(!controlsPanelOpen)}
-                            >
-                                {controlsPanelOpen ? 'Hide Controls' : 'Show Controls'}
-                            </SwarmButton>
+                            {activeCharacterId ? (
+                                <SwarmButton
+                                    tone="brand"
+                                    emphasis={isShowingCharacterPicker ? 'solid' : 'ghost'}
+                                    size="xs"
+                                    onClick={() => setShowCharacterPicker((value) => !value)}
+                                >
+                                    {isShowingCharacterPicker ? 'Back To Chat' : 'Choose Character'}
+                                </SwarmButton>
+                            ) : null}
+                            {!isShowingCharacterPicker ? (
+                                <SwarmButton
+                                    tone="brand"
+                                    emphasis="ghost"
+                                    size="xs"
+                                    onClick={() => setControlsPanelOpen(!controlsPanelOpen)}
+                                >
+                                    {controlsPanelOpen ? 'Hide Director' : 'Show Director'}
+                                </SwarmButton>
+                            ) : null}
                         </Group>
                     }
                 />
@@ -176,23 +220,50 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                 {!isShowingCharacterPicker && (
                     <>
                         {/* Character Sidebar */}
-                        <div className="roleplay-deck-panel" style={{ width: sidebar.size }}>
-                            <CharacterSidebar />
-                        </div>
+                        {deckPanelOpen ? (
+                            <>
+                                <div className="roleplay-deck-panel" style={{ width: sidebar.size }}>
+                                    <div className="roleplay-panel-collapse-bar">
+                                        <SwarmButton
+                                            tone="secondary"
+                                            emphasis="ghost"
+                                            size="xs"
+                                            leftSection={<IconLayoutSidebarLeftCollapse size={14} />}
+                                            onClick={() => setDeckPanelOpen(false)}
+                                        >
+                                            Collapse Deck
+                                        </SwarmButton>
+                                    </div>
+                                    <CharacterSidebar />
+                                </div>
 
-                        <ResizeHandle
-                            direction="horizontal"
-                            onPointerDown={sidebar.handlePointerDown}
-                            onNudge={sidebar.nudgeSize}
-                            isResizing={sidebar.isResizing}
-                        />
+                                <ResizeHandle
+                                    direction="horizontal"
+                                    onPointerDown={sidebar.handlePointerDown}
+                                    onNudge={sidebar.nudgeSize}
+                                    isResizing={sidebar.isResizing}
+                                />
+                            </>
+                        ) : (
+                            <div className="roleplay-panel-rail roleplay-panel-rail-left">
+                                <SwarmButton
+                                    tone="secondary"
+                                    emphasis="ghost"
+                                    size="xs"
+                                    onClick={() => setDeckPanelOpen(true)}
+                                >
+                                    <IconLayoutSidebarLeftExpand size={16} />
+                                </SwarmButton>
+                                <span>Deck</span>
+                            </div>
+                        )}
                     </>
                 )}
 
                 {/* Main Panel */}
                 <div className="roleplay-stage-panel">
                     {isShowingCharacterPicker ? (
-                        <CharacterSelectionPanel onSelectCharacter={() => setShowCharacterPicker(false)} />
+                        <CharacterSelectionPanel onSelectCharacter={handleSelectCharacterFromLanding} />
                     ) : (
                         <ChatPanel
                             onRegenerateScene={() => generateSceneRef.current?.()}
@@ -202,20 +273,45 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                 </div>
 
                 {/* Controls Panel */}
-                {controlsPanelOpen && (
+                {!isShowingCharacterPicker && (
                     <>
-                        <div
-                            className="roleplay-director-panel"
-                            style={{
-                                width: 320,
-                            }}
-                        >
-                            <ControlsPanel
-                                onProbeConnection={probeConnection}
-                                onRegisterGenerate={(fn) => { generateSceneRef.current = fn; }}
-                                onRegisterGenerateWithPrompt={(fn) => { generateSceneWithPromptRef.current = fn; }}
-                            />
-                        </div>
+                        {controlsPanelOpen ? (
+                            <div
+                                className="roleplay-director-panel"
+                                style={{
+                                    width: 320,
+                                }}
+                            >
+                                <div className="roleplay-panel-collapse-bar roleplay-panel-collapse-bar-right">
+                                    <SwarmButton
+                                        tone="secondary"
+                                        emphasis="ghost"
+                                        size="xs"
+                                        leftSection={<IconLayoutSidebarRightCollapse size={14} />}
+                                        onClick={() => setControlsPanelOpen(false)}
+                                    >
+                                        Collapse Director
+                                    </SwarmButton>
+                                </div>
+                                <ControlsPanel
+                                    onProbeConnection={probeConnection}
+                                    onRegisterGenerate={(fn) => { generateSceneRef.current = fn; }}
+                                    onRegisterGenerateWithPrompt={(fn) => { generateSceneWithPromptRef.current = fn; }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="roleplay-panel-rail roleplay-panel-rail-right">
+                                <SwarmButton
+                                    tone="secondary"
+                                    emphasis="ghost"
+                                    size="xs"
+                                    onClick={() => setControlsPanelOpen(true)}
+                                >
+                                    <IconLayoutSidebarRightExpand size={16} />
+                                </SwarmButton>
+                                <span>Director</span>
+                            </div>
+                        )}
                     </>
                 )}
             </div>

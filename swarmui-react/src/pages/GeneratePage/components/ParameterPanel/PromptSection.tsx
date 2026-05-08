@@ -211,6 +211,9 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
         required
         value={form.values.prompt}
         onChange={handlePromptChange}
+        promptRole="prompt"
+        contextModel={form.values.model || ''}
+        onNegativePromptChange={(value) => form.setFieldValue('negativeprompt', value)}
         autosize
         minRows={4}
         maxRows={12}
@@ -223,6 +226,8 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
         placeholder="ugly, blurry, bad quality..."
         value={form.values.negativeprompt || ''}
         onChange={(value) => form.setFieldValue('negativeprompt', value)}
+        promptRole="negative"
+        contextModel={form.values.model || ''}
         autosize
         minRows={2}
         maxRows={12}

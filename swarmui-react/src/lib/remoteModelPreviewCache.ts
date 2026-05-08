@@ -4,11 +4,18 @@ import { createIndexedDbStorage } from './indexedDbStorage';
 const storage = createIndexedDbStorage('remote-model-preview-cache');
 const MAX_PREVIEW_CANDIDATES = 8;
 const CIVITAI_PREFIX = 'https://civitai.com/';
-const CIVITAI_GREEN_PREFIX = 'https://civitai.green/';
 const HUGGINGFACE_PREFIX = 'https://huggingface.co/';
+const CIVITAI_HOSTS = new Set([
+  'civitai.com',
+  'www.civitai.com',
+  'civitai.green',
+  'www.civitai.green',
+  'civitai.red',
+  'www.civitai.red',
+]);
 
 const CIVITAI_SOURCE_REGEX =
-  /https?:\/\/(?:www\.)?(?:civitai\.com|civitai\.green)\/(?:models\/\d+(?:\/[^?\s"'<>]+)?(?:\?modelVersionId=\d+)?|api\/download\/models\/\d+)/i;
+  /https?:\/\/(?:www\.)?(?:civitai\.com|civitai\.green|civitai\.red)\/(?:models\/\d+(?:\/[^?\s"'<>]+)?(?:\?modelVersionId=\d+)?|api\/download\/models\/\d+)/i;
 const HUGGINGFACE_SOURCE_REGEX = /https?:\/\/(?:www\.)?huggingface\.co\/[^\s"'<>]+/i;
 
 export interface ParsedCivitAIUrl {
@@ -104,7 +111,7 @@ interface HuggingFaceModelLookup {
 }
 
 export interface RemotePreviewClient {
-  forwardMetadataRequest(url: string): Promise<any | null>;
+  forwardMetadataRequest(url: string): Promise<Record<string, unknown> | null>;
   getModelHeaders(model: string, subtype?: string): Promise<Record<string, unknown>>;
   getModelHash(modelName: string, subtype?: string): Promise<Record<string, unknown>>;
 }
@@ -166,15 +173,15 @@ export const coerceIdString = (value: unknown): string | null => {
 };
 
 export const parseCivitAIUrl = (inputUrl: string): ParsedCivitAIUrl => {
-  let normalizedUrl = inputUrl.trim();
-  if (normalizedUrl.startsWith(CIVITAI_GREEN_PREFIX)) {
-    normalizedUrl = CIVITAI_PREFIX + normalizedUrl.substring(CIVITAI_GREEN_PREFIX.length);
-  }
-  if (!normalizedUrl.startsWith(CIVITAI_PREFIX)) {
-    return { kind: 'invalid', modelId: null, versionId: null, normalizedUrl };
-  }
+  const rawUrl = inputUrl.trim();
+  let normalizedUrl = rawUrl;
   try {
-    const parsed = new URL(normalizedUrl);
+    const parsed = new URL(rawUrl);
+    const host = parsed.hostname.toLowerCase();
+    if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || !CIVITAI_HOSTS.has(host)) {
+      return { kind: 'invalid', modelId: null, versionId: null, normalizedUrl };
+    }
+    normalizedUrl = `${CIVITAI_PREFIX}${`${parsed.pathname}${parsed.search}`.replace(/^\/+/, '')}`;
     const parts = parsed.pathname.split('/').filter(Boolean);
     if (parts[0] === 'models' && parts.length >= 2) {
       return {

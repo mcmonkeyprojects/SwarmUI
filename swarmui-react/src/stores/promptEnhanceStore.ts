@@ -3,9 +3,11 @@ import { persist, devtools } from 'zustand/middleware';
 import type { AssistantConnectionStatus, AssistantServerMode } from '../types/assistant';
 
 const DEFAULT_SYSTEM_PROMPT =
-  'You are an expert at writing prompts for Stable Diffusion image generation. ' +
-  'Take the user\'s prompt and enhance it with more descriptive detail, artistic style references, ' +
-  'lighting, composition, and quality tags. Return ONLY the enhanced prompt text, nothing else.';
+  'You are an expert prompt editor for AI image generation. Preserve the user\'s core subject and intent, ' +
+  'then improve visual specificity, composition, lighting, materials, mood, style, and quality details. ' +
+  'When the subject includes a person, character, or creature, define anatomy details such as eyes, hair, face, hands, pose, body shape, clothing, and visible body parts. ' +
+  'Fill in missing visual details with plausible, coherent choices that support the user\'s idea. ' +
+  'Do not invent major new subjects unless the user asks for them. Keep formatting clean and directly usable.';
 
 const DEFAULT_ASSISTANT_SYSTEM_PROMPT =
   'You are a prompt-writing copilot for image generation. ' +
@@ -13,6 +15,48 @@ const DEFAULT_ASSISTANT_SYSTEM_PROMPT =
   'Keep suggestions grounded in the current model and prompt context.';
 
 export type PromptPresetKey = 'sd' | 'illustrious' | 'pony' | 'flux' | 'zimage';
+export type PromptEnhanceFormatMode = 'auto' | PromptPresetKey;
+export type PromptEnhanceCreativeStrength = 'balanced' | 'conservative' | 'rich';
+
+export function inferPromptPresetKey(modelName: string | null | undefined): PromptPresetKey {
+  const normalized = String(modelName || '').toLowerCase();
+
+  if (normalized.includes('pony')) {
+    return 'pony';
+  }
+  if (
+    normalized.includes('illustrious') ||
+    normalized.includes('animagine') ||
+    normalized.includes('anime') ||
+    normalized.includes('noobai') ||
+    normalized.includes('wai-') ||
+    normalized.includes('wai_')
+  ) {
+    return 'illustrious';
+  }
+  if (normalized.includes('flux')) {
+    return 'flux';
+  }
+  if (
+    normalized.includes('zimage') ||
+    normalized.includes('z-image') ||
+    normalized.includes('z image')
+  ) {
+    return 'zimage';
+  }
+
+  return 'sd';
+}
+
+export function resolvePromptEnhancePreset(
+  formatMode: PromptEnhanceFormatMode | null | undefined,
+  modelName: string | null | undefined
+): PromptPresetKey {
+  if (formatMode && formatMode !== 'auto') {
+    return formatMode;
+  }
+  return inferPromptPresetKey(modelName);
+}
 
 export interface PromptStylePreset {
   key: PromptPresetKey;
@@ -84,6 +128,9 @@ interface PromptEnhanceState {
   systemPrompt: string;
   assistantSystemPrompt: string;
   activePresetKey: PromptPresetKey | null;
+  formatMode: PromptEnhanceFormatMode;
+  creativeStrength: PromptEnhanceCreativeStrength;
+  unloadModelAfterEnhance: boolean;
   isEnhancing: boolean;
   lastError: string | null;
 }
@@ -104,6 +151,9 @@ interface PromptEnhanceActions {
   setSystemPrompt: (systemPrompt: string) => void;
   setAssistantSystemPrompt: (systemPrompt: string) => void;
   setActivePresetKey: (key: PromptPresetKey | null) => void;
+  setFormatMode: (mode: PromptEnhanceFormatMode) => void;
+  setCreativeStrength: (strength: PromptEnhanceCreativeStrength) => void;
+  setUnloadModelAfterEnhance: (enabled: boolean) => void;
   applyPreset: (key: PromptPresetKey) => void;
   setEnhancing: (isEnhancing: boolean) => void;
   setLastError: (error: string | null) => void;
@@ -124,6 +174,9 @@ export const usePromptEnhanceStore = create<PromptEnhanceState & PromptEnhanceAc
         systemPrompt: DEFAULT_SYSTEM_PROMPT,
         assistantSystemPrompt: DEFAULT_ASSISTANT_SYSTEM_PROMPT,
         activePresetKey: null,
+        formatMode: 'auto',
+        creativeStrength: 'balanced',
+        unloadModelAfterEnhance: true,
         isEnhancing: false,
         lastError: null,
 
@@ -150,10 +203,15 @@ export const usePromptEnhanceStore = create<PromptEnhanceState & PromptEnhanceAc
         setSystemPrompt: (systemPrompt) => set({ systemPrompt, activePresetKey: null }),
         setAssistantSystemPrompt: (assistantSystemPrompt) => set({ assistantSystemPrompt }),
         setActivePresetKey: (key) => set({ activePresetKey: key }),
+        setFormatMode: (formatMode) => set(formatMode === 'auto'
+          ? { formatMode, systemPrompt: DEFAULT_SYSTEM_PROMPT, activePresetKey: null }
+          : { formatMode }),
+        setCreativeStrength: (creativeStrength) => set({ creativeStrength }),
+        setUnloadModelAfterEnhance: (unloadModelAfterEnhance) => set({ unloadModelAfterEnhance }),
         applyPreset: (key) => {
           const preset = PROMPT_STYLE_PRESETS.find((p) => p.key === key);
           if (preset) {
-            set({ systemPrompt: preset.systemPrompt, activePresetKey: key });
+            set({ systemPrompt: preset.systemPrompt, activePresetKey: key, formatMode: key });
           }
         },
         setEnhancing: (isEnhancing) => set({ isEnhancing }),
@@ -173,6 +231,9 @@ export const usePromptEnhanceStore = create<PromptEnhanceState & PromptEnhanceAc
           systemPrompt: state.systemPrompt,
           assistantSystemPrompt: state.assistantSystemPrompt,
           activePresetKey: state.activePresetKey,
+          formatMode: state.formatMode,
+          creativeStrength: state.creativeStrength,
+          unloadModelAfterEnhance: state.unloadModelAfterEnhance,
         }),
       }
     ),

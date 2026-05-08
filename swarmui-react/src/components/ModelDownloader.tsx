@@ -48,7 +48,7 @@ import {
   ensureDescriptionHasSourceUrl as ensureRemoteDescriptionHasSourceUrl,
   getSourceCacheKey,
   loadRemoteModelPreviewCache,
-  parseCivitAIUrl as parseRemoteCivitAIUrl,
+  parseCivitAIUrl,
   parseHuggingFaceRepoId as parseRemoteHuggingFaceRepoId,
   refreshRemoteModelPreviewCache,
   type ResolvedRemoteModelSource,
@@ -56,7 +56,6 @@ import {
 
 // CivitAI prefixes
 const CIVITAI_PREFIX = 'https://civitai.com/';
-const CIVITAI_GREEN_PREFIX = 'https://civitai.green/';
 const HUGGINGFACE_PREFIX = 'https://huggingface.co/';
 
 // Model types
@@ -432,13 +431,6 @@ interface CivitAIDetails {
   sourceUrl: string;
 }
 
-interface ParsedCivitAIUrl {
-  kind: 'model' | 'download' | 'invalid';
-  modelId: string | null;
-  versionId: string | null;
-  normalizedUrl: string;
-}
-
 interface ActiveDownload {
   id: string;
   name: string;
@@ -777,7 +769,10 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
   );
 
   const refreshModelFolderQueries = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.modelDownloader.all });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.modelDownloader.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.upscalers.all }),
+    ]);
   }, []);
 
   useEffect(() => {
@@ -946,7 +941,7 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
       if (!trimmedUrl) {
         return null;
       }
-      const parsedCivit = parseRemoteCivitAIUrl(trimmedUrl);
+      const parsedCivit = parseCivitAIUrl(trimmedUrl);
       if (parsedCivit.kind === 'model' && parsedCivit.modelId) {
         const source = {
           sourceType: 'civitai' as const,
@@ -1001,44 +996,6 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     },
     []
   );
-
-  const parseCivitAIUrl = (inputUrl: string): ParsedCivitAIUrl => {
-    let normalizedUrl = inputUrl.trim();
-    if (normalizedUrl.startsWith(CIVITAI_GREEN_PREFIX)) {
-      normalizedUrl = CIVITAI_PREFIX + normalizedUrl.substring(CIVITAI_GREEN_PREFIX.length);
-    }
-    if (!normalizedUrl.startsWith(CIVITAI_PREFIX)) {
-      return { kind: 'invalid', modelId: null, versionId: null, normalizedUrl };
-    }
-    try {
-      const parsed = new URL(normalizedUrl);
-      const parts = parsed.pathname.split('/').filter(Boolean);
-      if (parts[0] === 'models' && parts.length >= 2) {
-        return {
-          kind: 'model',
-          modelId: parts[1],
-          versionId: parsed.searchParams.get('modelVersionId'),
-          normalizedUrl,
-        };
-      }
-      if (
-        parts[0] === 'api' &&
-        parts[1] === 'download' &&
-        parts[2] === 'models' &&
-        parts.length >= 4
-      ) {
-        return {
-          kind: 'download',
-          modelId: null,
-          versionId: parts[3],
-          normalizedUrl,
-        };
-      }
-    } catch (error) {
-      console.error('Failed to parse CivitAI URL:', error);
-    }
-    return { kind: 'invalid', modelId: null, versionId: null, normalizedUrl };
-  };
 
   const parseHuggingFaceRepoId = (inputUrl: string): string | null => {
     try {
@@ -1241,7 +1198,7 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
   const refreshRemoteMetadataForUrl = useCallback(
     async (inputUrl: string): Promise<boolean> => {
       const trimmedUrl = inputUrl.trim();
-      const isDirectCivitDownload = parseRemoteCivitAIUrl(trimmedUrl).kind === 'download';
+      const isDirectCivitDownload = parseCivitAIUrl(trimmedUrl).kind === 'download';
       const source = await resolveRemoteSourceFromUrl(trimmedUrl);
       if (!source) {
         return false;
@@ -1403,13 +1360,16 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
       return;
     }
 
-    if (trimmedUrl.startsWith(CIVITAI_PREFIX) || trimmedUrl.startsWith(CIVITAI_GREEN_PREFIX)) {
-      const parsed = parseCivitAIUrl(trimmedUrl);
+    const parsedCivit = parseCivitAIUrl(trimmedUrl);
+    if (parsedCivit.kind !== 'invalid') {
+      const parsed = parsedCivit;
       setUrl(parsed.normalizedUrl);
-      if (parsed.kind === 'model' || parsed.kind === 'download') {
-        void refreshRemoteMetadataForUrl(parsed.normalizedUrl);
-        return;
-      }
+      void refreshRemoteMetadataForUrl(parsed.normalizedUrl);
+      return;
+    }
+
+    const lowerUrl = trimmedUrl.toLowerCase();
+    if (lowerUrl.includes('civitai.com') || lowerUrl.includes('civitai.green') || lowerUrl.includes('civitai.red')) {
       setUrlStatus({
         type: 'warning',
         message: 'CivitAI link should point to /models/{id} or /api/download/models/{id}',

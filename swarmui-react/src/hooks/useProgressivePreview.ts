@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { profiler } from '../utils/performanceProfiler';
 
 const isDev = import.meta.env.DEV;
+const DATA_URL_PREFIX = 'data:';
 
 interface UseProgressivePreviewOptions {
     metricPrefix?: string;
@@ -52,6 +53,32 @@ export function useProgressivePreview(
         const token = requestTokenRef.current + 1;
         requestTokenRef.current = token;
         pendingSignatureRef.current = source;
+
+        if (source.startsWith(DATA_URL_PREFIX)) {
+            let cancelled = false;
+            queueMicrotask(() => {
+                if (cancelled || requestTokenRef.current !== token) {
+                    return;
+                }
+
+                setDisplaySource(source);
+                committedSignatureRef.current = source;
+                pendingSignatureRef.current = null;
+                commitCountRef.current += 1;
+
+                if (isDev) {
+                    profiler.startTimer(`${metricPrefix}-commit`).end({
+                        signature: source,
+                        commitCount: commitCountRef.current,
+                        commitMode: 'direct-data-url',
+                    });
+                }
+            });
+
+            return () => {
+                cancelled = true;
+            };
+        }
 
         let cancelled = false;
         let committed = false;

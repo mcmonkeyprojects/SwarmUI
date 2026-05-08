@@ -147,6 +147,205 @@ function closeLoadingWindow() {
   loadingWindow = null;
 }
 
+function safeSerializeDesktopEvent(event) {
+  try {
+    return JSON.parse(JSON.stringify(event));
+  } catch {
+    return {
+      type: 'desktop:telemetry-serialization-failed',
+      timestamp: Date.now(),
+    };
+  }
+}
+
+function appendDesktopTelemetryEvent(event) {
+  const nextEvent = safeSerializeDesktopEvent({
+    ...event,
+    timestamp: event.timestamp || Date.now(),
+    packaged: app.isPackaged,
+    platform: process.platform,
+    electron: process.versions.electron,
+  });
+
+  try {
+    fs.mkdirSync(path.dirname(performanceMetricsPath), { recursive: true });
+    let snapshot = {};
+    if (fs.existsSync(performanceMetricsPath)) {
+      try {
+        snapshot = JSON.parse(fs.readFileSync(performanceMetricsPath, 'utf8'));
+      } catch (error) {
+        snapshot = {
+          parseError: error instanceof Error ? error.message : 'Unknown parse error',
+        };
+      }
+    }
+
+    const desktopEvents = Array.isArray(snapshot.desktopEvents)
+      ? snapshot.desktopEvents.slice(-49)
+      : [];
+    desktopEvents.push(nextEvent);
+    fs.writeFileSync(
+      performanceMetricsPath,
+      JSON.stringify(
+        {
+          ...snapshot,
+          desktopEvents,
+          lastDesktopEvent: nextEvent,
+          exportedAt: Date.now(),
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+  } catch (error) {
+    console.error('Failed to append desktop telemetry event:', error);
+  }
+}
+
+function getRendererLoadTarget() {
+  if (isDev) {
+    return { kind: 'url', value: `http://localhost:${vitePort}` };
+  }
+  return { kind: 'file', value: path.join(__dirname, '..', 'dist', 'index.html') };
+}
+
+function loadRendererTarget(window) {
+  const target = getRendererLoadTarget();
+  if (target.kind === 'url') {
+    window.loadURL(target.value);
+  } else {
+    window.loadFile(target.value);
+  }
+}
+
+function loadRendererRecoveryPage(window, reason) {
+  const target = getRendererLoadTarget();
+  const escapedReason = String(reason || 'Unknown renderer failure')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const escapedTarget = target.kind === 'url'
+    ? target.value
+    : `file://${target.value.replace(/\\/g, '/')}`;
+  const targetJson = JSON.stringify(escapedTarget).replace(/</g, '\\u003c');
+  const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SwarmUI Renderer Recovery</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #1b1b20;
+      color: #f1f3f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(720px, calc(100vw - 48px));
+      padding: 28px;
+      border: 1px solid #3a3d45;
+      border-radius: 10px;
+      background: #25262b;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    }
+    h1 { margin: 0 0 12px; font-size: 24px; }
+    p { color: #c1c2c5; line-height: 1.5; }
+    code { display: block; white-space: pre-wrap; color: #ffc9c9; margin: 16px 0; }
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      background: #4dabf7;
+      color: #0b1720;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SwarmUI renderer stopped responding</h1>
+    <p>The desktop wrapper captured the crash and wrote telemetry to the performance snapshot. Reload the interface to continue.</p>
+    <code>${escapedReason}</code>
+    <button onclick="location.href=${targetJson}">Reload Interface</button>
+  </main>
+</body>
+</html>`;
+  window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+}
+
+function setupRendererCrashTelemetry(window) {
+  let recoveryAttempts = 0;
+  const maxRecoveryAttempts = 2;
+
+  window.on('unresponsive', () => {
+    appendDesktopTelemetryEvent({
+      type: 'desktop:window-unresponsive',
+      webContentsId: window.webContents.id,
+      url: window.webContents.getURL(),
+    });
+  });
+
+  window.on('responsive', () => {
+    appendDesktopTelemetryEvent({
+      type: 'desktop:window-responsive',
+      webContentsId: window.webContents.id,
+      url: window.webContents.getURL(),
+    });
+  });
+
+  window.webContents.on('render-process-gone', (_event, details) => {
+    recoveryAttempts++;
+    appendDesktopTelemetryEvent({
+      type: 'desktop:render-process-gone',
+      webContentsId: window.webContents.id,
+      url: window.webContents.getURL(),
+      reason: details.reason,
+      exitCode: details.exitCode,
+      recoveryAttempt: recoveryAttempts,
+    });
+
+    if (isQuitting || window.isDestroyed()) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (window.isDestroyed()) {
+        return;
+      }
+      if (recoveryAttempts <= maxRecoveryAttempts) {
+        loadRendererTarget(window);
+      } else {
+        loadRendererRecoveryPage(
+          window,
+          `Renderer process ended (${details.reason}, exit code ${details.exitCode}).`
+        );
+      }
+    }, 500);
+  });
+
+  window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (!isMainFrame) {
+      return;
+    }
+    appendDesktopTelemetryEvent({
+      type: 'desktop:renderer-load-failed',
+      webContentsId: window.webContents.id,
+      url: validatedURL,
+      errorCode,
+      errorDescription,
+    });
+  });
+
+  window.webContents.on('did-finish-load', () => {
+    recoveryAttempts = 0;
+  });
+}
+
 function handleSwarmRestartRequested() {
   serverReady = false;
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -422,14 +621,10 @@ function createWindow() {
   // Remove default menu
   Menu.setApplicationMenu(null);
 
+  setupRendererCrashTelemetry(newWindow);
+
   // Load the app
-  if (isDev) {
-    // Development mode - load from Vite dev server
-    newWindow.loadURL(`http://localhost:${vitePort}`);
-  } else {
-    // Production mode - load from built files
-    newWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
-  }
+  loadRendererTarget(newWindow);
 
   if (isDev) {
     newWindow.webContents.on('did-fail-load', async (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {

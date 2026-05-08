@@ -226,8 +226,8 @@ export function ResourcesTab() {
     const backendsQuery = useBackends({ enabled: isInitialized, autoRefresh });
 
     const resources = resourcesQuery.data ?? null;
-    const loadedModels = loadedModelsQuery.data ?? [];
-    const backendStatuses = backendsQuery.data ?? [];
+    const loadedModels = useMemo(() => loadedModelsQuery.data ?? [], [loadedModelsQuery.data]);
+    const backendStatuses = useMemo(() => backendsQuery.data ?? [], [backendsQuery.data]);
     const loading = resourcesQuery.isLoading || loadedModelsQuery.isLoading || backendsQuery.isLoading;
     const refreshing = resourcesQuery.isFetching || loadedModelsQuery.isFetching || backendsQuery.isFetching;
     const loadError = resourcesQuery.error || loadedModelsQuery.error || backendsQuery.error;
@@ -353,6 +353,39 @@ export function ResourcesTab() {
         ramUsedPercent,
         hottestGpu?.vramPercent || 0
     );
+
+    const operationalRecommendations = useMemo(() => {
+        const recommendations: Array<{ label: string; detail: string; tone: 'red' | 'yellow' | 'teal' | 'blue' }> = [];
+        if (clusterPressure >= 85) {
+            recommendations.push({
+                label: 'High pressure',
+                detail: 'Pause large queue campaigns or free backend memory before starting another heavy run.',
+                tone: 'red',
+            });
+        }
+        if ((hottestGpu?.vramPercent || 0) >= 80) {
+            recommendations.push({
+                label: 'VRAM hot',
+                detail: 'Unload idle models or reduce batch size before image-to-video, refiner, or upscale work.',
+                tone: 'yellow',
+            });
+        }
+        if (activeModelHosts.length > 0 && loadedModels.length > activeModelHosts.length) {
+            recommendations.push({
+                label: 'Idle residency',
+                detail: 'Some loaded models are not tied to active hosts; eject individual cards below if memory is tight.',
+                tone: 'blue',
+            });
+        }
+        if (recommendations.length === 0) {
+            recommendations.push({
+                label: 'Ready',
+                detail: 'Resource pressure is low enough for normal generation, review, or dataset planning work.',
+                tone: 'teal',
+            });
+        }
+        return recommendations;
+    }, [activeModelHosts.length, clusterPressure, hottestGpu?.vramPercent, loadedModels.length]);
 
     const handleEjectModel = useCallback(async (card: LoadedModelCardData) => {
         if (!card.hosts.length) {
@@ -514,6 +547,27 @@ export function ResourcesTab() {
                         />
                     </div>
                 </Group>
+            </Card>
+
+            <Card withBorder padding="md" className="surface-glass">
+                <Stack gap="xs">
+                    <Group gap="xs">
+                        <IconActivityHeartbeat size={18} color="var(--theme-brand)" />
+                        <Text fw={700}>Operational Guidance</Text>
+                    </Group>
+                    <SimpleGrid cols={{ base: 1, md: operationalRecommendations.length > 1 ? 2 : 1 }} spacing="xs">
+                        {operationalRecommendations.map((recommendation) => (
+                            <Group key={recommendation.label} align="flex-start" gap="xs" wrap="nowrap">
+                                <Badge color={recommendation.tone} variant="light">
+                                    {recommendation.label}
+                                </Badge>
+                                <Text size="sm" c="dimmed">
+                                    {recommendation.detail}
+                                </Text>
+                            </Group>
+                        ))}
+                    </SimpleGrid>
+                </Stack>
             </Card>
 
             <SimpleGrid cols={{ base: 1, sm: 2, xl: 4 }} spacing="md">

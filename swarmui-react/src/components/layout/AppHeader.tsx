@@ -8,6 +8,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import {
     IconDotsVertical,
     IconDownload,
+    IconFolder,
     IconLogout,
     IconPower,
     IconReload,
@@ -24,6 +25,7 @@ interface AppHeaderProps {
     onPrefetchPage?: (page: AppPage) => void;
     onOpenCommandPalette: () => void;
     onOpenModelDownloader: () => void;
+    onOpenProjects: () => void;
     onReloadWrapper: () => void;
     onLogout: () => void;
     onShutdown: () => void;
@@ -36,6 +38,7 @@ export function AppHeader({
     onPrefetchPage,
     onOpenCommandPalette,
     onOpenModelDownloader,
+    onOpenProjects,
     onReloadWrapper,
     onLogout,
     onShutdown,
@@ -110,6 +113,9 @@ export function AppHeader({
                             <Menu.Item leftSection={<IconDownload size={14} />} onClick={onOpenModelDownloader}>
                                 Model Downloader
                             </Menu.Item>
+                            <Menu.Item leftSection={<IconFolder size={14} />} onClick={onOpenProjects}>
+                                Creative Projects
+                            </Menu.Item>
                             <Menu.Item leftSection={<IconReload size={14} />} onClick={onReloadWrapper}>
                                 Reload Desktop Wrapper
                             </Menu.Item>
@@ -145,6 +151,18 @@ export function AppHeader({
                                 className="swarm-app-header-action swarm-app-header-action--download"
                             >
                                 <IconDownload size={18} />
+                            </SwarmActionIcon>
+                        </Tooltip>
+                        <Tooltip label="Creative projects">
+                            <SwarmActionIcon
+                                aria-label="Open creative projects"
+                                tone="secondary"
+                                emphasis="ghost"
+                                size="md"
+                                onClick={onOpenProjects}
+                                className="swarm-app-header-action"
+                            >
+                                <IconFolder size={18} />
                             </SwarmActionIcon>
                         </Tooltip>
                         <Tooltip label="Reload desktop wrapper">

@@ -1,9 +1,10 @@
 import { probeAssistantConnection } from './magicPromptService';
-import type { AssistantServerMode } from '../types/assistant';
+import type { AssistantRequestConfig, AssistantServerMode } from '../types/assistant';
 import type {
     ChatMessage,
     RoleplayCharacter,
     RoleplayModelCompatibilitySettings,
+    RoleplayPromptBudgetMode,
 } from '../types/roleplay';
 import { ROLEPLAY_MAX_MEMORY_FACTS } from '../features/roleplay/roleplayMemory';
 
@@ -28,6 +29,28 @@ function normalizeUrl(url: string): string {
     return url.replace(/\/+$/, '');
 }
 
+function normalizeOpenAIBaseUrl(endpointUrl: string): string {
+    const base = normalizeUrl(endpointUrl);
+    return base.endsWith('/v1') ? base : `${base}/v1`;
+}
+
+function buildAssistantHeaders(config?: AssistantRequestConfig): HeadersInit {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+    const apiKey = config?.apiKey?.trim();
+    if (apiKey) {
+        headers.Authorization = `Bearer ${apiKey}`;
+    }
+    if (config?.provider === 'openrouter') {
+        if (config.referer?.trim()) {
+            headers['HTTP-Referer'] = config.referer.trim();
+        }
+        headers['X-OpenRouter-Title'] = config.title?.trim() || 'SwarmUI Roleplay';
+    }
+    return headers;
+}
+
 interface StreamChatInput {
     endpointUrl: string;
     serverMode: AssistantServerMode;
@@ -41,6 +64,7 @@ interface StreamChatInput {
     temperature?: number;
     maxTokens?: number;
     compatibility?: RoleplayModelCompatibilitySettings;
+    requestConfig?: AssistantRequestConfig;
 }
 
 interface NonStreamingChatInput {
@@ -51,6 +75,7 @@ interface NonStreamingChatInput {
     temperature?: number;
     maxTokens?: number;
     compatibility?: RoleplayModelCompatibilitySettings;
+    requestConfig?: AssistantRequestConfig;
 }
 
 interface NonStreamingChatResult {
@@ -69,8 +94,8 @@ interface SSEChunk {
 
 function getChatUrl(base: string, serverMode: AssistantServerMode): string {
     if (serverMode === 'legacy-lmstudio') return `${base}/api/v1/chat`;
-    if (serverMode === 'openai-responses') return `${base}/v1/responses`;
-    return `${base}/v1/chat/completions`;
+    if (serverMode === 'openai-responses') return `${normalizeOpenAIBaseUrl(base)}/responses`;
+    return `${normalizeOpenAIBaseUrl(base)}/chat/completions`;
 }
 
 function buildChatBody(
@@ -265,7 +290,7 @@ async function doStreamRequest(
 ): Promise<{ ok: true } | { ok: false; status: number; errorText: string }> {
     const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: buildAssistantHeaders(input.requestConfig),
         body,
         signal: input.signal,
     });
@@ -283,6 +308,10 @@ async function doStreamRequest(
     const reader = response.body.getReader();
     const parser = serverMode === 'openai-responses' ? parseResponsesAPIStream : parseSSEStream;
     const fullText = await parser(reader, input.onToken, input.signal);
+    if (!input.signal?.aborted && !fullText.trim()) {
+        input.onError('Chat server ended the stream without response text.');
+        return { ok: true };
+    }
     input.onDone(fullText);
     return { ok: true };
 }
@@ -495,7 +524,7 @@ async function requestNonStreamingChat(input: NonStreamingChatInput): Promise<No
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: buildAssistantHeaders(input.requestConfig),
             body,
         });
 
@@ -511,7 +540,7 @@ async function requestNonStreamingChat(input: NonStreamingChatInput): Promise<No
                 });
                 const retryResponse = await fetch(retryUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: buildAssistantHeaders(input.requestConfig),
                     body: retryBody,
                 });
 
@@ -544,6 +573,37 @@ async function requestNonStreamingChat(input: NonStreamingChatInput): Promise<No
     }
 }
 
+export async function testRoleplayServerReply(input: {
+    endpointUrl: string;
+    serverMode: AssistantServerMode;
+    modelId: string;
+    compatibility?: RoleplayModelCompatibilitySettings;
+    requestConfig?: AssistantRequestConfig;
+}): Promise<{ success: boolean; content: string; error?: string; correctedMode?: AssistantServerMode }> {
+    const result = await requestNonStreamingChat({
+        endpointUrl: input.endpointUrl,
+        serverMode: input.serverMode,
+        modelId: input.modelId,
+        messages: [
+            {
+                role: 'system',
+                content:
+                    'You are testing a local roleplay model connection. Reply in character as a concise fantasy innkeeper. Keep it under 35 words.',
+            },
+            {
+                role: 'user',
+                content: 'A traveler steps inside and asks whether the road ahead is safe.',
+            },
+        ],
+        temperature: 0.7,
+        maxTokens: 80,
+        compatibility: input.compatibility,
+        requestConfig: input.requestConfig,
+    });
+
+    return result;
+}
+
 function extractJsonObject(text: string): string | null {
     const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
     const candidate = fencedMatch?.[1]?.trim() || text.trim();
@@ -564,6 +624,7 @@ export async function generateSceneDescription(input: {
     conversationContext: string;
     sceneSuggestionPrompt: string;
     compatibility?: RoleplayModelCompatibilitySettings;
+    requestConfig?: AssistantRequestConfig;
 }): Promise<{ success: boolean; description: string; error?: string; correctedMode?: AssistantServerMode }> {
     const result = await requestNonStreamingChat({
         endpointUrl: input.endpointUrl,
@@ -576,6 +637,7 @@ export async function generateSceneDescription(input: {
         temperature: 0.7,
         maxTokens: 200,
         compatibility: input.compatibility,
+        requestConfig: input.requestConfig,
     });
 
     if (!result.success) {
@@ -596,7 +658,9 @@ export async function generateRoleplayMemory(input: {
     character: Pick<RoleplayCharacter, 'name' | 'interactionStyle' | 'personality' | 'systemPrompt' | 'conversationSummary' | 'continuity' | 'memoryFacts'>;
     sourceMessages: ChatMessage[];
     conversationContext: string;
+    memoryBudgetMode?: RoleplayPromptBudgetMode;
     compatibility?: RoleplayModelCompatibilitySettings;
+    requestConfig?: AssistantRequestConfig;
 }): Promise<{
     success: boolean;
     conversationSummary: string;
@@ -612,6 +676,7 @@ export async function generateRoleplayMemory(input: {
     const existingFacts = input.character.memoryFacts
         .map((fact) => fact.text.trim())
         .filter((fact) => fact);
+    const compactMemory = input.memoryBudgetMode === 'compact' || input.memoryBudgetMode === 'micro';
 
     const result = await requestNonStreamingChat({
         endpointUrl: input.endpointUrl,
@@ -623,6 +688,9 @@ export async function generateRoleplayMemory(input: {
                 content:
                     'You maintain long-term memory for a roleplay conversation. ' +
                     'Summarize only durable context and extract only stable, important facts. ' +
+                    (compactMemory
+                        ? 'Be terse. Prefer short clauses and preserve only the highest-value continuity. '
+                        : '') +
                     'Keep names, relationship state, promises, preferences, unresolved threads, ' +
                     'major events, current location, current situation, and lasting details. Exclude fluff, one-off wording, and purely ' +
                     'stylistic phrases. Return JSON only with this exact shape: ' +
@@ -646,8 +714,9 @@ export async function generateRoleplayMemory(input: {
             },
         ],
         temperature: 0.3,
-        maxTokens: 800,
+        maxTokens: input.memoryBudgetMode === 'micro' ? 360 : compactMemory ? 520 : 800,
         compatibility: input.compatibility,
+        requestConfig: input.requestConfig,
     });
 
     if (!result.success) {

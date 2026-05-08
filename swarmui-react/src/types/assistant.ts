@@ -1,4 +1,12 @@
 export type AssistantServerMode = 'legacy-lmstudio' | 'openai-compatible' | 'openai-responses';
+export type AssistantProviderKind = 'local' | 'openrouter' | 'openai-compatible';
+
+export interface AssistantRequestConfig {
+    provider?: AssistantProviderKind;
+    apiKey?: string;
+    referer?: string;
+    title?: string;
+}
 
 export interface AssistantModel {
     id: string;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import {
   Modal,
@@ -19,6 +19,7 @@ import type { GenerateParams } from '../api/types';
 import { imageUrlToDataUrl, toRuntimeImageUrl } from '../utils/imageData';
 import { useQueueStore, type QueueJob } from '../stores/queue';
 import { SwarmButton, SwarmSegmentedControl, SwarmSlider } from './ui';
+import { useUpscalers } from '../hooks/useModels';
 
 interface ImageUpscalerProps {
   opened: boolean;
@@ -32,6 +33,12 @@ interface ImageUpscalerProps {
 }
 
 type UpscaleMethod = 'hires-fix' | 'model-based';
+
+const DEFAULT_UPSCALE_METHOD = 'pixel-lanczos';
+
+const isModelUpscaleMethod = (value: string): boolean => {
+  return value.startsWith('model-') || value.startsWith('latentmodel-');
+};
 
 function buildUpscaleResultUrl(imageData: unknown): string {
   if (typeof imageData === 'string') {
@@ -72,26 +79,44 @@ export function ImageUpscaler({
   const [upscaling, setUpscaling] = useState(false);
   const [progress, setProgress] = useState(0);
   const [upscaleMethod, setUpscaleMethod] = useState<UpscaleMethod>('hires-fix');
-  const [upscaleModel, setUpscaleModel] = useState('model-Remacri_-_Original.safetensors');
+  const [upscaleModel, setUpscaleModel] = useState(DEFAULT_UPSCALE_METHOD);
   const [scaleFactor, setScaleFactor] = useState(2);
   const [creativity, setCreativity] = useState(0.4); // For hi-res fix
   const [modelCreativity, setModelCreativity] = useState(0.1); // For model-based
   const [steps, setSteps] = useState(20);
   const [cfgScale, setCfgScale] = useState(7);
   const [upscaledImage, setUpscaledImage] = useState<string | null>(null);
+  const upscalersQuery = useUpscalers({ enabled: opened });
 
-  // Model-based upscale methods from SwarmUI backend
-  const upscaleModels = [
-    // Model-based upscalers (best quality)
-    { value: 'model-Remacri_-_Original.safetensors', label: 'Remacri (Best Quality)' },
-    { value: 'model-4xNMKDSuperscale_4xNMKDSuperscale.pt', label: '4x NMKD Superscale' },
-    { value: 'model-4xNMKDYandereneoxl_v10.pt', label: '4x NMKD Yandereneoxl' },
-    { value: 'model-4xRealisticrescaler_100000G.pt', label: '4x Realistic Rescaler' },
-    { value: 'model-8xNMKDSuperscale_150000G.pt', label: '8x NMKD Superscale' },
-    // Pixel-based methods (fast, simple)
-    { value: 'pixel-lanczos', label: 'Pixel Lanczos (Fast)' },
-    { value: 'pixel-bicubic', label: 'Pixel Bicubic' },
-  ];
+  const upscaleModels = useMemo(() => {
+    return (upscalersQuery.data ?? [])
+      .map((model) => ({
+        value: model.name,
+        label: model.title || model.name,
+      }))
+      .filter((model) => model.value.trim().length > 0);
+  }, [upscalersQuery.data]);
+
+  const modelUpscaleOptions = useMemo(() => {
+    return upscaleModels.filter((model) => isModelUpscaleMethod(model.value));
+  }, [upscaleModels]);
+
+  useEffect(() => {
+    if (upscaling) {
+      return;
+    }
+
+    if (upscaleMethod === 'model-based') {
+      if (!isModelUpscaleMethod(upscaleModel)) {
+        setUpscaleModel(modelUpscaleOptions[0]?.value || '');
+      }
+      return;
+    }
+
+    if (!upscaleModel) {
+      setUpscaleModel(DEFAULT_UPSCALE_METHOD);
+    }
+  }, [modelUpscaleOptions, upscaleMethod, upscaleModel, upscaling]);
 
   // Extract generation params from metadata
   const getParamsFromMetadata = (): {
@@ -203,6 +228,15 @@ export function ImageUpscaler({
       return;
     }
 
+    if (upscaleMethod === 'model-based' && !isModelUpscaleMethod(upscaleModel)) {
+      notifications.show({
+        title: 'No Upscale Model Selected',
+        message: 'Model-based upscale requires a model from upscale_models or latent_upscale_models.',
+        color: 'orange',
+      });
+      return;
+    }
+
     logger.debug('[Upscaler] Using method:', upscaleMethod);
     logger.debug('[Upscaler] Using model:', params.model);
     if (upscaleMethod === 'hires-fix') {
@@ -268,8 +302,13 @@ export function ImageUpscaler({
           initimage: imageBase64,
           initimagecreativity: creativity,
           aspectratio: 'Custom',
-          width: Math.round((params.width || 1024) * scaleFactor),
-          height: Math.round((params.height || 1024) * scaleFactor),
+          width: params.width || 1024,
+          height: params.height || 1024,
+          refinermethod: 'PostApply',
+          refinercontrol: 0,
+          refinercontrolpercentage: 0,
+          refinerupscale: scaleFactor,
+          refinerupscalemethod: upscaleModel || DEFAULT_UPSCALE_METHOD,
           steps: 20,
           cfgscale: 7,
           images: 1,
@@ -506,12 +545,33 @@ export function ImageUpscaler({
           description={upscaleMethod === 'hires-fix'
             ? 'Optional: Use an upscale model for final pass'
             : 'Select the upscale model to use'}
-          data={upscaleModels}
+          data={upscaleMethod === 'model-based' ? modelUpscaleOptions : upscaleModels}
           value={upscaleModel}
-          onChange={(value) => value && setUpscaleModel(value)}
-          disabled={upscaling}
+          onChange={(value) => {
+            if (upscaleMethod === 'hires-fix') {
+              setUpscaleModel(value || DEFAULT_UPSCALE_METHOD);
+              return;
+            }
+            if (value) {
+              setUpscaleModel(value);
+            }
+          }}
+          disabled={upscaling || upscalersQuery.isLoading || (upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0)}
           clearable={upscaleMethod === 'hires-fix'}
+          searchable
+          placeholder={upscalersQuery.isLoading ? 'Loading upscalers...' : 'Select upscale method'}
+          nothingFoundMessage={
+            upscaleMethod === 'model-based'
+              ? 'No model upscalers found. Refresh models after downloading to upscale_models or latent_upscale_models.'
+              : 'No upscale methods found'
+          }
         />
+
+        {upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0 && !upscalersQuery.isLoading && (
+          <Text size="xs" c="orange">
+            No model upscalers are currently available. Download one into upscale_models or latent_upscale_models, then refresh model data.
+          </Text>
+        )}
 
         {/* Creativity slider - for hi-res fix */}
         {upscaleMethod === 'hires-fix' && (

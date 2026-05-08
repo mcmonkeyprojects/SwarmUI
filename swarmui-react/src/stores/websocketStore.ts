@@ -203,7 +203,8 @@ const initialState: WebSocketStoreState = {
 };
 
 const PROGRESS_UPDATE_MIN_INTERVAL_MS = 50;
-const PREVIEW_UPDATE_MIN_INTERVAL_MS = 100;
+const PREVIEW_QUEUE_DELAY_WARNING_MS = 50;
+const PREVIEW_DATA_URL_PREFIX = 'data:';
 const IS_TEST_ENV = import.meta.env.MODE === 'test';
 
 /**
@@ -270,16 +271,16 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             let lastProgressUpdate = 0;
             let pendingProgressData: GenerationProgressData | null = null;
             let rafId: number | null = null;
-            let lastPreviewCommitAt = 0;
             let lastPreviewSignature: string | null = null;
             let pendingPreviewData: GenerationProgressData | null = null;
             let pendingPreviewSignature: string | null = null;
-            let previewTimeoutId: ReturnType<typeof setTimeout> | null = null;
+            let previewRafId: number | null = null;
             let pendingPreviewQueuedAt = 0;
             let previewEventCount = 0;
             let previewCommitCount = 0;
             let previewDedupedCount = 0;
             let previewSupersededCount = 0;
+            let previewDataUrlEventCount = 0;
             let firstPreviewEventRecorded = false;
             let firstPreviewCommitRecorded = false;
 
@@ -289,6 +290,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 previewCommitCount = 0;
                 previewDedupedCount = 0;
                 previewSupersededCount = 0;
+                previewDataUrlEventCount = 0;
                 firstPreviewEventRecorded = false;
                 firstPreviewCommitRecorded = false;
             };
@@ -306,12 +308,32 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         generationId: generation.generationId ?? '',
                         requestId: generation.requestId ?? '',
                         previewEventCount,
+                        previewDataUrlEventCount,
                         previewCommitCount,
                         previewDedupedCount,
                         previewSupersededCount,
                         previewRevision: generation.previewRevision,
+                        commitStrategy: 'animation_frame_coalesced',
                     }
                 );
+                if (generation.generationId) {
+                    useGenerationDiagnosticsStore.getState().appendEvent(generation.generationId, {
+                        type: 'preview_pipeline_summary',
+                        level: previewDedupedCount > 0 || previewSupersededCount > 0 ? 'warn' : 'info',
+                        message: 'Live preview pipeline summary.',
+                        details: {
+                            reason,
+                            requestId: generation.requestId ?? '',
+                            previewEventCount,
+                            previewDataUrlEventCount,
+                            previewCommitCount,
+                            previewDedupedCount,
+                            previewSupersededCount,
+                            previewRevision: generation.previewRevision,
+                            commitStrategy: 'animation_frame_coalesced',
+                        },
+                    });
+                }
             };
 
             const resetPreviewBuffer = () => {
@@ -319,10 +341,9 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 pendingPreviewSignature = null;
                 lastPreviewSignature = null;
                 pendingPreviewQueuedAt = 0;
-                lastPreviewCommitAt = 0;
-                if (previewTimeoutId !== null) {
-                    clearTimeout(previewTimeoutId);
-                    previewTimeoutId = null;
+                if (previewRafId !== null) {
+                    cancelAnimationFrame(previewRafId);
+                    previewRafId = null;
                 }
             };
 
@@ -357,7 +378,6 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 });
 
                 previewCommitCount += 1;
-                lastPreviewCommitAt = performance.now();
                 lastPreviewSignature = nextPreviewSignature;
                 usePerformanceSessionStore.getState().recordTiming(
                     'ws:preview-queue-delay',
@@ -368,7 +388,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         stageId: data.stageId ?? '',
                         stageLabel: data.stageLabel ?? '',
                     },
-                    queueDelay > 250 ? 'warning' : 'info'
+                    queueDelay > PREVIEW_QUEUE_DELAY_WARNING_MS ? 'warning' : 'info'
                 );
 
                 const generationStartTime = get().generation.startTime;
@@ -394,6 +414,9 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 }
 
                 previewEventCount += 1;
+                if (data.previewImage.startsWith(PREVIEW_DATA_URL_PREFIX)) {
+                    previewDataUrlEventCount += 1;
+                }
                 const generationStartTime = get().generation.startTime;
                 if (generationStartTime && !firstPreviewEventRecorded) {
                     firstPreviewEventRecorded = true;
@@ -423,21 +446,23 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 pendingPreviewSignature = nextPreviewSignature;
                 pendingPreviewQueuedAt = performance.now();
 
-                if (previewTimeoutId !== null) {
-                    clearTimeout(previewTimeoutId);
-                    previewTimeoutId = null;
-                }
-
-                const elapsed = performance.now() - lastPreviewCommitAt;
-                if (force || elapsed >= PREVIEW_UPDATE_MIN_INTERVAL_MS) {
+                if (force) {
+                    if (previewRafId !== null) {
+                        cancelAnimationFrame(previewRafId);
+                        previewRafId = null;
+                    }
                     flushPreviewUpdate();
                     return;
                 }
 
-                previewTimeoutId = setTimeout(() => {
-                    previewTimeoutId = null;
+                if (previewRafId !== null) {
+                    return;
+                }
+
+                previewRafId = requestAnimationFrame(() => {
+                    previewRafId = null;
                     flushPreviewUpdate();
-                }, PREVIEW_UPDATE_MIN_INTERVAL_MS - elapsed);
+                });
             };
 
             const flushProgressUpdate = () => {

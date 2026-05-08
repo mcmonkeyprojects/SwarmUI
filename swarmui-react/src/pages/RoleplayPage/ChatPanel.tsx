@@ -1,23 +1,32 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   ActionIcon,
+  Badge,
   Group,
   Loader,
   ScrollArea,
+  Select,
   Stack,
   Text,
+  TextInput,
   Textarea,
   Tooltip,
 } from '@mantine/core';
 import {
+  IconBrain,
   IconEdit,
   IconCopy,
   IconEye,
   IconEyeOff,
   IconChevronLeft,
   IconChevronRight,
+  IconChevronDown,
+  IconChevronUp,
   IconArrowUp,
   IconArrowDown,
+  IconBookmark,
+  IconGitBranch,
+  IconGitCompare,
   IconPlayerStop,
   IconPhotoPlus,
   IconRefresh,
@@ -29,6 +38,10 @@ import {
 import { notifications } from '@mantine/notifications';
 import { useShallow } from 'zustand/react/shallow';
 import { compileRoleplayPrompt } from '../../features/roleplay/roleplayPromptCompiler';
+import {
+  createRoleplayCompatibilityFromProfile,
+  getRoleplayLocalModelProfile,
+} from '../../data/roleplayLocalModelProfiles';
 import {
   ROLEPLAY_MEMORY_REFRESH_THRESHOLD,
   formatMessagesForMemoryRefresh,
@@ -45,12 +58,30 @@ import {
   streamRoleplayChat,
 } from '../../services/roleplayChatService';
 import {
+  cancelScheduledLocalTextModelUnload,
+  scheduleLocalTextModelUnload,
+  type LocalTextModelResidency,
+} from '../../services/localModelVramCoordinator';
+import {
+  getLastAssistantMessage,
+  getLastUserMessage,
   getMessageContent,
   getMessageSceneImageUrl,
   getMessageSuggestedImagePrompt,
 } from '../../features/roleplay/roleplayMessageUtils';
 import { useRoleplayStore } from '../../stores/roleplayStore';
-import type { ChatMessage, RoleplayCharacter, RoleplayMemoryFact } from '../../types/roleplay';
+import { recordDebugTrace } from '../../utils/debugTrace';
+import { logger } from '../../utils/logger';
+import type {
+  ChatMessage,
+  CompiledRoleplayPrompt,
+  RoleplayCharacter,
+  RoleplayChatBranch,
+  RoleplayChatCheckpoint,
+  RoleplayChatSession,
+  RoleplayGenerationMode,
+  RoleplayMemoryFact,
+} from '../../types/roleplay';
 import { ElevatedCard } from '../../components/ui/ElevatedCard';
 import { SwarmButton } from '../../components/ui/SwarmButton';
 import { CharacterAvatar } from './CharacterAvatar';
@@ -91,11 +122,165 @@ function expandGreetingMacros(
     .replaceAll('{{scenario}}', character.scenario);
 }
 
+interface BranchTreeNode {
+  branch: RoleplayChatBranch;
+  depth: number;
+  childCount: number;
+}
+
+const EMPTY_ROLEPLAY_CHAT_BRANCHES: RoleplayChatBranch[] = [];
+
+function buildBranchTreeNodes(branches: RoleplayChatBranch[]): BranchTreeNode[] {
+  const childrenByParentId = new Map<string | null, RoleplayChatBranch[]>();
+  for (const branch of branches) {
+    const parentId = branch.parentBranchId ?? null;
+    const siblings = childrenByParentId.get(parentId);
+    if (siblings) {
+      siblings.push(branch);
+    } else {
+      childrenByParentId.set(parentId, [branch]);
+    }
+  }
+  for (const children of childrenByParentId.values()) {
+    children.sort((left, right) => left.createdAt - right.createdAt);
+  }
+
+  const visited = new Set<string>();
+  const nodes: BranchTreeNode[] = [];
+  const appendBranch = (branch: RoleplayChatBranch, depth: number) => {
+    if (visited.has(branch.id)) {
+      return;
+    }
+    visited.add(branch.id);
+    const children = childrenByParentId.get(branch.id) ?? [];
+    nodes.push({ branch, depth, childCount: children.length });
+    for (const child of children) {
+      appendBranch(child, depth + 1);
+    }
+  };
+
+  for (const root of childrenByParentId.get(null) ?? []) {
+    appendBranch(root, 0);
+  }
+  for (const branch of branches) {
+    appendBranch(branch, 0);
+  }
+  return nodes;
+}
+
+function getBranchLineage(
+  branches: RoleplayChatBranch[],
+  activeBranchId: string
+): RoleplayChatBranch[] {
+  const branchById = new Map(branches.map((branch) => [branch.id, branch]));
+  const lineage: RoleplayChatBranch[] = [];
+  let current = branchById.get(activeBranchId) ?? null;
+  const visited = new Set<string>();
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    lineage.unshift(current);
+    current = current.parentBranchId ? (branchById.get(current.parentBranchId) ?? null) : null;
+  }
+  return lineage;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message || error.name;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  try {
+    return JSON.stringify(error) ?? 'Unknown error';
+  } catch {
+    return 'Unknown error';
+  }
+}
+
+function getErrorStack(error: unknown): string | null {
+  return error instanceof Error && error.stack ? error.stack : null;
+}
+
+function truncateDiagnosticText(text: string, maxLength: number = 700): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, maxLength).trimEnd()}...`;
+}
+
+function summarizeEndpoint(endpointUrl: string): string {
+  try {
+    const url = new URL(endpointUrl);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return endpointUrl.trim() || '(empty endpoint)';
+  }
+}
+
+function summarizeCompiledPrompt(compiledPrompt: CompiledRoleplayPrompt): Record<string, unknown> {
+  return {
+    promptTokenEstimate: compiledPrompt.tokenEstimate,
+    promptBlockCount: compiledPrompt.promptBlocks.length,
+    activePromptBlockCount: compiledPrompt.segments.length,
+    apiMessageCount: compiledPrompt.apiMessages.length,
+    apiMessageRoles: compiledPrompt.apiMessages.map((message) => message.role).join(','),
+    includedHistoryMessages: compiledPrompt.contextBudget.includedHistoryMessages,
+    droppedHistoryMessages: compiledPrompt.contextBudget.droppedHistoryMessages,
+    truncatedHistoryMessages: compiledPrompt.contextBudget.truncatedHistoryMessages,
+    promptBlockTokens: compiledPrompt.contextBudget.promptBlockTokens,
+    historyTokens: compiledPrompt.contextBudget.historyTokens,
+    reservedResponseTokens: compiledPrompt.contextBudget.reservedResponseTokens,
+    promptBudgetMode: compiledPrompt.diagnostics.promptBudgetMode,
+    memoryTokens: compiledPrompt.diagnostics.memoryTokens,
+    loreTokens: compiledPrompt.diagnostics.loreTokens,
+    droppedLoreEntries: compiledPrompt.diagnostics.droppedLoreEntries,
+  };
+}
+
+function buildFailureMessage(errorMessage: string, context: Record<string, unknown>): string {
+  return [
+    'Roleplay chat failed before a response could be saved.',
+    '',
+    `Error ID: ${context.requestId ?? 'unknown'}`,
+    `Stage: ${context.stage ?? 'unknown'}`,
+    `Mode: ${context.generationMode ?? 'unknown'}`,
+    `Server: ${context.serverMode ?? 'unknown'}`,
+    `Model: ${context.modelId ?? 'unknown'}`,
+    `Prompt tokens: ${context.promptTokenEstimate ?? 'unknown'}`,
+    `API messages: ${context.apiMessageCount ?? 'unknown'}`,
+    '',
+    truncateDiagnosticText(errorMessage),
+    '',
+    'This diagnostic message is excluded from the prompt.',
+  ].join('\n');
+}
+
+function recordRoleplayChatTelemetry(
+  eventName: string,
+  context: Record<string, unknown>,
+  error?: unknown
+) {
+  const payload = {
+    ...context,
+    errorMessage: error ? truncateDiagnosticText(getErrorMessage(error), 2000) : undefined,
+    errorStack: error ? getErrorStack(error) : undefined,
+  };
+  recordDebugTrace(`RoleplayChat:${eventName}`, payload);
+  if (error) {
+    logger.error(`[RoleplayChat] ${eventName}`, payload);
+  }
+}
+
 export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const [dismissedResumeRecapKeys, setDismissedResumeRecapKeys] = useState<string[]>([]);
   const [visibleResumeRecapKey, setVisibleResumeRecapKey] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [checkpointName, setCheckpointName] = useState('');
+  const [compareBranchId, setCompareBranchId] = useState<string | null>(null);
+  const [branchNameDraft, setBranchNameDraft] = useState('');
+  const [branchNavigatorOpen, setBranchNavigatorOpen] = useState(true);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const RESUME_RECAP_MINUTES = 20;
@@ -108,6 +293,8 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     isStreamingChat,
     streamingContent,
     connectionStatus,
+    chatProvider,
+    chatApiKey,
     lmStudioEndpoint,
     selectedModelId,
     modelCompatibilityByModelId,
@@ -122,7 +309,13 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     setMessageIncluded,
     addAssistantMessageVariant,
     selectMessageVariant,
-    deleteMessagesFrom,
+    branchFromMessage,
+    switchBranch,
+    returnToParentBranch,
+    renameBranch,
+    createCheckpoint,
+    restoreCheckpoint,
+    removeCheckpoint,
     clearConversation,
     setStreamingChat,
     setStreamingContent,
@@ -144,6 +337,8 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       isStreamingChat: state.isStreamingChat,
       streamingContent: state.streamingContent,
       connectionStatus: state.connectionStatus,
+      chatProvider: state.chatProvider,
+      chatApiKey: state.chatApiKey,
       lmStudioEndpoint: state.lmStudioEndpoint,
       selectedModelId: state.selectedModelId,
       modelCompatibilityByModelId: state.modelCompatibilityByModelId,
@@ -158,7 +353,13 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       setMessageIncluded: state.setMessageIncluded,
       addAssistantMessageVariant: state.addAssistantMessageVariant,
       selectMessageVariant: state.selectMessageVariant,
-      deleteMessagesFrom: state.deleteMessagesFrom,
+      branchFromMessage: state.branchFromMessage,
+      switchBranch: state.switchBranch,
+      returnToParentBranch: state.returnToParentBranch,
+      renameBranch: state.renameBranch,
+      createCheckpoint: state.createCheckpoint,
+      restoreCheckpoint: state.restoreCheckpoint,
+      removeCheckpoint: state.removeCheckpoint,
       clearConversation: state.clearConversation,
       setStreamingChat: state.setStreamingChat,
       setStreamingContent: state.setStreamingContent,
@@ -178,124 +379,321 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     () => chatSessions.find((session) => session.id === activeSessionId) ?? null,
     [activeSessionId, chatSessions]
   );
+  const characterById = useMemo(
+    () => new Map(characters.map((character) => [character.id, character])),
+    [characters]
+  );
   const activeCharacter = useMemo(
-    () => characters.find((character) => character.id === activeSession?.characterId) ?? null,
-    [activeSession?.characterId, characters]
+    () =>
+      activeSession?.characterId ? (characterById.get(activeSession.characterId) ?? null) : null,
+    [activeSession?.characterId, characterById]
+  );
+  const participantCharacters = useMemo(
+    () =>
+      activeSession?.participantCharacterIds
+        .map((characterId) => characterById.get(characterId))
+        .filter((character): character is RoleplayCharacter => Boolean(character)) ?? [],
+    [activeSession?.participantCharacterIds, characterById]
+  );
+  const activeSpeakerCharacter = useMemo(
+    () =>
+      (activeSession?.activeSpeakerCharacterId
+        ? characterById.get(activeSession.activeSpeakerCharacterId)
+        : null) ??
+      activeCharacter,
+    [activeCharacter, activeSession?.activeSpeakerCharacterId, characterById]
+  );
+  const personaById = useMemo(
+    () => new Map(personas.map((persona) => [persona.id, persona])),
+    [personas]
   );
   const activePersona = useMemo(
-    () => personas.find((persona) => persona.id === activeSession?.activePersonaId) ?? null,
-    [activeSession?.activePersonaId, personas]
+    () =>
+      activeSession?.activePersonaId
+        ? (personaById.get(activeSession.activePersonaId) ?? null)
+        : null,
+    [activeSession?.activePersonaId, personaById]
   );
   const messages = useMemo(() => activeSession?.messages ?? [], [activeSession?.messages]);
-  const greetingOptions = activeCharacter ? getGreetingOptions(activeCharacter) : [];
+  const activeBranches = activeSession?.branches ?? EMPTY_ROLEPLAY_CHAT_BRANCHES;
+  const activeBranchId = activeSession?.activeBranchId ?? null;
+  const activeBranch = useMemo(
+    () => activeBranches.find((branch) => branch.id === activeBranchId) ?? null,
+    [activeBranchId, activeBranches]
+  );
+  const branchOptions = useMemo(
+    () =>
+      activeBranches.map((branch) => ({
+        value: branch.id,
+        label: `${branch.name} (${branch.messages.length})`,
+      })),
+    [activeBranches]
+  );
+  const comparableBranchOptions = useMemo(
+    () => branchOptions.filter((branch) => branch.value !== activeBranchId),
+    [activeBranchId, branchOptions]
+  );
+  const branchTreeNodes = useMemo(
+    () => buildBranchTreeNodes(activeBranches),
+    [activeBranches]
+  );
+  const activeBranchLineage = useMemo(
+    () => activeBranchId ? getBranchLineage(activeBranches, activeBranchId) : [],
+    [activeBranchId, activeBranches]
+  );
+  const checkpointsByBranchId = useMemo(() => {
+    const next = new Map<string, RoleplayChatCheckpoint[]>();
+    for (const checkpoint of activeSession?.checkpoints ?? []) {
+      const branchCheckpoints = next.get(checkpoint.branchId);
+      if (branchCheckpoints) {
+        branchCheckpoints.push(checkpoint);
+      } else {
+        next.set(checkpoint.branchId, [checkpoint]);
+      }
+    }
+    for (const checkpoints of next.values()) {
+      checkpoints.sort((left, right) => right.createdAt - left.createdAt);
+    }
+    return next;
+  }, [activeSession?.checkpoints]);
+  const parentBranch = useMemo(
+    () =>
+      activeBranch?.parentBranchId
+        ? activeBranches.find((branch) => branch.id === activeBranch.parentBranchId) ?? null
+        : null,
+    [activeBranch, activeBranches]
+  );
+  const greetingOptions = useMemo(
+    () => activeCharacter ? getGreetingOptions(activeCharacter) : [],
+    [activeCharacter]
+  );
   const selectedModelCompatibility = useMemo(
     () =>
       selectedModelId
-        ? (modelCompatibilityByModelId[selectedModelId] ?? {
-            forceFinalUserTurn: false,
-            inlineSystemPrompt: false,
-          })
-        : {
-            forceFinalUserTurn: false,
-            inlineSystemPrompt: false,
-          },
+        ? (modelCompatibilityByModelId[selectedModelId] ??
+            createRoleplayCompatibilityFromProfile())
+        : createRoleplayCompatibilityFromProfile(),
     [modelCompatibilityByModelId, selectedModelId]
   );
-  const lastAssistantMessageId =
-    [...messages].reverse().find((message) => message.role === 'assistant')?.id ?? null;
-  const lastUserMessageId =
-    [...messages].reverse().find((message) => message.role === 'user')?.id ?? null;
+  const selectedModelProfile = useMemo(
+    () => getRoleplayLocalModelProfile(selectedModelCompatibility.localProfileId),
+    [selectedModelCompatibility.localProfileId]
+  );
+  const selectedPromptBudgetMode =
+    selectedModelCompatibility.memoryBudgetMode ?? selectedModelProfile.promptBudgetMode;
+  const selectedContextTokens =
+    selectedModelCompatibility.maxContextTokens ?? selectedModelProfile.recommendedContextTokens;
+  const selectedLoreEntryLimit =
+    selectedModelCompatibility.loreEntryLimit ?? selectedModelProfile.loreEntryLimit;
+  const selectedMaxHistoryMessages =
+    selectedModelCompatibility.maxHistoryMessages ?? selectedModelProfile.maxHistoryMessages;
+  const lastAssistantMessageId = useMemo(
+    () => getLastAssistantMessage(messages)?.id ?? null,
+    [messages]
+  );
+  const lastUserMessageId = useMemo(
+    () => getLastUserMessage(messages)?.id ?? null,
+    [messages]
+  );
+  const comparedBranchPrompt = useMemo(() => {
+    const comparedBranch = activeSession?.branches.find((branch) => branch.id === compareBranchId);
+    if (!activeCharacter || !activeSession || !comparedBranch) {
+      return null;
+    }
+    return compileRoleplayPrompt({
+      character: activeCharacter,
+      session: { ...activeSession, messages: comparedBranch.messages },
+      persona: activePersona,
+      groupCharacters: participantCharacters,
+      lorebooks,
+      maxHistoryMessages: selectedMaxHistoryMessages,
+      maxContextTokens: selectedContextTokens,
+      reservedResponseTokens: chatMaxTokens,
+      promptBudgetMode: selectedPromptBudgetMode,
+      loreEntryLimit: selectedLoreEntryLimit,
+    });
+  }, [
+    activeCharacter,
+    activePersona,
+    activeSession,
+    chatMaxTokens,
+    compareBranchId,
+    lorebooks,
+    participantCharacters,
+    selectedContextTokens,
+    selectedLoreEntryLimit,
+    selectedMaxHistoryMessages,
+    selectedPromptBudgetMode,
+  ]);
+  const activeBranchPrompt = useMemo(
+    () =>
+      activeCharacter && activeSession
+        ? compileRoleplayPrompt({
+            character: activeCharacter,
+            session: activeSession,
+            persona: activePersona,
+            groupCharacters: participantCharacters,
+            lorebooks,
+            maxHistoryMessages: selectedMaxHistoryMessages,
+            maxContextTokens: selectedContextTokens,
+            reservedResponseTokens: chatMaxTokens,
+            promptBudgetMode: selectedPromptBudgetMode,
+            loreEntryLimit: selectedLoreEntryLimit,
+          })
+        : null,
+    [
+      activeCharacter,
+      activePersona,
+      activeSession,
+      chatMaxTokens,
+      lorebooks,
+      participantCharacters,
+      selectedContextTokens,
+      selectedLoreEntryLimit,
+      selectedMaxHistoryMessages,
+      selectedPromptBudgetMode,
+    ]
+  );
+  const comparedPromptTokenDelta =
+    comparedBranchPrompt && activeBranchPrompt
+      ? comparedBranchPrompt.tokenEstimate - activeBranchPrompt.tokenEstimate
+      : null;
 
   const refreshSessionMemory = useCallback(
     async (sessionId: string, conversationMessages: ChatMessage[]) => {
-      const state = useRoleplayStore.getState();
-      const session = state.chatSessions.find((entry) => entry.id === sessionId);
-      const character = state.characters.find((entry) => entry.id === session?.characterId);
-      const triggerMessageId = conversationMessages[conversationMessages.length - 1]?.id ?? null;
+      let textModelResidency: LocalTextModelResidency | null = null;
+      try {
+        const state = useRoleplayStore.getState();
+        const session = state.chatSessions.find((entry) => entry.id === sessionId);
+        const character = state.characters.find((entry) => entry.id === session?.characterId);
+        const triggerMessageId = conversationMessages[conversationMessages.length - 1]?.id ?? null;
 
-      if (!session || !character) {
-        return;
-      }
+        if (!session || !character) {
+          return;
+        }
 
-      if (
-        state.connectionStatus !== 'connected' ||
-        !state.detectedServerMode ||
-        !state.selectedModelId
-      ) {
-        setSessionMemoryStatus(sessionId, 'stale');
-        return;
-      }
+        if (
+          state.connectionStatus !== 'connected' ||
+          !state.detectedServerMode ||
+          !state.selectedModelId
+        ) {
+          setSessionMemoryStatus(sessionId, 'stale');
+          return;
+        }
 
-      const sourceMessages = getMessagesForMemoryRefresh(conversationMessages);
-      if (sourceMessages.length === 0) {
-        return;
-      }
+        const sourceMessages = getMessagesForMemoryRefresh(conversationMessages);
+        if (sourceMessages.length === 0) {
+          return;
+        }
 
-      setSessionMemoryStatus(sessionId, 'updating');
+        setSessionMemoryStatus(sessionId, 'updating');
+        textModelResidency = {
+          endpointUrl: state.lmStudioEndpoint,
+          modelId: state.selectedModelId,
+          serverMode: state.detectedServerMode,
+        };
+        cancelScheduledLocalTextModelUnload(textModelResidency);
+        const memoryCompatibility = state.selectedModelId
+          ? (state.modelCompatibilityByModelId[state.selectedModelId] ??
+              createRoleplayCompatibilityFromProfile())
+          : createRoleplayCompatibilityFromProfile();
 
-      const result = await generateRoleplayMemory({
-        endpointUrl: state.lmStudioEndpoint,
-        serverMode: state.detectedServerMode,
-        modelId: state.selectedModelId,
-        character: {
-          name: character.name,
-          interactionStyle: character.interactionStyle,
-          personality: buildCharacterPersonalityBlock(character) || character.personality,
-          systemPrompt: getEffectiveSystemPrompt(character),
-          conversationSummary: session.conversationSummary,
-          continuity: session.continuity,
-          memoryFacts: session.memoryFacts,
-        },
-        sourceMessages,
-        conversationContext: formatMessagesForMemoryRefresh(sourceMessages),
-        compatibility: state.selectedModelId
-          ? (state.modelCompatibilityByModelId[state.selectedModelId] ?? {
-              forceFinalUserTurn: false,
-              inlineSystemPrompt: false,
-            })
-          : {
-              forceFinalUserTurn: false,
-              inlineSystemPrompt: false,
-            },
-      });
+        const result = await generateRoleplayMemory({
+          endpointUrl: state.lmStudioEndpoint,
+          serverMode: state.detectedServerMode,
+          modelId: state.selectedModelId,
+          character: {
+            name: character.name,
+            interactionStyle: character.interactionStyle,
+            personality: buildCharacterPersonalityBlock(character) || character.personality,
+            systemPrompt: getEffectiveSystemPrompt(character),
+            conversationSummary: session.conversationSummary,
+            continuity: session.continuity,
+            memoryFacts: session.memoryFacts,
+          },
+          sourceMessages,
+          conversationContext: formatMessagesForMemoryRefresh(sourceMessages),
+          memoryBudgetMode:
+            memoryCompatibility.memoryBudgetMode ??
+            getRoleplayLocalModelProfile(memoryCompatibility.localProfileId).promptBudgetMode,
+          compatibility: memoryCompatibility,
+          requestConfig: {
+            provider: state.chatProvider,
+            apiKey: state.chatApiKey,
+            title: 'SwarmUI Roleplay',
+          },
+        });
 
-      if (result.correctedMode) {
-        setDetectedServerMode(result.correctedMode);
-      }
+        if (result.correctedMode) {
+          setDetectedServerMode(result.correctedMode);
+        }
 
-      if (!result.success) {
-        setSessionMemoryStatus(
+        if (!result.success) {
+          setSessionMemoryStatus(
+            sessionId,
+            state.connectionStatus === 'connected' ? 'error' : 'stale'
+          );
+          notifications.show({
+            title: 'Memory Refresh Failed',
+            message: result.error ?? 'Could not update conversation memory.',
+            color: 'orange',
+          });
+          return;
+        }
+
+        const latestSession = useRoleplayStore
+          .getState()
+          .chatSessions.find((entry) => entry.id === sessionId);
+        if (
+          !latestSession ||
+          (triggerMessageId &&
+            !latestSession.messages.some((message) => message.id === triggerMessageId))
+        ) {
+          return;
+        }
+
+        applyGeneratedMemory(
           sessionId,
-          state.connectionStatus === 'connected' ? 'error' : 'stale'
+          result.conversationSummary,
+          result.continuity,
+          mergeGeneratedMemoryFacts(
+            latestSession.memoryFacts,
+            result.memoryFacts.map((text): RoleplayMemoryFact => ({
+              id: crypto.randomUUID(),
+              text,
+              pinned: false,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            }))
+          ),
+          Date.now()
         );
+      } catch (error) {
+        const context = {
+          requestId: crypto.randomUUID(),
+          stage: 'memory-refresh',
+          sessionId,
+          sourceMessageCount: conversationMessages.length,
+        };
+        recordRoleplayChatTelemetry('memory-refresh-failed', context, error);
+        setSessionMemoryStatus(sessionId, 'error');
         notifications.show({
           title: 'Memory Refresh Failed',
-          message: result.error ?? 'Could not update conversation memory.',
+          message: getErrorMessage(error),
           color: 'orange',
         });
-        return;
+      } finally {
+        if (textModelResidency) {
+          scheduleLocalTextModelUnload(textModelResidency, {
+            onError: (error) =>
+              notifications.show({
+                title: 'Text Model Still Loaded',
+                message: error,
+                color: 'yellow',
+              }),
+          });
+        }
       }
-
-      const latestSession = useRoleplayStore
-        .getState()
-        .chatSessions.find((entry) => entry.id === sessionId);
-      if (
-        !latestSession ||
-        (triggerMessageId &&
-          !latestSession.messages.some((message) => message.id === triggerMessageId))
-      ) {
-        return;
-      }
-
-      applyGeneratedMemory(
-        sessionId,
-        result.conversationSummary,
-        result.continuity,
-        mergeGeneratedMemoryFacts(latestSession.memoryFacts, result.memoryFacts.map((text): RoleplayMemoryFact => ({
-          id: crypto.randomUUID(), text, pinned: false, createdAt: Date.now(), updatedAt: Date.now(),
-        }))),
-        Date.now()
-      );
     },
     [applyGeneratedMemory, setDetectedServerMode, setSessionMemoryStatus]
   );
@@ -315,6 +713,22 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       markSessionVisited(activeSessionId);
     };
   }, [activeSessionId, markSessionVisited]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setBranchNameDraft(activeBranch?.name ?? '');
+    });
+  }, [activeBranch?.id, activeBranch?.name]);
+
+  useEffect(() => {
+    if (!compareBranchId) {
+      return;
+    }
+    const stillComparable = comparableBranchOptions.some((branch) => branch.value === compareBranchId);
+    if (!stillComparable) {
+      queueMicrotask(() => setCompareBranchId(null));
+    }
+  }, [comparableBranchOptions, compareBranchId]);
 
   useEffect(() => {
     const resumeRecapKey =
@@ -347,6 +761,10 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   const streamAssistantReply = async (
     baseMessages: ChatMessage[],
     options?: {
+      generationMode?: RoleplayGenerationMode;
+      outputRole?: 'assistant' | 'user';
+      appendToMessageId?: string;
+      replaceMessageId?: string;
       targetVariantMessageId?: string;
       onDone?: (assistantMessage: ChatMessage) => void;
     }
@@ -361,103 +779,244 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       return;
     }
 
-    const latestState = useRoleplayStore.getState();
-    const promptSession =
-      latestState.chatSessions.find((session) => session.id === activeSessionId) ?? activeSession;
-    const promptCharacter =
-      latestState.characters.find((character) => character.id === promptSession.characterId) ??
-      activeCharacter;
-    const promptPersona =
-      latestState.personas.find((persona) => persona.id === promptSession.activePersonaId) ??
-      activePersona;
-
-    const compiledPrompt = compileRoleplayPrompt({
-      character: promptCharacter,
-      session: promptSession,
-      persona: promptPersona,
-      lorebooks,
-      pendingMessages: baseMessages
-        .filter(
-          (message) =>
-            (message.role === 'user' || message.role === 'assistant') &&
-            message.includedInPrompt !== false
-        )
-        .map((message) => ({
-          role: message.role as 'user' | 'assistant',
-          content: getMessageContent(message),
-        })),
-    });
-
-    setStreamingChat(true);
-    setStreamingContent('');
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    await streamRoleplayChat({
-      endpointUrl: lmStudioEndpoint,
-      serverMode: detectedServerMode,
+    const requestId = crypto.randomUUID();
+    const generationMode = options?.generationMode ?? 'normal';
+    const baseTelemetry = {
+      requestId,
+      generationMode,
+      outputRole: options?.outputRole ?? 'assistant',
+      sessionId: activeSessionId,
+      branchId: activeSession.activeBranchId,
+      characterId: activeCharacter.id,
       modelId: selectedModelId,
-      messages: compiledPrompt.apiMessages,
+      serverMode: detectedServerMode,
+      endpoint: summarizeEndpoint(lmStudioEndpoint),
+      provider: chatProvider,
+      baseMessageCount: baseMessages.length,
       temperature: chatTemperature,
       maxTokens: chatMaxTokens,
-      compatibility: selectedModelCompatibility,
-      signal: controller.signal,
-      onToken: appendStreamingContent,
-      onServerModeCorrection: (correctedMode) => {
-        setDetectedServerMode(correctedMode);
-      },
-      onDone: (fullText) => {
-        const { cleanText, scenePrompt } = parseSceneTag(fullText);
-        const assistantMessage: ChatMessage = {
+      appendToMessageId: options?.appendToMessageId ?? null,
+      replaceMessageId: options?.replaceMessageId ?? null,
+      targetVariantMessageId: options?.targetVariantMessageId ?? null,
+    };
+    let controller: AbortController | null = null;
+    let requestServerMode = detectedServerMode;
+    const textModelResidency: LocalTextModelResidency = {
+      endpointUrl: lmStudioEndpoint,
+      modelId: selectedModelId,
+      serverMode: detectedServerMode,
+    };
+    cancelScheduledLocalTextModelUnload(textModelResidency);
+
+    const failChat = (stage: string, error: unknown, extra: Record<string, unknown> = {}) => {
+      if (controller?.signal.aborted) {
+        return;
+      }
+
+      const errorMessage = getErrorMessage(error);
+      const context = {
+        ...baseTelemetry,
+        ...extra,
+        stage,
+      };
+      recordRoleplayChatTelemetry('failed', context, error);
+
+      try {
+        notifications.show({
+          title: 'Roleplay Chat Failed',
+          message: truncateDiagnosticText(errorMessage, 180),
+          color: 'red',
+        });
+      } catch (notificationError) {
+        recordRoleplayChatTelemetry('failure-notification-failed', context, notificationError);
+      }
+
+      try {
+        addMessage(activeSessionId, {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: cleanText,
-          includedInPrompt: true,
+          content: buildFailureMessage(errorMessage, context),
+          includedInPrompt: false,
           variants: [],
           activeVariantId: null,
           timestamp: Date.now(),
           sceneImageUrl: null,
-          suggestedImagePrompt: scenePrompt,
-        };
-        if (options?.targetVariantMessageId) {
-          addAssistantMessageVariant(activeSessionId, options.targetVariantMessageId, {
-            content: cleanText,
-            sceneImageUrl: null,
-            suggestedImagePrompt: scenePrompt,
-          });
-        } else {
-          addMessage(activeSessionId, assistantMessage);
-        }
-        incrementMessagesSinceMemoryRefresh(activeSessionId);
-        const nextMessages = [...baseMessages, assistantMessage];
-        const latestSession = useRoleplayStore
-          .getState()
-          .chatSessions.find((entry) => entry.id === activeSessionId);
-        const messagesSinceRefresh =
-          latestSession?.messagesSinceMemoryRefresh ?? promptSession.messagesSinceMemoryRefresh + 1;
-        if (messagesSinceRefresh >= ROLEPLAY_MEMORY_REFRESH_THRESHOLD) {
-          void refreshSessionMemory(activeSessionId, nextMessages);
-        }
-        options?.onDone?.(assistantMessage);
-        setStreamingChat(false);
-        setStreamingContent('');
-        abortRef.current = null;
-      },
-      onError: (error) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        notifications.show({
-          title: 'Chat Error',
-          message: error,
-          color: 'red',
+          suggestedImagePrompt: null,
         });
+      } catch (messageError) {
+        recordRoleplayChatTelemetry('failure-message-failed', context, messageError);
+      } finally {
         setStreamingChat(false);
         setStreamingContent('');
         abortRef.current = null;
-      },
-    });
+      }
+    };
+
+    try {
+      const latestState = useRoleplayStore.getState();
+      const promptSession =
+        latestState.chatSessions.find((session) => session.id === activeSessionId) ?? activeSession;
+      const latestCharacterById = new Map(
+        latestState.characters.map((character) => [character.id, character])
+      );
+      const promptCharacter =
+        latestCharacterById.get(promptSession.characterId) ?? activeCharacter;
+      const promptPersona =
+        latestState.personas.find((persona) => persona.id === promptSession.activePersonaId) ??
+        activePersona;
+      const promptGroupCharacters = promptSession.participantCharacterIds
+        .map((characterId) => latestCharacterById.get(characterId))
+        .filter((character): character is RoleplayCharacter => Boolean(character));
+
+      const compiledPrompt = compileRoleplayPrompt({
+        character: promptCharacter,
+        session: promptSession,
+        persona: promptPersona,
+        groupCharacters: promptGroupCharacters,
+        lorebooks,
+        pendingMessages: baseMessages
+          .filter(
+            (message) =>
+              (message.role === 'user' || message.role === 'assistant') &&
+              message.includedInPrompt !== false
+          )
+          .map((message) => ({
+            role: message.role as 'user' | 'assistant',
+            content: getMessageContent(message),
+          })),
+        generationMode,
+        maxHistoryMessages: selectedMaxHistoryMessages,
+        maxContextTokens: selectedContextTokens,
+        reservedResponseTokens: chatMaxTokens,
+        promptBudgetMode: selectedPromptBudgetMode,
+        loreEntryLimit: selectedLoreEntryLimit,
+      });
+      const promptTelemetry = summarizeCompiledPrompt(compiledPrompt);
+
+      recordRoleplayChatTelemetry('started', {
+        ...baseTelemetry,
+        ...promptTelemetry,
+        stage: 'stream-request',
+      });
+
+      setStreamingChat(true);
+      setStreamingContent('');
+
+      controller = new AbortController();
+      abortRef.current = controller;
+
+      await streamRoleplayChat({
+        endpointUrl: lmStudioEndpoint,
+        serverMode: detectedServerMode,
+        modelId: selectedModelId,
+        messages: compiledPrompt.apiMessages,
+        temperature: chatTemperature,
+        maxTokens: chatMaxTokens,
+        compatibility: selectedModelCompatibility,
+        requestConfig: {
+          provider: chatProvider,
+          apiKey: chatApiKey,
+          title: 'SwarmUI Roleplay',
+        },
+        signal: controller.signal,
+        onToken: appendStreamingContent,
+        onServerModeCorrection: (correctedMode) => {
+          requestServerMode = correctedMode;
+          recordRoleplayChatTelemetry('server-mode-corrected', {
+            ...baseTelemetry,
+            ...promptTelemetry,
+            stage: 'server-mode-correction',
+            correctedMode,
+          });
+          setDetectedServerMode(correctedMode);
+        },
+        onDone: (fullText) => {
+          try {
+            const { cleanText, scenePrompt } = parseSceneTag(fullText);
+            const outputRole = options?.outputRole ?? 'assistant';
+            const assistantMessage: ChatMessage = {
+              id: crypto.randomUUID(),
+              role: outputRole,
+              content: cleanText,
+              includedInPrompt: true,
+              variants: [],
+              activeVariantId: null,
+              timestamp: Date.now(),
+              sceneImageUrl: null,
+              suggestedImagePrompt: scenePrompt,
+            };
+            if (options?.appendToMessageId) {
+              const latestTarget = getLatestSessionMessages(activeSessionId).find(
+                (message) => message.id === options.appendToMessageId
+              );
+              const previousContent = latestTarget ? getMessageContent(latestTarget).trimEnd() : '';
+              replaceMessageContent(
+                activeSessionId,
+                options.appendToMessageId,
+                [previousContent, cleanText.trim()].filter(Boolean).join('\n')
+              );
+            } else if (options?.replaceMessageId) {
+              replaceMessageContent(activeSessionId, options.replaceMessageId, cleanText);
+            } else if (options?.targetVariantMessageId) {
+              addAssistantMessageVariant(activeSessionId, options.targetVariantMessageId, {
+                content: cleanText,
+                sceneImageUrl: null,
+                suggestedImagePrompt: scenePrompt,
+              });
+            } else {
+              addMessage(activeSessionId, assistantMessage);
+            }
+            incrementMessagesSinceMemoryRefresh(activeSessionId);
+            const nextMessages =
+              options?.appendToMessageId || options?.replaceMessageId
+                ? getLatestSessionMessages(activeSessionId)
+                : [...baseMessages, assistantMessage];
+            const latestSession = useRoleplayStore
+              .getState()
+              .chatSessions.find((entry) => entry.id === activeSessionId);
+            const messagesSinceRefresh =
+              latestSession?.messagesSinceMemoryRefresh ?? promptSession.messagesSinceMemoryRefresh + 1;
+            if (messagesSinceRefresh >= ROLEPLAY_MEMORY_REFRESH_THRESHOLD) {
+              void refreshSessionMemory(activeSessionId, nextMessages);
+            }
+            options?.onDone?.(assistantMessage);
+            recordRoleplayChatTelemetry('completed', {
+              ...baseTelemetry,
+              ...promptTelemetry,
+              stage: 'stream-complete',
+              responseCharacterCount: fullText.length,
+              cleanResponseCharacterCount: cleanText.length,
+              scenePromptSuggested: Boolean(scenePrompt),
+            });
+            setStreamingChat(false);
+            setStreamingContent('');
+            abortRef.current = null;
+          } catch (error) {
+            failChat('stream-completion', error, promptTelemetry);
+          }
+        },
+        onError: (error) => {
+          failChat('stream-error', error, promptTelemetry);
+        },
+      });
+    } catch (error) {
+      failChat('preflight', error);
+    } finally {
+      scheduleLocalTextModelUnload(
+        {
+          ...textModelResidency,
+          serverMode: requestServerMode,
+        },
+        {
+          onError: (error) =>
+            notifications.show({
+              title: 'Text Model Still Loaded',
+              message: error,
+              color: 'yellow',
+            }),
+        }
+      );
+    }
   };
 
   const sendUserText = async (rawInput: string, replaceFromMessageId?: string | null) => {
@@ -467,7 +1026,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     if (connectionStatus !== 'connected' || !detectedServerMode || !selectedModelId) {
       notifications.show({
         title: 'Not Connected',
-        message: 'Connect to LM Studio first via the settings sidebar.',
+        message: 'Connect to a chat provider first via the settings sidebar.',
         color: 'orange',
       });
       return;
@@ -492,12 +1051,18 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     const baseMessages = replaceIndex >= 0 ? currentMessages.slice(0, replaceIndex) : currentMessages;
 
     if (replaceFromMessageId && replaceIndex >= 0) {
-      deleteMessagesFrom(activeSessionId, replaceFromMessageId);
+      branchFromMessage(activeSessionId, replaceFromMessageId, {
+        name: `Edit from turn ${replaceIndex + 1}`,
+        replacementMessage: userMessage,
+      });
+      const nextMessages = [...baseMessages, userMessage];
+      await streamAssistantReply(nextMessages, { generationMode: 'normal' });
+      return;
     }
 
     addMessage(activeSessionId, userMessage);
     const nextMessages = [...baseMessages, userMessage];
-    await streamAssistantReply(nextMessages);
+    await streamAssistantReply(nextMessages, { generationMode: 'normal' });
   };
 
   const handleSend = async () => {
@@ -535,14 +1100,72 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     }
 
     const baseMessages = currentMessages.slice(0, assistantIndex);
-    await streamAssistantReply(baseMessages, { targetVariantMessageId: lastAssistantMessageId });
+    await streamAssistantReply(baseMessages, {
+      generationMode: 'regenerate',
+      replaceMessageId: lastAssistantMessageId,
+    });
+  };
+
+  const handleNewSwipe = async () => {
+    if (!activeSessionId || !lastAssistantMessageId) {
+      return;
+    }
+    const currentMessages = getLatestSessionMessages(activeSessionId);
+    const assistantIndex = currentMessages.findIndex(
+      (message) => message.id === lastAssistantMessageId
+    );
+    if (assistantIndex === -1) {
+      return;
+    }
+
+    const baseMessages = currentMessages.slice(0, assistantIndex);
+    await streamAssistantReply(baseMessages, {
+      generationMode: 'swipe',
+      targetVariantMessageId: lastAssistantMessageId,
+    });
   };
 
   const handleContinue = async () => {
+    if (!activeSessionId || !lastAssistantMessageId) {
+      return;
+    }
+    await streamAssistantReply(getLatestSessionMessages(activeSessionId), {
+      generationMode: 'continue',
+      appendToMessageId: lastAssistantMessageId,
+    });
+  };
+
+  const handleImpersonate = async () => {
     if (!activeSessionId) {
       return;
     }
-    await streamAssistantReply(getLatestSessionMessages(activeSessionId));
+    await streamAssistantReply(getLatestSessionMessages(activeSessionId), {
+      generationMode: 'impersonate',
+      outputRole: 'user',
+    });
+  };
+
+  const handleQuietRefresh = async () => {
+    if (!activeSessionId) {
+      return;
+    }
+
+    const currentMessages = getLatestSessionMessages(activeSessionId);
+    if (currentMessages.length === 0) {
+      notifications.show({
+        title: 'Nothing To Refresh',
+        message: 'This session has no messages yet.',
+        color: 'orange',
+      });
+      return;
+    }
+
+    await refreshSessionMemory(activeSessionId, currentMessages);
+    notifications.show({
+      title: 'Quiet Refresh Queued',
+      message: 'Memory and lore context were refreshed without adding a chat turn.',
+      color: 'green',
+    });
   };
 
   const handleRememberMessage = (message: ChatMessage) => {
@@ -631,6 +1254,45 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     selectMessageVariant(activeSessionId, message.id, variantId);
   };
 
+  const handleBranchFromMessage = (message: ChatMessage) => {
+    if (!activeSessionId) {
+      return;
+    }
+    const messageIndex = messages.findIndex((entry) => entry.id === message.id);
+    branchFromMessage(activeSessionId, message.id, {
+      name: `Branch from turn ${messageIndex >= 0 ? messageIndex + 1 : messages.length}`,
+    });
+  };
+
+  const handleCreateCheckpoint = () => {
+    if (!activeSessionId) {
+      return;
+    }
+    createCheckpoint(activeSessionId, checkpointName);
+    setCheckpointName('');
+  };
+
+  const handleRestoreCheckpoint = (checkpointId: string) => {
+    if (!activeSessionId) {
+      return;
+    }
+    restoreCheckpoint(activeSessionId, checkpointId);
+  };
+
+  const handleRemoveCheckpoint = (checkpointId: string) => {
+    if (!activeSessionId) {
+      return;
+    }
+    removeCheckpoint(activeSessionId, checkpointId);
+  };
+
+  const handleRenameActiveBranch = () => {
+    if (!activeSessionId || !activeBranch) {
+      return;
+    }
+    renameBranch(activeSessionId, activeBranch.id, branchNameDraft);
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -649,6 +1311,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   }
 
   const showResumeRecap = visibleResumeRecapKey !== null;
+  const displaySpeakerCharacter = activeSpeakerCharacter ?? activeCharacter;
 
   return (
     <Stack h="100%" gap={0}>
@@ -662,7 +1325,14 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
             {activeSession.title}
           </Text>
           <Text size="xs" c="dimmed">
-            {activePersona ? `Persona: ${activePersona.name}` : 'No persona selected'}
+            {[
+              activePersona ? `Persona: ${activePersona.name}` : 'No persona selected',
+              participantCharacters.length > 1
+                ? `Group: ${participantCharacters.map((character) => character.name).join(', ')}`
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' | ')}
           </Text>
         </div>
         <Group gap="xs">
@@ -686,10 +1356,79 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
           >
             Regenerate
           </SwarmButton>
+          <SwarmButton
+            tone="secondary"
+            emphasis="ghost"
+            size="xs"
+            onClick={() => void handleImpersonate()}
+            leftSection={<IconEdit size={14} />}
+            disabled={messages.length === 0 || isStreamingChat}
+          >
+            Impersonate
+          </SwarmButton>
+          <SwarmButton
+            tone="secondary"
+            emphasis="ghost"
+            size="xs"
+            onClick={() => void handleQuietRefresh()}
+            leftSection={<IconBrain size={14} />}
+            disabled={messages.length === 0 || isStreamingChat}
+          >
+            Quiet
+          </SwarmButton>
         </Group>
       </Group>
 
-      <ScrollArea style={{ flex: 1 }} viewportRef={viewportRef}>
+      <BranchNavigator
+        activeSessionId={activeSessionId}
+        activeSession={activeSession}
+        activeBranch={activeBranch}
+        parentBranch={parentBranch}
+        branchTreeNodes={branchTreeNodes}
+        activeBranchLineage={activeBranchLineage}
+        checkpointsByBranchId={checkpointsByBranchId}
+        branchNameDraft={branchNameDraft}
+        checkpointName={checkpointName}
+        compareBranchId={compareBranchId}
+        comparableBranchOptions={comparableBranchOptions}
+        activeBranchPromptTokens={activeBranchPrompt?.tokenEstimate ?? null}
+        comparedBranchPromptTokens={comparedBranchPrompt?.tokenEstimate ?? null}
+        comparedPromptTokenDelta={comparedPromptTokenDelta}
+        comparedPromptBlockCount={comparedBranchPrompt?.promptBlocks.length ?? null}
+        activePromptBlockCount={activeBranchPrompt?.promptBlocks.length ?? null}
+        comparedPromptApiCount={comparedBranchPrompt?.apiMessages.length ?? null}
+        activePromptApiCount={activeBranchPrompt?.apiMessages.length ?? null}
+        messagesLength={messages.length}
+        collapsed={!branchNavigatorOpen}
+        onToggleCollapsed={() => setBranchNavigatorOpen((value) => !value)}
+        onBranchNameDraftChange={setBranchNameDraft}
+        onCheckpointNameChange={setCheckpointName}
+        onCompareBranchChange={setCompareBranchId}
+        onSwitchBranch={switchBranch}
+        onReturnToParentBranch={returnToParentBranch}
+        onBranchFromLatest={() => {
+          const latestMessageId = messages[messages.length - 1]?.id;
+          if (activeSessionId && latestMessageId) {
+            branchFromMessage(activeSessionId, latestMessageId);
+          }
+        }}
+        onRenameActiveBranch={handleRenameActiveBranch}
+        onCreateCheckpoint={handleCreateCheckpoint}
+        onRestoreCheckpoint={handleRestoreCheckpoint}
+        onRemoveCheckpoint={handleRemoveCheckpoint}
+      />
+
+      <ScrollArea
+        style={{
+          flex: 1,
+          backgroundImage: activeSession.chatBackgroundImage
+            ? `linear-gradient(rgba(0, 0, 0, 0.36), rgba(0, 0, 0, 0.36)), url("${activeSession.chatBackgroundImage}")`
+            : undefined,
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+        }}
+        viewportRef={viewportRef}
+      >
         <Stack gap="sm" p="md">
           {messages.length === 0 && greetingOptions.length > 0 ? (
             <ElevatedCard elevation="floor" tone="brand">
@@ -794,7 +1533,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
             <MessageBubble
               key={message.id}
               message={message}
-              character={activeCharacter}
+              character={message.role === 'assistant' ? displaySpeakerCharacter : activeCharacter}
               activeSessionId={activeSessionId}
               onRegenerateScene={getMessageSceneImageUrl(message) ? onRegenerateScene : undefined}
               onGenerateSceneWithPrompt={onGenerateSceneWithPrompt}
@@ -807,7 +1546,8 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
               onMoveMessage={handleMoveMessage}
               onToggleIncluded={handleToggleMessageIncluded}
               onSelectVariant={handleSelectVariant}
-              onRegenerateReply={() => void handleRegenerateReply()}
+              onBranchFromMessage={handleBranchFromMessage}
+              onRegenerateReply={() => void handleNewSwipe()}
               onContinue={() => void handleContinue()}
               isLatestAssistantMessage={message.id === lastAssistantMessageId}
               isLatestUserMessage={message.id === lastUserMessageId}
@@ -818,12 +1558,12 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
             <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
               <Group gap="xs" align="flex-start" wrap="nowrap">
                 <div style={{ paddingTop: 4, flexShrink: 0 }}>
-                  <CharacterAvatar character={activeCharacter} size={28} />
+                  <CharacterAvatar character={displaySpeakerCharacter} size={28} />
                 </div>
                 <ElevatedCard elevation="table" tone="neutral" style={{ maxWidth: '80%' }}>
                   <Stack gap={4}>
                     <Text size="xs" fw={600} c="dimmed">
-                      {activeCharacter.name}
+                      {displaySpeakerCharacter.name}
                     </Text>
                     <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
                       {streamingContent}
@@ -836,10 +1576,10 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
 
           {isStreamingChat && !streamingContent ? (
             <Group gap="xs" p="xs">
-              <CharacterAvatar character={activeCharacter} size={24} />
+              <CharacterAvatar character={displaySpeakerCharacter} size={24} />
               <Loader size="xs" />
               <Text size="xs" c="dimmed">
-                {activeCharacter.name} is thinking...
+                {displaySpeakerCharacter.name} is thinking...
               </Text>
             </Group>
           ) : null}
@@ -908,6 +1648,338 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   );
 }
 
+interface BranchNavigatorProps {
+  activeSessionId: string | null;
+  activeSession: RoleplayChatSession;
+  activeBranch: RoleplayChatBranch | null;
+  parentBranch: RoleplayChatBranch | null;
+  branchTreeNodes: BranchTreeNode[];
+  activeBranchLineage: RoleplayChatBranch[];
+  checkpointsByBranchId: Map<string, RoleplayChatCheckpoint[]>;
+  branchNameDraft: string;
+  checkpointName: string;
+  compareBranchId: string | null;
+  comparableBranchOptions: Array<{ value: string; label: string }>;
+  activeBranchPromptTokens: number | null;
+  comparedBranchPromptTokens: number | null;
+  comparedPromptTokenDelta: number | null;
+  activePromptBlockCount: number | null;
+  comparedPromptBlockCount: number | null;
+  activePromptApiCount: number | null;
+  comparedPromptApiCount: number | null;
+  messagesLength: number;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  onBranchNameDraftChange: (name: string) => void;
+  onCheckpointNameChange: (name: string) => void;
+  onCompareBranchChange: (branchId: string | null) => void;
+  onSwitchBranch: (sessionId: string, branchId: string) => void;
+  onReturnToParentBranch: (sessionId: string) => void;
+  onBranchFromLatest: () => void;
+  onRenameActiveBranch: () => void;
+  onCreateCheckpoint: () => void;
+  onRestoreCheckpoint: (checkpointId: string) => void;
+  onRemoveCheckpoint: (checkpointId: string) => void;
+}
+
+function BranchNavigator({
+  activeSessionId,
+  activeSession,
+  activeBranch,
+  parentBranch,
+  branchTreeNodes,
+  activeBranchLineage,
+  checkpointsByBranchId,
+  branchNameDraft,
+  checkpointName,
+  compareBranchId,
+  comparableBranchOptions,
+  activeBranchPromptTokens,
+  comparedBranchPromptTokens,
+  comparedPromptTokenDelta,
+  activePromptBlockCount,
+  comparedPromptBlockCount,
+  activePromptApiCount,
+  comparedPromptApiCount,
+  messagesLength,
+  collapsed,
+  onToggleCollapsed,
+  onBranchNameDraftChange,
+  onCheckpointNameChange,
+  onCompareBranchChange,
+  onSwitchBranch,
+  onReturnToParentBranch,
+  onBranchFromLatest,
+  onRenameActiveBranch,
+  onCreateCheckpoint,
+  onRestoreCheckpoint,
+  onRemoveCheckpoint,
+}: BranchNavigatorProps) {
+  const activeBranchId = activeSession.activeBranchId;
+
+  if (collapsed) {
+    return (
+      <div className="roleplay-branch-navigator roleplay-branch-navigator-collapsed">
+        <Group justify="space-between" wrap="nowrap">
+          <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+            <IconGitBranch size={15} />
+            <Text size="xs" fw={700} truncate>
+              {activeBranch?.name ?? 'Branch Tree'}
+            </Text>
+            <Badge size="xs" variant="light">
+              {activeSession.branches.length} branches
+            </Badge>
+            <Badge size="xs" variant="outline">
+              {messagesLength} turns
+            </Badge>
+          </Group>
+          <ActionIcon variant="subtle" size="sm" onClick={onToggleCollapsed}>
+            <IconChevronDown size={14} />
+          </ActionIcon>
+        </Group>
+      </div>
+    );
+  }
+
+  return (
+    <div className="roleplay-branch-navigator">
+      <Stack gap="xs">
+        <Group justify="space-between" align="flex-start" gap="xs">
+          <Stack gap={4} style={{ minWidth: 0 }}>
+            <Group gap={6}>
+              <IconGitBranch size={15} />
+              <Text size="sm" fw={700}>
+                Branch Tree
+              </Text>
+              <Badge size="xs" variant="light">
+                {activeSession.branches.length}
+              </Badge>
+            </Group>
+            <Group gap={4}>
+              {activeBranchLineage.map((branch, index) => (
+                <Group key={branch.id} gap={4} wrap="nowrap">
+                  {index > 0 ? (
+                    <Text size="xs" c="dimmed">
+                      /
+                    </Text>
+                  ) : null}
+                  <Text
+                    size="xs"
+                    fw={branch.id === activeBranchId ? 700 : 500}
+                    c={branch.id === activeBranchId ? undefined : 'dimmed'}
+                    truncate
+                  >
+                    {branch.name}
+                  </Text>
+                </Group>
+              ))}
+            </Group>
+          </Stack>
+          <Group gap="xs" align="flex-end">
+            <ActionIcon variant="subtle" size="sm" onClick={onToggleCollapsed}>
+              <IconChevronUp size={14} />
+            </ActionIcon>
+            <TextInput
+              label="Active Branch Name"
+              size="xs"
+              value={branchNameDraft}
+              onChange={(event) => onBranchNameDraftChange(event.currentTarget.value)}
+              style={{ width: 190 }}
+            />
+            <SwarmButton
+              tone="secondary"
+              emphasis="ghost"
+              size="xs"
+              onClick={onRenameActiveBranch}
+              disabled={!activeBranch || !branchNameDraft.trim() || branchNameDraft === activeBranch.name}
+            >
+              Rename
+            </SwarmButton>
+            <SwarmButton
+              tone="secondary"
+              emphasis="ghost"
+              size="xs"
+              onClick={onBranchFromLatest}
+              disabled={messagesLength === 0}
+              leftSection={<IconGitBranch size={14} />}
+            >
+              Branch Current
+            </SwarmButton>
+            <SwarmButton
+              tone="secondary"
+              emphasis="ghost"
+              size="xs"
+              onClick={() => activeSessionId && onReturnToParentBranch(activeSessionId)}
+              disabled={!parentBranch}
+            >
+              Parent{parentBranch ? `: ${parentBranch.name}` : ''}
+            </SwarmButton>
+          </Group>
+        </Group>
+
+        <ScrollArea h={170} type="auto">
+          <Stack gap={4} pr="xs">
+            {branchTreeNodes.map(({ branch, depth, childCount }) => {
+              const branchCheckpoints = checkpointsByBranchId.get(branch.id) ?? [];
+              const isActive = branch.id === activeBranchId;
+              const isCompared = branch.id === compareBranchId;
+              return (
+                <div key={branch.id} className="roleplay-branch-tree-row-wrap">
+                  <Group
+                    className={`roleplay-branch-tree-row${isActive ? ' roleplay-branch-tree-row-active' : ''}`}
+                    gap="xs"
+                    wrap="nowrap"
+                    style={{ paddingLeft: 8 + depth * 22 }}
+                  >
+                    <span className="roleplay-branch-tree-line" />
+                    <Stack gap={1} style={{ minWidth: 0, flex: 1 }}>
+                      <Group gap={5} wrap="nowrap">
+                        <Text size="xs" fw={isActive ? 700 : 600} truncate>
+                          {branch.name}
+                        </Text>
+                        {isActive ? (
+                          <Badge size="xs" color="green" variant="light">
+                            active
+                          </Badge>
+                        ) : null}
+                        {isCompared ? (
+                          <Badge size="xs" color="blue" variant="light">
+                            compare
+                          </Badge>
+                        ) : null}
+                      </Group>
+                      <Text size="xs" c="dimmed" truncate>
+                        {branch.messages.length} turns · {childCount} child
+                        {childCount === 1 ? '' : 'ren'} · fork{' '}
+                        {branch.forkMessageId ? branch.forkMessageId.slice(0, 8) : 'root'}
+                      </Text>
+                    </Stack>
+                    <Group gap={2} wrap="nowrap">
+                      <SwarmButton
+                        tone="secondary"
+                        emphasis={isActive ? 'soft' : 'ghost'}
+                        size="xs"
+                        onClick={() => activeSessionId && onSwitchBranch(activeSessionId, branch.id)}
+                        disabled={isActive}
+                      >
+                        Open
+                      </SwarmButton>
+                      <SwarmButton
+                        tone="secondary"
+                        emphasis={isCompared ? 'soft' : 'ghost'}
+                        size="xs"
+                        onClick={() => onCompareBranchChange(isCompared ? null : branch.id)}
+                        disabled={isActive}
+                      >
+                        Compare
+                      </SwarmButton>
+                    </Group>
+                  </Group>
+                  {branchCheckpoints.length > 0 ? (
+                    <Group
+                      gap={4}
+                      wrap="wrap"
+                      className="roleplay-branch-checkpoint-row"
+                      style={{ paddingLeft: 30 + depth * 22 }}
+                    >
+                      {branchCheckpoints.map((checkpoint) => (
+                        <Group key={checkpoint.id} gap={2} wrap="nowrap">
+                          <SwarmButton
+                            tone="secondary"
+                            emphasis="ghost"
+                            size="xs"
+                            leftSection={<IconBookmark size={12} />}
+                            onClick={() => onRestoreCheckpoint(checkpoint.id)}
+                          >
+                            {checkpoint.name}
+                          </SwarmButton>
+                          <Tooltip label="Delete checkpoint">
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              size="xs"
+                              onClick={() => onRemoveCheckpoint(checkpoint.id)}
+                            >
+                              <IconX size={10} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
+                      ))}
+                    </Group>
+                  ) : null}
+                </div>
+              );
+            })}
+          </Stack>
+        </ScrollArea>
+
+        <Group gap="xs" align="flex-end" wrap="wrap">
+          <TextInput
+            label="Checkpoint"
+            size="xs"
+            placeholder="Name this state"
+            value={checkpointName}
+            onChange={(event) => onCheckpointNameChange(event.currentTarget.value)}
+            style={{ minWidth: 180 }}
+          />
+          <SwarmButton
+            tone="secondary"
+            emphasis="ghost"
+            size="xs"
+            leftSection={<IconBookmark size={14} />}
+            onClick={onCreateCheckpoint}
+            disabled={messagesLength === 0}
+          >
+            Save Checkpoint
+          </SwarmButton>
+          <Select
+            label="Compare Branch"
+            size="xs"
+            placeholder="Prompt trace"
+            data={comparableBranchOptions}
+            value={compareBranchId}
+            onChange={onCompareBranchChange}
+            clearable
+            leftSection={<IconGitCompare size={14} />}
+            disabled={comparableBranchOptions.length === 0}
+            style={{ minWidth: 210 }}
+          />
+          <Badge size="sm" variant="light">
+            Active {activeBranch?.messages.length ?? messagesLength} turns
+          </Badge>
+          <Badge size="sm" variant="light">
+            Checkpoints {activeSession.checkpoints.length}
+          </Badge>
+          {activeBranchPromptTokens !== null ? (
+            <Badge size="sm" variant="outline">
+              Active prompt ~{activeBranchPromptTokens}
+            </Badge>
+          ) : null}
+          {comparedBranchPromptTokens !== null ? (
+            <>
+              <Badge size="sm" color="blue" variant="outline">
+                Compare prompt ~{comparedBranchPromptTokens}
+              </Badge>
+              {comparedPromptTokenDelta !== null ? (
+                <Badge size="sm" color="blue" variant="light">
+                  Delta {comparedPromptTokenDelta >= 0 ? '+' : ''}
+                  {comparedPromptTokenDelta}
+                </Badge>
+              ) : null}
+              <Badge size="sm" color="blue" variant="light">
+                Blocks {activePromptBlockCount ?? 0} / {comparedPromptBlockCount ?? 0}
+              </Badge>
+              <Badge size="sm" color="blue" variant="light">
+                API {activePromptApiCount ?? 0} / {comparedPromptApiCount ?? 0}
+              </Badge>
+            </>
+          ) : null}
+        </Group>
+      </Stack>
+    </div>
+  );
+}
+
 interface MessageBubbleProps {
   message: ChatMessage;
   character: RoleplayCharacter;
@@ -923,6 +1995,7 @@ interface MessageBubbleProps {
   onMoveMessage: (message: ChatMessage, direction: -1 | 1) => void;
   onToggleIncluded: (message: ChatMessage) => void;
   onSelectVariant: (message: ChatMessage, variantId: string | null) => void;
+  onBranchFromMessage: (message: ChatMessage) => void;
   onRegenerateReply: () => void;
   onContinue: () => void;
   isLatestAssistantMessage: boolean;
@@ -944,6 +2017,7 @@ function MessageBubble({
   onMoveMessage,
   onToggleIncluded,
   onSelectVariant,
+  onBranchFromMessage,
   onRegenerateReply,
   onContinue,
   isLatestAssistantMessage,
@@ -988,6 +2062,11 @@ function MessageBubble({
             <Tooltip label={isLatestUserMessage ? 'Edit and resend' : 'Edit'}>
               <ActionIcon variant="subtle" size="xs" onClick={() => onEditMessage(message)}>
                 <IconEdit size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Branch from here">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onBranchFromMessage(message)}>
+                <IconGitBranch size={12} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label="Move up">
@@ -1097,6 +2176,11 @@ function MessageBubble({
             <Tooltip label="Edit">
               <ActionIcon variant="subtle" size="xs" onClick={() => onEditMessage(message)}>
                 <IconEdit size={12} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Branch from here">
+              <ActionIcon variant="subtle" size="xs" onClick={() => onBranchFromMessage(message)}>
+                <IconGitBranch size={12} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label="Move up">

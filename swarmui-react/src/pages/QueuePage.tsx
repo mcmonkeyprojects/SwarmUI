@@ -33,6 +33,7 @@ import {
   IconAlertTriangle,
   IconChecks,
   IconClockCog,
+  IconTableOptions,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useQueueStore, type QueueJob, type JobPriority } from '../stores/queue';
@@ -41,6 +42,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { featureFlags } from '../config/featureFlags';
 import { resolveAssetUrl } from '../config/runtimeEndpoints';
 import { useNavigationStore, type QueueRouteState } from '../stores/navigationStore';
+import { useCreativeWorkspaceStore } from '../stores/creativeWorkspaceStore';
 import type { ImageListItem } from '../api/types';
 import { PageScaffold } from '../components/layout/PageScaffold';
 import { ImageComparison } from '../components/ImageComparison';
@@ -121,6 +123,7 @@ export function QueuePage({ routeState }: QueuePageProps) {
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
   const [comparisonPair, setComparisonPair] = useState<[ImageListItem | null, ImageListItem | null]>([null, null]);
   const navigateToQueue = useNavigationStore((state) => state.navigateToQueue);
+  const { activeProjectId, ensureActiveProject, createRunMatrix } = useCreativeWorkspaceStore();
 
   // Current time for duration calculation - updated every second for running jobs
   const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -274,6 +277,41 @@ export function QueuePage({ routeState }: QueuePageProps) {
     });
   };
 
+  const handleSaveCampaign = () => {
+    const candidateJobs = selectedJobs.length > 0
+      ? jobs.filter((job) => selectedJobs.includes(job.id))
+      : filteredJobs;
+    const sourceJob = candidateJobs[0];
+    if (!sourceJob) {
+      notifications.show({
+        title: 'No Jobs Selected',
+        message: 'Select jobs or filter the queue before saving a campaign snapshot.',
+        color: 'orange',
+      });
+      return;
+    }
+    const projectId = activeProjectId ?? ensureActiveProject();
+    const uniqueModels = Array.from(new Set(candidateJobs.map((job) => job.params.model).filter(Boolean))) as string[];
+    const uniqueSeeds = Array.from(new Set(candidateJobs.map((job) => job.params.seed).filter((seed): seed is number => typeof seed === 'number')));
+    const uniqueCfg = Array.from(new Set(candidateJobs.map((job) => job.params.cfgscale).filter((cfg): cfg is number => typeof cfg === 'number')));
+    const axes = [
+      ...(uniqueModels.length > 1 ? [{ id: 'axis-model', paramKey: 'model', label: 'Model', values: uniqueModels }] : []),
+      ...(uniqueSeeds.length > 1 ? [{ id: 'axis-seed', paramKey: 'seed', label: 'Seed', values: uniqueSeeds }] : []),
+      ...(uniqueCfg.length > 1 ? [{ id: 'axis-cfg', paramKey: 'cfgscale', label: 'CFG', values: uniqueCfg }] : []),
+    ];
+    createRunMatrix({
+      name: sourceJob.batchId ? `Queue Campaign ${sourceJob.batchId.slice(-4)}` : 'Queue Campaign Snapshot',
+      projectId,
+      baseParams: sourceJob.params,
+      axes,
+    });
+    notifications.show({
+      title: 'Campaign Saved',
+      message: `${candidateJobs.length} job(s) summarized for the active project.`,
+      color: 'teal',
+    });
+  };
+
   const getStatusTone = (status: QueueJob['status']): SwarmTone => {
     switch (status) {
       case 'pending': return 'secondary';
@@ -395,6 +433,16 @@ export function QueuePage({ routeState }: QueuePageProps) {
           tooltip: 'Start processing pending and scheduled jobs',
         },
       ]),
+    {
+      id: 'save-campaign',
+      label: 'Save Campaign',
+      icon: <IconTableOptions size={14} />,
+      onClick: handleSaveCampaign,
+      disabled: jobs.length === 0,
+      tone: 'info' as const,
+      emphasis: 'soft' as const,
+      tooltip: 'Save selected or visible jobs as a project queue campaign',
+    },
     {
       id: 'clear-completed',
       label: 'Clear Done',
@@ -958,10 +1006,21 @@ export function QueuePage({ routeState }: QueuePageProps) {
                   {selectedJobDetails.provenance.recipeName ? (
                     <SwarmBadge tone="success">{selectedJobDetails.provenance.recipeName}</SwarmBadge>
                   ) : null}
+                  {selectedJobDetails.provenance.projectId ? (
+                    <SwarmBadge tone="primary">project</SwarmBadge>
+                  ) : null}
+                  {selectedJobDetails.provenance.roleplayCharacterName ? (
+                    <SwarmBadge tone="info">{selectedJobDetails.provenance.roleplayCharacterName}</SwarmBadge>
+                  ) : null}
                   {selectedJobDetails.provenance.workflowMode ? (
                     <SwarmBadge tone="info">{selectedJobDetails.provenance.workflowMode}</SwarmBadge>
                   ) : null}
                 </Group>
+                {selectedJobDetails.provenance.prompt ? (
+                  <Text size="sm" mt="xs" lineClamp={3}>
+                    {selectedJobDetails.provenance.prompt}
+                  </Text>
+                ) : null}
               </Paper>
             )}
 
