@@ -20,6 +20,8 @@ import { imageUrlToDataUrl, toRuntimeImageUrl } from '../utils/imageData';
 import { useQueueStore, type QueueJob } from '../stores/queue';
 import { SwarmButton, SwarmSegmentedControl, SwarmSlider } from './ui';
 import { useUpscalers } from '../hooks/useModels';
+import { swarmClient } from '../api/client';
+import { queryClient, queryKeys } from '../api/queryClient';
 
 interface ImageUpscalerProps {
   opened: boolean;
@@ -86,6 +88,7 @@ export function ImageUpscaler({
   const [steps, setSteps] = useState(20);
   const [cfgScale, setCfgScale] = useState(7);
   const [upscaledImage, setUpscaledImage] = useState<string | null>(null);
+  const [refreshingUpscalers, setRefreshingUpscalers] = useState(false);
   const upscalersQuery = useUpscalers({ enabled: opened });
 
   const upscaleModels = useMemo(() => {
@@ -309,8 +312,8 @@ export function ImageUpscaler({
           refinercontrolpercentage: 0,
           refinerupscale: scaleFactor,
           refinerupscalemethod: upscaleModel || DEFAULT_UPSCALE_METHOD,
-          steps: 20,
-          cfgscale: 7,
+          steps: steps,
+          cfgscale: cfgScale,
           images: 1,
           seed: params.seed || -1,
         }
@@ -348,8 +351,6 @@ export function ImageUpscaler({
         message: 'This upscale is now tracked in Queue, so you can safely navigate away.',
         color: 'blue',
       });
-
-      const { swarmClient } = await import('../api/client');
 
       const methodLabel = upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : selectedUpscaleModelLabel;
       const initImageValue = typeof upscaleParams.initimage === 'string' ? upscaleParams.initimage : '';
@@ -487,6 +488,28 @@ export function ImageUpscaler({
 
   const originalImageUrl = getProxyUrl(imagePath);
 
+  const handleRefreshUpscalers = async () => {
+    setRefreshingUpscalers(true);
+    try {
+      await swarmClient.triggerModelRefresh();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.upscalers.all });
+      await upscalersQuery.refetch();
+      notifications.show({
+        title: 'Upscalers Refreshed',
+        message: 'Checked the backend model list for upscale_models and latent_upscale_models.',
+        color: 'green',
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Refresh Failed',
+        message: error instanceof Error ? error.message : 'Could not refresh upscaler models.',
+        color: 'red',
+      });
+    } finally {
+      setRefreshingUpscalers(false);
+    }
+  };
+
   return (
     <Modal
       opened={opened}
@@ -540,32 +563,49 @@ export function ImageUpscaler({
         </Stack>
 
         {/* Upscale Model - always show for model-based, optional for hi-res fix */}
-        <Select
-          label={upscaleMethod === 'hires-fix' ? 'Upscaler (Optional)' : 'Upscale Model'}
-          description={upscaleMethod === 'hires-fix'
-            ? 'Optional: Use an upscale model for final pass'
-            : 'Select the upscale model to use'}
-          data={upscaleMethod === 'model-based' ? modelUpscaleOptions : upscaleModels}
-          value={upscaleModel}
-          onChange={(value) => {
-            if (upscaleMethod === 'hires-fix') {
-              setUpscaleModel(value || DEFAULT_UPSCALE_METHOD);
-              return;
+        <Stack gap="xs">
+          <Select
+            label={upscaleMethod === 'hires-fix' ? 'Upscaler Method' : 'Upscale Model'}
+            description={upscaleMethod === 'hires-fix'
+              ? 'Choose the backend resize/model method used by hi-res fix'
+              : 'Select a model from upscale_models or latent_upscale_models'}
+            data={upscaleMethod === 'model-based' ? modelUpscaleOptions : upscaleModels}
+            value={upscaleModel}
+            onChange={(value) => {
+              if (upscaleMethod === 'hires-fix') {
+                setUpscaleModel(value || DEFAULT_UPSCALE_METHOD);
+                return;
+              }
+              if (value) {
+                setUpscaleModel(value);
+              }
+            }}
+            disabled={upscaling || upscalersQuery.isLoading || (upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0)}
+            clearable={upscaleMethod === 'hires-fix'}
+            searchable
+            placeholder={upscalersQuery.isLoading ? 'Loading upscalers...' : 'Select upscale method'}
+            nothingFoundMessage={
+              upscaleMethod === 'model-based'
+                ? 'No model upscalers found. Refresh after adding files to upscale_models or latent_upscale_models.'
+                : 'No upscale methods found'
             }
-            if (value) {
-              setUpscaleModel(value);
-            }
-          }}
-          disabled={upscaling || upscalersQuery.isLoading || (upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0)}
-          clearable={upscaleMethod === 'hires-fix'}
-          searchable
-          placeholder={upscalersQuery.isLoading ? 'Loading upscalers...' : 'Select upscale method'}
-          nothingFoundMessage={
-            upscaleMethod === 'model-based'
-              ? 'No model upscalers found. Refresh models after downloading to upscale_models or latent_upscale_models.'
-              : 'No upscale methods found'
-          }
-        />
+          />
+          <Group justify="space-between" align="center">
+            <Text size="xs" c="dimmed">
+              Added files under Models/upscale_models appear here after backend model refresh.
+            </Text>
+            <SwarmButton
+              size="xs"
+              emphasis="soft"
+              tone="secondary"
+              onClick={handleRefreshUpscalers}
+              loading={refreshingUpscalers}
+              disabled={upscaling || upscalersQuery.isLoading}
+            >
+              Refresh Upscalers
+            </SwarmButton>
+          </Group>
+        </Stack>
 
         {upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0 && !upscalersQuery.isLoading && (
           <Text size="xs" c="orange">
@@ -600,56 +640,52 @@ export function ImageUpscaler({
           </Stack>
         )}
 
-        {/* Model-based controls: creativity, CFG, steps */}
+        {/* Model-based creativity */}
         {upscaleMethod === 'model-based' && (
-          <Stack gap="md">
-            {/* Creativity for model-based */}
-            <Stack gap="xs">
-              <Group justify="space-between">
-                <Text size="sm" fw={500}>Creativity</Text>
-                <Text size="sm" c="dimmed">{modelCreativity.toFixed(2)}</Text>
-              </Group>
-              <SwarmSlider
-                value={modelCreativity}
-                onChange={setModelCreativity}
-                min={0}
-                max={0.5}
-                step={0.05}
-                disabled={upscaling}
-                mb="xl"
-                marks={[
-                  { value: 0, label: 'None' },
-                  { value: 0.1, label: 'Low' },
-                  { value: 0.3, label: 'Med' },
-                ]}
-              />
-            </Stack>
-
-            {/* CFG Scale */}
-            <NumberInput
-              label="CFG Scale"
-              description="How strongly to follow the prompt"
-              min={1}
-              max={20}
-              step={0.5}
-              value={cfgScale}
-              onChange={(value) => typeof value === 'number' && setCfgScale(value)}
+          <Stack gap="xs">
+            <Group justify="space-between">
+              <Text size="sm" fw={500}>Creativity</Text>
+              <Text size="sm" c="dimmed">{modelCreativity.toFixed(2)}</Text>
+            </Group>
+            <SwarmSlider
+              value={modelCreativity}
+              onChange={setModelCreativity}
+              min={0}
+              max={0.5}
+              step={0.05}
               disabled={upscaling}
-            />
-
-            {/* Steps */}
-            <NumberInput
-              label="Steps"
-              description="More steps = higher quality, slower"
-              min={10}
-              max={50}
-              step={5}
-              value={steps}
-              onChange={(value) => typeof value === 'number' && setSteps(value)}
-              disabled={upscaling}
+              mb="xl"
+              marks={[
+                { value: 0, label: 'None' },
+                { value: 0.1, label: 'Low' },
+                { value: 0.3, label: 'Med' },
+              ]}
             />
           </Stack>
         )}
+
+        <Group grow align="flex-start">
+          <NumberInput
+            label="CFG Scale"
+            description="How strongly to follow the prompt"
+            min={1}
+            max={20}
+            step={0.5}
+            value={cfgScale}
+            onChange={(value) => typeof value === 'number' && setCfgScale(value)}
+            disabled={upscaling}
+          />
+          <NumberInput
+            label="Steps"
+            description="More steps = higher quality, slower"
+            min={10}
+            max={50}
+            step={5}
+            value={steps}
+            onChange={(value) => typeof value === 'number' && setSteps(value)}
+            disabled={upscaling}
+          />
+        </Group>
 
         <NumberInput
           label="Scale Factor"

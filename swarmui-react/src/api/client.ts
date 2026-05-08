@@ -1098,45 +1098,71 @@ export class SwarmUIClient {
   }
 
   async listUpscalers(): Promise<Model[]> {
-    // Upscalers are found in the 'refinerupscalemethod' parameter
-    const values = await this.listParameterValues('refinerupscalemethod');
-    if (values.length > 0) {
-      return values
-        .map((v: any) => {
-          // Common formats:
-          // - "id///Description"
-          // - "id"
-          // - { name: "id///Description" } or { value: "id///Description" }
-          const raw = typeof v === 'string'
-            ? v
-            : (typeof v?.name === 'string'
-              ? v.name
-              : (typeof v?.value === 'string' ? v.value : ''));
+    // Upscalers are exposed as parameter values for refinerupscalemethod.
+    // Model methods are emitted dynamically by the backend as model-* / latentmodel-* entries.
+    const fallbackValues = [
+      'pixel-lanczos///Pixel: Lanczos',
+      'pixel-bicubic///Pixel: Bicubic',
+      'pixel-area///Pixel: Area',
+      'pixel-bilinear///Pixel: Bilinear',
+      'pixel-nearest-exact///Pixel: Nearest Exact',
+      'latent-bislerp///Latent: Bislerp',
+      'latent-bicubic///Latent: Bicubic',
+      'latent-area///Latent: Area',
+      'latent-bilinear///Latent: Bilinear',
+      'latent-nearest-exact///Latent: Nearest Exact',
+    ];
+    const response = await this.getCachedTriggerRefresh();
+    const responseObject = response && typeof response === 'object'
+      ? response as { list?: unknown }
+      : {};
+    const list = Array.isArray(responseObject.list) ? responseObject.list : [];
+    const param = list.find((entry) => (
+      Boolean(entry)
+      && typeof entry === 'object'
+      && (entry as { id?: unknown }).id === 'refinerupscalemethod'
+    )) as { values?: unknown; value_names?: unknown } | undefined;
+    const values = Array.isArray(param?.values) ? param.values : [];
+    const valueNames = Array.isArray(param?.value_names) ? param.value_names : [];
+    const seen = new Set<string>();
 
-          if (!raw) return null;
+    const parseUpscaler = (value: unknown, index: number): Model | null => {
+      const valueObject = value && typeof value === 'object'
+        ? value as { name?: unknown; value?: unknown; title?: unknown }
+        : {};
+      const raw = typeof value === 'string'
+        ? value
+        : (typeof valueObject.name === 'string'
+          ? valueObject.name
+          : (typeof valueObject.value === 'string' ? valueObject.value : ''));
 
-          const parts = raw.split('///');
-          const id = (parts[0] || '').trim();
-          if (!id) return null;
+      if (!raw) return null;
 
-          const objectTitle = typeof v?.title === 'string' ? v.title : '';
-          const desc = objectTitle || (parts[1]?.trim() || id);
+      const parts = raw.split('///');
+      const id = (parts[0] || '').trim();
+      if (!id || seen.has(id)) return null;
+      seen.add(id);
 
-          return {
-            name: id,
-            title: desc,
-            architecture: 'upscaler',
-            class: 'upscaler',
-            description: desc,
-            hash: '',
-            loaded: false,
-            preview: undefined,
-            metadata: {},
-          } as Model;
-        })
-        .filter((item): item is Model => item !== null);
-    }
-    return [];
+      const objectTitle = typeof valueObject.title === 'string' ? valueObject.title : '';
+      const pairedTitle = typeof valueNames[index] === 'string' ? valueNames[index] : '';
+      const desc = objectTitle || pairedTitle || (parts[1]?.trim() || id);
+
+      return {
+        name: id,
+        title: desc,
+        architecture: 'upscaler',
+        class: 'upscaler',
+        description: desc,
+        hash: '',
+        loaded: false,
+        preview: undefined,
+        metadata: {},
+      } as Model;
+    };
+
+    return [...values, ...fallbackValues]
+      .map(parseUpscaler)
+      .filter((item): item is Model => item !== null);
   }
 
   async listWildcards(): Promise<Model[]> {

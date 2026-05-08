@@ -144,6 +144,8 @@ const REFINER_METHOD_LABELS: Record<string, string> = {
     StepSwapNoisy: 'Step Swap Noisy',
 };
 
+const DEFAULT_UPSCALE_METHOD = 'pixel-lanczos';
+
 function updateLoRAWeight(activeLoras: LoRASelection[], index: number, weight: number): LoRASelection[] {
     return activeLoras.map((lora, currentIndex) => (
         currentIndex === index ? { ...lora, weight } : lora
@@ -158,6 +160,27 @@ function humanizeToken(value: string): string {
     return value
         .replace(/[_-]+/g, ' ')
         .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function formatUpscaleMethodLabel(model: Model): string {
+    const value = model.name || '';
+    const title = model.title || '';
+    if (title && title !== value) {
+        return title;
+    }
+    if (value.startsWith('model-')) {
+        return `Model: ${value.slice('model-'.length)}`;
+    }
+    if (value.startsWith('latentmodel-')) {
+        return `Latent Model: ${value.slice('latentmodel-'.length)}`;
+    }
+    if (value.startsWith('pixel-')) {
+        return `Pixel: ${humanizeToken(value.slice('pixel-'.length))}`;
+    }
+    if (value.startsWith('latent-')) {
+        return `Latent: ${humanizeToken(value.slice('latent-'.length))}`;
+    }
+    return humanizeToken(value);
 }
 
 function mergeUniqueItems<T extends string>(items: readonly T[], additions: readonly T[]): T[] {
@@ -391,11 +414,31 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
     const refinerMethodLabel = REFINER_METHOD_LABELS[form.values.refinermethod as string]
         || humanizeToken(String(form.values.refinermethod || 'PostApply'));
 
+    const selectedUpscaleMethod = String(form.values.refinerupscalemethod || DEFAULT_UPSCALE_METHOD);
+
     const upscaleMethodLabel = useMemo(() => {
-        const selectedMethod = String(form.values.refinerupscalemethod || 'pixel-lanczos');
-        const matchingModel = upscaleModels.find((model) => model.name === selectedMethod);
-        return matchingModel?.title || matchingModel?.name || humanizeToken(selectedMethod);
-    }, [form.values.refinerupscalemethod, upscaleModels]);
+        const matchingModel = upscaleModels.find((model) => model.name === selectedUpscaleMethod);
+        return matchingModel ? formatUpscaleMethodLabel(matchingModel) : humanizeToken(selectedUpscaleMethod);
+    }, [selectedUpscaleMethod, upscaleModels]);
+
+    const quickUpscaleMethodOptions = useMemo(() => {
+        const seen = new Set<string>();
+        const options: { value: string; label: string }[] = [];
+        const pushOption = (value: string, label: string) => {
+            if (!value || seen.has(value)) {
+                return;
+            }
+            seen.add(value);
+            options.push({ value, label });
+        };
+
+        pushOption(DEFAULT_UPSCALE_METHOD, 'Pixel: Lanczos');
+        for (const model of upscaleModels) {
+            pushOption(model.name, formatUpscaleMethodLabel(model));
+        }
+        pushOption(selectedUpscaleMethod, humanizeToken(selectedUpscaleMethod));
+        return options;
+    }, [selectedUpscaleMethod, upscaleModels]);
 
     const refinerModelOptions = useMemo(() => [
         { value: '', label: 'Use Base Model' },
@@ -1040,6 +1083,25 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                     max={4}
                                                     step={0.25}
                                                     decimalScale={2}
+                                                />
+
+                                                <Select
+                                                    label="Upscale Method"
+                                                    placeholder="Select upscale method"
+                                                    data={quickUpscaleMethodOptions}
+                                                    value={selectedUpscaleMethod}
+                                                    onChange={(value) => {
+                                                        const nextValue = value || DEFAULT_UPSCALE_METHOD;
+                                                        form.setFieldValue('refinerupscalemethod', nextValue);
+                                                        if (!enableRefiner) {
+                                                            setEnableRefiner(true);
+                                                        }
+                                                        if (refinerUpscale <= 1) {
+                                                            form.setFieldValue('refinerupscale', 2);
+                                                        }
+                                                    }}
+                                                    searchable
+                                                    nothingFoundMessage="No upscale methods found"
                                                 />
 
                                                 <SliderWithInput
