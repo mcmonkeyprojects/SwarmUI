@@ -4,6 +4,8 @@
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 
+export DOTNET_CLI_UI_LANGUAGE=en
+
 # Add dotnet non-admin-install to path
 export PATH="$SCRIPT_DIR/.dotnet:$HOME/.dotnet:/usr/lib/dotnet:/usr/share/dotnet:$PATH"
 

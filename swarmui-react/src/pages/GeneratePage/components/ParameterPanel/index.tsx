@@ -18,7 +18,6 @@ import { DimensionControls } from './DimensionControls';
 import { GenerationSettings } from './GenerationSettings';
 import { AdvancedSettings } from './AdvancedSettings';
 import { ActiveLoRAs } from './ActiveLoRAs';
-import { BatchOutputFolderControl } from './BatchOutputFolderControl';
 import { GenerateButton } from './GenerateButton';
 import { analyzeGenerateQuality } from '../../utils/qualityCoach';
 
@@ -63,9 +62,6 @@ export interface ParameterPanelProps {
     onStop: () => void;
     onOpenSchedule: () => void;
     onGenerateAndUpscale?: () => void;
-    batchOutputFolder: string;
-    onBatchOutputFolderChange: (folder: string) => void;
-    onClearBatchOutputFolder: () => void;
 
     // High-Res Fix (Refiner)
     enableRefiner: boolean;
@@ -110,9 +106,6 @@ export function ParameterPanel({
     onStop,
     onOpenSchedule,
     onGenerateAndUpscale,
-    batchOutputFolder,
-    onBatchOutputFolderChange,
-    onClearBatchOutputFolder,
     enableRefiner,
     setEnableRefiner,
     models,
@@ -210,12 +203,6 @@ export function ParameterPanel({
 
                             <div className="divider-themed" />
 
-                            <BatchOutputFolderControl
-                                value={batchOutputFolder}
-                                onChange={onBatchOutputFolderChange}
-                                onClear={onClearBatchOutputFolder}
-                            />
-
                             {/* Generate Button */}
                             <GenerateButton
                                 generating={generating}
@@ -269,5 +256,4 @@ export { DimensionControls } from './DimensionControls';
 export { GenerationSettings } from './GenerationSettings';
 export { AdvancedSettings } from './AdvancedSettings';
 export { ActiveLoRAs } from './ActiveLoRAs';
-export { BatchOutputFolderControl } from './BatchOutputFolderControl';
 export { GenerateButton } from './GenerateButton';

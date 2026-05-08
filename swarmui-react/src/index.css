@@ -4307,6 +4307,47 @@ pre,
   justify-content: center;
 }
 
+.appearance-theme-library {
+  border: 1px solid var(--theme-gray-5);
+  border-radius: calc(10px * var(--theme-radius-multiplier));
+  overflow: hidden;
+  background: var(--theme-surface-card);
+}
+
+.appearance-scheme-target {
+  min-width: min(320px, 100%);
+}
+
+.swarm-theme-catalog__body {
+  width: 100%;
+}
+
+.swarm-theme-catalog__viewer-header {
+  border-bottom: 1px solid var(--theme-gray-5);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 7%, transparent),
+      transparent 72%
+    ),
+    color-mix(in srgb, var(--theme-gray-8) 94%, var(--theme-gray-9));
+}
+
+.swarm-theme-catalog__list {
+  flex: 0 0 330px;
+}
+
+.swarm-theme-catalog__preview {
+  flex: 1;
+  min-width: 0;
+  border-left: 1px solid var(--theme-gray-5);
+  background-color: var(--theme-gray-8);
+}
+
+.swarm-theme-catalog--viewer .swarm-theme-item {
+  padding-block: 10px;
+}
+
 .swarm-theme-item {
   display: flex;
   align-items: flex-start;
@@ -4360,11 +4401,11 @@ pre,
 }
 
 .swarm-theme-item__meta-text {
-  font-size: 7px;
-  line-height: 1;
+  font-size: 10px;
+  line-height: 1.2;
   letter-spacing: 0.03em;
   text-transform: none;
-  opacity: 0.5;
+  opacity: 0.72;
 }
 
 .swarm-theme-item__badge-row {
@@ -4377,6 +4418,28 @@ pre,
 .swarm-theme-item__style-badge {
   letter-spacing: 0.02em;
   opacity: 0.88;
+}
+
+.swarm-theme-catalog__preview-title,
+.swarm-theme-catalog__preview-copy,
+.theme-builder-preview-copy {
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .swarm-theme-catalog__body {
+    flex-direction: column;
+  }
+
+  .swarm-theme-catalog__list {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .swarm-theme-catalog__preview {
+    border-left: none;
+    border-top: 1px solid var(--theme-gray-5);
+  }
 }
 
 /* Resizable handle */
@@ -5229,7 +5292,7 @@ pre,
   position: sticky;
   top: 0;
   z-index: 4;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--theme-gray-8) 98%, transparent),
@@ -5256,6 +5319,35 @@ pre,
       transparent 30%
     ),
     color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9));
+}
+
+.generate-studio__sidebar-hero {
+  padding: 10px 12px !important;
+}
+
+.generate-studio__run-status-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.generate-studio__run-status-item {
+  min-width: 0;
+  padding: 8px 9px;
+  border-radius: calc(8px * var(--theme-radius-multiplier));
+  border: 1px solid color-mix(in srgb, var(--theme-gray-1) 10%, transparent);
+  background: color-mix(in srgb, var(--theme-gray-8) 86%, var(--theme-gray-9));
+}
+
+.generate-studio__run-status-item[data-ready='true'] {
+  border-color: color-mix(in srgb, var(--theme-success) 28%, var(--theme-gray-5));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-success-soft) 16%, transparent),
+      transparent 64%
+    ),
+    color-mix(in srgb, var(--theme-gray-8) 88%, var(--theme-gray-9));
 }
 
 .generate-studio__prompt-section {
@@ -5702,13 +5794,42 @@ pre,
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-brand) 6%, transparent);
 }
 
-.generate-workspace-bar {
-  border-color: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5));
+.generate-studio-canvas__empty-dashboard {
+  width: min(720px, 92%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.generate-studio-canvas__empty-tile {
+  min-width: 0;
+  padding: 12px;
+  text-align: left;
+  border-radius: calc(10px * var(--theme-radius-multiplier));
+  border: 1px solid color-mix(in srgb, var(--theme-gray-1) 10%, transparent);
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--theme-brand-soft) 10%, transparent),
+      color-mix(in srgb, var(--theme-gray-1) 4%, transparent),
       transparent 62%
+    ),
+    color-mix(in srgb, var(--theme-gray-8) 74%, var(--theme-gray-9));
+}
+
+.generate-studio-canvas__empty-tile[data-ready='true'] {
+  border-color: color-mix(in srgb, var(--theme-brand) 26%, var(--theme-gray-5));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-brand) 6%, transparent);
+}
+
+.generate-workspace-bar {
+  border-color: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5));
+  padding: 8px 10px !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 6%, transparent),
+      transparent 58%
     ),
     linear-gradient(
       180deg,
@@ -5718,18 +5839,21 @@ pre,
   box-shadow: 0 12px 26px color-mix(in srgb, black 16%, transparent);
 }
 
-.generate-workspace-bar__controls {
-  align-items: flex-end;
+.generate-workspace-bar__top {
+  min-height: 32px;
+}
+
+.generate-workspace-bar__identity {
+  min-width: 0;
 }
 
 .generate-workspace-bar__mode {
-  flex: 1 1 280px;
-  min-width: 240px;
+  flex: 0 1 auto;
+  min-width: 276px;
 }
 
-.generate-workspace-bar__recipe {
-  flex: 1 1 260px;
-  min-width: 220px;
+.generate-workspace-bar__status {
+  min-width: 0;
 }
 
 .generate-workspace-bar__actions {
@@ -5741,10 +5865,14 @@ pre,
   border: 1px solid color-mix(in srgb, var(--theme-gray-1) 10%, transparent);
 }
 
-.generate-workspace-bar .mantine-Button-root,
-.generate-workspace-bar .mantine-Input-input,
-.generate-workspace-bar .mantine-Input-section {
-  min-height: 34px;
+.generate-workspace-bar .mantine-Button-root {
+  min-height: 30px;
+}
+
+.generate-studio-canvas__empty-model {
+  max-width: min(520px, 84vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .generate-studio-gallery {
@@ -5803,6 +5931,10 @@ pre,
 }
 
 @media (max-width: 959px) {
+  .generate-studio-canvas__empty-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .generate-studio__workspace {
     flex-direction: column;
   }
@@ -5833,5 +5965,12 @@ pre,
     border-bottom: none;
     background: transparent;
     backdrop-filter: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .generate-studio__run-status-strip,
+  .generate-studio-canvas__empty-dashboard {
+    grid-template-columns: 1fr;
   }
 }

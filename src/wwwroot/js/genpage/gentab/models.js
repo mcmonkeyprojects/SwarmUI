@@ -161,11 +161,17 @@ function getCivitUrlGuessFor(model) {
     }
     let civitUrl = '';
     // (Hacky but we don't have a dedicated datastore for this, just included at the top of descriptions generally)
-    let civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.com/models/');
+    let civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.red/models/');
+    if (civitUrlStartIndex == -1) {
+        civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.com/models/');
+    }
     if (civitUrlStartIndex != -1) {
         let end = model.description.indexOf('"', civitUrlStartIndex + '<a href="'.length);
         if (end != -1) {
             civitUrl = model.description.substring(civitUrlStartIndex + '<a href="'.length, end);
+            if (civitUrl.startsWith('https://civitai.com/')) {
+                civitUrl = `https://civitai.red/${civitUrl.substring('https://civitai.com/'.length)}`;
+            }
             if (!civitUrl.includes("?modelVersionId=") || civitUrl.length > 200 || civitUrl.includes("?modelVersionId=null")) {
                 console.log(`Invalid CivitAI URL (failed sanity check): ${civitUrl}`);
                 civitUrl = '';
@@ -694,9 +700,9 @@ class ModelBrowserWrapper {
         }
         else if (this.subType == 'Embedding') {
             buttons = [
-                { label: 'Add To Prompt', onclick: () => embedAddToPrompt(model.data, 'alt_prompt_textbox') },
-                { label: 'Add To Negative', onclick: () => embedAddToPrompt(model.data, 'alt_negativeprompt_textbox') },
-                { label: 'Remove All Usages', onclick: () => { embedClearFromPrompt(model.data, 'alt_prompt_textbox'); embedClearFromPrompt(model.data, 'alt_negativeprompt_textbox'); } }
+                { label: 'Add To Prompt', onclick: () => embedAddToPrompt(model.data, 'alt_prompt_textbox'), can_multi: true },
+                { label: 'Add To Negative', onclick: () => embedAddToPrompt(model.data, 'alt_negativeprompt_textbox'), can_multi: true },
+                { label: 'Remove All Usages', onclick: () => { embedClearFromPrompt(model.data, 'alt_prompt_textbox'); embedClearFromPrompt(model.data, 'alt_negativeprompt_textbox'); }, can_multi: true }
             ];
         }
         else if (this.subType == 'LoRA') {
@@ -708,7 +714,7 @@ class ModelBrowserWrapper {
                 }
                 promptBox.value += ` <lora:${name}>`;
                 triggerChangeFor(promptBox);
-            }}];
+            }, can_multi: true }];
         }
         let isStarred = this.isStarred(model.data.name);
         let starButton = { label: isStarred ? 'Unstar' : 'Star', onclick: () => { this.toggleStar(model.data.name); } };
@@ -719,7 +725,7 @@ class ModelBrowserWrapper {
             buttons = [starButton];
             if (permissions.hasPermission('edit_wildcards')) {
                 buttons.push({ label: 'Edit Wildcard', onclick: () => wildcardHelpers.editWildcard(model.data) });
-                buttons.push({ label: 'Duplicate Wildcard', onclick: () => wildcardHelpers.duplicateWildcard(model.data) });
+                buttons.push({ label: 'Duplicate Wildcard', onclick: () => wildcardHelpers.duplicateWildcard(model.data), can_multi: true });
             }
             buttons.push({ label: 'Test Wildcard', onclick: () => wildcardHelpers.testWildcard(model.data) });
             if (permissions.hasPermission('edit_wildcards')) {
@@ -729,10 +735,11 @@ class ModelBrowserWrapper {
                             wildcardsBrowser.browser.refresh();
                         });
                     }
-                } });
+                    // TODO: Only ask once for the multi-set rather than once per each
+                }, can_multi: true });
             }
             let raw = model.data.raw;
-            detail_list.push(escapeHtml(raw).replaceAll('\n', '').replaceAll('<br>', ', '));
+            detail_list.push(escapeHtml(raw).trim().replaceAll('\n', '').replaceAll('<br>', '<span class="browser-details-list-entry-text-separator">, </span>'));
             description = `<span class="wildcard_title">${escapeHtml(name)}</span><br>${escapeHtml(raw)}`;
             let match = wildcardHelpers.matchWildcard(this.promptBox.value, model.data.name);
             let isSelected = match && match.length > 0;
@@ -783,7 +790,7 @@ class ModelBrowserWrapper {
                 buttons.push({ label: 'View Raw Header', onclick: () => viewRawHeader(model.data, this) });
             }
             if (model.data.local && permissions.hasPermission('delete_models')) {
-                buttons.push({ label: 'Delete Model', onclick: () => deleteModel(model.data, this) });
+                buttons.push({ label: 'Delete Model', onclick: () => deleteModel(model.data, this), can_multi: true });
             }
             if (model.data.local && permissions.hasPermission('delete_models')) {
                 buttons.push({ label: 'Rename Model', onclick: () => renameModel(model.data, this) });

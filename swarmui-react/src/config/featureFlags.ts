@@ -3,6 +3,13 @@ export interface FrontendFeatureFlags {
   queueRunnerV2: boolean;
   historyLoaderV2: boolean;
   virtualizedBrowsersV2: boolean;
+  devRenderProfiling: boolean;
+  devPerformanceDashboard: boolean;
+  generateBootstrapRefreshMs: number;
+  generateBootstrapCooldownMs: number;
+  generateTriggerRefreshCacheMs: number;
+  generateBackendHeartbeatMs: number;
+  generateDeferredDataDelayMs: number;
 }
 
 function parseBooleanEnv(value: string | undefined, defaultValue: boolean): boolean {
@@ -19,6 +26,23 @@ function parseBooleanEnv(value: string | undefined, defaultValue: boolean): bool
   return defaultValue;
 }
 
+function parseNumberEnv(
+  value: string | undefined,
+  defaultValue: number,
+  { min = 0 }: { min?: number } = {}
+): number {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return defaultValue;
+  }
+
+  return Math.max(min, parsed);
+}
+
 export const featureFlags: FrontendFeatureFlags = {
   syncSessionV2: parseBooleanEnv(import.meta.env.VITE_SYNC_SESSION_V2 as string | undefined, true),
   queueRunnerV2: parseBooleanEnv(import.meta.env.VITE_QUEUE_RUNNER_V2 as string | undefined, true),
@@ -27,9 +51,41 @@ export const featureFlags: FrontendFeatureFlags = {
     import.meta.env.VITE_VIRTUALIZED_BROWSERS_V2 as string | undefined,
     true
   ),
+  devRenderProfiling: parseBooleanEnv(
+    import.meta.env.VITE_DEV_RENDER_PROFILING as string | undefined,
+    true
+  ),
+  devPerformanceDashboard: parseBooleanEnv(
+    import.meta.env.VITE_DEV_PERFORMANCE_DASHBOARD as string | undefined,
+    true
+  ),
+  generateBootstrapRefreshMs: parseNumberEnv(
+    import.meta.env.VITE_GENERATE_BOOTSTRAP_REFRESH_MS as string | undefined,
+    0
+  ),
+  generateBootstrapCooldownMs: parseNumberEnv(
+    import.meta.env.VITE_GENERATE_BOOTSTRAP_COOLDOWN_MS as string | undefined,
+    15000
+  ),
+  generateTriggerRefreshCacheMs: parseNumberEnv(
+    import.meta.env.VITE_GENERATE_TRIGGER_REFRESH_CACHE_MS as string | undefined,
+    30000
+  ),
+  generateBackendHeartbeatMs: parseNumberEnv(
+    import.meta.env.VITE_GENERATE_BACKEND_HEARTBEAT_MS as string | undefined,
+    120000
+  ),
+  generateDeferredDataDelayMs: parseNumberEnv(
+    import.meta.env.VITE_GENERATE_DEFERRED_DATA_DELAY_MS as string | undefined,
+    0
+  ),
 };
 
-export function isFeatureEnabled(flag: keyof FrontendFeatureFlags): boolean {
+type BooleanFeatureFlagKey = {
+  [K in keyof FrontendFeatureFlags]: FrontendFeatureFlags[K] extends boolean ? K : never;
+}[keyof FrontendFeatureFlags];
+
+export function isFeatureEnabled(flag: BooleanFeatureFlagKey): boolean {
   return featureFlags[flag];
 }
 

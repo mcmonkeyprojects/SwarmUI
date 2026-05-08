@@ -1,7 +1,9 @@
 import { useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSessionStore } from '../stores/session';
 import type { T2IParam, T2IParamGroup, T2IParamsResponse } from '../api/types';
-import { useBackendBootstrap } from './useBackendBootstrap';
+import { swarmClient } from '../api/client';
+import { queryKeys } from '../api/queryClient';
 import type { SamplerOption, SchedulerOption } from '../data/samplerData';
 import {
   SAMPLER_OPTIONS as FALLBACK_SAMPLERS,
@@ -91,7 +93,12 @@ export function mergeSamplingOptions<T extends SamplingOptionLike>(
 
 export function useT2IParams(): T2IParamsState {
   const isInitialized = useSessionStore((state) => state.isInitialized);
-  const query = useBackendBootstrap({ enabled: isInitialized });
+  const query = useQuery<T2IParamsResponse>({
+    queryKey: queryKeys.backend.t2iParams,
+    queryFn: () => swarmClient.listT2IParams(),
+    enabled: isInitialized,
+    staleTime: 10 * 60 * 1000,
+  });
 
   const loadParams = useCallback(async () => {
     try {
@@ -101,7 +108,7 @@ export function useT2IParams(): T2IParamsState {
     }
   }, [query]);
 
-  const rawResponse: T2IParamsResponse | null = query.data?.t2iParams ?? null;
+  const rawResponse: T2IParamsResponse | null = query.data ?? null;
 
   const params = useMemo(() => rawResponse?.list ?? [], [rawResponse]);
   const groups = useMemo(() => rawResponse?.groups ?? [], [rawResponse]);

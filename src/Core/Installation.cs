@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Backends;
 using SwarmUI.Builtin_ComfyUIBackend;
@@ -81,7 +81,6 @@ public class Installation
     /// <summary>Configure the backend as ComfyUI specifically for Windows during installation.</summary>
     public static async Task<(string, string, bool)> BackendComfyWindows(bool install_amd)
     {
-        string stableWindowsComfyDownload = "https://github.com/comfyanonymous/ComfyUI/releases/download/v0.3.49/ComfyUI_windows_portable_nvidia.7z";
         try
         {
             if (install_amd)
@@ -92,14 +91,14 @@ public class Installation
             {
                 //await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
                 // TODO: Comfy updated default to python 3.13, but 3.13 is super unstable and incompatible, so use an older package
-                await Utilities.DownloadFile(stableWindowsComfyDownload, "dlbackend/comfyui_dl.7z", UpdateProgress);
+                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/v0.3.49/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
             }
         }
         catch (HttpRequestException ex)
         {
             Logs.Error($"Comfy download failed: {ex.ReadableString()}");
             Logs.Info("Will try alternate download...");
-            await Utilities.DownloadFile(stableWindowsComfyDownload, "dlbackend/comfyui_dl.7z", UpdateProgress);
+            await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_or_cpu_nightly_pytorch.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
         }
         StepsThusFar++;
         UpdateProgress(0, 0, 0);
@@ -116,7 +115,7 @@ public class Installation
             {
                 Directory.Move("dlbackend/tmpcomfy/ComfyUI_windows_portable_nightly_pytorch", "dlbackend/comfy");
             }
-        };
+        }
         try
         {
             moveFolder();
@@ -150,31 +149,6 @@ public class Installation
         }
         string path = "dlbackend/comfy/ComfyUI/main.py";
         string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
-        string comfyPythonPath = Path.GetFullPath($"{comfyFolderPath}/python_embeded/python.exe");
-        string comfyPythonRoot = Path.GetFullPath($"{comfyFolderPath}/python_embeded");
-        async Task RunEmbeddedPythonInstallStep(string stepName, IEnumerable<string> args)
-        {
-            ProcessStartInfo processInfo = new(comfyPythonPath)
-            {
-                WorkingDirectory = comfyFolderPath,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
-            processInfo.Environment["PATH"] = PythonLaunchHelper.ReworkPythonPaths(comfyPythonRoot);
-            PythonLaunchHelper.CleanEnvironmentOfPythonMess(processInfo, $"({stepName}) ");
-            foreach (string arg in args)
-            {
-                processInfo.ArgumentList.Add(arg);
-            }
-            Process process = Process.Start(processInfo) ?? throw new SwarmReadableErrorException($"Failed to start install step '{stepName}'.");
-            NetworkBackendUtils.ReportLogsFromProcess(process, stepName, "comfyinstall");
-            await process.WaitForExitAsync(Program.GlobalProgramCancel);
-            if (process.ExitCode != 0)
-            {
-                throw new SwarmReadableErrorException($"Install step '{stepName}' failed with exit code {process.ExitCode}.");
-            }
-        }
         await Output("Prepping ComfyUI's git repo...");
         string fetchResp = await Utilities.RunGitProcess($"fetch", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git fetch response: {fetchResp}");
@@ -186,34 +160,7 @@ public class Installation
         string requirementsRaw = File.ReadAllText($"{comfyFolderPath}/ComfyUI/requirements.txt");
         // Exclude torch requirements here as pip installing those just breaks things
         string[] requirements = [.. requirementsRaw.Replace('\r', '\n').Split('\n').Select(r => r.Trim()).Where(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith('#') && !r.StartsWith("torch"))];
-        List<string> requirementsArgs = ["-s", "-m", "pip", "install"];
-        if (install_amd)
-        {
-            requirementsArgs.Add("-U");
-        }
-        requirementsArgs.AddRange(requirements);
-        await RunEmbeddedPythonInstallStep("ComfyUI Install (python requirements)", requirementsArgs);
-        if (install_amd)
-        {
-            // Keep these URLs in sync with AMD's official Windows PyTorch docs.
-            string[] amdRocmSdkUrls =
-            [
-                "https://repo.radeon.com/rocm/windows/rocm-rel-7.2/rocm_sdk_core-7.2.0.dev0-py3-none-win_amd64.whl",
-                "https://repo.radeon.com/rocm/windows/rocm-rel-7.2/rocm_sdk_devel-7.2.0.dev0-py3-none-win_amd64.whl",
-                "https://repo.radeon.com/rocm/windows/rocm-rel-7.2/rocm_sdk_libraries_custom-7.2.0.dev0-py3-none-win_amd64.whl",
-                "https://repo.radeon.com/rocm/windows/rocm-rel-7.2/rocm-7.2.0.dev0.tar.gz"
-            ];
-            string[] amdTorchUrls =
-            [
-                "https://repo.radeon.com/rocm/windows/rocm-rel-7.2/torch-2.9.1%2Brocmsdk20260116-cp312-cp312-win_amd64.whl",
-                "https://repo.radeon.com/rocm/windows/rocm-rel-7.2/torchaudio-2.9.1%2Brocmsdk20260116-cp312-cp312-win_amd64.whl",
-                "https://repo.radeon.com/rocm/windows/rocm-rel-7.2/torchvision-0.24.1%2Brocmsdk20260116-cp312-cp312-win_amd64.whl"
-            ];
-            await Output("Refreshing ComfyUI's AMD ROCm torch packages...");
-            await RunEmbeddedPythonInstallStep("ComfyUI Install (AMD torch uninstall)", ["-s", "-m", "pip", "uninstall", "-y", "torch", "torchvision", "torchaudio"]);
-            await RunEmbeddedPythonInstallStep("ComfyUI Install (AMD ROCm SDK)", ["-s", "-m", "pip", "install", "--no-cache-dir", .. amdRocmSdkUrls]);
-            await RunEmbeddedPythonInstallStep("ComfyUI Install (AMD ROCm torch)", ["-s", "-m", "pip", "install", "--no-cache-dir", .. amdTorchUrls]);
-        }
+        await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", $"-s -m pip install{(install_amd ? " -U " : "")} {requirements.JoinString(" ")}") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
         string extraArgs = "";
         bool enablePreviews = true;
         return (path, extraArgs, enablePreviews);
@@ -262,7 +209,7 @@ public class Installation
             gpu = mostVRAM.ID;
         }
         await Output("Enabling ComfyUI...");
-        Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = $"{gpu}", ExtraArgs = extraArgs.Trim(), EnablePreviews = enablePreviews ? "true" : "false"});
+        Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = $"{gpu}", ExtraArgs = extraArgs.Trim(), EnablePreviews = enablePreviews ? "true" : "false" });
     }
 
     /// <summary>Configure the backend during installation.</summary>

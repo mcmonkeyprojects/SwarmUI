@@ -678,7 +678,7 @@ public class WorkflowGeneratorSteps
                         });
                         g.FinalNegativePrompt = [zeroed, 0];
                     }
-                    if (!g.UserInput.TryGet(T2IParamTypes.Model, out T2IModel model) || model.ModelClass is null || 
+                    if (!g.UserInput.TryGet(T2IParamTypes.Model, out T2IModel model) || model.ModelClass is null ||
                         (model.ModelClass.CompatClass?.ID != "stable-diffusion-xl-v1"/* && model.ModelClass.CompatClass?.ID != "stable-diffusion-v3-medium"*/))
                     {
                         throw new SwarmUserErrorException($"Model type must be SDXL for ReVision (currently is {model?.ModelClass?.Name ?? "Unknown"}). Set ReVision Strength to 0 if you just want IP-Adapter.");
@@ -896,7 +896,7 @@ public class WorkflowGeneratorSteps
                         }
                         double ipAdapterStart = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterStart, 0.0);
                         double ipAdapterEnd = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterEnd, 1.0);
-                        if (ipAdapterStart >= ipAdapterEnd) 
+                        if (ipAdapterStart >= ipAdapterEnd)
                         {
                             throw new SwarmUserErrorException($"IP-Adapter Start must be less than IP-Adapter End.");
                         }
@@ -1199,6 +1199,24 @@ public class WorkflowGeneratorSteps
                 g.FinalNegativePrompt = [vaceNode, 1];
                 g.CurrentMedia = new WGNodeData([vaceNode, 2], g, WGNodeData.DT_LATENT_VIDEO, g.CurrentCompat()) { Width = width, Height = height, Frames = frames };
                 g.FinalTrimLatent = [vaceNode, 3];
+            }
+            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+            {
+                string audioNode = g.CreateAudioLoadNode(audio, "${videoaudioinput}");
+                string refNode = g.CreateNode("LTXVReferenceAudio", new JObject()
+                {
+                    ["model"] = g.CurrentModel.Path,
+                    ["positive"] = g.FinalPrompt,
+                    ["negative"] = g.FinalNegativePrompt,
+                    ["reference_audio"] = NodePath(audioNode, 0),
+                    ["audio_vae"] = g.CurrentAudioVae.Path,
+                    ["identity_guidance_scale"] = 3, // TODO: Param?
+                    ["start_percent"] = 0,
+                    ["end_percent"] = 1
+                });
+                g.CurrentModel = g.CurrentModel.WithPath([refNode, 0]);
+                g.FinalPrompt = [refNode, 1];
+                g.FinalNegativePrompt = [refNode, 2];
             }
         }, -6);
         #region SAM2 Masking
@@ -1521,7 +1539,7 @@ public class WorkflowGeneratorSteps
                     }
                     else
                     {
-                        throw new SwarmUserErrorException($"Cannot latent-upscale for {g.CurrentCompatClass()}");
+                        throw new SwarmUserErrorException($"Cannot latent-upscale with a model for {g.CurrentCompatClass()}, check your Refiner Upscale Method parameter");
                     }
                     g.CurrentMedia.Width = width;
                     g.CurrentMedia.Height = height;
@@ -1904,22 +1922,6 @@ public class WorkflowGeneratorSteps
                     }
                 }
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(g.CurrentVae);
-                void altLatent(ImageToVideoGenInfo genInfo)
-                {
-                    if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
-                    {
-                        string fromBatch = g.CreateNode("ImageFromBatch", new JObject()
-                        {
-                            ["image"] = g.CurrentMedia.Path,
-                            ["batch_index"] = 0,
-                            ["length"] = genInfo.Frames.Value
-                        });
-                        genInfo.StartStep = (int)Math.Floor(steps * (1 - v2vCreativity));
-                        g.CurrentMedia = g.CurrentMedia.WithPath([fromBatch, 0]);
-                        g.CurrentMedia.Frames = Math.Min(genInfo.Frames.Value, g.CurrentMedia.Frames ?? int.MaxValue);
-                        g.CurrentMedia = g.CurrentMedia.AsLatentImage(genInfo.Vae);
-                    }
-                }
                 ImageToVideoGenInfo genInfo = new()
                 {
                     Generator = g,
@@ -1935,12 +1937,15 @@ public class WorkflowGeneratorSteps
                     NegativePrompt = negPrompt,
                     Steps = steps,
                     Seed = seed,
-                    AltLatent = altLatent,
                     BatchIndex = batchInd,
                     BatchLen = batchLen,
                     ContextID = T2IParamInput.SectionID_Video,
                     VideoEndFrame = g.UserInput.Get(T2IParamTypes.VideoEndFrame, null)
                 };
+                if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
+                {
+                    genInfo.StartStep = (int)Math.Floor(steps * (1 - v2vCreativity));
+                }
                 g.CreateImageToVideo(genInfo);
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(genInfo.Vae);
                 bool hasExtend = prompt.Contains("<extend:");
@@ -1966,6 +1971,34 @@ public class WorkflowGeneratorSteps
         #region Extend Video
         AddStep(g =>
         {
+            WGNodeData ensureAttachedAudio(WGNodeData media)
+            {
+                if (media?.AttachedAudio is null || media.AttachedAudio.DataType == WGNodeData.DT_AUDIO || g.CurrentAudioVae is null)
+                {
+                    return media;
+                }
+                WGNodeData dup = media.Duplicate();
+                dup.AttachedAudio = media.AttachedAudio.DecodeLatents(g.CurrentAudioVae, true);
+                return dup;
+            }
+            WGNodeData appendAudio(WGNodeData combinedAudio, WGNodeData nextAudio)
+            {
+                if (combinedAudio is null)
+                {
+                    return nextAudio;
+                }
+                if (nextAudio is null || combinedAudio.DataType != WGNodeData.DT_AUDIO || nextAudio.DataType != WGNodeData.DT_AUDIO)
+                {
+                    return combinedAudio;
+                }
+                string concatNode = g.CreateNode("AudioConcat", new JObject()
+                {
+                    ["audio1"] = combinedAudio.Path,
+                    ["audio2"] = nextAudio.Path,
+                    ["direction"] = "after"
+                });
+                return combinedAudio.WithPath([concatNode, 0], WGNodeData.DT_AUDIO, combinedAudio.Compat ?? nextAudio.Compat);
+            }
             string fullRawPrompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
             if (fullRawPrompt.Contains("<extend:"))
             {
@@ -1978,8 +2011,8 @@ public class WorkflowGeneratorSteps
                 bool saveIntermediate = g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false);
                 T2IModel extendModel = g.UserInput.Get(T2IParamTypes.VideoExtendModel, null) ?? throw new SwarmUserErrorException("You have an '<extend:' block in your prompt, but you don't have a 'Video Extend Model' selected.");
                 PromptRegion regionalizer = new(fullRawPrompt);
-                List<JArray> vidChunks = [g.CurrentMedia.Path];
                 WGNodeData conjoinedLast = g.CurrentMedia;
+                WGNodeData conjoinedAudio = ensureAttachedAudio(conjoinedLast)?.AttachedAudio;
                 string getWidthNode = g.CreateNode("SwarmImageWidth", new JObject()
                 {
                     ["image"] = g.CurrentMedia.Path
@@ -2039,6 +2072,7 @@ public class WorkflowGeneratorSteps
                     };
                     g.CreateImageToVideo(genInfo);
                     g.CurrentMedia = g.CurrentMedia.AsRawImage(genInfo.Vae);
+                    WGNodeData stageWithAudio = ensureAttachedAudio(g.CurrentMedia);
                     videoFps = genInfo.VideoFPS;
                     g.CurrentMedia.FPS = videoFps ?? g.CurrentMedia.FPS;
                     if (saveIntermediate)
@@ -2052,13 +2086,14 @@ public class WorkflowGeneratorSteps
                         ["length"] = frames.Value - frameExtendOverlap
                     });
                     g.CurrentMedia = g.CurrentMedia.WithPath([cutNode, 0]);
-                    vidChunks.Add(g.CurrentMedia.Path);
+                    conjoinedAudio = appendAudio(conjoinedAudio, stageWithAudio?.AttachedAudio);
                     string batchedNode = g.CreateNode("ImageBatch", new JObject()
                     {
                         ["image1"] = conjoinedLast.Path,
                         ["image2"] = g.CurrentMedia.Path
                     });
                     conjoinedLast = conjoinedLast.WithPath([batchedNode, 0]);
+                    conjoinedLast.AttachedAudio = conjoinedAudio;
                 }
                 g.CurrentMedia = conjoinedLast;
                 g.CurrentMedia.FPS = videoFps ?? g.CurrentMedia.FPS;
@@ -2162,7 +2197,7 @@ public class WorkflowGeneratorSteps
     public static HashSet<string> AutoCleanupNodeTypes =
     [
         "VAEDecode", "VAEDecodeTiled", "VAEEncode", "CLIPTextEncode", "CLIPTextEncodeSDXL",
-        "LTXVAudioVAEDecode", "LTXVSeparateAVLatent", "LTXVConditioning", "LTXVEmptyLatentAudio", "LTXVConcatAVLatent",
+        "LTXVAudioVAEDecode", "LTXVSeparateAVLatent", "LTXVConditioning", "LTXVEmptyLatentAudio", "LTXVConcatAVLatent", "LTXVReferenceAudio",
         "SwarmCountFrames", "SwarmClipTextEncodeAdvanced"
     ];
 }

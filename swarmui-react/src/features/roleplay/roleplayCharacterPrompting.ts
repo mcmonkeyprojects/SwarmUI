@@ -29,6 +29,7 @@ export function createDefaultPromptSet(): RoleplayPromptStack {
     includeExampleMessages: true,
     includeMemory: true,
     includeLore: true,
+    promptBlockSettings: {},
   };
 }
 

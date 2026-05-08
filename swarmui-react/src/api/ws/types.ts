@@ -86,6 +86,22 @@ export interface GenerationProgressData {
     stageTaskIndex?: number;
     stageTaskCount?: number;
     stageTasksRemaining?: number;
+    backendPreview?: {
+        previewMode?: string;
+        previewMethod?: string;
+        warning?: string | null;
+        promptQueuedMs?: number;
+        executionStartMs?: number;
+        firstProgressMs?: number;
+        firstPreviewMs?: number;
+        firstImageMs?: number;
+        completeMs?: number;
+        previewEventCount?: number;
+        firstPreviewBytes?: number;
+        averagePreviewBytes?: number;
+        finalImageBytes?: number;
+        isFinal?: boolean;
+    };
 }
 
 export interface GenerationImageData {
@@ -218,6 +234,22 @@ export interface BackendWSMessage {
         preview?: string;
         stage_id?: string;
         stage_label?: string;
+        backend_preview?: {
+            preview_mode?: string;
+            preview_method?: string;
+            warning?: string | null;
+            prompt_queued_ms?: number;
+            execution_start_ms?: number;
+            first_progress_ms?: number;
+            first_preview_ms?: number;
+            first_image_ms?: number;
+            complete_ms?: number;
+            preview_event_count?: number;
+            first_preview_bytes?: number;
+            average_preview_bytes?: number;
+            final_image_bytes?: number;
+            is_final?: boolean;
+        };
         stage_detail?: string;
         stage_index?: number;
         stage_count?: number;

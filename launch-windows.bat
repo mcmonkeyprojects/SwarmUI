@@ -45,26 +45,10 @@ if exist .\src\bin\must_rebuild (
     del .\src\bin\must_rebuild
 )
 
-rem Rebuild if local C# source changes are newer than the built executable.
-if exist src\bin\live_release\SwarmUI.exe (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "$exe = Get-Item 'src/bin/live_release/SwarmUI.exe';" ^
-        "$latest = Get-ChildItem 'src' -Recurse -File -Include *.cs,*.csproj,*.cshtml | Sort-Object LastWriteTime -Descending | Select-Object -First 1;" ^
-        "if ($latest -and $latest.LastWriteTimeUtc -gt $exe.LastWriteTimeUtc) { exit 1 } else { exit 0 }"
-    if errorlevel 1 (
-        echo.
-        echo.
-        echo WARNING: Local source files changed since the last backend build. Will now build for you...
-        echo.
-        echo.
-        echo. 2>.\src\bin\must_rebuild
-    )
-)
-
 rem Build the program if it isn't already built
 if not exist src\bin\live_release\SwarmUI.exe (
     rem For some reason Microsoft's nonsense is missing the official nuget source? So forcibly add that to be safe.
-    dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source"
+    dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source" >nul 2>&1
 
     dotnet build src/SwarmUI.csproj --configuration Release -o src/bin/live_release
     for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD2=%%i
@@ -85,6 +69,7 @@ if not exist src\bin\live_release\SwarmUI.exe if exist src\bin\live_release_back
 rem Default env configuration, gets overwritten by the C# code's settings handler
 set ASPNETCORE_ENVIRONMENT="Production"
 set ASPNETCORE_URLS="http://*:7801"
+set DOTNET_CLI_UI_LANGUAGE="en"
 
 .\src\bin\live_release\SwarmUI.exe %*
 

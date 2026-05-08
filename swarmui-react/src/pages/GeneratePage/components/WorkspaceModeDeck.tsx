@@ -27,7 +27,6 @@ import type { GenerateWorkspaceMode } from '../../../stores/navigationStore';
 import type { ModelMediaCapabilities } from '../../../utils/modelCapabilities';
 import { SwarmButton, SwarmSwitch } from '../../../components/ui';
 import { DimensionControls } from './ParameterPanel/DimensionControls';
-import { BatchOutputFolderControl } from './ParameterPanel/BatchOutputFolderControl';
 import { GenerateButton } from './ParameterPanel/GenerateButton';
 
 interface WorkspaceModeDeckProps {
@@ -52,9 +51,6 @@ interface WorkspaceModeDeckProps {
     onOpenLoraBrowser: () => void;
     onOpenEmbeddingBrowser: () => void;
     onPromoteWorkflow: () => void;
-    batchOutputFolder: string;
-    onBatchOutputFolderChange: (folder: string) => void;
-    onClearBatchOutputFolder: () => void;
     enableRefiner: boolean;
     setEnableRefiner: (enabled: boolean) => void;
     enableInitImage: boolean;
@@ -122,9 +118,6 @@ export const WorkspaceModeDeck = memo(function WorkspaceModeDeck({
     onOpenLoraBrowser,
     onOpenEmbeddingBrowser,
     onPromoteWorkflow,
-    batchOutputFolder,
-    onBatchOutputFolderChange,
-    onClearBatchOutputFolder,
     enableRefiner,
     setEnableRefiner,
     enableInitImage,
@@ -271,12 +264,6 @@ export const WorkspaceModeDeck = memo(function WorkspaceModeDeck({
                                     </Stack>
                                 </Card>
                             ) : null}
-
-                            <BatchOutputFolderControl
-                                value={batchOutputFolder}
-                                onChange={onBatchOutputFolderChange}
-                                onClear={onClearBatchOutputFolder}
-                            />
 
                             <GenerateButton
                                 generating={generating}
@@ -520,12 +507,6 @@ export const WorkspaceModeDeck = memo(function WorkspaceModeDeck({
                                 </Stack>
                             </Card>
                         ) : null}
-
-                        <BatchOutputFolderControl
-                            value={batchOutputFolder}
-                            onChange={onBatchOutputFolderChange}
-                            onClear={onClearBatchOutputFolder}
-                        />
 
                         <GenerateButton
                             generating={generating}

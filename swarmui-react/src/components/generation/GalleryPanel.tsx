@@ -23,6 +23,7 @@ import { ImageLightbox } from '../ImageLightbox';
 import { VirtualGrid } from '../VirtualGrid';
 import { useDragReorder } from '../../hooks/useDragReorder';
 import { useBatchThumbnails } from '../../hooks/useBatchThumbnails';
+import { useMotionPerformancePolicy } from '../../hooks/useMotionPerformancePolicy';
 import { galleryItemVariants, fastStaggerContainer } from '../../utils/animations';
 import { SwarmActionIcon, SwarmActionIcon as ActionIcon, SwarmBadge } from '../ui';
 
@@ -80,7 +81,12 @@ export const GalleryPanel = memo(function GalleryPanel({
 
   const gridColumns = density === 'compact' ? 3 : 2;
   const shouldVirtualize = generatedImages.length > LARGE_SESSION_THRESHOLD;
-  const enableAnimations = !generating && !shouldVirtualize;
+  const motionPolicy = useMotionPerformancePolicy({
+    isGenerating: generating,
+    itemCount: generatedImages.length,
+    largeListThreshold: LARGE_SESSION_THRESHOLD,
+  });
+  const enableAnimations = motionPolicy.enableItemMotion && !shouldVirtualize;
   const tileHeight = density === 'compact' ? 132 : 164;
   const thumbnailSize = density === 'compact' ? 168 : 224;
   const { thumbnails } = useBatchThumbnails(generatedImages, {
@@ -224,7 +230,7 @@ export const GalleryPanel = memo(function GalleryPanel({
                 visible={thumbnailLoading || !thumbnailUrl}
                 width="100%"
                 height="100%"
-                animate
+                animate={!motionPolicy.shouldReduceMotion}
               />
             )}
           </Box>
@@ -251,7 +257,7 @@ export const GalleryPanel = memo(function GalleryPanel({
           exit="exit"
           whileHover="hover"
           whileTap="tap"
-          layout
+          layout={motionPolicy.enableLayoutMotion}
           style={wrapperStyle}
           {...dragProps}
         >
@@ -269,6 +275,8 @@ export const GalleryPanel = memo(function GalleryPanel({
     onUseAsInitImage,
     previewImage,
     thumbnails,
+    motionPolicy.enableLayoutMotion,
+    motionPolicy.shouldReduceMotion,
   ]);
 
   const smallGallery =

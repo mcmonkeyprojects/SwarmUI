@@ -23,8 +23,27 @@ export type JobStatus = 'pending' | 'scheduled' | 'generating' | 'completed' | '
 
 /** Queue job entity */
 export interface JobProvenance {
-    source: 'generate' | 'history' | 'workflow';
+    source: 'generate' | 'history' | 'workflow' | 'roleplay' | 'queue' | 'training' | 'asset';
+    projectId?: string | null;
+    prompt?: string | null;
+    negativePrompt?: string | null;
+    model?: string | null;
+    loras?: string[];
+    initImage?: string | null;
+    parentImageId?: string | null;
+    childImageIds?: string[];
+    roleplayCharacterId?: string | null;
+    roleplayCharacterName?: string | null;
+    roleplaySessionId?: string | null;
+    roleplayMessageId?: string | null;
+    queueJobId?: string | null;
+    queueBatchId?: string | null;
+    workflowId?: string | null;
+    trainingDatasetId?: string | null;
+    capturedAt?: number;
+    /** Legacy Generate recipe provenance. Kept only for persisted queue compatibility. */
     recipeId?: string;
+    /** Legacy Generate recipe provenance. Kept only for persisted queue compatibility. */
     recipeName?: string;
     workspaceMode?: 'quick' | 'guided' | 'advanced' | 'video';
     historyImagePath?: string;

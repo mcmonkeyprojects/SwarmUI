@@ -24,6 +24,7 @@ export interface AssetCatalogItem {
     compatibility: {
         status: 'ready' | 'recommended' | 'partial';
         reason: string;
+        score: number;
     };
 }
 
@@ -36,25 +37,25 @@ interface CompatibilityContext {
 function buildCompatibility(kind: AssetCatalogKind, context: CompatibilityContext): AssetCatalogItem['compatibility'] {
     if (kind === 'controlnet') {
         return context.enableControlNet
-            ? { status: 'recommended', reason: 'ControlNet is enabled in the current workspace.' }
-            : { status: 'partial', reason: 'Enable ControlNet to use this asset immediately.' };
+            ? { status: 'recommended', reason: 'ControlNet is enabled in the current workspace.', score: 92 }
+            : { status: 'partial', reason: 'Enable ControlNet to use this asset immediately.', score: 48 };
     }
 
     if (kind === 'upscaler') {
         return context.enableVideo
-            ? { status: 'partial', reason: 'Upscalers are most useful in still-image workflows.' }
-            : { status: 'recommended', reason: 'Recommended for current image generation workflow.' };
+            ? { status: 'partial', reason: 'Upscalers are most useful in still-image workflows.', score: 55 }
+            : { status: 'recommended', reason: 'Recommended for current image generation workflow.', score: 88 };
     }
 
     if (kind === 'model') {
         return context.selectedModel
-            ? { status: 'ready', reason: 'Models can be swapped at any time.' }
-            : { status: 'recommended', reason: 'A model is required before generation can start.' };
+            ? { status: 'ready', reason: 'Models can be swapped at any time.', score: 74 }
+            : { status: 'recommended', reason: 'A model is required before generation can start.', score: 96 };
     }
 
     return context.selectedModel
-        ? { status: 'recommended', reason: 'Works well with the active model workflow.' }
-        : { status: 'partial', reason: 'Select a base model first to use this asset confidently.' };
+        ? { status: 'recommended', reason: 'Works well with the active model workflow.', score: 82 }
+        : { status: 'partial', reason: 'Select a base model first to use this asset confidently.', score: 42 };
 }
 
 function makeItem(

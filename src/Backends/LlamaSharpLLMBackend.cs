@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticDataSyntax;
 using LLama;
 using LLama.Common;
 using Newtonsoft.Json.Linq;

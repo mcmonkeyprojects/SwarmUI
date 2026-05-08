@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { swarmClient } from '../api/client';
-import { queryKeys } from '../api/queryClient';
+import { queryClient, queryKeys } from '../api/queryClient';
 import { useBackendBootstrap } from './useBackendBootstrap';
-import type { BackendBootstrapSnapshot, Model, VAEModel } from '../api/types';
+import type { BackendBootstrapSnapshot, BackendStatus, Model, VAEModel } from '../api/types';
+import { featureFlags } from '../config/featureFlags';
 
 interface ModelQueryOptions {
     enabled?: boolean;
@@ -13,8 +14,52 @@ interface BackendQueryOptions extends ModelQueryOptions {
     autoRefresh?: boolean;
 }
 
+interface AllModelDataScopes {
+    models?: boolean;
+    vaes?: boolean;
+    backends?: boolean;
+    controlnets?: boolean;
+    upscalers?: boolean;
+    embeddings?: boolean;
+    wildcards?: boolean;
+}
+
+interface AllModelDataOptions {
+    enabled?: boolean;
+    autoRefreshBackends?: boolean;
+    scopes?: AllModelDataScopes;
+}
+
+function resolveBackendRefreshInterval(autoRefresh: boolean | undefined): number | false {
+    if (!autoRefresh) {
+        return false;
+    }
+
+    return featureFlags.generateBackendHeartbeatMs > 0
+        ? featureFlags.generateBackendHeartbeatMs
+        : false;
+}
+
+function readBootstrapBackends(): BackendStatus[] | undefined {
+    const bootstrap = queryClient.getQueryData<BackendBootstrapSnapshot>(queryKeys.backend.bootstrap);
+    return bootstrap?.backendStatus;
+}
+
+function readBootstrapBackendsUpdatedAt(): number | undefined {
+    const bootstrap = queryClient.getQueryData<BackendBootstrapSnapshot>(queryKeys.backend.bootstrap);
+    return bootstrap?.refreshedAt;
+}
+
 function selectModelCatalog(data: BackendBootstrapSnapshot | undefined, subtype: string): Model[] {
     return (data?.modelCatalog?.[subtype] as Model[] | undefined) ?? [];
+}
+
+function resolveScopeEnabled(
+    enabled: boolean,
+    scopeValue: boolean | undefined,
+    defaultValue: boolean = true
+): boolean {
+    return enabled && (scopeValue ?? defaultValue);
 }
 
 /**
@@ -57,12 +102,18 @@ export function useLoRAs(options: ModelQueryOptions = {}) {
  * Hook to fetch and cache backends
  */
 export function useBackends(options: BackendQueryOptions = {}) {
-    const bootstrap = useBackendBootstrap(options);
-
-    return {
-        ...bootstrap,
-        data: bootstrap.data?.backendStatus ?? [],
-    };
+    return useQuery<BackendStatus[]>({
+        queryKey: queryKeys.backends.list(),
+        queryFn: () => swarmClient.listBackends({ fullData: true }),
+        staleTime: options.autoRefresh ? 60 * 1000 : 2 * 60 * 1000,
+        enabled: options.enabled ?? true,
+        refetchInterval: resolveBackendRefreshInterval(options.autoRefresh),
+        refetchIntervalInBackground: false,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        initialData: readBootstrapBackends,
+        initialDataUpdatedAt: readBootstrapBackendsUpdatedAt,
+    });
 }
 
 /**
@@ -129,16 +180,25 @@ export function useImages(path: string = '') {
  * Useful for the GeneratePage that needs multiple data types
  * Uses React Query for caching - prevents duplicate API calls
  */
-export function useAllModelData(options: { enabled?: boolean; autoRefreshBackends?: boolean } = {}) {
+export function useAllModelData(options: AllModelDataOptions = {}) {
     const enabled = options.enabled ?? true;
-    const models = useModels('Stable-Diffusion', { enabled });
-    const vaes = useVAEs({ enabled });
+    const scopes = options.scopes ?? {};
+    const modelsEnabled = resolveScopeEnabled(enabled, scopes.models);
+    const vaesEnabled = resolveScopeEnabled(enabled, scopes.vaes);
+    const backendsEnabled = resolveScopeEnabled(enabled, scopes.backends);
+    const controlnetsEnabled = resolveScopeEnabled(enabled, scopes.controlnets);
+    const upscalersEnabled = resolveScopeEnabled(enabled, scopes.upscalers);
+    const embeddingsEnabled = resolveScopeEnabled(enabled, scopes.embeddings);
+    const wildcardsEnabled = resolveScopeEnabled(enabled, scopes.wildcards);
+
+    const models = useModels('Stable-Diffusion', { enabled: modelsEnabled });
+    const vaes = useVAEs({ enabled: vaesEnabled });
     // Note: LoRAs are lazy-loaded by LoRABrowser when opened
-    const backends = useBackends({ enabled, autoRefresh: options.autoRefreshBackends ?? false });
-    const controlnets = useControlNets({ enabled });
-    const upscalers = useUpscalers({ enabled });
-    const embeddings = useEmbeddings({ enabled });
-    const wildcards = useWildcards({ enabled });
+    const backends = useBackends({ enabled: backendsEnabled, autoRefresh: options.autoRefreshBackends ?? false });
+    const controlnets = useControlNets({ enabled: controlnetsEnabled });
+    const upscalers = useUpscalers({ enabled: upscalersEnabled });
+    const embeddings = useEmbeddings({ enabled: embeddingsEnabled });
+    const wildcards = useWildcards({ enabled: wildcardsEnabled });
 
     // Pre-computed options for Select components
     const vaeOptions = useMemo(() => {

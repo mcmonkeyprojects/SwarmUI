@@ -82,46 +82,46 @@ public class ComfyUIBackendExtension : Extension
         StyleSheetFiles.Add("Assets/comfy_workflow_editor.css");
         T2IParamTypes.FakeTypeProviders.Add(DynamicParamGenerator);
         // Temporary: remove old pycache files where we used to have python files, to prevent Comfy boot errors
-        Utilities.RemoveBadPycacheFrom($"{FilePath}/ExtraNodes");
-        Utilities.RemoveBadPycacheFrom($"{FilePath}/ExtraNodes/SwarmWebHelper");
+        Utilities.RemoveBadPycacheFrom($"{FilePath}ExtraNodes");
+        Utilities.RemoveBadPycacheFrom($"{FilePath}ExtraNodes/SwarmWebHelper");
         T2IAPI.AlwaysTopKeys.Add("comfyworkflowraw");
         T2IAPI.AlwaysTopKeys.Add("comfyworkflowparammetadata");
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI_IPAdapter_plus"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI_IPAdapter_plus"))
         {
             FeaturesSupported.UnionWith(["ipadapter", "cubiqipadapterunified"]);
             FeaturesDiscardIfNotFound.UnionWith(["ipadapter", "cubiqipadapterunified"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/comfyui_controlnet_aux"))
+        if (Directory.Exists($"{FilePath}DLNodes/comfyui_controlnet_aux"))
         {
             FeaturesSupported.UnionWith(["controlnetpreprocessors"]);
             FeaturesDiscardIfNotFound.UnionWith(["controlnetpreprocessors"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-Frame-Interpolation"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-Frame-Interpolation"))
         {
             FeaturesSupported.UnionWith(["frameinterps"]);
             FeaturesDiscardIfNotFound.UnionWith(["frameinterps"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-GIMM-VFI"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-GIMM-VFI"))
         {
             FeaturesSupported.UnionWith(["frameinterps_gimmvfi"]);
             FeaturesDiscardIfNotFound.UnionWith(["frameinterps_gimmvfi"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-segment-anything-2"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-segment-anything-2"))
         {
             FeaturesSupported.UnionWith(["sam2"]);
             FeaturesDiscardIfNotFound.UnionWith(["sam2"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI_bitsandbytes_NF4"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI_bitsandbytes_NF4"))
         {
             FeaturesSupported.UnionWith(["bnb_nf4"]);
             FeaturesDiscardIfNotFound.UnionWith(["bnb_nf4"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-GGUF"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-GGUF"))
         {
             FeaturesSupported.UnionWith(["gguf"]);
             FeaturesDiscardIfNotFound.UnionWith(["gguf"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-TeaCache"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-TeaCache"))
         {
             FeaturesSupported.UnionWith(["teacache"]);
             FeaturesDiscardIfNotFound.UnionWith(["teacache"]);
@@ -297,8 +297,8 @@ public class ComfyUIBackendExtension : Extension
     public void LoadWorkflowFiles()
     {
         CustomWorkflows.Clear();
-        Directory.CreateDirectory($"{FilePath}/CustomWorkflows");
-        Directory.CreateDirectory($"{FilePath}/CustomWorkflows/Examples");
+        Directory.CreateDirectory($"{FilePath}CustomWorkflows");
+        Directory.CreateDirectory($"{FilePath}CustomWorkflows/Examples");
         string[] getCustomFlows(string path) => [.. Directory.EnumerateFiles($"{FilePath}/{path}", "*.*", new EnumerationOptions() { RecurseSubdirectories = true }).Select(f => f.Replace('\\', '/').After($"/{path}/")).Order()];
         ExampleWorkflowNames = getCustomFlows("ExampleWorkflows");
         string[] customFlows = getCustomFlows("CustomWorkflows");
@@ -307,7 +307,7 @@ public class ComfyUIBackendExtension : Extension
         {
             if (!customFlows.Contains($"Examples/{workflow}") && !customFlows.Contains($"Examples/{workflow}.deleted"))
             {
-                File.Copy($"{FilePath}/ExampleWorkflows/{workflow}", $"{FilePath}/CustomWorkflows/Examples/{workflow}");
+                File.Copy($"{FilePath}ExampleWorkflows/{workflow}", $"{FilePath}CustomWorkflows/Examples/{workflow}");
                 anyCopied = true;
             }
         }
@@ -444,7 +444,7 @@ public class ComfyUIBackendExtension : Extension
     }
 
     public static LockObject ValueAssignmentLocker = new();
-    
+
     /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
     public static List<Action<JObject>> RawObjectInfoParsers = [];
 
@@ -663,16 +663,16 @@ public class ComfyUIBackendExtension : Extension
     public override void OnInit()
     {
         Sam2PointCoordsPositive = T2IParamTypes.Register<string>(new("SAM2 Positive Points", "Internal: JSON list of positive point coordinates for SAM2 point masking.",
-            "[]", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            "[]", IgnoreIf: "[]", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true, Toggleable: true
             ));
         Sam2PointCoordsNegative = T2IParamTypes.Register<string>(new("SAM2 Negative Points", "Internal: JSON list of negative point coordinates for SAM2 point masking.",
-            "[]", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            "[]", IgnoreIf: "[]", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true, Toggleable: true
             ));
         Sam2BBox = T2IParamTypes.Register<string>(new("SAM2 BBox", "Internal: JSON bounding box [x1,y1,x2,y2] for SAM2 bbox masking.",
-            null, FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            "", IgnoreIf: "", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true, Toggleable: true
             ));
         Sam2MaskPadding = T2IParamTypes.Register<string>(new("SAM2 Mask Padding", "Internal: Number of pixels to dilate/expand the SAM2 mask boundary.",
-            "0", IgnoreIf: "0", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            "0", IgnoreIf: "0", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true, Toggleable: true
             ));
         UseIPAdapterForRevision = T2IParamTypes.Register<string>(new("Use IP-Adapter", $"Select an IP-Adapter model to use IP-Adapter for image-prompt input handling.\nModels will automatically be downloaded when you first use them.\nNote if you use a custom model, you must also set your CLIP-Vision Model under Advanced Model Addons, otherwise CLIP Vision G will be presumed.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ImagePrompting.md\">See more docs here.</a>",
             "None", IgnoreIf: "None", FeatureFlag: "ipadapter", GetValues: _ => IPAdapterModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 15, ChangeWeight: 1
@@ -828,6 +828,98 @@ public class ComfyUIBackendExtension : Extension
         SwarmSwarmBackend.ValidityChecks[BackendApiType.ID] = (backend, input) => ComfyUIAPIAbstractBackend.TryIsValid(input, backend.ExtensionData.GetValueOrDefault("ComfyNodeTypes", null) as HashSet<string>);
         SwarmSwarmBackend.ValidityChecks[BackendSelfStartType.ID] = SwarmSwarmBackend.ValidityChecks[BackendApiType.ID];
         ComfyUIWebAPI.Register();
+        AdminAPI.CheckForBackendUpdates.Add(CheckForUpdates);
+        AdminAPI.DoBackendUpdates.Add(DoBackendUpdates);
+    }
+
+    /// <summary>Enumerates all folders that have a ComfyUI install managed by swarm.</summary>
+    public static IEnumerable<string> ComfyInstallDirs()
+    {
+        foreach (ComfyUISelfStartBackend backend in Program.Backends.EnumerateT2IBackends.Select(b => b.Backend as ComfyUISelfStartBackend).Where(b => b is not null).DistinctBy(b => b.Settings.StartScript))
+        {
+            string script = backend.Settings.StartScript;
+            if (string.IsNullOrWhiteSpace(script))
+            {
+                continue;
+            }
+            yield return Path.GetFullPath(Directory.GetParent(script).FullName);
+        }
+    }
+
+    public async Task CheckForUpdates(LockObject locker, JObject backendsData)
+    {
+        string[] folders = [.. ComfyInstallDirs()];
+        // TODO: is a bunch of git fetches in parallel a rate limit issue? GitHub seems pretty chill about a `fetch` call (vs API is strict limits).
+        List<Task> tasks = [];
+        foreach (string folder in folders)
+        {
+            tasks.Add(Utilities.RunCheckedTask(async () =>
+            {
+                JObject updates = await AdminAPI.GetUpdatesDataFor(folder, true);
+                if (updates is null)
+                {
+                    Logs.Debug($"Check for updates found no updates for ComfyUI install at {folder}");
+                    return;
+                }
+                string altName = folders.Length == 1 ? "ComfyUI" : $"ComfyUI In Folder: {folder.Replace('\\', '/')}";
+                lock (locker)
+                {
+                    backendsData[altName] = updates;
+                }
+                Logs.Debug($"Check for updates found {updates["count"]} updates for ComfyUI install at {folder}");
+            }));
+        }
+        await Task.WhenAll(tasks); // Intentional force order for Comfy folders to be before nodes
+        tasks = [];
+        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}DLNodes"))
+        {
+            tasks.Add(Utilities.RunCheckedTask(async () =>
+            {
+                string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
+                JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true, headTarget: headTarget);
+                if (nodeUpdates is null)
+                {
+                    Logs.Debug($"Check for updates found no updates for ComfyUI node at {folder}");
+                    return;
+                }
+                string nodeName = Path.GetFileName(folder);
+                lock (locker)
+                {
+                    backendsData[$"Comfy Node: {nodeName}"] = nodeUpdates;
+                }
+                Logs.Debug($"Check for updates found {nodeUpdates["count"]} updates for ComfyUI node at {folder}");
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+
+    public async Task DoBackendUpdates(Action didWork, Action<string> didFail, bool aggressive, string[] toUpdate)
+    {
+        string[] folders = [.. ComfyInstallDirs()];
+        List<Task> tasks = [];
+        foreach (string folder in folders)
+        {
+            string altName = folders.Length == 1 ? "ComfyUI" : $"ComfyUI In Folder: {folder.Replace('\\', '/')}";
+            if (toUpdate.Contains(altName))
+            {
+                tasks.Add(Utilities.RunCheckedTask(async () =>
+                {
+                    await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail);
+                }));
+            }
+        }
+        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}DLNodes"))
+        {
+            string nodeName = Path.GetFileName(folder);
+            if (toUpdate.Contains($"Comfy Node: {nodeName}"))
+            {
+                tasks.Add(Utilities.RunCheckedTask(async () =>
+                {
+                    string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
+                    await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail, targetCommit: headTarget);
+                }));
+            }
+        }
     }
 
     public BackendHandler.BackendType BackendApiType, BackendSelfStartType;

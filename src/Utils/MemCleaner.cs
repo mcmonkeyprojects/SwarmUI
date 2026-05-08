@@ -1,4 +1,4 @@
-﻿using SwarmUI.Core;
+using SwarmUI.Core;
 using SwarmUI.WebAPI;
 
 namespace SwarmUI.Utils;

@@ -4,10 +4,12 @@ export const PROMPT_BUILDER_BLOCK_END = '<comment:swarm-builder-end>';
 export type PromptBuilderSyncState = 'synced' | 'manual_override' | 'out_of_sync';
 
 export type BuilderRegionShape = 'rectangle' | 'background';
+export type BuilderRegionSource = 'character' | 'canvas' | 'manual';
 
 export interface BuilderRegionRule {
   id: string;
   shape: BuilderRegionShape;
+  source?: BuilderRegionSource;
   label?: string;
   x: number;
   y: number;

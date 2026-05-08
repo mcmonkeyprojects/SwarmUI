@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.DataHolders;
@@ -27,13 +27,11 @@ public class APICallReflectBuilder
 
     public static APICall BuildFor(object obj, MethodInfo method, bool isUserUpdate, PermInfo permission)
     {
-        bool returnsTaskJObject = method.ReturnType == typeof(Task<JObject>);
-        bool returnsJObject = method.ReturnType == typeof(JObject);
-        if (!returnsTaskJObject && !returnsJObject)
+        if (method.ReturnType != typeof(Task<JObject>))
         {
             throw new Exception($"Invalid API return type '{method.ReturnType.Name}' for method '{method.DeclaringType.Name}.{method.Name}'");
         }
-        APICaller caller = new(obj, method, [], returnsTaskJObject);
+        APICaller caller = new(obj, method, []);
         bool isWebSocket = false;
         foreach (ParameterInfo param in method.GetParameters())
         {
@@ -136,7 +134,7 @@ public class APICallReflectBuilder
         return new APICall(method.Name, method, caller.Call, isWebSocket, isUserUpdate, permission);
     }
 
-    public record class APICaller(object Obj, MethodInfo Method, List<Func<HttpContext, Session, WebSocket, JObject, (string, object)>> InputMappers, bool ReturnsTaskJObject)
+    public record class APICaller(object Obj, MethodInfo Method, List<Func<HttpContext, Session, WebSocket, JObject, (string, object)>> InputMappers)
     {
         public Task<JObject> Call(HttpContext context, Session session, WebSocket socket, JObject input)
         {
@@ -150,12 +148,7 @@ public class APICallReflectBuilder
                 }
                 arr[i] = value;
             }
-            object result = Method.Invoke(Obj, arr);
-            if (ReturnsTaskJObject)
-            {
-                return result as Task<JObject>;
-            }
-            return Task.FromResult(result as JObject ?? new JObject());
+            return Method.Invoke(Obj, arr) as Task<JObject>;
         }
     }
 }

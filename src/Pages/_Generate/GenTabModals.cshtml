@@ -257,6 +257,18 @@
     </div>
 @WebUtil.ModalFooter()
 
+<!-- =================================== Input Image Browser Modal =================================== -->
+
+@WebUtil.ModalHeader("input_image_browser_modal", "Select From Inputs")
+    <div class="modal-body input-image-browser-modal-body">
+        <div id="input_image_browser_upload_container" class="input-image-browser-upload-bar"></div>
+        <div id="input_image_browser_container" class="input-image-browser-container"></div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#input_image_browser_modal').modal('hide')">Cancel</button>
+    </div>
+@WebUtil.ModalFooter()
+
 <!-- =================================== Debug Modals =================================== -->
 
 @WebUtil.ModalHeader("image_editor_debug_modal", "Debug Images")
@@ -324,12 +336,12 @@
         <p class="translate">Select the checkbox next to inputs you want included in the preset.<br>By default this will override values entirely. For text inputs, use <code>{value}</code> to include the current UI value instead of overriding.</p>
         <div id="new_preset_modal_inputs"></div>
         <div class="advanced_input_checkbox advanced_input_checkbox_presets">
-            <input type="checkbox" id="preset_advanced_options_checkbox" onclick="preset_toggle_advanced()"/>
+            <input type="checkbox" id="preset_advanced_options_checkbox" onclick="preset_toggle_advanced()" autocomplete="off"/>
             <span class="translate" onclick="preset_toggle_advanced_checkbox_manual()">Display Advanced Options?</span>
         </div>
         <div id="new_preset_modal_advanced_inputs" style="display:none;"></div>
         <div class="advanced_input_checkbox advanced_input_checkbox_presets">
-            <input type="checkbox" id="preset_hidden_options_checkbox" onclick="preset_toggle_hidden()"/>
+            <input type="checkbox" id="preset_hidden_options_checkbox" onclick="preset_toggle_hidden()" autocomplete="off"/>
             <span class="translate" onclick="preset_toggle_hidden_checkbox_manual()">Display Normally-Hidden Options?</span>
         </div>
         <div id="new_preset_modal_hidden_inputs" style="display:none;"></div>

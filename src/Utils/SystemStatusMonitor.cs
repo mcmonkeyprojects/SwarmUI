@@ -1,4 +1,4 @@
-﻿using Hardware.Info;
+using Hardware.Info;
 using System.Diagnostics;
 
 namespace SwarmUI.Utils;

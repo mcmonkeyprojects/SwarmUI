@@ -11,7 +11,7 @@ import {
   Tooltip,
   Menu,
 } from '@mantine/core';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -30,6 +30,276 @@ import { previewFadeVariants, livePreviewPulse } from '../../utils/animations';
 import type { GenerateParams } from '../../api/types';
 import { SwarmActionIcon, SwarmButton as Button } from '../ui';
 import { useCanvasWorkflowStore, type CanvasWorkflowStep } from '../../stores/canvasWorkflowStore';
+import type { GenerateWorkspaceMode } from '../../stores/navigationStore';
+
+const CANVAS_FRAME_MIN_HEIGHT = 'calc(var(--app-content-height) - 220px)';
+const CANVAS_IMAGE_MAX_HEIGHT = 'calc(var(--app-content-height) - 280px)';
+
+interface CanvasPreviewImageProps {
+  src: string;
+  alt: string;
+  live?: boolean;
+}
+
+const CanvasPreviewImage = memo(function CanvasPreviewImage({
+  src,
+  alt,
+  live = false,
+}: CanvasPreviewImageProps) {
+  if (live) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        loading="eager"
+        decoding="async"
+        fetchPriority="high"
+        style={{
+          width: '100%',
+          height: '100%',
+          maxHeight: CANVAS_IMAGE_MAX_HEIGHT,
+          objectFit: 'contain',
+          display: 'block',
+        }}
+      />
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      radius="sm"
+      fit="contain"
+      style={{
+        maxHeight: CANVAS_IMAGE_MAX_HEIGHT,
+        maxWidth: '100%',
+        objectFit: 'contain',
+      }}
+    />
+  );
+});
+
+interface CanvasViewportProps {
+  disableCanvasMotion: boolean;
+  displayImage: string | null;
+  previewImage: string | null;
+  isLivePreview: boolean;
+  totalImages: number;
+  workspaceMode?: GenerateWorkspaceMode;
+  selectedModel?: string;
+  selectedBackend?: string;
+  generationParams?: Partial<GenerateParams>;
+}
+
+const CanvasViewport = memo(function CanvasViewport({
+  disableCanvasMotion,
+  displayImage,
+  previewImage,
+  isLivePreview,
+  totalImages,
+  workspaceMode = 'advanced',
+  selectedModel,
+  selectedBackend,
+  generationParams,
+}: CanvasViewportProps) {
+  const modeLabel = workspaceMode.charAt(0).toUpperCase() + workspaceMode.slice(1);
+  const width = generationParams?.width || 1024;
+  const height = generationParams?.height || 1024;
+  const steps = generationParams?.steps || 20;
+  const cfgScale = generationParams?.cfgscale || 7;
+  const promptReady = typeof generationParams?.prompt === 'string' && generationParams.prompt.trim().length > 0;
+
+  const renderLivePreviewFrame = (animated: boolean) => {
+    const frame = (
+      <Paper
+        p="md"
+        className="generate-studio-canvas__frame"
+        style={{
+          minHeight: CANVAS_FRAME_MIN_HEIGHT,
+          height: CANVAS_FRAME_MIN_HEIGHT,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+            minHeight: 0,
+          }}
+        >
+          <CanvasPreviewImage src={previewImage!} alt="Live Preview" live />
+        </Box>
+      </Paper>
+    );
+
+    if (!animated) {
+      return frame;
+    }
+
+    return (
+      <motion.div
+        key="live-preview"
+        variants={previewFadeVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        <motion.div
+          variants={livePreviewPulse}
+          animate="animate"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          {frame}
+        </motion.div>
+      </motion.div>
+    );
+  };
+
+  const renderSelectedImageFrame = (animated: boolean) => {
+    const frame = (
+      <Paper
+        p="md"
+        className="generate-studio-canvas__frame"
+        style={{
+          minHeight: CANVAS_FRAME_MIN_HEIGHT,
+          height: CANVAS_FRAME_MIN_HEIGHT,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <CanvasPreviewImage src={displayImage!} alt="Selected Image" />
+      </Paper>
+    );
+
+    if (!animated) {
+      return frame;
+    }
+
+    return (
+      <motion.div
+        key="selected-image"
+        variants={previewFadeVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        {frame}
+      </motion.div>
+    );
+  };
+
+  const renderEmptyState = (animated: boolean) => {
+    const emptyState = (
+      <Box
+        className="generate-studio-canvas__empty"
+        style={{
+          textAlign: 'center',
+          minHeight: 'calc(var(--app-content-height) - 200px)',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Stack align="center" gap="md">
+          <IconPhoto size={48} color="var(--mantine-color-invokeGray-4)" />
+          <Text size="xl" c="invokeGray.2" fw={600}>
+            {totalImages > 0 ? 'Canvas Stage' : `${modeLabel} workspace ready`}
+          </Text>
+          <Text size="md" c="invokeGray.3">
+            {totalImages > 0
+              ? 'Select a session image to inspect it here'
+              : 'Your next generation will appear here with live progress, preview updates, and review tools.'}
+          </Text>
+          {selectedModel ? (
+            <Badge color="gray" variant="light" className="generate-studio-canvas__empty-model">
+              {selectedModel}
+            </Badge>
+          ) : (
+            <Text size="sm" c="invokeGray.4">
+              Select a base model in the left rail, then tune the run before generating.
+            </Text>
+          )}
+          <Box className="generate-studio-canvas__empty-dashboard">
+            <Box className="generate-studio-canvas__empty-tile" data-ready="true">
+              <Text size="xs" fw={700} c="var(--theme-text-secondary)">Mode</Text>
+              <Text size="sm" fw={700}>{modeLabel}</Text>
+            </Box>
+            <Box className="generate-studio-canvas__empty-tile" data-ready={selectedModel ? 'true' : undefined}>
+              <Text size="xs" fw={700} c="var(--theme-text-secondary)">Model</Text>
+              <Text size="sm" fw={700} truncate>{selectedModel || 'Select model'}</Text>
+            </Box>
+            <Box className="generate-studio-canvas__empty-tile" data-ready="true">
+              <Text size="xs" fw={700} c="var(--theme-text-secondary)">Canvas</Text>
+              <Text size="sm" fw={700}>{width} x {height}</Text>
+            </Box>
+            <Box className="generate-studio-canvas__empty-tile" data-ready="true">
+              <Text size="xs" fw={700} c="var(--theme-text-secondary)">Run</Text>
+              <Text size="sm" fw={700}>{steps} steps · CFG {cfgScale}</Text>
+            </Box>
+            <Box className="generate-studio-canvas__empty-tile" data-ready={selectedBackend ? 'true' : undefined}>
+              <Text size="xs" fw={700} c="var(--theme-text-secondary)">Backend</Text>
+              <Text size="sm" fw={700} truncate>{selectedBackend || 'Auto backend'}</Text>
+            </Box>
+            <Box className="generate-studio-canvas__empty-tile" data-ready={promptReady ? 'true' : undefined}>
+              <Text size="xs" fw={700} c="var(--theme-text-secondary)">Prompt</Text>
+              <Text size="sm" fw={700}>{promptReady ? 'Ready' : 'Empty'}</Text>
+            </Box>
+          </Box>
+        </Stack>
+      </Box>
+    );
+
+    if (!animated) {
+      return emptyState;
+    }
+
+    return (
+      <motion.div
+        key="empty-state"
+        variants={previewFadeVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        {emptyState}
+      </motion.div>
+    );
+  };
+
+  return (
+    <ScrollArea flex={1} p="lg">
+      {disableCanvasMotion ? (
+        <>
+          {isLivePreview && previewImage && renderLivePreviewFrame(false)}
+          {!isLivePreview && displayImage && renderSelectedImageFrame(false)}
+          {!isLivePreview && !displayImage && renderEmptyState(false)}
+        </>
+      ) : (
+        <AnimatePresence mode="wait">
+          {isLivePreview && previewImage && renderLivePreviewFrame(true)}
+          {!isLivePreview && displayImage && renderSelectedImageFrame(true)}
+          {!isLivePreview && !displayImage && renderEmptyState(true)}
+        </AnimatePresence>
+      )}
+    </ScrollArea>
+  );
+});
 
 interface FavoriteImage {
   path: string;
@@ -105,6 +375,14 @@ interface CanvasPanelProps {
   initImagePreview?: string | null;
   /** Show diagnostics/shortcut tools inside the internal toolbar */
   showWorkspaceTools?: boolean;
+  /** Active workspace mode for empty-state context */
+  workspaceMode?: GenerateWorkspaceMode;
+  /** Selected base model for empty-state context */
+  selectedModel?: string;
+  /** Selected backend for empty-state context */
+  selectedBackend?: string;
+  /** Current generation params for empty-state context */
+  generationParams?: Partial<GenerateParams>;
 }
 
 /**
@@ -141,8 +419,13 @@ export const CanvasPanel = memo(function CanvasPanel({
   hasDiagnosticIssue = false,
   getImageActionContext,
   showWorkspaceTools = true,
+  workspaceMode = 'advanced',
+  selectedModel,
+  selectedBackend,
+  generationParams,
 }: CanvasPanelProps) {
   const openSession = useCanvasWorkflowStore((state) => state.openSession);
+  const prefersReducedMotion = useReducedMotion();
 
   const openEditor = useCallback(
     (image: string, initialStep: CanvasWorkflowStep) => {
@@ -169,6 +452,7 @@ export const CanvasPanel = memo(function CanvasPanel({
   // Determine what to display: live preview during generation, or the selected image.
   const displayImage = previewImage || selectedImage;
   const isLivePreview = generating && !!previewImage;
+  const disableCanvasMotion = generating || Boolean(prefersReducedMotion);
 
   return (
     <Box
@@ -348,128 +632,17 @@ export const CanvasPanel = memo(function CanvasPanel({
         </Box>
       )}
 
-      {/* Main canvas area */}
-      <ScrollArea flex={1} p="lg">
-        <AnimatePresence mode="wait">
-          {/* Live preview during generation */}
-          {isLivePreview && (
-            <motion.div
-              key="live-preview"
-              variants={previewFadeVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <Paper
-                p="md"
-                className="generate-studio-canvas__frame"
-                style={{
-                  minHeight: 'calc(var(--app-content-height) - 220px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <motion.div
-                  variants={livePreviewPulse}
-                  animate="animate"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '100%',
-                    height: '100%',
-                  }}
-                >
-                  <Image
-                    src={previewImage}
-                    alt="Live Preview"
-                    radius="sm"
-                    fit="contain"
-                    style={{
-                      maxHeight: 'calc(var(--app-content-height) - 280px)',
-                      objectFit: 'contain',
-                    }}
-                  />
-                </motion.div>
-              </Paper>
-            </motion.div>
-          )}
-
-          {/* Selected image full-size display (or lingering preview after generation ends) */}
-          {!isLivePreview && displayImage && (
-            <motion.div
-              key="selected-image"
-              variants={previewFadeVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <Paper
-                p="md"
-                className="generate-studio-canvas__frame"
-                style={{
-                  minHeight: 'calc(var(--app-content-height) - 220px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Image
-                  src={displayImage}
-                  alt="Selected Image"
-                  radius="sm"
-                  fit="contain"
-                  style={{
-                    maxHeight: 'calc(var(--app-content-height) - 280px)',
-                    maxWidth: '100%',
-                    objectFit: 'contain',
-                  }}
-                />
-              </Paper>
-            </motion.div>
-          )}
-
-          {/* Empty State */}
-          {!isLivePreview && !displayImage && (
-            <motion.div
-              key="empty-state"
-              variants={previewFadeVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <Box
-                className="generate-studio-canvas__empty"
-                style={{
-                  textAlign: 'center',
-                  minHeight: 'calc(var(--app-content-height) - 200px)',
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Stack align="center" gap="md">
-                  <IconPhoto size={48} color="var(--mantine-color-invokeGray-4)" />
-                  <Text size="xl" c="invokeGray.2" fw={600}>
-                    Canvas Stage
-                  </Text>
-                  <Text size="md" c="invokeGray.3">
-                    {totalImages > 0
-                      ? 'Select a session image to inspect it here'
-                      : 'Your next generation will appear here with live progress and preview updates'}
-                  </Text>
-                  <Text size="sm" c="invokeGray.4">
-                    Keep controls supportive, keep the stage central, and open edit tools only when
-                    you need them
-                  </Text>
-                </Stack>
-              </Box>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </ScrollArea>
+      <CanvasViewport
+        disableCanvasMotion={disableCanvasMotion}
+        displayImage={displayImage}
+        previewImage={previewImage}
+        isLivePreview={isLivePreview}
+        totalImages={totalImages}
+        workspaceMode={workspaceMode}
+        selectedModel={selectedModel}
+        selectedBackend={selectedBackend}
+        generationParams={generationParams}
+      />
 
       {/* Progress Bar at Bottom of Canvas */}
       {generating && (

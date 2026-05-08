@@ -23,7 +23,7 @@ export async function preloadCriticalData(): Promise<void> {
     Promise.all([
         queryClient.prefetchQuery({
             queryKey: queryKeys.backend.bootstrap,
-            queryFn: () => swarmBackendAdapter.getBootstrap('startup'),
+            queryFn: () => swarmBackendAdapter.getBootstrap('startup', { source: 'preload' }),
             staleTime: 300000,
         }).catch(() => { }),
     ]).then(() => {

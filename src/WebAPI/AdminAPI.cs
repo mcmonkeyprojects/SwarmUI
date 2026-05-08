@@ -52,6 +52,12 @@ public static class AdminAPI
         API.RegisterAPICall(AdminListPermissions, false, Permissions.ConfigureRoles);
     }
 
+    /// <summary>Async actions that check for backend updates, and add them to the JObject (within the lock!).</summary>
+    public static List<Func<LockObject, JObject, Task>> CheckForBackendUpdates = [];
+
+    /// <summary>Async actions that apply backend updates if backend is in the given array of requested updates, and trigger a counter action when updates are successful or a log when failed.</summary>
+    public static List<Func<Action, Action<string>, bool, string[], Task>> DoBackendUpdates = [];
+
     public static JObject AutoConfigToParamData(AutoConfiguration config, bool hideRestricted = false)
     {
         JObject output = [];
@@ -574,51 +580,99 @@ public static class AdminAPI
         return new JObject() { ["users"] = list };
     }
 
+    public static async Task<JObject> GetUpdatesDataFor(string folder, bool nullOnNone, bool tryPatches = true, string headTarget = null)
+    {
+        headTarget ??= "HEAD";
+        string fetchResult = await Utilities.RunGitProcess("fetch", folder);
+        Logs.Debug($"Git fetch of {folder} says: {fetchResult}");
+        string commitRaw = (await Utilities.RunGitProcess($"rev-list {headTarget}..origin", folder)).Trim().Replace("\r", "");
+        string[] commits;
+        if (commitRaw.StartsWith("fatal: "))
+        {
+            Logs.Error($"Git rev-list failed for folder '{folder}' with message: {commitRaw}");
+            if (tryPatches)
+            {
+                string autofixme = await Utilities.RunGitProcess("remote set-head origin --auto", folder);
+                Logs.Debug($"Autofix for git rev-list failure: {autofixme}");
+                return await GetUpdatesDataFor(folder, nullOnNone, false, headTarget);
+            }
+            commits = ["(unknown revisions, see error in logs. Use Aggressive Update to auto-resolve most issues.)"];
+            return new JObject() { ["count"] = 1, ["preview"] = JArray.FromObject(commits) };
+        }
+        commits = commitRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        int updatesCount = commits.Length;
+        if (commits.Length > 6)
+        {
+            commits = [.. commits[0..2], "...", .. commits[^3..]];
+        }
+        if (nullOnNone && updatesCount == 0)
+        {
+            return null;
+        }
+        for (int i = 0; i < commits.Length; i++)
+        {
+            if (commits[i].Length > 5)
+            {
+                string showOutput = await Utilities.RunGitProcess($"show --no-patch --format=%h^%ci^%s {commits[i]}", folder);
+                string[] parts = showOutput.SplitFast('^', 2);
+                if (parts.Length < 2)
+                {
+                    Logs.Error($"Cannot parse commit details for commit '{commits[i]}': yielded '{showOutput}' with split {parts.Length}");
+                    commits[i] = $"{commits[i]}: (unknown commit details, see error in logs)";
+                }
+                else
+                {
+                    DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
+                    string dateFormat = $"{date:yyyy-MM-dd HH:mm:ss}";
+                    commits[i] = $"{dateFormat}: {parts[2]}";
+                }
+            }
+        }
+        List<string> updatesPreview = [.. commits];
+        return new JObject()
+        {
+            ["count"] = updatesCount,
+            ["preview"] = JArray.FromObject(updatesPreview)
+        };
+    }
+
     [API.APIDescription("Do a scan for any available updates to SwarmUI, extensions, or backends.",
         """
-            "server_updates_count": 0,
-            "server_updates_preview": ["name1", ..., "name6"], // capped to just a few
-            "extension_updates": ["name1", ...],
-            "backend_updates": ["name1", ...]
+            "server": {
+                "count": 0,
+                "preview": ["name1", ..., "name6"] // capped to just a few
+            },
+            "extensions": {
+                "MyExtension": {
+                    "count": 0,
+                    "preview": []
+                }
+            },
+            "backends": {
+                "MyBackend": {
+                    "count": 0,
+                    "preview": []
+                }
+            }
         """)]
     public static async Task<JObject> CheckForUpdates(Session session)
     {
         Logs.Debug($"User {session.User.UserID} requested check for updates.");
         List<Task> fetchTasks = [];
         LockObject locker = new();
-        List<string> extensions = [];
-        int serverUpdates = 0;
-        List<string> updatesPreview = [];
-        List<string> backendUpdates = [];
+        JObject result = [], extensions = [], backends = [];
         fetchTasks.Add(Utilities.RunCheckedTask(async () =>
         {
-            await Utilities.RunGitProcess("fetch");
-            string[] commits = (await Utilities.RunGitProcess("rev-list HEAD..origin")).Trim().Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            serverUpdates = commits.Length;
-            if (commits.Length > 6)
+            JObject serverData = await GetUpdatesDataFor(Environment.CurrentDirectory, false);
+            if (serverData is null)
             {
-                commits = [.. commits[0..2], "...", .. commits[^3..]];
+                return;
             }
-            for (int i = 0; i < commits.Length; i++)
+            lock (locker)
             {
-                if (commits[i].Length > 5)
-                {
-                    string showOutput = await Utilities.RunGitProcess($"show --no-patch --format=%h^%ci^%s {commits[i]}");
-                    string[] parts = showOutput.SplitFast('^', 2);
-                    if (parts.Length < 2)
-                    {
-                        Logs.Error($"Cannot parse commit details for commit '{commits[i]}': yielded '{showOutput}' with split {parts.Length}");
-                        commits[i] = $"{commits[i]}: (unknown commit details, see error in logs)";
-                    }
-                    else
-                    {
-                        DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
-                        string dateFormat = $"{date:yyyy-MM-dd HH:mm:ss}";
-                        commits[i] = $"{dateFormat}: {parts[2]}";
-                    }
-                }
+                result["server"] = serverData;
             }
-            updatesPreview = [.. commits];
+            Logs.Debug($"Check for updates found {serverData["count"]} updates to SwarmUI core.");
         }, "check for core update"));
         foreach (Extension extension in Program.Extensions.Extensions.Where(e => !e.IsCore))
         {
@@ -626,29 +680,90 @@ public static class AdminAPI
             fetchTasks.Add(Utilities.RunCheckedTask(async () =>
             {
                 string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
-                await Utilities.RunGitProcess("fetch", path);
-                string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
-                string remoteHash = (await Utilities.RunGitProcess("rev-parse origin", path)).Trim();
-                Logs.Debug($"Update checker: current hash for {ext.ExtensionName} is {priorHash}, origin hash is {remoteHash}");
-                if (priorHash != remoteHash)
+                JObject extData = await GetUpdatesDataFor(path, true);
+                if (extData is null)
                 {
-                    lock (locker)
-                    {
-                        extensions.Add(ext.ExtensionName);
-                    }
+                    Logs.Debug($"Check for updates found no updates to extension '{ext.ExtensionName}'.");
+                    return;
                 }
+                lock (locker)
+                {
+                    extensions[ext.ExtensionName] = extData;
+                }
+                Logs.Debug($"Check for updates found {extData["count"]} updates to extension '{ext.ExtensionName}'.");
             }, "check for extension update"));
         }
-        await Task.WhenAll(fetchTasks);
-        Logs.Debug($"Update check complete - {serverUpdates} Swarm commits, {extensions.Count} extensions, {backendUpdates.Count} backends.");
-        // TODO: Backends
-        return new()
+        foreach (Func<LockObject, JObject, Task> backendCheck in CheckForBackendUpdates)
         {
-            ["server_updates_count"] = serverUpdates,
-            ["server_updates_preview"] = JArray.FromObject(updatesPreview),
-            ["extension_updates"] = JArray.FromObject(extensions),
-            ["backend_updates"] = JArray.FromObject(backendUpdates)
-        };
+            fetchTasks.Add(Utilities.RunCheckedTask(async () =>
+            {
+                await backendCheck(locker, backends);
+            }, "check for backend update"));
+        }
+        await Task.WhenAll(fetchTasks);
+        result["extensions"] = extensions;
+        result["backends"] = backends;
+        return result;
+    }
+
+    public static async Task DoGitUpdate(string folder, bool aggressive, Action didWork, Action<string> didFail, string targetCommit = null)
+    {
+        string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD", folder)).Trim();
+        if (targetCommit is not null && priorHash == targetCommit)
+        {
+            Logs.Debug($"Already at target commit {targetCommit} for folder {folder}, skipping update.");
+            return;
+        }
+        string pullResult = await Utilities.RunGitProcess(aggressive ? "pull --autostash" : "pull", folder);
+        Logs.Debug($"Git pull of {folder} says: {pullResult}");
+        if (aggressive)
+        {
+            if (pullResult.Contains("There is no tracking information for the current branch") || pullResult.Contains("You are not currently on a branch"))
+            {
+                string checkout = await Utilities.RunGitProcess("checkout master --force", folder);
+                Logs.Debug($"Aggressive checkout: {checkout}");
+                string branch = await Utilities.RunGitProcess("branch --set-upstream-to=origin/master master", folder);
+                Logs.Debug($"Aggressive set-branch: {branch}");
+            }
+            string fetch = await Utilities.RunGitProcess("fetch", folder);
+            Logs.Debug($"Aggressive fetch: {fetch}");
+            string addAny = await Utilities.RunGitProcess("add .", folder); // reset excludes untracked, so add all
+            Logs.Debug($"Aggressive add: {addAny}");
+            string reset = await Utilities.RunGitProcess("reset --hard HEAD", folder);
+            Logs.Debug($"Aggressive reset: {reset}");
+            string repull = await Utilities.RunGitProcess("pull --autostash", folder); // Should already be good, but make sure
+            Logs.Debug($"Aggressive repull: {repull}");
+        }
+        else
+        {
+            if (pullResult.Contains("error: ") && pullResult.Contains("files would be overwritten by merge:"))
+            {
+                didFail($"Update for folder '{folder}' failed: git pull failed because you have local changes to source files.\nPlease remove them, or enable Aggressive Updates.");
+                return;
+            }
+            else if (pullResult.Contains("You are not currently on a branch"))
+            {
+                didFail($"Update for folder '{folder}' failed: git pull failed with a 'not currently on a branch' message.\nPlease swap to the master branch, or enable Aggressive Updates.");
+                return;
+            }
+            else if (pullResult.EndsWith("Aborting"))
+            {
+                Logs.Warning($"Git refused to pull updates for folder '{folder}' and aborted, with message: {pullResult}");
+                didFail($"Update for folder '{folder}' failed: git aborted for an unknown reason. Check server logs for details.\nPlease swap to the master branch, or enable Aggressive Updates.");
+                return;
+            }
+        }
+        if (targetCommit is not null)
+        {
+            string resetBack = await Utilities.RunGitProcess($"reset --hard {targetCommit}", folder);
+            Logs.Debug($"Reset back to target commit {targetCommit}: {resetBack}");
+        }
+        string localHash = (await Utilities.RunGitProcess("rev-parse HEAD", folder)).Trim();
+        Logs.Debug($"Updater: prior hash was {priorHash}, new hash is {localHash}");
+        if (localHash != priorHash)
+        {
+            didWork();
+        }
     }
 
     [API.APIDescription("Causes swarm to update, then close and restart itself. If there's no update to apply, won't restart.",
@@ -657,70 +772,65 @@ public static class AdminAPI
             "result": "No changes found." // or any other applicable human-readable English message
         """)]
     public static async Task<JObject> UpdateAndRestart(Session session,
-        [API.APIParameter("True to also update any extensions.")] bool updateExtensions = false,
-        [API.APIParameter("True to also update any backends.")] bool updateBackends = false, // TODO: Impl
+        [API.APIParameter("Add extensionsToUpdate: ['name'] and backendsToUpdate: ['name', 'name'] to update extensions/backends. Match names to CheckForUpdates output.")] JObject raw,
+        [API.APIParameter("True to include the SwarmUI core in the updates.")] bool doUpdateServer = false,
+        [API.APIParameter("True to perform an *aggressive* git update (forcibly override common git issues).")] bool aggressive = false,
         [API.APIParameter("True to always rebuild and restart even if there's no visible update.")] bool force = false)
     {
         Logs.Warning($"User {session.User.UserID} requested update-and-restart.");
-        string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-
-        // Fetch from remote to ensure we have latest refs
-        Logs.Debug("Updater: fetching from origin...");
-        string fetchResult = await Utilities.RunGitProcess("fetch origin");
-        Logs.Debug($"Updater: fetch response: {fetchResult}");
-
-        // Explicitly checkout master to ensure we're on the right branch
-        Logs.Debug("Updater: checking out master branch...");
-        string checkoutResult = await Utilities.RunGitProcess("checkout master --force");
-        Logs.Debug($"Updater: checkout response: {checkoutResult}");
-
-        // Pull with autostash to handle any local changes
-        Logs.Debug("Updater: pulling with autostash...");
-        string pullResult = await Utilities.RunGitProcess("pull --autostash");
-        Logs.Debug($"Updater: pull response: {pullResult}");
-
-        // Handle various error cases
-        if (pullResult.Contains("error: Your local changes to the following files would be overwritten by merge:"))
+        long updates = 0;
+        List<Task> tasks = [];
+        void didWork() => Interlocked.Increment(ref updates);
+        List<string> fails = [];
+        void didFail(string msg)
         {
-            return new JObject() { ["error"] = "Git pull failed because you have local changes to source files.\nPlease remove them, or manually run 'git pull --autostash', or 'git fetch origin && git checkout -f master' in the SwarmUI folder." };
-        }
-        if (pullResult.Contains("error") && !pullResult.Contains("fast-forward"))
-        {
-            Logs.Error($"Updater: Pull failed with error: {pullResult}");
-            return new JObject() { ["error"] = $"Git pull failed with error: {pullResult}" };
-        }
-
-        string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-        Logs.Debug($"Updater: prior hash was {priorHash}, new hash is {localHash}");
-        long updates = localHash != priorHash ? 1 : 0;
-        List<Task> pullTasks = [];
-        if (updateExtensions)
-        {
-            foreach (Extension extension in Program.Extensions.Extensions.Where(e => !e.IsCore))
+            Logs.Error($"Failed to apply update: {msg}");
+            lock (fails)
             {
-                Extension ext = extension; // lambda capture
-                pullTasks.Add(Utilities.RunCheckedTask(async () =>
-                {
-                    string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
-                    string priorExtHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
-                    await Utilities.RunGitProcess("pull", path);
-                    string localExtHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
-                    Logs.Debug($"Updater: prior hash for {ext.ExtensionName} was {priorExtHash}, new hash is {localExtHash}");
-                    if (priorExtHash != localExtHash)
-                    {
-                        Interlocked.Increment(ref updates);
-                    }
-                }));
+                fails.Add(msg);
             }
         }
-        await Task.WhenAll(pullTasks);
-        if (Interlocked.Read(ref updates) == 0 && !force)
+        if (doUpdateServer)
         {
-            return new JObject() { ["success"] = false, ["result"] = "No changes found." };
+            tasks.Add(Utilities.RunCheckedTask(async () =>
+            {
+                await DoGitUpdate(Environment.CurrentDirectory, aggressive, didWork, didFail);
+            }, "update core"));
+        }
+        if (raw.TryGetValue("extensionsToUpdate", out JToken extToken) && extToken is JArray updateExtensions)
+        {
+            string[] toUpdate = [.. updateExtensions.Select(v => $"{v}")];
+            Logs.Debug($"Request updates to extensions: {toUpdate.JoinString(", ")}");
+            foreach (Extension extension in Program.Extensions.Extensions.Where(e => !e.IsCore && toUpdate.Contains(e.ExtensionName)))
+            {
+                Extension ext = extension; // lambda capture
+                tasks.Add(Utilities.RunCheckedTask(async () =>
+                {
+                    string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
+                    await DoGitUpdate(path, aggressive, didWork, didFail);
+                }, $"update extension {extension.ExtensionName}"));
+            }
+        }
+        if (raw.TryGetValue("backendsToUpdate", out JToken backToken) && backToken is JArray updateBackends)
+        {
+            string[] toUpdate = [.. updateBackends.Select(v => $"{v}")];
+            Logs.Debug($"Request updates to backends: {toUpdate.JoinString(", ")}");
+            foreach (Func<Action, Action<string>, bool, string[], Task> backendUpdate in DoBackendUpdates)
+            {
+                tasks.Add(Utilities.RunCheckedTask(async () =>
+                {
+                    await backendUpdate(didWork, didFail, aggressive, toUpdate);
+                }, "update backend"));
+            }
+        }
+        await Task.WhenAll(tasks);
+        if ((Interlocked.Read(ref updates) == 0 || fails.Count > 0) && !force)
+        {
+            return new JObject() { ["success"] = false, ["result"] = fails.Count > 0 ? fails.JoinString("\n") : "No changes found." };
         }
         File.WriteAllText("src/bin/must_rebuild", "yes");
         Program.RequestRestart();
-        return new JObject() { ["success"] = true, ["result"] = "Update successful. Restarting... (please wait a moment, then refresh the page)" };
+        return new JObject() { ["success"] = true, ["result"] = fails.Count > 0 ? fails.JoinString("\n") + "\nRestarting..." : "Update successful. Restarting... (please wait a moment, then refresh the page)" };
     }
 
     [API.APIDescription("Installs an extension from the known extensions list. Does not trigger a restart.",
@@ -735,15 +845,17 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
-        string extensionsFolder = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, "src/Extensions");
-        string folder = Utilities.CombinePathWithAbsolute(extensionsFolder, ext.FolderName);
-        if (Directory.Exists(folder))
+        Program.Extensions.CleanDisabledExtensions();
+        foreach (string folderName in ext.FolderNames)
         {
-            return new JObject() { ["error"] = "Extension already installed." };
+            if (Directory.Exists($"./src/Extensions/{folderName}"))
+            {
+                return new JObject() { ["error"] = "Extension already installed." };
+            }
+            Program.Extensions.RemoveDisabledExtensionSetting(folderName);
         }
-        Program.Extensions.RemoveDisabledExtensionSetting(ext.FolderName);
         Program.SaveSettingsFile();
-        await Utilities.RunGitProcess($"clone {ext.URL}", extensionsFolder);
+        await Utilities.RunGitProcess($"clone {ext.URL}", Path.GetFullPath("./src/Extensions"));
         return new JObject() { ["success"] = true };
     }
 

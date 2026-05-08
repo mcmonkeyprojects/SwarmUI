@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
@@ -688,10 +688,6 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             AutoThrowException(response);
             result = response["result"].Value<bool>();
         });
-        if (Volatile.Read(ref result))
-        {
-            CurrentModelName = null;
-        }
         return Volatile.Read(ref result);
     }
 }

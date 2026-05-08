@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy, useState, type ReactNode } from 'react';
+import { useEffect, Suspense, lazy, useRef, useState, type ReactNode } from 'react';
 import { MantineProvider, AppShell, Loader, Center } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { notifications } from '@mantine/notifications';
@@ -11,20 +11,21 @@ import { swarmClient } from './api/client';
 import { swarmBackendAdapter } from './api/backendAdapter';
 import { useSessionStore } from './stores/session';
 import { useShallow } from 'zustand/react/shallow';
-const GeneratePage = lazy(() => import('./pages/GeneratePage').then(module => ({ default: module.GeneratePage })));
-const HistoryPage = lazy(() => import('./pages/HistoryPage').then(module => ({ default: module.HistoryPage })));
-const QueuePage = lazy(() => import('./pages/QueuePage').then(module => ({ default: module.QueuePage })));
-const WorkflowPage = lazy(() => import('./pages/WorkflowPage').then(module => ({ default: module.WorkflowPage })));
-const ServerPage = lazy(() => import('./pages/ServerPage').then(module => ({ default: module.ServerPage })));
-const RoleplayPage = lazy(() => import('./pages/RoleplayPage').then(module => ({ default: module.RoleplayPage })));
-const AssetCatalogModal = lazy(() => import('./components/AssetCatalogModal').then(module => ({ default: module.AssetCatalogModal })));
-const CommandPalette = lazy(() => import('./components/CommandPalette').then(module => ({ default: module.CommandPalette })));
-const ModelDownloader = lazy(() => import('./components/ModelDownloader').then(module => ({ default: module.ModelDownloader })));
-const CanvasWorkflowHost = lazy(() => import('./components/canvas/CanvasWorkflowHost').then(module => ({ default: module.CanvasWorkflowHost })));
+const GeneratePage = lazy(() => retryDynamicImport(() => import('./pages/GeneratePage').then(module => ({ default: module.GeneratePage }))));
+const HistoryPage = lazy(() => retryDynamicImport(() => import('./pages/HistoryPage').then(module => ({ default: module.HistoryPage }))));
+const QueuePage = lazy(() => retryDynamicImport(() => import('./pages/QueuePage').then(module => ({ default: module.QueuePage }))));
+const WorkflowPage = lazy(() => retryDynamicImport(() => import('./pages/WorkflowPage').then(module => ({ default: module.WorkflowPage }))));
+const ServerPage = lazy(() => retryDynamicImport(() => import('./pages/ServerPage').then(module => ({ default: module.ServerPage }))));
+const RoleplayPage = lazy(() => retryDynamicImport(() => import('./pages/RoleplayPage').then(module => ({ default: module.RoleplayPage }))));
+const AssetCatalogModal = lazy(() => retryDynamicImport(() => import('./components/AssetCatalogModal').then(module => ({ default: module.AssetCatalogModal }))));
+const CommandPalette = lazy(() => retryDynamicImport(() => import('./components/CommandPalette').then(module => ({ default: module.CommandPalette }))));
+const ModelDownloader = lazy(() => retryDynamicImport(() => import('./components/ModelDownloader').then(module => ({ default: module.ModelDownloader }))));
+const CanvasWorkflowHost = lazy(() => retryDynamicImport(() => import('./components/canvas/CanvasWorkflowHost').then(module => ({ default: module.CanvasWorkflowHost }))));
+const ProjectWorkspaceModal = lazy(() => retryDynamicImport(() => import('./components/projects/ProjectWorkspaceModal').then(module => ({ default: module.ProjectWorkspaceModal }))));
 // Skeleton for instant visual feedback while GeneratePage lazy-loads
 import { GeneratePageSkeleton } from './components/GeneratePageSkeleton';
 // Performance Dashboard - development only, lazy loaded
-const PerformanceDashboard = lazy(() => import('./components/dev/PerformanceDashboard'));
+const PerformanceDashboard = lazy(() => retryDynamicImport(() => import('./components/dev/PerformanceDashboard')));
 import { theme } from './theme';
 import { InstallPrompt, UpdateNotification } from './components/InstallPrompt';
 import { initializeTheme, useThemeStore } from './store/themeStore';
@@ -35,7 +36,10 @@ import { useNavigationStore, type AppPage, type AppRoute } from './stores/naviga
 import { AppHeader } from './components/layout/AppHeader';
 import { useCanvasWorkflowStore } from './stores/canvasWorkflowStore';
 import { usePromptCacheStore } from './stores/promptCacheStore';
+import { usePerformanceSessionStore } from './stores/performanceSessionStore';
 import { isWebRuntimeTarget } from './config/runtimeTarget';
+import { featureFlags } from './config/featureFlags';
+import type { BackendBootstrapSnapshot } from './api/types';
 
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
@@ -46,7 +50,29 @@ type ElectronAPI = {
   version: string;
   shutdownApp?: () => Promise<boolean>;
   reloadWrapper?: () => Promise<boolean>;
+  writePerformanceMetrics?: (payload: string) => Promise<{ success: boolean; path: string; error?: string }>;
 };
+
+const DYNAMIC_IMPORT_RETRY_DELAYS_MS = [250, 750, 1500];
+
+async function retryDynamicImport<T>(loader: () => Promise<T>): Promise<T> {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= DYNAMIC_IMPORT_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await loader();
+    } catch (error) {
+      lastError = error;
+      const delay = DYNAMIC_IMPORT_RETRY_DELAYS_MS[attempt];
+      if (delay === undefined) {
+        break;
+      }
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, delay);
+      });
+    }
+  }
+  throw lastError;
+}
 
 // Initialize theme on app load
 initializeTheme();
@@ -91,6 +117,34 @@ function PageLoader() {
       <Loader size="lg" />
     </Center>
   );
+}
+
+function getUnknownErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message || error.name;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  try {
+    return JSON.stringify(error) ?? 'Unknown error';
+  } catch {
+    return 'Unknown error';
+  }
+}
+
+function getUnknownErrorStack(error: unknown): string | null {
+  return error instanceof Error && error.stack ? error.stack : null;
+}
+
+function truncateRuntimeTelemetryText(text: string | null, maxLength: number = 1800): string | null {
+  if (!text) {
+    return null;
+  }
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, maxLength).trimEnd()}...`;
 }
 
 function AppRouteOutlet({
@@ -161,12 +215,25 @@ function AppContent() {
     setCurrentPage: state.setCurrentPage,
     syncFromLocation: state.syncFromLocation,
   })));
+  const { isSessionInitialized, isSessionInitializing } = useSessionStore(
+    useShallow((state) => ({
+      isSessionInitialized: state.isInitialized,
+      isSessionInitializing: state.isInitializing,
+    }))
+  );
+  const startNavigation = usePerformanceSessionStore((state) => state.startNavigation);
+  const completeNavigation = usePerformanceSessionStore((state) => state.completeNavigation);
+  const markSessionBootstrapped = usePerformanceSessionStore((state) => state.markSessionBootstrapped);
+  const recordEventLoopLag = usePerformanceSessionStore((state) => state.recordEventLoopLag);
+  const recordSessionEvent = usePerformanceSessionStore((state) => state.recordSessionEvent);
   const { startTransition } = useViewTransition();
   const electronAPI = (window as Window & { electronAPI?: ElectronAPI }).electronAPI;
   const [modelDownloaderOpen, setModelDownloaderOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [assetCatalogOpen, setAssetCatalogOpen] = useState(false);
+  const [projectWorkspaceOpen, setProjectWorkspaceOpen] = useState(false);
   const isCanvasWorkflowActive = useCanvasWorkflowStore((state) => state.isOpen || state.upscalerOpen);
+  const appStartRef = useRef(0);
 
   // Get theme store state and sync function
   const { _hasHydrated, syncThemeCSS, currentTheme, resolvedColorScheme, customAccent } = useThemeStore(useShallow((state) => ({
@@ -194,6 +261,10 @@ function AppContent() {
   useAdaptiveAccentPipeline();
 
   // Preload only Generate-adjacent data on idle to keep startup responsive.
+  useEffect(() => {
+    appStartRef.current = performance.now();
+  }, []);
+
   useEffect(() => {
     if (shouldSkipStartupPrefetch()) {
       return;
@@ -240,6 +311,8 @@ function AppContent() {
   // Handle page changes with View Transitions API
   const handlePageChange = (newPage: AppPage) => {
     if (newPage === currentPage) return;
+
+    startNavigation(newPage);
 
     // Use View Transitions if supported, otherwise just set directly
     startTransition(() => {
@@ -325,14 +398,10 @@ function AppContent() {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: queryKeys.models.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.backends.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.vaes.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.controlnets.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.embeddings.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.wildcards.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.server.status });
-      queryClient.invalidateQueries({ queryKey: queryKeys.server.info });
+      const snapshot = event.data as BackendBootstrapSnapshot;
+
+      queryClient.setQueryData(queryKeys.backend.bootstrap, snapshot);
+      queryClient.setQueryData(queryKeys.backends.list(), snapshot.backendStatus);
     });
   }, []);
 
@@ -347,6 +416,127 @@ function AppContent() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    if (!isSessionInitialized) {
+      return;
+    }
+
+    markSessionBootstrapped(performance.now() - appStartRef.current);
+  }, [isSessionInitialized, markSessionBootstrapped]);
+
+  useEffect(() => {
+    if (!isSessionInitialized) {
+      return;
+    }
+
+    const routeName = route.page;
+    const startedAt = performance.now();
+    const settleTimer = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        completeNavigation(routeName, performance.now() - startedAt);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(settleTimer);
+    };
+  }, [completeNavigation, isSessionInitialized, route.page]);
+
+  useEffect(() => {
+    if (!isSessionInitialized) {
+      return;
+    }
+
+    const intervalMs = 5000;
+    let expected = performance.now() + intervalMs;
+    const intervalId = window.setInterval(() => {
+      const now = performance.now();
+      const lagMs = Math.max(0, now - expected);
+      expected = now + intervalMs;
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+      if (lagMs > intervalMs * 3) {
+        recordSessionEvent('event-loop:discarded-resume-sample', 'info', {
+          lagMs,
+          intervalMs,
+          reason: 'visibility-or-sleep-resume',
+        });
+        return;
+      }
+      recordEventLoopLag(lagMs);
+    }, intervalMs);
+
+    const handleVisibilityChange = () => {
+      expected = performance.now() + intervalMs;
+      recordSessionEvent(
+        document.visibilityState === 'visible'
+          ? 'app:visibility-visible'
+          : 'app:visibility-hidden',
+        'info'
+      );
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isSessionInitialized, recordEventLoopLag, recordSessionEvent]);
+
+  useEffect(() => {
+    const persistCrashTelemetry = () => {
+      const api = (window as Window & { electronAPI?: ElectronAPI }).electronAPI;
+      if (!api?.writePerformanceMetrics) {
+        return;
+      }
+      try {
+        void api.writePerformanceMetrics(usePerformanceSessionStore.getState().exportSession());
+      } catch (error) {
+        console.error('Failed to persist runtime crash telemetry:', error);
+      }
+    };
+
+    const recordRuntimeFailure = (
+      name: string,
+      error: unknown,
+      metadata?: Record<string, unknown>
+    ) => {
+      recordSessionEvent(
+        name,
+        'bad',
+        {
+          route: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+          message: truncateRuntimeTelemetryText(getUnknownErrorMessage(error)),
+          stack: truncateRuntimeTelemetryText(getUnknownErrorStack(error)),
+          ...metadata,
+        }
+      );
+      persistCrashTelemetry();
+    };
+
+    const handleError = (event: ErrorEvent) => {
+      recordRuntimeFailure('runtime:window-error', event.error || event.message, {
+        source: event.filename || null,
+        line: event.lineno || null,
+        column: event.colno || null,
+      });
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      recordRuntimeFailure('runtime:unhandled-rejection', event.reason);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, [recordSessionEvent]);
 
   return (
     <>
@@ -375,6 +565,7 @@ function AppContent() {
             }}
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onOpenModelDownloader={() => setModelDownloaderOpen(true)}
+            onOpenProjects={() => setProjectWorkspaceOpen(true)}
             onReloadWrapper={handleReloadWrapper}
             onLogout={handleLogout}
             onShutdown={handleShutdown}
@@ -383,7 +574,16 @@ function AppContent() {
         </AppShell.Header>
 
         <AppShell.Main>
-          <AppRouteOutlet currentPage={currentPage} route={route} />
+          {isSessionInitialized ? (
+            <AppRouteOutlet currentPage={currentPage} route={route} />
+          ) : (
+            <Center h="100%">
+              <Loader size="lg" />
+              {!isSessionInitializing && (
+                <span style={{ marginLeft: 12 }}>Connecting to SwarmUI...</span>
+              )}
+            </Center>
+          )}
         </AppShell.Main>
       </AppShell>
 
@@ -405,8 +605,15 @@ function AppContent() {
         />
       </Suspense>
 
+      <Suspense fallback={null}>
+        <ProjectWorkspaceModal
+          opened={projectWorkspaceOpen}
+          onClose={() => setProjectWorkspaceOpen(false)}
+        />
+      </Suspense>
+
       {/* Performance Dashboard - development only */}
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && featureFlags.devPerformanceDashboard && (
         <Suspense fallback={null}>
           <PerformanceDashboard />
         </Suspense>

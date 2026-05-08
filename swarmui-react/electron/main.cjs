@@ -1,21 +1,30 @@
 const { app, BrowserWindow, Menu, Tray, dialog, ipcMain, shell } = require('electron');
-const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-
-// Try to require optional dependencies
-let remoteMain, autoUpdater;
-try {
-  remoteMain = require('@electron/remote/main');
-  remoteMain.initialize();
-} catch (e) {
-  console.log('@electron/remote not installed, settings window will be limited');
-}
-try {
-  autoUpdater = require('electron-updater').autoUpdater;
-} catch (e) {
-  console.log('electron-updater not installed, auto-updates disabled');
-}
+const {
+  SWARMUI_PORT,
+  DEFAULT_VITE_PORT,
+  MAX_VITE_PORT_SCAN,
+  OPEN_DEVTOOLS,
+  MAX_DEV_LOAD_RETRIES,
+  DEV_LOAD_RETRY_DELAY_MS,
+  ENABLE_DESKTOP_NATIVE_SPELL_CONTEXT_MENU,
+  getSwarmUiPaths,
+  loadConfig,
+  saveConfig,
+  loadWindowState,
+  saveWindowState,
+} = require('./runtime.cjs');
+const {
+  createLoadingWindow: buildLoadingWindow,
+  updateLoadingProgress: sendLoadingProgress,
+  closeLoadingWindow: destroyLoadingWindow,
+  createSettingsWindow: buildSettingsWindow,
+} = require('./auxiliaryWindows.cjs');
+const { createUpdaterManager } = require('./updater.cjs');
+const { createProcessManager } = require('./process.cjs');
+const { registerIpcHandlers } = require('./ipcHandlers.cjs');
+const { registerAppLifecycle } = require('./appLifecycle.cjs');
 
 // Global state
 let mainWindow = null;
@@ -34,451 +43,336 @@ let stopProcessesPromise = null;
 const ignoredWordsByWebContentsId = new Map();
 const activePromptTargetByWebContentsId = new Map();
 
-const ENABLE_DESKTOP_NATIVE_SPELL_CONTEXT_MENU =
-  process.env.SWARMUI_NATIVE_SPELL_CONTEXT_MENU !== '0';
-
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-const SWARMUI_PORT = 7801;
-const DEFAULT_VITE_PORT = Number(process.env.VITE_PORT) || 5173;
-const MAX_VITE_PORT_SCAN = 6;
-const OPEN_DEVTOOLS = process.env.SWARMUI_ELECTRON_DEVTOOLS === '1';
-const MAX_DEV_LOAD_RETRIES = 3;
-const DEV_LOAD_RETRY_DELAY_MS = 1200;
 let vitePort = DEFAULT_VITE_PORT;
-
-function stripAnsiCodes(value) {
-  return value.replace(/\u001b\[[0-9;]*m/g, '');
-}
-
-function updateVitePortFromOutput(output) {
-  const match = output.match(/https?:\/\/localhost:(\d+)/i) || output.match(/localhost:(\d+)/i);
-  if (!match) {
-    return null;
-  }
-
-  const parsed = Number(match[1]);
-  if (Number.isNaN(parsed)) {
-    return null;
-  }
-
-  vitePort = parsed;
-  return parsed;
-}
-
-// Paths
-const SWARMUI_DIR = path.join(__dirname, '..', '..'); // Parent directory of swarmui-react
-const SWARMUI_EXECUTABLE = process.platform === 'win32'
-  ? path.join(SWARMUI_DIR, 'launch-windows.bat')
-  : path.join(SWARMUI_DIR, 'launch-linux.sh');
-
-// Configuration paths
-const configPath = path.join(app.getPath('userData'), 'config.json');
-const windowStatePath = path.join(app.getPath('userData'), 'window-state.json');
-
-// ============================================================================
-// Configuration Management
-// ============================================================================
-
-function loadConfig() {
-  try {
-    if (fs.existsSync(configPath)) {
-      return JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    }
-  } catch (error) {
-    console.error('Error loading config:', error);
-  }
-  return {
-    minimizeToTray: true,
-    startMinimized: false,
-    checkUpdates: true,
-    multipleWindows: true
-  };
-}
-
-function saveConfig(config) {
-  try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  } catch (error) {
-    console.error('Error saving config:', error);
-  }
-}
-
-// ============================================================================
-// Window State Persistence
-// ============================================================================
-
-function loadWindowState() {
-  try {
-    if (fs.existsSync(windowStatePath)) {
-      return JSON.parse(fs.readFileSync(windowStatePath, 'utf8'));
-    }
-  } catch (error) {
-    console.error('Error loading window state:', error);
-  }
-  return {
-    width: 1600,
-    height: 1000,
-    x: undefined,
-    y: undefined,
-    isMaximized: false
-  };
-}
-
-function saveWindowState() {
-  if (!mainWindow) return;
-
-  try {
-    const bounds = mainWindow.getBounds();
-    const state = {
-      width: bounds.width,
-      height: bounds.height,
-      x: bounds.x,
-      y: bounds.y,
-      isMaximized: mainWindow.isMaximized()
-    };
-    fs.writeFileSync(windowStatePath, JSON.stringify(state, null, 2));
-  } catch (error) {
-    console.error('Error saving window state:', error);
-  }
-}
+const {
+  swarmUiDir: SWARMUI_DIR,
+  swarmUiExecutable: SWARMUI_EXECUTABLE,
+  configPath,
+  windowStatePath,
+  performanceMetricsPath,
+} = getSwarmUiPaths(app);
+const processManager = createProcessManager({
+  state: {
+    get swarmUIProcess() {
+      return swarmUIProcess;
+    },
+    set swarmUIProcess(value) {
+      swarmUIProcess = value;
+    },
+    get viteDevServer() {
+      return viteDevServer;
+    },
+    set viteDevServer(value) {
+      viteDevServer = value;
+    },
+    get ownsSwarmUIProcess() {
+      return ownsSwarmUIProcess;
+    },
+    set ownsSwarmUIProcess(value) {
+      ownsSwarmUIProcess = value;
+    },
+    get ownsViteDevServer() {
+      return ownsViteDevServer;
+    },
+    set ownsViteDevServer(value) {
+      ownsViteDevServer = value;
+    },
+    get serverUrl() {
+      return serverUrl;
+    },
+    set serverUrl(value) {
+      serverUrl = value;
+    },
+    get serverReady() {
+      return serverReady;
+    },
+    set serverReady(value) {
+      serverReady = value;
+    },
+    get isQuitting() {
+      return isQuitting;
+    },
+    set isQuitting(value) {
+      isQuitting = value;
+    },
+    get vitePort() {
+      return vitePort;
+    },
+    set vitePort(value) {
+      vitePort = value;
+    },
+    get stopProcessesPromise() {
+      return stopProcessesPromise;
+    },
+    set stopProcessesPromise(value) {
+      stopProcessesPromise = value;
+    },
+  },
+  runtime: {
+    SWARMUI_PORT,
+    DEFAULT_VITE_PORT,
+    MAX_VITE_PORT_SCAN,
+    SWARMUI_DIR,
+    SWARMUI_EXECUTABLE,
+  },
+  dialog,
+});
+processManager.setUpdateLoadingProgress(updateLoadingProgress);
+const updaterManager = createUpdaterManager({
+  app,
+  dialog,
+  loadConfig: () => loadConfig(configPath),
+  state: {
+    setIsQuitting(value) {
+      isQuitting = value;
+    },
+  },
+});
 
 // ============================================================================
 // Loading Window
 // ============================================================================
 
 function createLoadingWindow() {
-  loadingWindow = new BrowserWindow({
-    width: 400,
-    height: 320,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
-
-  loadingWindow.loadFile(path.join(__dirname, 'loading.html'));
-  loadingWindow.center();
+  loadingWindow = buildLoadingWindow(BrowserWindow);
 }
 
 function updateLoadingProgress(message) {
-  if (loadingWindow && !loadingWindow.isDestroyed()) {
-    loadingWindow.webContents.send('loading-progress', message);
-  }
+  sendLoadingProgress(loadingWindow, message);
 }
 
 function closeLoadingWindow() {
-  if (loadingWindow && !loadingWindow.isDestroyed()) {
-    loadingWindow.close();
-    loadingWindow = null;
+  destroyLoadingWindow(loadingWindow);
+  loadingWindow = null;
+}
+
+function safeSerializeDesktopEvent(event) {
+  try {
+    return JSON.parse(JSON.stringify(event));
+  } catch {
+    return {
+      type: 'desktop:telemetry-serialization-failed',
+      timestamp: Date.now(),
+    };
   }
 }
 
-// ============================================================================
-// SwarmUI Backend Management
-// ============================================================================
-
-async function isSwarmServerAvailable(port) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 1500);
+function appendDesktopTelemetryEvent(event) {
+  const nextEvent = safeSerializeDesktopEvent({
+    ...event,
+    timestamp: event.timestamp || Date.now(),
+    packaged: app.isPackaged,
+    platform: process.platform,
+    electron: process.versions.electron,
+  });
 
   try {
-    const response = await fetch(`http://localhost:${port}/API/GetCurrentStatus`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: '{}',
-      signal: controller.signal,
+    fs.mkdirSync(path.dirname(performanceMetricsPath), { recursive: true });
+    let snapshot = {};
+    if (fs.existsSync(performanceMetricsPath)) {
+      try {
+        snapshot = JSON.parse(fs.readFileSync(performanceMetricsPath, 'utf8'));
+      } catch (error) {
+        snapshot = {
+          parseError: error instanceof Error ? error.message : 'Unknown parse error',
+        };
+      }
+    }
+
+    const desktopEvents = Array.isArray(snapshot.desktopEvents)
+      ? snapshot.desktopEvents.slice(-49)
+      : [];
+    desktopEvents.push(nextEvent);
+    fs.writeFileSync(
+      performanceMetricsPath,
+      JSON.stringify(
+        {
+          ...snapshot,
+          desktopEvents,
+          lastDesktopEvent: nextEvent,
+          exportedAt: Date.now(),
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+  } catch (error) {
+    console.error('Failed to append desktop telemetry event:', error);
+  }
+}
+
+function getRendererLoadTarget() {
+  if (isDev) {
+    return { kind: 'url', value: `http://localhost:${vitePort}` };
+  }
+  return { kind: 'file', value: path.join(__dirname, '..', 'dist', 'index.html') };
+}
+
+function loadRendererTarget(window) {
+  const target = getRendererLoadTarget();
+  if (target.kind === 'url') {
+    window.loadURL(target.value);
+  } else {
+    window.loadFile(target.value);
+  }
+}
+
+function loadRendererRecoveryPage(window, reason) {
+  const target = getRendererLoadTarget();
+  const escapedReason = String(reason || 'Unknown renderer failure')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const escapedTarget = target.kind === 'url'
+    ? target.value
+    : `file://${target.value.replace(/\\/g, '/')}`;
+  const targetJson = JSON.stringify(escapedTarget).replace(/</g, '\\u003c');
+  const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SwarmUI Renderer Recovery</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #1b1b20;
+      color: #f1f3f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(720px, calc(100vw - 48px));
+      padding: 28px;
+      border: 1px solid #3a3d45;
+      border-radius: 10px;
+      background: #25262b;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    }
+    h1 { margin: 0 0 12px; font-size: 24px; }
+    p { color: #c1c2c5; line-height: 1.5; }
+    code { display: block; white-space: pre-wrap; color: #ffc9c9; margin: 16px 0; }
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      background: #4dabf7;
+      color: #0b1720;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SwarmUI renderer stopped responding</h1>
+    <p>The desktop wrapper captured the crash and wrote telemetry to the performance snapshot. Reload the interface to continue.</p>
+    <code>${escapedReason}</code>
+    <button onclick="location.href=${targetJson}">Reload Interface</button>
+  </main>
+</body>
+</html>`;
+  window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+}
+
+function setupRendererCrashTelemetry(window) {
+  let recoveryAttempts = 0;
+  const maxRecoveryAttempts = 2;
+
+  window.on('unresponsive', () => {
+    appendDesktopTelemetryEvent({
+      type: 'desktop:window-unresponsive',
+      webContentsId: window.webContents.id,
+      url: window.webContents.getURL(),
+    });
+  });
+
+  window.on('responsive', () => {
+    appendDesktopTelemetryEvent({
+      type: 'desktop:window-responsive',
+      webContentsId: window.webContents.id,
+      url: window.webContents.getURL(),
+    });
+  });
+
+  window.webContents.on('render-process-gone', (_event, details) => {
+    recoveryAttempts++;
+    appendDesktopTelemetryEvent({
+      type: 'desktop:render-process-gone',
+      webContentsId: window.webContents.id,
+      url: window.webContents.getURL(),
+      reason: details.reason,
+      exitCode: details.exitCode,
+      recoveryAttempt: recoveryAttempts,
     });
 
-    return response.ok || response.status === 400 || response.status === 401 || response.status === 403;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
+    if (isQuitting || window.isDestroyed()) {
+      return;
+    }
 
-async function isViteServerAvailable(port) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 1200);
+    setTimeout(() => {
+      if (window.isDestroyed()) {
+        return;
+      }
+      if (recoveryAttempts <= maxRecoveryAttempts) {
+        loadRendererTarget(window);
+      } else {
+        loadRendererRecoveryPage(
+          window,
+          `Renderer process ended (${details.reason}, exit code ${details.exitCode}).`
+        );
+      }
+    }, 500);
+  });
 
-  try {
-    const response = await fetch(`http://localhost:${port}`, {
-      method: 'GET',
-      signal: controller.signal,
+  window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (!isMainFrame) {
+      return;
+    }
+    appendDesktopTelemetryEvent({
+      type: 'desktop:renderer-load-failed',
+      webContentsId: window.webContents.id,
+      url: validatedURL,
+      errorCode,
+      errorDescription,
     });
-    if (!response.ok) {
-      return false;
-    }
+  });
 
-    const html = await response.text();
-    return html.includes('/@vite/client') || html.toLowerCase().includes('vite');
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  window.webContents.on('did-finish-load', () => {
+    recoveryAttempts = 0;
+  });
 }
 
-async function detectExistingVitePort() {
-  for (let offset = 0; offset < MAX_VITE_PORT_SCAN; offset++) {
-    const port = DEFAULT_VITE_PORT + offset;
-    if (await isViteServerAvailable(port)) {
-      return port;
-    }
+function handleSwarmRestartRequested() {
+  serverReady = false;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close();
   }
-  return null;
-}
-
-async function detectExistingSwarmPort() {
-  const candidatePorts = [SWARMUI_PORT, SWARMUI_PORT + 1];
-  for (const port of candidatePorts) {
-    if (await isSwarmServerAvailable(port)) {
-      return port;
-    }
-  }
-  return null;
+  createLoadingWindow();
+  setTimeout(() => {
+    processManager.startSwarmUI({ onRestartRequested: handleSwarmRestartRequested }).then(() => {
+      updateLoadingProgress('Opening SwarmUI React...');
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        createWindow();
+      }
+      closeLoadingWindow();
+    }).catch((error) => {
+      console.error('Failed to restart SwarmUI backend:', error);
+      closeLoadingWindow();
+      dialog.showErrorBox('Restart Error', error.message);
+    });
+  }, 1000);
 }
 
 function startSwarmUI() {
-  return new Promise((resolve, reject) => {
-    const start = async () => {
-      console.log('Starting SwarmUI backend...');
-      console.log('SwarmUI directory:', SWARMUI_DIR);
-      console.log('SwarmUI executable:', SWARMUI_EXECUTABLE);
-      updateLoadingProgress('Checking SwarmUI installation...');
-
-      if (!fs.existsSync(SWARMUI_EXECUTABLE)) {
-        const errorMsg = `SwarmUI not found at ${SWARMUI_EXECUTABLE}`;
-        console.error(errorMsg);
-        dialog.showErrorBox('SwarmUI Not Found', errorMsg);
-        reject(new Error(errorMsg));
-        return;
-      }
-
-      const existingPort = await detectExistingSwarmPort();
-      if (existingPort !== null) {
-        serverUrl = `http://localhost:${existingPort}`;
-        serverReady = true;
-        ownsSwarmUIProcess = false;
-        console.log(`Using existing SwarmUI backend at ${serverUrl}`);
-        updateLoadingProgress(`Using existing SwarmUI server on port ${existingPort}...`);
-        resolve();
-        return;
-      }
-
-      updateLoadingProgress('Starting SwarmUI server...');
-
-      const isWindows = process.platform === 'win32';
-
-      if (isWindows) {
-        swarmUIProcess = spawn('cmd.exe', ['/c', SWARMUI_EXECUTABLE, '--launch_mode', 'none'], {
-          cwd: SWARMUI_DIR,
-          stdio: 'pipe',
-          windowsHide: true,
-        });
-      } else {
-        swarmUIProcess = spawn('bash', [SWARMUI_EXECUTABLE, '--launch_mode', 'none'], {
-          cwd: SWARMUI_DIR,
-          stdio: 'pipe',
-        });
-      }
-      ownsSwarmUIProcess = true;
-      let startupSettled = false;
-      const startupTimeout = setTimeout(() => {
-        if (!startupSettled && !serverReady) {
-          startupSettled = true;
-          reject(new Error('SwarmUI backend did not become ready within 60 seconds.'));
-        }
-      }, 60000);
-
-      const markReady = () => {
-        if (startupSettled) {
-          return;
-        }
-        startupSettled = true;
-        clearTimeout(startupTimeout);
-        resolve();
-      };
-
-      const markFailed = (error) => {
-        if (startupSettled) {
-          return;
-        }
-        startupSettled = true;
-        clearTimeout(startupTimeout);
-        reject(error);
-      };
-
-      swarmUIProcess.stdout.on('data', (data) => {
-        const output = data.toString();
-        console.log('[SwarmUI]:', output);
-
-        // Update loading progress based on output
-        if (output.includes('Loading models')) {
-          updateLoadingProgress('Loading AI models...');
-        } else if (output.includes('Loading backends')) {
-          updateLoadingProgress('Loading backends...');
-        } else if (output.includes('Starting webserver')) {
-          updateLoadingProgress('Starting web server...');
-        }
-
-        // Detect when server is ready
-        if (output.includes('Now listening on:') ||
-          output.includes('is now running') ||
-          output.includes(`localhost:${SWARMUI_PORT}`)) {
-          serverReady = true;
-          console.log('SwarmUI backend is ready!');
-          markReady();
-        }
-
-        if (output.includes('Press any key to continue')) {
-          markFailed(new Error('SwarmUI launch script paused after a backend startup failure.'));
-        }
-
-        // Detect port changes
-        const portMatch = output.match(/localhost:(\d+)/);
-        if (portMatch) {
-          serverUrl = `http://localhost:${portMatch[1]}`;
-        }
-      });
-
-      swarmUIProcess.stderr.on('data', (data) => {
-        console.error('[SwarmUI Error]:', data.toString());
-      });
-
-      swarmUIProcess.on('error', (error) => {
-        console.error('Failed to start SwarmUI:', error);
-        markFailed(error);
-      });
-
-      swarmUIProcess.on('close', (code) => {
-        console.log(`SwarmUI process exited with code ${code}`);
-
-        // Exit code 42 means restart requested
-        if (code === 42 && !isQuitting) {
-          console.log('Restarting SwarmUI...');
-          serverReady = false;
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.close();
-          }
-          createLoadingWindow();
-          setTimeout(() => startSwarmUI(), 1000);
-        }
-
-        swarmUIProcess = null;
-        ownsSwarmUIProcess = false;
-
-        if (!serverReady && !isQuitting) {
-          markFailed(new Error(`SwarmUI process exited before server became ready (exit code ${code}).`));
-        }
-      });
-    };
-
-    start().catch((error) => {
-      reject(error);
-    });
-  });
+  return processManager.startSwarmUI({ onRestartRequested: handleSwarmRestartRequested });
 }
 
-// ============================================================================
-// Vite Dev Server (Development Only)
-// ============================================================================
-
 function startViteDevServer() {
-  return new Promise((resolve, reject) => {
-    const start = async () => {
-      const existingVitePort = await detectExistingVitePort();
-      if (existingVitePort !== null) {
-        vitePort = existingVitePort;
-        ownsViteDevServer = false;
-        console.log(`Using existing Vite dev server on port ${vitePort}`);
-        updateLoadingProgress(`Using existing React dev server on port ${vitePort}...`);
-        resolve();
-        return;
-      }
-
-      console.log('Starting Vite dev server...');
-      updateLoadingProgress('Starting React dev server...');
-
-      const viteDir = path.join(__dirname, '..');
-      let readyResolved = false;
-      const viteSpawnCommand = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
-      const viteSpawnArgs = process.platform === 'win32'
-        ? ['/d', '/s', '/c', 'npm', 'run', 'dev:vite']
-        : ['run', 'dev:vite'];
-
-      viteDevServer = spawn(viteSpawnCommand, viteSpawnArgs, {
-        cwd: viteDir,
-        stdio: 'pipe',
-        windowsHide: true,
-        env: {
-          ...process.env,
-          VITE_RUNTIME_TARGET: 'electron',
-        },
-      });
-      ownsViteDevServer = true;
-
-      const markReady = () => {
-        if (readyResolved) return;
-        readyResolved = true;
-        console.log(`Vite dev server is ready on port ${vitePort}!`);
-        resolve();
-      };
-
-      viteDevServer.stdout.on('data', (data) => {
-        const rawOutput = data.toString();
-        console.log('[Vite]:', rawOutput);
-        const output = stripAnsiCodes(rawOutput);
-
-        const detectedPort = updateVitePortFromOutput(output);
-        if (detectedPort !== null) {
-          console.log(`[Vite] Using detected port ${detectedPort}`);
-        }
-
-        if (output.includes('Local:') || output.includes('ready in')) {
-          markReady();
-        }
-      });
-
-      viteDevServer.stderr.on('data', (data) => {
-        const rawOutput = data.toString();
-        console.error('[Vite Error]:', rawOutput);
-        const output = stripAnsiCodes(rawOutput);
-        updateVitePortFromOutput(output);
-      });
-
-      viteDevServer.on('error', (error) => {
-        console.error('Failed to start Vite:', error);
-        reject(error);
-      });
-
-      viteDevServer.on('close', (code) => {
-        console.log(`Vite process exited with code ${code}`);
-        if (!readyResolved && code && code !== 0) {
-          reject(new Error(`Vite process exited before becoming ready (exit code ${code})`));
-        }
-        viteDevServer = null;
-        ownsViteDevServer = false;
-      });
-
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        if (viteDevServer && !readyResolved) {
-          console.log(`Vite dev server startup timeout reached, assuming ready on port ${vitePort}`);
-          markReady();
-        }
-      }, 30000);
-    };
-
-    start().catch((error) => {
-      reject(error);
-    });
-  });
+  return processManager.startViteDevServer();
 }
 
 // ============================================================================
@@ -516,7 +410,7 @@ function createTray() {
     {
       label: 'New Window',
       click: () => {
-        const config = loadConfig();
+        const config = loadConfig(configPath);
         if (config.multipleWindows) {
           createWindow();
         } else {
@@ -539,7 +433,7 @@ function createTray() {
     {
       label: 'Check for Updates',
       click: () => {
-        checkForUpdates(true);
+        updaterManager.checkForUpdates(true);
       }
     },
     { type: 'separator' },
@@ -579,12 +473,9 @@ function createTray() {
 }
 
 function setupPromptContextMenu(window) {
-  if (!ENABLE_DESKTOP_NATIVE_SPELL_CONTEXT_MENU) {
-    return;
-  }
-
   const webContentsId = window.webContents.id;
   const ignoredWords = ignoredWordsByWebContentsId.get(webContentsId) || new Set();
+  const allowElementInspection = true;
 
   window.webContents.on('context-menu', (_event, params) => {
     const items = [];
@@ -592,7 +483,7 @@ function setupPromptContextMenu(window) {
     const misspelledKey = misspelledWord.toLowerCase();
     const isIgnored = misspelledKey.length > 0 && ignoredWords.has(misspelledKey);
 
-    if (misspelledWord && !isIgnored) {
+    if (ENABLE_DESKTOP_NATIVE_SPELL_CONTEXT_MENU && misspelledWord && !isIgnored) {
       const suggestions = (params.dictionarySuggestions || []).slice(0, 5);
 
       for (const suggestion of suggestions) {
@@ -641,8 +532,11 @@ function setupPromptContextMenu(window) {
 
     const hasActivePromptTarget = !!activePromptTargetByWebContentsId.get(webContentsId);
 
+    if (items.length > 0) {
+      items.push({ type: 'separator' });
+    }
+
     items.push(
-      { type: 'separator' },
       {
         label: 'Auto-correct Format',
         enabled: hasActivePromptTarget,
@@ -659,6 +553,18 @@ function setupPromptContextMenu(window) {
       }
     );
 
+    if (allowElementInspection) {
+      items.push(
+        { type: 'separator' },
+        {
+          label: 'Inspect Element',
+          click: () => {
+            window.webContents.inspectElement(params.x, params.y);
+          },
+        }
+      );
+    }
+
     const menu = Menu.buildFromTemplate(items);
     menu.popup({ window });
   });
@@ -669,7 +575,7 @@ function setupPromptContextMenu(window) {
 // ============================================================================
 
 function createWindow() {
-  const config = loadConfig();
+  const config = loadConfig(configPath);
 
   // Don't allow multiple windows if disabled
   if (mainWindow && !config.multipleWindows) {
@@ -680,7 +586,7 @@ function createWindow() {
 
   // Load saved window state
   if (!mainWindow) {
-    windowState = loadWindowState();
+  windowState = loadWindowState(windowStatePath);
   }
 
   const newWindow = new BrowserWindow({
@@ -715,14 +621,10 @@ function createWindow() {
   // Remove default menu
   Menu.setApplicationMenu(null);
 
+  setupRendererCrashTelemetry(newWindow);
+
   // Load the app
-  if (isDev) {
-    // Development mode - load from Vite dev server
-    newWindow.loadURL(`http://localhost:${vitePort}`);
-  } else {
-    // Production mode - load from built files
-    newWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
-  }
+  loadRendererTarget(newWindow);
 
   if (isDev) {
     newWindow.webContents.on('did-fail-load', async (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
@@ -781,7 +683,7 @@ function createWindow() {
       newWindow.hide();
     } else {
       if (newWindow === mainWindow) {
-        saveWindowState();
+    saveWindowState(windowStatePath, mainWindow);
       }
     }
   });
@@ -832,374 +734,73 @@ function createWindow() {
 // ============================================================================
 
 function createSettingsWindow() {
-  if (settingsWindow) {
-    settingsWindow.focus();
-    return;
-  }
-
-  settingsWindow = new BrowserWindow({
-    width: 600,
-    height: 500,
-    modal: true,
-    parent: mainWindow,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    },
-    title: 'SwarmUI Settings',
-    backgroundColor: '#1b1b20'
-  });
-
-  // Enable remote for settings window if available
-  if (remoteMain) {
-    remoteMain.enable(settingsWindow.webContents);
-  }
-
-  settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
-  settingsWindow.setMenu(null);
-
-  settingsWindow.on('closed', () => {
+  settingsWindow = buildSettingsWindow(BrowserWindow, mainWindow, settingsWindow, () => {
     settingsWindow = null;
   });
 }
 
-// ============================================================================
-// Auto-Updater
-// ============================================================================
-
-function setupAutoUpdater() {
-  if (!autoUpdater) {
-    console.log('Auto-updater not available');
-    return;
-  }
-
-  const config = loadConfig();
-
-  if (!config.checkUpdates || !app.isPackaged) {
-    return;
-  }
-
-  autoUpdater.autoDownload = false;
-
-  autoUpdater.on('update-available', (info) => {
-    dialog.showMessageBox({
-      type: 'info',
-      title: 'Update Available',
-      message: `A new version (${info.version}) is available!`,
-      buttons: ['Download', 'Later'],
-      defaultId: 0
-    }).then((result) => {
-      if (result.response === 0) {
-        autoUpdater.downloadUpdate();
-      }
-    });
-  });
-
-  autoUpdater.on('update-downloaded', () => {
-    dialog.showMessageBox({
-      type: 'info',
-      title: 'Update Ready',
-      message: 'Update downloaded. Restart to apply?',
-      buttons: ['Restart', 'Later'],
-      defaultId: 0
-    }).then((result) => {
-      if (result.response === 0) {
-        isQuitting = true;
-        autoUpdater.quitAndInstall();
-      }
-    });
-  });
-
-  autoUpdater.on('error', (error) => {
-    console.error('Update error:', error);
-  });
-
-  // Check for updates on startup
-  setTimeout(() => {
-    checkForUpdates(false);
-  }, 3000);
-}
-
-function checkForUpdates(showNoUpdateDialog = false) {
-  if (!autoUpdater) {
-    if (showNoUpdateDialog) {
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Updates Not Available',
-        message: 'Auto-update is not configured for this build.',
-        buttons: ['OK']
-      });
-    }
-    return;
-  }
-
-  if (!app.isPackaged) {
-    if (showNoUpdateDialog) {
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Development Mode',
-        message: 'Auto-update is only available in packaged builds.',
-        buttons: ['OK']
-      });
-    }
-    return;
-  }
-
-  autoUpdater.checkForUpdates().then((result) => {
-    if (showNoUpdateDialog && !result.updateInfo) {
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'No Updates',
-        message: 'You are running the latest version!',
-        buttons: ['OK']
-      });
-    }
-  }).catch((error) => {
-    if (showNoUpdateDialog) {
-      dialog.showMessageBox({
-        type: 'error',
-        title: 'Update Check Failed',
-        message: 'Could not check for updates.',
-        detail: error.message,
-        buttons: ['OK']
-      });
-    }
-  });
-}
-
-// ============================================================================
-// Process Management
-// ============================================================================
-
-function killProcessTree(pid, label) {
-  if (!pid) {
-    return Promise.resolve();
-  }
-
-  if (process.platform === 'win32') {
-    return new Promise((resolve) => {
-      const killer = spawn('taskkill', ['/pid', String(pid), '/f', '/t'], { stdio: 'ignore' });
-      killer.on('close', resolve);
-      killer.on('error', (error) => {
-        console.warn(`Failed to taskkill ${label} (pid=${pid}):`, error);
-        resolve();
-      });
-    });
-  }
-
-  return new Promise((resolve) => {
-    try {
-      process.kill(pid, 'SIGTERM');
-    } catch (error) {
-      console.warn(`Failed to SIGTERM ${label} (pid=${pid}):`, error);
-      resolve();
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      try {
-        process.kill(pid, 'SIGKILL');
-      } catch {
-        // Best-effort fallback.
-      }
-      resolve();
-    }, 4000);
-
-    const checkExited = setInterval(() => {
-      try {
-        process.kill(pid, 0);
-      } catch {
-        clearInterval(checkExited);
-        clearTimeout(timeout);
-        resolve();
-      }
-    }, 250);
-  });
-}
-
 function stopProcesses() {
-  if (stopProcessesPromise) {
-    return stopProcessesPromise;
-  }
-
-  stopProcessesPromise = (async () => {
-    console.log('Stopping processes...');
-
-    const kills = [];
-
-    if (swarmUIProcess && ownsSwarmUIProcess) {
-      console.log('Stopping SwarmUI...');
-      kills.push(killProcessTree(swarmUIProcess.pid, 'SwarmUI'));
-    }
-
-    if (viteDevServer && ownsViteDevServer) {
-      console.log('Stopping Vite dev server...');
-      kills.push(killProcessTree(viteDevServer.pid, 'Vite'));
-    }
-
-    await Promise.all(kills);
-    swarmUIProcess = null;
-    viteDevServer = null;
-    ownsSwarmUIProcess = false;
-    ownsViteDevServer = false;
-  })().finally(() => {
-    stopProcessesPromise = null;
-  });
-
-  return stopProcessesPromise;
+  return processManager.stopProcesses();
 }
 
 // ============================================================================
 // IPC Handlers
 // ============================================================================
-
-ipcMain.on('get-config', (event) => {
-  event.returnValue = loadConfig();
-});
-
-ipcMain.on('save-config', (event, config) => {
-  saveConfig(config);
-  event.returnValue = true;
-});
-
-ipcMain.handle('get-swarmui-status', async () => {
-  return {
-    running: swarmUIProcess !== null,
-    serverReady: serverReady,
+registerIpcHandlers({
+  ipcMain,
+  BrowserWindow,
+  dialog,
+  fs,
+  path,
+  loadConfig,
+  saveConfig,
+  configPath,
+  performanceMetricsPath,
+  getState: () => ({
+    mainWindow,
+    swarmUIProcess,
+    serverReady,
     port: SWARMUI_PORT,
-  };
-});
-
-ipcMain.handle('restart-swarmui', async () => {
-  await stopProcesses();
-  await startSwarmUI();
-  return { success: true };
-});
-
-ipcMain.handle('shutdown-app', async () => {
-  isQuitting = true;
-  await stopProcesses();
-  setImmediate(() => {
-    app.quit();
-  });
-  return true;
-});
-
-ipcMain.handle('reload-wrapper', async () => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.reload();
-    return true;
-  }
-  return false;
-});
-
-ipcMain.on('set-prompt-target-active', (event, payload) => {
-  const wcId = event.sender.id;
-  const isActive = !!(payload && payload.active);
-  activePromptTargetByWebContentsId.set(wcId, isActive);
-});
-
-ipcMain.handle('get-ignored-spell-words', (event) => {
-  const wcId = event.sender.id;
-  const words = ignoredWordsByWebContentsId.get(wcId) || new Set();
-  return Array.from(words);
-});
-
-ipcMain.handle('is-native-spell-context-menu-enabled', () => {
-  return ENABLE_DESKTOP_NATIVE_SPELL_CONTEXT_MENU;
-});
-
-ipcMain.handle('select-folder', async (event, startPath) => {
-  const focusedWindow = BrowserWindow.fromWebContents(event.sender) || mainWindow;
-  const options = {
-    title: 'Select Destination Folder',
-    properties: ['openDirectory'],
-  };
-  if (typeof startPath === 'string' && startPath.trim()) {
-    options.defaultPath = startPath;
-  }
-  const result = await dialog.showOpenDialog(focusedWindow || undefined, options);
-  if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
-    return null;
-  }
-  return result.filePaths[0];
+  }),
+  actions: {
+    startSwarmUI,
+    stopProcesses,
+    setIsQuitting(value) {
+      isQuitting = value;
+    },
+    quitApp() {
+      app.quit();
+    },
+  },
+  ignoredWordsByWebContentsId,
+  activePromptTargetByWebContentsId,
+  ENABLE_DESKTOP_NATIVE_SPELL_CONTEXT_MENU,
 });
 
 // ============================================================================
 // App Lifecycle
 // ============================================================================
-
-app.whenReady().then(async () => {
-  const startupBegin = Date.now();
-  try {
-    const session = require('electron').session.defaultSession;
-    session.setSpellCheckerLanguages(['en-US']);
-  } catch (error) {
-    console.warn('Unable to set spellchecker languages:', error);
-  }
-  createLoadingWindow();
-  createTray();
-  setupAutoUpdater();
-
-  try {
-    const startupTasks = [startSwarmUI()];
-    if (isDev) {
-      startupTasks.push(startViteDevServer());
-    }
-    await Promise.all(startupTasks);
-
-    updateLoadingProgress('Opening SwarmUI React...');
-    createWindow();
-    closeLoadingWindow();
-    console.log(`Startup complete in ${Date.now() - startupBegin}ms`);
-
-  } catch (error) {
-    console.error('Failed to start application:', error);
-    closeLoadingWindow();
-    dialog.showErrorBox('Startup Error', error.message);
-    app.quit();
-  }
-});
-
-app.on('window-all-closed', async () => {
-  const config = loadConfig();
-  if (process.platform !== 'darwin' && !config.minimizeToTray) {
-    isQuitting = true;
-    await stopProcesses();
-    app.quit();
-  }
-});
-
-app.on('before-quit', async () => {
-  isQuitting = true;
-  await stopProcesses();
-});
-
-app.on('will-quit', async () => {
-  isQuitting = true;
-  await stopProcesses();
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0 && serverReady) {
-    createWindow();
-  }
-});
-
-// Handle crashes
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught exception:', error);
-  dialog.showErrorBox('Application Error', 'An unexpected error occurred: ' + error.message);
-});
-
-process.on('SIGINT', async () => {
-  isQuitting = true;
-  await stopProcesses();
-  app.quit();
-});
-
-process.on('SIGTERM', async () => {
-  isQuitting = true;
-  await stopProcesses();
-  app.quit();
+registerAppLifecycle({
+  app,
+  BrowserWindow,
+  dialog,
+  loadConfig,
+  configPath,
+  isDev,
+  createLoadingWindow,
+  updateLoadingProgress,
+  closeLoadingWindow,
+  createTray,
+  createWindow,
+  startSwarmUI,
+  startViteDevServer,
+  stopProcesses,
+  updaterManager,
+  getState: () => ({
+    mainWindow,
+    serverReady,
+  }),
+  setIsQuitting(value) {
+    isQuitting = value;
+  },
 });

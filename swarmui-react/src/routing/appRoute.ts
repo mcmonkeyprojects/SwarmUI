@@ -32,7 +32,7 @@ export interface WorkflowRouteState {
 }
 
 export interface ServerRouteState {
-    tab?: 'backends' | 'logs' | 'resources' | 'account' | 'admin-tools' | 'trainer';
+    tab?: 'backends' | 'updates' | 'logs' | 'resources' | 'account' | 'admin-tools' | 'trainer';
 }
 
 export interface RoleplayRouteState {
@@ -52,8 +52,20 @@ export interface AppRoute {
 const DEFAULT_ROUTE: AppRoute = {
     page: 'generate',
     generate: {
-        mode: 'guided',
+        mode: 'advanced',
     },
+};
+
+const DEFAULT_HISTORY_ROUTE_STATE: HistoryRouteState = {
+    path: null,
+    query: null,
+    sortBy: 'Date',
+    sortReverse: false,
+    starredOnly: false,
+    mediaType: 'all',
+    currentFolderOnly: false,
+    image: null,
+    viewId: null,
 };
 
 function readBoolean(value: string | null): boolean | undefined {
@@ -83,17 +95,7 @@ export function normalizeRoute(route: Partial<AppRoute> | null | undefined): App
             compare: route?.generate?.compare ?? null,
             restore: route?.generate?.restore ?? null,
         },
-        history: {
-            path: route?.history?.path ?? null,
-            query: route?.history?.query ?? null,
-            sortBy: route?.history?.sortBy ?? 'Date',
-            sortReverse: route?.history?.sortReverse ?? false,
-            starredOnly: route?.history?.starredOnly ?? false,
-            mediaType: route?.history?.mediaType ?? 'all',
-            currentFolderOnly: route?.history?.currentFolderOnly ?? false,
-            image: route?.history?.image ?? null,
-            viewId: route?.history?.viewId ?? null,
-        },
+        history: normalizeHistoryRouteState(route?.history),
         queue: {
             jobId: route?.queue?.jobId ?? null,
             batchId: route?.queue?.batchId ?? null,
@@ -109,6 +111,34 @@ export function normalizeRoute(route: Partial<AppRoute> | null | undefined): App
             characterId: route?.roleplay?.characterId ?? null,
         },
     };
+}
+
+export function normalizeHistoryRouteState(route: Partial<HistoryRouteState> | null | undefined): HistoryRouteState {
+    return {
+        path: route?.path ?? DEFAULT_HISTORY_ROUTE_STATE.path,
+        query: route?.query ?? DEFAULT_HISTORY_ROUTE_STATE.query,
+        sortBy: route?.sortBy ?? DEFAULT_HISTORY_ROUTE_STATE.sortBy,
+        sortReverse: route?.sortReverse ?? DEFAULT_HISTORY_ROUTE_STATE.sortReverse,
+        starredOnly: route?.starredOnly ?? DEFAULT_HISTORY_ROUTE_STATE.starredOnly,
+        mediaType: route?.mediaType ?? DEFAULT_HISTORY_ROUTE_STATE.mediaType,
+        currentFolderOnly: route?.currentFolderOnly ?? DEFAULT_HISTORY_ROUTE_STATE.currentFolderOnly,
+        image: route?.image ?? DEFAULT_HISTORY_ROUTE_STATE.image,
+        viewId: route?.viewId ?? DEFAULT_HISTORY_ROUTE_STATE.viewId,
+    };
+}
+
+export function serializeHistoryRouteState(route: Partial<HistoryRouteState> | null | undefined): string {
+    return serializeRoute({
+        page: 'history',
+        history: normalizeHistoryRouteState(route),
+    });
+}
+
+export function isHistoryRouteStateEqual(
+    left: Partial<HistoryRouteState> | null | undefined,
+    right: Partial<HistoryRouteState> | null | undefined
+): boolean {
+    return serializeHistoryRouteState(left) === serializeHistoryRouteState(right);
 }
 
 export function parseHashRoute(hashValue: string): AppRoute {
@@ -163,7 +193,7 @@ export function serializeRoute(routeInput: Partial<AppRoute> | null | undefined)
     const params = new URLSearchParams();
 
     if (route.page === 'generate') {
-        if (route.generate?.mode && route.generate.mode !== 'guided') {
+        if (route.generate?.mode && route.generate.mode !== 'advanced') {
             params.set('mode', route.generate.mode);
         }
         if (route.generate?.recipe) {

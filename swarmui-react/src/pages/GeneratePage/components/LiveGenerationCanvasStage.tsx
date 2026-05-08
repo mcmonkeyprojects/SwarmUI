@@ -6,6 +6,7 @@ import { useProgressivePreview } from '../../../hooks/useProgressivePreview';
 import { useRenderProfiler } from '../../../hooks/useRenderProfiler';
 import { CanvasPanel } from '../../../components/generation/CanvasPanel';
 import type { GenerateParams } from '../../../api/types';
+import type { GenerateWorkspaceMode } from '../../../stores/navigationStore';
 
 interface FavoriteImage {
     path: string;
@@ -34,6 +35,10 @@ interface LiveGenerationCanvasStageProps {
     hasDiagnosticIssue?: boolean;
     getImageActionContext: () => ImageActionContext;
     showWorkspaceTools?: boolean;
+    workspaceMode?: GenerateWorkspaceMode;
+    selectedModel?: string;
+    selectedBackend?: string;
+    generationParams?: Partial<GenerateParams>;
 }
 
 function resolvePreviewAsset(previewImage: string | null): string | null {
@@ -153,6 +158,10 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
     hasDiagnosticIssue = false,
     getImageActionContext,
     showWorkspaceTools = true,
+    workspaceMode = 'advanced',
+    selectedModel,
+    selectedBackend,
+    generationParams,
 }: LiveGenerationCanvasStageProps) {
     useRenderProfiler('LiveGenerationCanvasStage');
 
@@ -231,6 +240,10 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
             hasDiagnosticIssue={hasDiagnosticIssue}
             getImageActionContext={getImageActionContext}
             showWorkspaceTools={showWorkspaceTools}
+            workspaceMode={workspaceMode}
+            selectedModel={selectedModel}
+            selectedBackend={selectedBackend}
+            generationParams={generationParams}
         />
     );
 });

@@ -15,9 +15,6 @@ namespace SwarmUI.Accounts;
 /// <summary>Represents a single user account.</summary>
 public class User
 {
-    /// <summary>Extra metadata key used for one-shot output folder overrides on generation requests.</summary>
-    public const string BatchOutputFolderExtraMetaKey = "batch_output_folder";
-
     /// <summary>Data for the user that goes directly to the database.</summary>
     public class DatabaseEntry
     {
@@ -175,10 +172,18 @@ public class User
     /// <summary>Returns the user preset for the given name, or null if not found.</summary>
     public T2IPreset GetPreset(string name)
     {
+        T2IPreset preset;
         lock (SessionHandlerSource.DBLock)
         {
-            return SessionHandlerSource.T2IPresets.FindById($"{UserID}///{name.ToLowerFast()}");
+            preset = SessionHandlerSource.T2IPresets.FindById($"{UserID}///{name.ToLowerFast()}");
         }
+        if (preset is null)
+        {
+            return null;
+        }
+        // TODO: Running this on every get is excessive. Need some amount of versioning/resaving.
+        preset.Clean();
+        return preset;
     }
 
     /// <summary>Returns a list of all presets this user has saved.</summary>
@@ -196,6 +201,10 @@ public class User
                     presets.RemoveAll(p => p is null);
                     Data.Presets.RemoveAll(bad.Contains);
                     Save();
+                }
+                foreach (T2IPreset preset in presets)
+                {
+                    preset.Clean();
                 }
                 return presets;
             }
@@ -465,53 +474,11 @@ public class User
         }
         string path = user_input.Get(T2IParamTypes.OverrideOutpathFormat, Settings.OutPathBuilder.Format);
         path = StringConversionHelper.QuickSimpleTagFiller(path, "[", "]", buildPathPart, false);
-        if (user_input.ExtraMeta.TryGetValue(BatchOutputFolderExtraMetaKey, out object outputFolder) && outputFolder is not null && $"{outputFolder}".Length > 0)
-        {
-            path = $"{outputFolder}/{path.TrimStart('/')}";
-        }
         if (CalculatedRole.Data.AllowUnsafeOutpaths)
         {
             return path;
         }
         return Utilities.StrictFilenameClean(path);
-    }
-
-    /// <summary>Normalizes a user-supplied output folder override into a safe relative history path.</summary>
-    public string NormalizeBatchOutputFolder(string folder)
-    {
-        if (folder is null)
-        {
-            return null;
-        }
-        folder = folder.Replace('\\', '/').Trim('/');
-        if (string.IsNullOrWhiteSpace(folder))
-        {
-            return null;
-        }
-        List<string> cleanedParts = [];
-        int maxLen = Settings.OutPathBuilder.MaxLenPerPart;
-        foreach (string rawPart in folder.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            string clean = Utilities.StrictFilenameClean(rawPart);
-            if (string.IsNullOrWhiteSpace(clean))
-            {
-                continue;
-            }
-            if (clean.Length > maxLen)
-            {
-                clean = clean[..maxLen];
-            }
-            cleanedParts.Add(clean);
-        }
-        if (cleanedParts.Count == 0)
-        {
-            throw new SwarmUserErrorException("Selected output folder is invalid.");
-        }
-        if (cleanedParts.Count > CalculatedRole.Data.MaxOutPathDepth)
-        {
-            throw new SwarmUserErrorException($"Selected output folder is too deep. Maximum folder depth is {CalculatedRole.Data.MaxOutPathDepth}.");
-        }
-        return cleanedParts.JoinString("/");
     }
 
     /// <summary>Returns true if the user is allowed to view all models, or false if there are restrictions that apply.</summary>

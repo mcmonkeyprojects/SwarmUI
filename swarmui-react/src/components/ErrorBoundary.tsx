@@ -3,10 +3,17 @@ import { Card, Title, Text, Stack, Code, Group } from '@mantine/core';
 import { IconAlertTriangle, IconCopy, IconRefresh } from '@tabler/icons-react';
 import { SwarmButton as Button } from './ui';
 import { getRecentDebugTrace } from '../utils/debugTrace';
+import { recoverFromRuntimeCrash } from '../utils/crashRecovery';
 
 interface Props {
     children?: ReactNode;
     fallback?: ReactNode;
+    fallbackTitle?: string;
+    fallbackDescription?: string;
+    recoverLabel?: string;
+    reloadLabel?: string;
+    copyLabel?: string;
+    renderFallback?: (state: ErrorBoundaryFallbackState) => ReactNode;
     /** Called when user clicks "Try Again" - use to reset any relevant state */
     onRecover?: () => void;
 }
@@ -16,6 +23,47 @@ interface State {
     error: Error | null;
     errorInfo: ErrorInfo | null;
     errorTime: Date | null;
+}
+
+export interface ErrorBoundaryFallbackState {
+    error: Error | null;
+    errorInfo: ErrorInfo | null;
+    occurredAt: Date | null;
+    routeContext: string;
+    primaryFrame: string;
+    primaryRuntimeFrame: string;
+    recentTrace: string;
+    errorDetails: string;
+    tryAgain: () => void;
+    reload: () => void;
+    copyDetails: () => void;
+}
+
+function getPrimaryComponentFrame(componentStack?: string | null): string {
+    const frame = componentStack
+        ?.split('\n')
+        .map((line) => line.trim())
+        .find((line) => line.startsWith('at '));
+    return frame || 'Unknown component';
+}
+
+function getRouteContext(): string {
+    if (typeof window === 'undefined') {
+        return 'Unknown route';
+    }
+    return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function getErrorName(error: Error | null): string {
+    return error?.name || 'Error';
+}
+
+function getPrimaryRuntimeFrame(error: Error | null): string {
+    const frame = error?.stack
+        ?.split('\n')
+        .map((line) => line.trim())
+        .find((line) => line.includes('/src/') || line.includes('\\src\\'));
+    return frame || 'No app source frame found';
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -39,12 +87,66 @@ export class ErrorBoundary extends Component<Props, State> {
     };
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error('Uncaught error:', error, errorInfo);
+        const primaryFrame = getPrimaryComponentFrame(errorInfo.componentStack);
+        const primaryRuntimeFrame = getPrimaryRuntimeFrame(error);
+        console.error('Uncaught render error:', {
+            name: error.name,
+            message: error.message,
+            route: getRouteContext(),
+            component: primaryFrame,
+            sourceFrame: primaryRuntimeFrame,
+            stack: error.stack,
+            componentStack: errorInfo.componentStack,
+            recentTrace: getRecentDebugTrace(),
+        });
         this.setState({ errorInfo });
     }
 
     public render() {
         if (this.state.hasError) {
+            const recentTrace = getRecentDebugTrace();
+            const primaryFrame = getPrimaryComponentFrame(this.state.errorInfo?.componentStack);
+            const primaryRuntimeFrame = getPrimaryRuntimeFrame(this.state.error);
+            const routeContext = getRouteContext();
+            const occurredAt = this.state.errorTime?.toLocaleString() ?? 'Unknown time';
+            const errorDetails = [
+                `Error: ${this.state.error?.toString()}`,
+                `Name: ${getErrorName(this.state.error)}`,
+                `Route: ${routeContext}`,
+                `Primary component: ${primaryFrame}`,
+                `Primary source frame: ${primaryRuntimeFrame}`,
+                `Occurred: ${occurredAt}`,
+                '',
+                `Trace:\n${recentTrace || 'No recent trace captured.'}`,
+                '',
+                `Component stack:\n${this.state.errorInfo?.componentStack || 'No component stack captured.'}`,
+                '',
+                `Runtime stack:\n${this.state.error?.stack || 'No runtime stack captured.'}`,
+            ].join('\n');
+            const copyDetails = () => {
+                void navigator.clipboard.writeText(errorDetails);
+            };
+            const reload = async () => {
+                await recoverFromRuntimeCrash();
+            };
+            const fallbackState: ErrorBoundaryFallbackState = {
+                error: this.state.error,
+                errorInfo: this.state.errorInfo,
+                occurredAt: this.state.errorTime,
+                routeContext,
+                primaryFrame,
+                primaryRuntimeFrame,
+                recentTrace,
+                errorDetails,
+                tryAgain: this.handleTryAgain,
+                reload,
+                copyDetails,
+            };
+
+            if (this.props.renderFallback) {
+                return this.props.renderFallback(fallbackState);
+            }
+
             if (this.props.fallback) {
                 return this.props.fallback;
             }
@@ -64,28 +166,43 @@ export class ErrorBoundary extends Component<Props, State> {
                         <Stack gap="md">
                             <Stack gap="xs" align="center">
                                 <IconAlertTriangle size={50} color="var(--theme-warning)" />
-                                <Title order={2} style={{ color: 'var(--theme-gray-0)' }}>Something went wrong</Title>
-                                <Text c="dimmed" size="sm">The application encountered an unexpected error.</Text>
+                                <Title order={2} style={{ color: 'var(--theme-gray-0)' }}>
+                                    {this.props.fallbackTitle || 'Something went wrong'}
+                                </Title>
+                                <Text c="dimmed" size="sm">
+                                    {this.props.fallbackDescription || `${getErrorName(this.state.error)} in ${primaryFrame}`}
+                                </Text>
                             </Stack>
 
                             {this.state.error && (
                                 <>
-                                    {(() => {
-                                        const recentTrace = getRecentDebugTrace();
-                                        return recentTrace ? (
-                                            <>
-                                                <Text fw={500} size="sm" c="yellow.3">Recent Trace:</Text>
-                                                <Code block color="yellow" style={{ whiteSpace: 'pre-wrap', maxHeight: '220px', overflowY: 'auto', fontSize: '11px' }}>
-                                                    {recentTrace}
-                                                </Code>
-                                            </>
-                                        ) : null;
-                                    })()}
+                                    <Text fw={500} size="sm" c="dimmed">Crash Context:</Text>
+                                    <Code block color="gray" style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>
+                                        {`Route: ${routeContext}\nPrimary component: ${primaryFrame}\nPrimary source frame: ${primaryRuntimeFrame}\nOccurred: ${occurredAt}`}
+                                    </Code>
+
+                                    {recentTrace ? (
+                                        <>
+                                            <Text fw={500} size="sm" c="yellow.3">Recent Trace:</Text>
+                                            <Code block color="yellow" style={{ whiteSpace: 'pre-wrap', maxHeight: '220px', overflowY: 'auto', fontSize: '11px' }}>
+                                                {recentTrace}
+                                            </Code>
+                                        </>
+                                    ) : null}
 
                                     <Text fw={500} size="sm" c="red.3">Error Message:</Text>
                                     <Code block color="red" style={{ whiteSpace: 'pre-wrap', maxHeight: '150px', overflowY: 'auto' }}>
                                         {this.state.error.toString()}
                                     </Code>
+
+                                    {this.state.error.stack && (
+                                        <>
+                                            <Text fw={500} size="sm" c="dimmed" mt="sm">Runtime Stack:</Text>
+                                            <Code block color="gray" style={{ whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto', fontSize: '11px' }}>
+                                                {this.state.error.stack}
+                                            </Code>
+                                        </>
+                                    )}
 
                                     {this.state.errorInfo && (
                                         <>
@@ -103,13 +220,9 @@ export class ErrorBoundary extends Component<Props, State> {
                                     variant="subtle"
                                     color="gray"
                                     leftSection={<IconCopy size={16} />}
-                                    onClick={() => {
-                                        const text = `Error: ${this.state.error?.toString()}\n\nTrace:\n${getRecentDebugTrace()}\n\nStack: ${this.state.errorInfo?.componentStack}`;
-                                        navigator.clipboard.writeText(text);
-                                        // Ideally show a toast here, but for now simple copy is fine
-                                    }}
+                                    onClick={copyDetails}
                                 >
-                                    Copy Details
+                                    {this.props.copyLabel || 'Copy Details'}
                                 </Button>
                                 <Button
                                     variant="light"
@@ -117,14 +230,16 @@ export class ErrorBoundary extends Component<Props, State> {
                                     leftSection={<IconRefresh size={16} />}
                                     onClick={this.handleTryAgain}
                                 >
-                                    Try Again
+                                    {this.props.recoverLabel || 'Try Again'}
                                 </Button>
                                 <Button
                                     variant="light"
                                     color="orange"
-                                    onClick={() => window.location.reload()}
+                                    onClick={() => {
+                                        void reload();
+                                    }}
                                 >
-                                    Reload Application
+                                    {this.props.reloadLabel || 'Reset UI State & Reload'}
                                 </Button>
                             </Group>
                         </Stack>

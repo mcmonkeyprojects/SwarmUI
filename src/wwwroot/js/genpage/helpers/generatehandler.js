@@ -105,6 +105,7 @@ class GenerateHandler {
                 imgElem.remove();
             }
             vid = document.createElement('video');
+            vid.classList.add('image-block-img-inner');
             vid.loop = true;
             vid.autoplay = true;
             vid.muted = true;
@@ -120,6 +121,7 @@ class GenerateHandler {
                 imgElem.remove();
             }
             imgElem = document.createElement('audio');
+            imgElem.classList.add('image-block-img-inner');
             imgElem.controls = true;
             imgElem.src = src;
             imgHolder.div.appendChild(imgElem);
@@ -317,9 +319,6 @@ class GenerateHandler {
             let discardable = {};
             let timeLastGenHit = [Date.now()];
             let actualInput = this.getGenInput(input_overrides, input_preoverrides);
-            if (typeof clearCurrentGenerationOutputFolderAfterGenerate == 'function' && actualInput.extra_metadata && actualInput.extra_metadata.batch_output_folder) {
-                clearCurrentGenerationOutputFolderAfterGenerate();
-            }
             let socket = null;
             let handleError = e => {
                 console.log(`Error in GenerateText2ImageWS:`, e, this.interrupted, batch_id);

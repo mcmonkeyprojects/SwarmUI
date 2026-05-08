@@ -169,6 +169,7 @@ export const PromptWizard = memo(function PromptWizard({
   }, [selectedTagIds, allTags]);
 
   const selectedTagIdSet = useMemo(() => new Set(selectedTagIds), [selectedTagIds]);
+  const validTagIdSet = useMemo(() => new Set(allTags.map((tag) => tag.id)), [allTags]);
   const stepSummaries = useMemo(
     () => buildStepSummaries(STEP_META, allTags, selectedTagIdSet),
     [allTags, selectedTagIdSet]
@@ -325,6 +326,31 @@ export const PromptWizard = memo(function PromptWizard({
     [activeStep, markStepInteraction, toggleTag]
   );
 
+  const handleApplyPreset = useCallback(
+    (tagIds: string[]) => {
+      const validTagIds = tagIds.filter((tagId) => validTagIdSet.has(tagId));
+      if (validTagIds.length === 0) {
+        notifications.show({
+          title: 'Preset Unavailable',
+          message: 'This preset references tags that are no longer available.',
+          color: 'yellow',
+        });
+        return;
+      }
+
+      applyPreset(validTagIds);
+
+      if (validTagIds.length !== tagIds.length) {
+        notifications.show({
+          title: 'Preset Partially Applied',
+          message: 'Some preset tags are no longer available and were skipped.',
+          color: 'yellow',
+        });
+      }
+    },
+    [applyPreset, validTagIdSet]
+  );
+
   const handleSaveBundle = useCallback(
     (name: string, description?: string) => {
       saveBundle({ name, description, tagIds: selectedTagIds });
@@ -423,7 +449,7 @@ export const PromptWizard = memo(function PromptWizard({
         savedRecipes={savedRecipes}
         savedStates={savedStates}
         onJumpStep={setActiveStep}
-        onApplyPreset={applyPreset}
+        onApplyPreset={handleApplyPreset}
         onApplyBundle={applyBundle}
         onRemoveBundle={removeBundle}
         onApplyRecipe={applyRecipe}

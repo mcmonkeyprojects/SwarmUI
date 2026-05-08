@@ -1,18 +1,27 @@
-import type { LibraryPreset } from './types';
+import {
+  PRESET_PROMPT_SECTION_ORDER,
+  type LibraryPreset,
+  type PresetCategory,
+  type PresetPromptSection,
+} from './types';
 
 export interface PresetCartState {
   stagedWords: string[];
   stagedFromPresetIds: string[];
+  sections: Partial<Record<PresetCategory, string[]>>;
   wordContributors: Record<string, string[]>;
   displayByKey: Record<string, string>;
+  categoryByKey: Record<string, PresetCategory>;
 }
 
 export function createEmptyPresetCartState(): PresetCartState {
   return {
     stagedWords: [],
     stagedFromPresetIds: [],
+    sections: {},
     wordContributors: {},
     displayByKey: {},
+    categoryByKey: {},
   };
 }
 
@@ -45,10 +54,14 @@ function cloneCartState(state: PresetCartState): PresetCartState {
   return {
     stagedWords: [...state.stagedWords],
     stagedFromPresetIds: [...state.stagedFromPresetIds],
+    sections: Object.fromEntries(
+      Object.entries(state.sections).map(([category, words]) => [category, [...(words ?? [])]])
+    ) as Partial<Record<PresetCategory, string[]>>,
     wordContributors: Object.fromEntries(
       Object.entries(state.wordContributors).map(([key, presetIds]) => [key, [...presetIds]])
     ),
     displayByKey: { ...state.displayByKey },
+    categoryByKey: { ...state.categoryByKey },
   };
 }
 
@@ -58,7 +71,7 @@ function trimPresetWords(words: string[]): string[] {
 
 export function stagePresetInCart(
   state: PresetCartState,
-  preset: Pick<LibraryPreset, 'id' | 'words'>
+  preset: Pick<LibraryPreset, 'id' | 'category' | 'words'>
 ): PresetCartState {
   const words = trimPresetWords(preset.words);
   if (words.length === 0) {
@@ -80,7 +93,9 @@ export function stagePresetInCart(
 
     if (!(key in nextState.displayByKey)) {
       nextState.displayByKey[key] = word;
+      nextState.categoryByKey[key] = preset.category;
       nextState.stagedWords.push(word);
+      nextState.sections[preset.category] = [...(nextState.sections[preset.category] ?? []), word];
     }
   }
 
@@ -106,9 +121,19 @@ export function unstagePresetFromCart(state: PresetCartState, presetId: string):
     const remainingContributors = contributors.filter((id) => id !== presetId);
     if (remainingContributors.length === 0) {
       const displayWord = nextState.displayByKey[key];
+      const category = nextState.categoryByKey[key];
       nextState.stagedWords = nextState.stagedWords.filter((word) => word !== displayWord);
+      if (category) {
+        nextState.sections[category] = (nextState.sections[category] ?? []).filter(
+          (word) => word !== displayWord
+        );
+        if (nextState.sections[category]?.length === 0) {
+          delete nextState.sections[category];
+        }
+      }
       delete nextState.wordContributors[key];
       delete nextState.displayByKey[key];
+      delete nextState.categoryByKey[key];
     } else {
       nextState.wordContributors[key] = remainingContributors;
     }
@@ -138,9 +163,19 @@ export function unstageWordFromCart(state: PresetCartState, displayWord: string)
   }
 
   const nextState = cloneCartState(state);
+  const category = nextState.categoryByKey[key];
   delete nextState.wordContributors[key];
   delete nextState.displayByKey[key];
+  delete nextState.categoryByKey[key];
   nextState.stagedWords = nextState.stagedWords.filter((word) => word !== currentDisplayWord);
+  if (category) {
+    nextState.sections[category] = (nextState.sections[category] ?? []).filter(
+      (word) => word !== currentDisplayWord
+    );
+    if (nextState.sections[category]?.length === 0) {
+      delete nextState.sections[category];
+    }
+  }
   nextState.stagedFromPresetIds = nextState.stagedFromPresetIds.filter((presetId) =>
     presetStillContributes(nextState, presetId)
   );
@@ -150,4 +185,23 @@ export function unstageWordFromCart(state: PresetCartState, displayWord: string)
 
 export function commitCartWords(words: string[]): string {
   return words.join(', ');
+}
+
+export function commitCartSections(state: PresetCartState): PresetPromptSection[] {
+  const sections: PresetPromptSection[] = [];
+
+  for (const category of PRESET_PROMPT_SECTION_ORDER) {
+    const words = state.sections[category] ?? [];
+    if (words.length === 0) {
+      continue;
+    }
+
+    sections.push({
+      category,
+      words: [...words],
+      text: commitCartWords(words),
+    });
+  }
+
+  return sections;
 }

@@ -2,7 +2,7 @@ import type { HistoryImageItem, HistoryMediaType } from '../../api/types';
 import { resolveAssetUrl } from '../../config/runtimeEndpoints';
 import { extractRelativePath, toImageUrl } from '../../utils/imageUtils';
 
-export const HISTORY_PAGE_SIZE = 200;
+export const HISTORY_PAGE_SIZE = 96;
 export const HISTORY_PREFERENCES_KEY = 'swarmui-history-preferences-v2';
 
 export interface HistoryPreferences {

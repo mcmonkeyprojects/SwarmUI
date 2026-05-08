@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
@@ -11,7 +11,6 @@ using SwarmUI.Utils;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
@@ -24,8 +23,6 @@ namespace SwarmUI.WebAPI;
 [API.APIClass("API routes for actual text-to-image processing and directly related features.")]
 public static class T2IAPI
 {
-    private const string MissingModelInputErrorMessage = "No model input given. Did your UI load properly?";
-
     public static void Register()
     {
         // TODO: Some of these shouldn't be here?
@@ -33,14 +30,9 @@ public static class T2IAPI
         API.RegisterAPICall(GenerateText2ImageWS, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(AddImageToHistory, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(ListImages, false, Permissions.ViewImageHistory);
-        API.RegisterAPICall(ListImagesV2, false, Permissions.ViewImageHistory);
         API.RegisterAPICall(ToggleImageStarred, true, Permissions.UserStarImages);
         API.RegisterAPICall(OpenImageFolder, true, Permissions.LocalImageFolder);
         API.RegisterAPICall(DeleteImage, true, Permissions.UserDeleteImage);
-        API.RegisterAPICall(CreateHistoryFolder, true, Permissions.UserDeleteImage);
-        API.RegisterAPICall(RenameHistoryFolder, true, Permissions.UserDeleteImage);
-        API.RegisterAPICall(MoveHistoryImage, true, Permissions.UserDeleteImage);
-        API.RegisterAPICall(ExportHistoryZip, true, Permissions.ViewImageHistory);
         API.RegisterAPICall(ListT2IParams, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(TriggerRefresh, true, Permissions.FundamentalGenerateTabAccess); // Intentionally weird perm here: internal check for readonly vs true refresh
     }
@@ -88,56 +80,11 @@ public static class T2IAPI
         [API.APIParameter("The number of images to generate.")] int images,
         [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.\nThe key 'extra_metadata' may be used to apply extra internal metadata as a JSON string:string map.")] JObject rawInput)
     {
-        static bool hasFollowupPayload(JObject input)
-        {
-            foreach (JProperty prop in input.Properties())
-            {
-                if (prop.Name is "session_id" or "type" or "timestamp" or "signal")
-                {
-                    continue;
-                }
-                return true;
-            }
-            return false;
-        }
-        static JObject prepareFollowupInput(JObject priorInput, JObject updatedInput)
-        {
-            JObject prepared = (JObject)updatedInput.DeepClone();
-            // Follow-up generate payloads are full requests in practice, except model can occasionally be omitted.
-            // Preserve only that field so default/disabled params from an earlier run do not leak into the next one.
-            if (!hasUsableModel(prepared) && hasUsableModel(priorInput) && priorInput.TryGetValue("model", out JToken priorModel))
-            {
-                prepared["model"] = priorModel.DeepClone();
-            }
-            foreach (JProperty prop in updatedInput.Properties())
-            {
-                if (prop.Name is "session_id" or "type" or "timestamp" or "signal")
-                {
-                    continue;
-                }
-                if (prop.Value.Type != JTokenType.Null)
-                {
-                    continue;
-                }
-                prepared.Remove(prop.Name);
-            }
-            return prepared;
-        }
-        static bool hasUsableModel(JObject input)
-        {
-            if (!input.TryGetValue("model", out JToken modelToken))
-            {
-                return false;
-            }
-            return !string.IsNullOrWhiteSpace(modelToken?.ToString());
-        }
-
         using CancellationTokenSource cancelTok = new();
         bool retain = false, ended = false;
         using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancelTok.Token);
         SharedGenT2IData data = new();
         ConcurrentDictionary<Task, Task> tasks = [];
-        JObject latestInput = (JObject)rawInput.DeepClone();
         static int guessBatchSize(JObject input)
         {
             if (input.TryGetValue("batchsize", out JToken batch))
@@ -160,65 +107,11 @@ public static class T2IAPI
                         return;
                     }
                     JObject newInput = StringConversionHelper.UTF8Encoding.GetString(rec).ParseToJson();
-                    if (newInput.TryGetValue("type", out JToken controlType))
-                    {
-                        string controlTypeText = controlType?.ToString();
-                        if (string.Equals(controlTypeText, "ping", StringComparison.OrdinalIgnoreCase))
-                        {
-                            JObject pong = new()
-                            {
-                                ["type"] = "pong"
-                            };
-                            if (newInput.TryGetValue("timestamp", out JToken timestamp))
-                            {
-                                pong["timestamp"] = timestamp;
-                            }
-                            await socket.SendJson(pong, API.WebsocketTimeout);
-                            Volatile.Write(ref retain, false);
-                            continue;
-                        }
-                        if (string.Equals(controlTypeText, "pong", StringComparison.OrdinalIgnoreCase))
-                        {
-                            Volatile.Write(ref retain, false);
-                            continue;
-                        }
-                    }
-                    if (newInput.TryGetValue("signal", out JToken signalToken))
-                    {
-                        string signalText = signalToken?.ToString();
-                        if (string.Equals(signalText, "cancel", StringComparison.OrdinalIgnoreCase) || string.Equals(signalText, "interrupt", StringComparison.OrdinalIgnoreCase))
-                        {
-                            session.Interrupt();
-                            Volatile.Write(ref retain, false);
-                            continue;
-                        }
-                    }
-                    if (!hasFollowupPayload(newInput))
-                    {
-                        Logs.Verbose($"Ignoring non-generation follow-up payload on GenerateText2ImageWS for user {session.User.UserID}, keys=[{newInput.Properties().Select(p => p.Name).JoinString(", ")}]");
-                        Volatile.Write(ref retain, false);
-                        continue;
-                    }
-                    JObject mergedInput = prepareFollowupInput(latestInput, newInput);
-                    if (!hasUsableModel(mergedInput))
-                    {
-                        string rawModel = newInput.TryGetValue("model", out JToken rawModelToken) ? rawModelToken?.ToString() : null;
-                        Logs.Warning($"Ignoring follow-up generation payload with no usable model on GenerateText2ImageWS for user {session.User.UserID}, raw_model='{rawModel ?? "<null>"}', keys=[{newInput.Properties().Select(p => p.Name).JoinString(", ")}]");
-                        Volatile.Write(ref retain, false);
-                        continue;
-                    }
-                    int newImages = mergedInput.TryGetValue("images", out JToken imageToken) ? imageToken.Value<int>() : 1;
-                    if (newImages <= 0)
-                    {
-                        Logs.Verbose($"Ignoring follow-up generation payload with non-positive image count on GenerateText2ImageWS for user {session.User.UserID}, keys=[{newInput.Properties().Select(p => p.Name).JoinString(", ")}]");
-                        Volatile.Write(ref retain, false);
-                        continue;
-                    }
-                    Task handleMore = API.RunWebsocketHandlerCallWS(GenT2I_Internal, session, (newImages, mergedInput, data, batchOffset), socket);
+                    int newImages = newInput.Value<int>("images");
+                    Task handleMore = API.RunWebsocketHandlerCallWS(GenT2I_Internal, session, (newImages, newInput, data, batchOffset), socket);
                     tasks.TryAdd(handleMore, handleMore);
-                    latestInput = mergedInput;
                     Volatile.Write(ref retain, false);
-                    batchOffset += newImages * guessBatchSize(mergedInput);
+                    batchOffset += newImages * guessBatchSize(newInput);
                 }
             }
             catch (TaskCanceledException)
@@ -294,110 +187,6 @@ public static class T2IAPI
 
     public static HashSet<string> AlwaysTopKeys = [];
 
-    private static string SummarizeDiagnosticString(string value, int maxLength = 140)
-    {
-        if (value is null)
-        {
-            return "<null>";
-        }
-        if (value.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-        {
-            string mime = value.After("data:").Before(';');
-            return $"<{mime} data-url, {value.Length} chars>";
-        }
-        string normalized = value.Replace('\r', ' ').Replace('\n', ' ').Trim();
-        if (normalized.Length <= maxLength)
-        {
-            return normalized;
-        }
-        return $"{normalized[..maxLength]}... ({normalized.Length} chars)";
-    }
-
-    private static JToken SummarizeDiagnosticToken(JToken token, int depth = 0)
-    {
-        if (token is null || token.Type == JTokenType.Null)
-        {
-            return JValue.CreateNull();
-        }
-        if (depth >= 3)
-        {
-            return $"{token.Type}";
-        }
-        return token.Type switch
-        {
-            JTokenType.String => SummarizeDiagnosticString(token.ToString()),
-            JTokenType.Integer or JTokenType.Float or JTokenType.Boolean => token.DeepClone(),
-            JTokenType.Array => new JObject()
-            {
-                ["type"] = "array",
-                ["count"] = ((JArray)token).Count,
-                ["items"] = new JArray(((JArray)token).Take(6).Select(t => SummarizeDiagnosticToken(t, depth + 1)))
-            },
-            JTokenType.Object => new JObject(((JObject)token).Properties().Take(24).Select(prop =>
-                new JProperty(prop.Name, SummarizeDiagnosticToken(prop.Value, depth + 1)))),
-            _ => SummarizeDiagnosticString(token.ToString())
-        };
-    }
-
-    private static JObject BuildRawInputDiagnosticSummary(JObject rawInput)
-    {
-        JObject summary = [];
-        foreach (JProperty prop in rawInput.Properties().Take(48))
-        {
-            summary[prop.Name] = SummarizeDiagnosticToken(prop.Value);
-        }
-        if (rawInput.Count > 48)
-        {
-            summary["__truncated__"] = $"{rawInput.Count - 48} more key(s)";
-        }
-        return summary;
-    }
-
-    private static JObject BuildGenerationDiagnosticData(Session session, JObject rawInput, T2IParamInput userInput, string rawModel, T2IModel parsedModel, string stage)
-    {
-        string prompt = userInput?.Get(T2IParamTypes.Prompt, rawInput.TryGetValue("prompt", out JToken promptToken) ? promptToken?.ToString() : null);
-        string negativePrompt = userInput?.Get(T2IParamTypes.NegativePrompt, rawInput.TryGetValue("negativeprompt", out JToken negativeToken) ? negativeToken?.ToString() : null);
-        int imageCount = userInput?.Get(T2IParamTypes.Images, rawInput.TryGetValue("images", out JToken imagesToken) ? imagesToken.Value<int>() : 1) ?? 1;
-        int steps = userInput?.Get(T2IParamTypes.Steps, rawInput.TryGetValue("steps", out JToken stepsToken) ? stepsToken.Value<int>() : 20) ?? 20;
-        string[] rawKeys = rawInput.Properties().Select(p => p.Name).Take(64).ToArray();
-        string[] parsedKeys = userInput?.InternalSet?.ValuesInput?.Keys?.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).Take(64).ToArray() ?? [];
-        return new JObject()
-        {
-            ["stage"] = stage,
-            ["session_id"] = session.ID,
-            ["user_id"] = session.User.UserID,
-            ["request_id"] = userInput?.UserRequestId ?? 0,
-            ["raw_model"] = rawModel is null ? JValue.CreateNull() : rawModel,
-            ["parsed_model"] = parsedModel?.Name is null ? JValue.CreateNull() : parsedModel.Name,
-            ["images"] = imageCount,
-            ["steps"] = steps,
-            ["raw_keys"] = JArray.FromObject(rawKeys),
-            ["parsed_param_keys"] = JArray.FromObject(parsedKeys),
-            ["prompt_length"] = prompt?.Length ?? 0,
-            ["negative_prompt_length"] = negativePrompt?.Length ?? 0,
-            ["raw_input_summary"] = BuildRawInputDiagnosticSummary(rawInput),
-            ["log_hint"] = $"Search server logs for [GenDiag] request={(userInput?.UserRequestId ?? 0)} session={session.ID}"
-        };
-    }
-
-    private static bool TryHandleStructuredReadableGenerationError(Session session, JObject rawInput, string rawModel, T2IParamInput userInput, SwarmReadableErrorException ex, Action<string, string, JObject> setErrorWithDetails)
-    {
-        if (!string.Equals(ex.Message, MissingModelInputErrorMessage, StringComparison.Ordinal))
-        {
-            return false;
-        }
-        T2IModel parsedModel = userInput?.Get(T2IParamTypes.Model);
-        JObject diagnosticData = BuildGenerationDiagnosticData(session, rawInput, userInput, rawModel, parsedModel, "workflow_missing_model");
-        string[] parsedKeys = userInput?.InternalSet?.ValuesInput?.Keys?.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).Take(32).ToArray() ?? [];
-        Logs.Warning($"[GenDiag] stage=workflow_missing_model_marshaled user={session.User.UserID} session={session.ID} request={userInput?.UserRequestId ?? 0} raw_model='{SummarizeDiagnosticString(rawModel)}' parsed_keys=[{parsedKeys.JoinString(", ")}]");
-        if (Logs.MinimumLevel <= Logs.LogLevel.Debug)
-        {
-            Logs.Debug($"[GenDiag] details={diagnosticData.ToString(Newtonsoft.Json.Formatting.None)}");
-        }
-        setErrorWithDetails(ex.Message, "missing_model_input", diagnosticData);
-        return true;
-    }
-
     /// <summary>Helper util to take a user-supplied JSON object of parameter data and turn it into a valid T2I request object.</summary>
     public static T2IParamInput RequestToParams(Session session, JObject rawInput, bool applyPresets = true)
     {
@@ -425,11 +214,6 @@ public static class T2IAPI
             }
             else
             {
-                if (key.Equals("refinercontrol", StringComparison.OrdinalIgnoreCase) && !rawInput.ContainsKey("refinercontrolpercentage"))
-                {
-                    Logs.Warning($"T2I image request from user {session.User.UserID} used legacy parameter 'refinercontrol'. Modern key is 'refinercontrolpercentage'; ignoring legacy key.");
-                    continue;
-                }
                 Logs.Warning($"T2I image request from user {session.User.UserID} had request parameter '{key}', but that parameter is unrecognized, skipping...");
             }
         }
@@ -473,39 +257,21 @@ public static class T2IAPI
         }
         void setError(string message)
         {
-            setErrorWithDetails(message, null, null);
-        }
-        void setErrorWithDetails(string message, string errorId, JObject errorData)
-        {
             Logs.Debug($"Refused to generate image for {session.User.UserID}: {message}");
-            JObject err = new() { ["error"] = message };
-            if (!string.IsNullOrWhiteSpace(errorId))
-            {
-                err["error_id"] = errorId;
-            }
-            if (errorData is not null)
-            {
-                err["error_data"] = errorData;
-            }
-            output(err);
+            output(new JObject() { ["error"] = message });
             claim.LocalClaimInterrupt.Cancel();
         }
         long timeStart = Environment.TickCount64;
         T2IParamInput user_input;
-        string rawModel = rawInput.TryGetValue("model", out JToken rawModelToken) ? rawModelToken?.ToString() : null;
         try
         {
             user_input = RequestToParams(session, rawInput);
-            ApplyBatchOutputFolderOverride(session.User, user_input);
         }
         catch (SwarmReadableErrorException ex)
         {
-            Logs.Warning($"[GenDiag] stage=request_parse_error user={session.User.UserID} session={session.ID} raw_model='{SummarizeDiagnosticString(rawModel)}' raw_keys=[{rawInput.Properties().Select(p => p.Name).Take(32).JoinString(", ")}] message='{SummarizeDiagnosticString(ex.Message)}'");
             setError(ex.Message);
             return;
         }
-        T2IModel parsedModelBeforeSpecial = user_input.Get(T2IParamTypes.Model);
-        Logs.Info($"[GenDiag] stage=params_loaded user={session.User.UserID} session={session.ID} request={user_input.UserRequestId} raw_model='{SummarizeDiagnosticString(rawModel)}' parsed_model_pre_special='{parsedModelBeforeSpecial?.Name ?? "<null>"}' raw_keys=[{rawInput.Properties().Select(p => p.Name).Take(32).JoinString(", ")}]");
         if (user_input.Get(T2IParamTypes.ForwardRawBackendData, false))
         {
             user_input.ReceiveRawBackendData = (type, data) =>
@@ -521,23 +287,9 @@ public static class T2IAPI
             };
         }
         user_input.ApplySpecialLogic();
-        T2IModel requestedModel = user_input.Get(T2IParamTypes.Model);
-        Logs.Info($"[GenDiag] stage=params_ready user={session.User.UserID} session={session.ID} request={user_input.UserRequestId} parsed_model='{requestedModel?.Name ?? "<null>"}' images={user_input.Get(T2IParamTypes.Images, 1)} steps={user_input.Get(T2IParamTypes.Steps, 20)} parsed_keys=[{user_input.InternalSet.ValuesInput.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).Take(32).JoinString(", ")}]");
-        if (requestedModel is null)
-        {
-            JObject diagnosticData = BuildGenerationDiagnosticData(session, rawInput, user_input, rawModel, requestedModel, "missing_model_input");
-            Logs.Warning($"[GenDiag] stage=missing_model_input user={session.User.UserID} session={session.ID} request={user_input.UserRequestId} raw_model='{SummarizeDiagnosticString(rawModel)}' parsed_keys=[{user_input.InternalSet.ValuesInput.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).Take(32).JoinString(", ")}]");
-            if (Logs.MinimumLevel <= Logs.LogLevel.Debug)
-            {
-                Logs.Debug($"[GenDiag] details={diagnosticData.ToString(Newtonsoft.Json.Formatting.None)}");
-            }
-            setErrorWithDetails(MissingModelInputErrorMessage, "missing_model_input", diagnosticData);
-            return;
-        }
         images = user_input.Get(T2IParamTypes.Images, 1);
         claim.Extend(images - claim.WaitingGenerations);
-        Logs.Info($"User {session.User.UserID} requested {images} image{(images == 1 ? "" : "s")} with model '{requestedModel.Name}'...");
-        Logs.Info($"[GenDiag] stage=dispatch user={session.User.UserID} session={session.ID} request={user_input.UserRequestId} model='{requestedModel.Name}' images={images} batchsize={user_input.Get(T2IParamTypes.BatchSize, 1)} steps={user_input.Get(T2IParamTypes.Steps, 20)}");
+        Logs.Info($"User {session.User.UserID} requested {images} image{(images == 1 ? "" : "s")} with model '{user_input.Get(T2IParamTypes.Model)?.Name}'...");
         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
         {
             Logs.Verbose($"User {session.User.UserID} above image request had parameters: {user_input}");
@@ -609,8 +361,7 @@ public static class T2IAPI
             {
                 output(new JObject() { ["raw_swarm_data"] = new JObject() { ["params_used"] = JArray.FromObject(thisParams.ParamsQueried.ToArray()) } });
             }
-            JObject imageOutput = new() { ["image"] = url, ["batch_index"] = $"{actualIndex}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata };
-            output(imageOutput);
+            output(new JObject() { ["image"] = url, ["batch_index"] = $"{actualIndex}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
         }
         for (int i = 0; i < images && !claim.ShouldCancel; i++)
         {
@@ -740,13 +491,13 @@ public static class T2IAPI
         [API.APIParameter("Data URL of the image to save.")] string image,
         [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.")] JObject rawInput)
     {
+        // TODO: Recognize audio/video inputs properly
         ImageFile img = ImageFile.FromDataString(image);
         T2IParamInput user_input;
         rawInput.Remove("image");
         try
         {
             user_input = RequestToParams(session, rawInput);
-            ApplyBatchOutputFolderOverride(session.User, user_input);
         }
         catch (SwarmReadableErrorException ex)
         {
@@ -770,458 +521,6 @@ public static class T2IAPI
     ];
 
     public enum ImageHistorySortMode { Name, Date }
-    public enum ImageHistoryMediaMode { All, Image, Video, Audio, Html }
-
-    public record class HistoryMetadataSummary(string PromptPreview, string Model, long? Seed, int? Width, int? Height, long CreatedAt, bool IsStarred, string SearchText);
-
-    public record class HistoryResolvedItem
-    {
-        public string RelativePath { get; init; }
-
-        public string CanonicalPath { get; init; }
-
-        public string ActualPath { get; init; }
-
-        public string PreviewPath { get; init; }
-
-        public string Metadata { get; init; }
-
-        public ImageHistoryMediaMode MediaType { get; init; }
-
-        public bool Starred { get; init; }
-
-        public long CreatedAt { get; init; }
-
-        public string PromptPreview { get; init; }
-
-        public string Model { get; init; }
-
-        public long? Seed { get; init; }
-
-        public int? Width { get; init; }
-
-        public int? Height { get; init; }
-
-        public string SearchText { get; init; }
-    }
-
-    public record class HistoryQueryResult
-    {
-        public List<string> Folders { get; set; } = [];
-
-        public List<HistoryResolvedItem> Items { get; set; } = [];
-
-        public string Error { get; set; }
-    }
-
-    /// <summary>Normalizes and stores a one-shot output folder override on a request if one was supplied.</summary>
-    public static void ApplyBatchOutputFolderOverride(User user, T2IParamInput userInput)
-    {
-        if (!userInput.ExtraMeta.TryGetValue(User.BatchOutputFolderExtraMetaKey, out object rawFolder) || rawFolder is null)
-        {
-            return;
-        }
-        string cleaned = user.NormalizeBatchOutputFolder($"{rawFolder}");
-        if (string.IsNullOrWhiteSpace(cleaned))
-        {
-            userInput.ExtraMeta.Remove(User.BatchOutputFolderExtraMetaKey);
-        }
-        else
-        {
-            userInput.ExtraMeta[User.BatchOutputFolderExtraMetaKey] = cleaned;
-        }
-    }
-
-    public static HashSet<string> HistoryImageExtensions = ["png", "jpg", "gif", "webp"];
-    public static HashSet<string> HistoryVideoExtensions = ["webm", "mp4", "mov"];
-    public static HashSet<string> HistoryAudioExtensions = ["mp3", "aac", "wav", "flac"];
-    public static HashSet<string> HistoryHtmlExtensions = ["html"];
-
-    private static string NormalizeHistoryPath(string path) => (path ?? "").Replace('\\', '/').Trim('/');
-
-    private static bool IsReservedHistoryPath(string path)
-    {
-        string clean = NormalizeHistoryPath(path);
-        return clean.StartsWith("_") || clean.Equals("Starred", StringComparison.OrdinalIgnoreCase) || clean.StartsWith("Starred/", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string GetHistoryFileName(string path)
-    {
-        return NormalizeHistoryPath(path).AfterLast('/');
-    }
-
-    private static IEnumerable<string> EnumerateHistoryMediaFiles(string folder)
-    {
-        if (!Directory.Exists(folder))
-        {
-            return [];
-        }
-        return Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).Where(file => HistoryExtensions.Contains(file.AfterLast('.').ToLowerInvariant()));
-    }
-
-    private static void MoveHistorySidecars(string sourcePath, string targetPath)
-    {
-        string sourceBeforeDot = sourcePath.BeforeLast('.');
-        string targetBeforeDot = targetPath.BeforeLast('.');
-        foreach (string ext in DeletableFileExtensions)
-        {
-            string sourceAlt = $"{sourceBeforeDot}{ext}";
-            string targetAlt = $"{targetBeforeDot}{ext}";
-            if (File.Exists(sourceAlt) && File.Exists(targetAlt))
-            {
-                throw new SwarmUserErrorException($"Cannot move image because sidecar file '{Path.GetFileName(targetAlt)}' already exists.");
-            }
-        }
-        Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
-        File.Move(sourcePath, targetPath);
-        foreach (string ext in DeletableFileExtensions)
-        {
-            string sourceAlt = $"{sourceBeforeDot}{ext}";
-            if (!File.Exists(sourceAlt))
-            {
-                continue;
-            }
-            string targetAlt = $"{targetBeforeDot}{ext}";
-            File.Move(sourceAlt, targetAlt);
-        }
-        OutputMetadataTracker.RemoveMetadataFor(sourcePath);
-        OutputMetadataTracker.RemoveMetadataFor(targetPath);
-    }
-
-    private static bool TryResolveHistoryPath(Session session, string root, string rawPath, out string actualPath, out string userError)
-    {
-        (actualPath, string consoleError, userError) = WebServer.CheckFilePath(root, NormalizeHistoryPath(rawPath));
-        if (consoleError is not null)
-        {
-            Logs.Error(consoleError);
-            actualPath = null;
-            return false;
-        }
-        actualPath = UserImageHistoryHelper.GetRealPathFor(session.User, actualPath, root: root);
-        return true;
-    }
-
-    private static string BuildHistoryViewPath(string relativePath)
-    {
-        string clean = NormalizeHistoryPath(relativePath);
-        return string.IsNullOrWhiteSpace(clean) ? "" : $"/View/local/{clean}";
-    }
-
-    private static string GetHistoryPreviewPath(string relativePath, ImageHistoryMediaMode mediaType)
-    {
-        return mediaType switch
-        {
-            ImageHistoryMediaMode.Audio => "/imgs/audio_placeholder.jpg",
-            ImageHistoryMediaMode.Html => "/imgs/html.jpg",
-            _ => $"{BuildHistoryViewPath(relativePath)}?preview=true"
-        };
-    }
-
-    private static ImageHistoryMediaMode GetHistoryMediaModeForPath(string path)
-    {
-        string ext = NormalizeHistoryPath(path).AfterLast('.').ToLowerInvariant();
-        if (HistoryVideoExtensions.Contains(ext))
-        {
-            return ImageHistoryMediaMode.Video;
-        }
-        if (HistoryAudioExtensions.Contains(ext))
-        {
-            return ImageHistoryMediaMode.Audio;
-        }
-        if (HistoryHtmlExtensions.Contains(ext))
-        {
-            return ImageHistoryMediaMode.Html;
-        }
-        return ImageHistoryMediaMode.Image;
-    }
-
-    private static bool TryParseHistoryMediaMode(string mediaType, out ImageHistoryMediaMode mode)
-    {
-        mode = ImageHistoryMediaMode.All;
-        if (string.IsNullOrWhiteSpace(mediaType))
-        {
-            return true;
-        }
-        return Enum.TryParse(mediaType, true, out mode);
-    }
-
-    private static int ParseHistoryDepth(string depth, int defaultValue)
-    {
-        if (string.IsNullOrWhiteSpace(depth))
-        {
-            return defaultValue;
-        }
-        if (!int.TryParse(depth, out int parsed))
-        {
-            return defaultValue;
-        }
-        return Math.Max(parsed, 0);
-    }
-
-    private static string GetHistoryCanonicalPath(string relativePath, bool starNoFolders)
-    {
-        string clean = NormalizeHistoryPath(relativePath);
-        if (clean.StartsWith("Starred/", StringComparison.OrdinalIgnoreCase))
-        {
-            clean = clean["Starred/".Length..];
-        }
-        return starNoFolders ? clean.Replace("/", "") : clean;
-    }
-
-    private static string BuildHistorySearchText(string relativePath, string metadata, string promptPreview, string model, long? seed, int? width, int? height)
-    {
-        string resolution = width.HasValue && height.HasValue ? $"{width.Value}x{height.Value}" : "";
-        return $"{NormalizeHistoryPath(relativePath)}\n{promptPreview ?? ""}\n{model ?? ""}\n{seed?.ToString() ?? ""}\n{resolution}\n{metadata ?? ""}".ToLowerInvariant();
-    }
-
-    private static HistoryMetadataSummary ParseHistoryMetadataSummary(string metadata, long fileTime, bool pathIsStarred, string relativePath)
-    {
-        string promptPreview = null;
-        string model = null;
-        long? seed = null;
-        int? width = null;
-        int? height = null;
-        long createdAt = fileTime;
-        bool isStarred = pathIsStarred;
-        if (!string.IsNullOrWhiteSpace(metadata) && metadata.TrimStart().StartsWith('{'))
-        {
-            try
-            {
-                JObject raw = JObject.Parse(metadata);
-                isStarred = isStarred || raw.Value<bool?>("is_starred") == true;
-                JObject paramData = raw["sui_image_params"] as JObject ?? raw["swarm"] as JObject ?? raw;
-                promptPreview = paramData.Value<string>("prompt") ?? raw.Value<string>("prompt");
-                model = paramData.Value<string>("model") ?? raw.Value<string>("model") ?? raw.Value<string>("Model");
-                seed = paramData.Value<long?>("seed") ?? raw.Value<long?>("seed");
-                width = paramData.Value<int?>("width") ?? raw.Value<int?>("width");
-                height = paramData.Value<int?>("height") ?? raw.Value<int?>("height");
-                string dateText = paramData.Value<string>("date") ?? raw.Value<string>("date");
-                if (!string.IsNullOrWhiteSpace(dateText) && DateTimeOffset.TryParse(dateText, out DateTimeOffset parsedDate))
-                {
-                    createdAt = parsedDate.ToUnixTimeSeconds();
-                }
-            }
-            catch (Exception)
-            {
-                // Metadata can be non-standard or partially broken; keep raw text searchable.
-            }
-        }
-        if (!string.IsNullOrWhiteSpace(promptPreview))
-        {
-            promptPreview = promptPreview.Replace("\r", " ").Replace("\n", " ").Trim();
-            if (promptPreview.Length > 180)
-            {
-                promptPreview = promptPreview[..177] + "...";
-            }
-        }
-        return new(promptPreview, model, seed, width, height, createdAt, isStarred, BuildHistorySearchText(relativePath, metadata, promptPreview, model, seed, width, height));
-    }
-
-    private static bool ShouldReplaceHistoryItem(HistoryResolvedItem existing, HistoryResolvedItem candidate)
-    {
-        if (candidate.Starred && !existing.Starred)
-        {
-            return true;
-        }
-        if (!candidate.Starred && existing.Starred)
-        {
-            return false;
-        }
-        if (candidate.CreatedAt != existing.CreatedAt)
-        {
-            return candidate.CreatedAt > existing.CreatedAt;
-        }
-        return string.Compare(candidate.RelativePath, existing.RelativePath, StringComparison.OrdinalIgnoreCase) < 0;
-    }
-
-    private static HistoryResolvedItem BuildHistoryResolvedItem(string relativePath, string actualPath, string root, bool starNoFolders)
-    {
-        OutputMetadataTracker.OutputMetadataEntry metadataEntry = OutputMetadataTracker.GetMetadataFor(actualPath, root, starNoFolders);
-        if (metadataEntry is null)
-        {
-            return null;
-        }
-        string cleanPath = NormalizeHistoryPath(relativePath);
-        bool pathIsStarred = cleanPath.StartsWith("Starred/", StringComparison.OrdinalIgnoreCase);
-        HistoryMetadataSummary summary = ParseHistoryMetadataSummary(metadataEntry.Metadata, metadataEntry.FileTime, pathIsStarred, cleanPath);
-        ImageHistoryMediaMode mediaMode = GetHistoryMediaModeForPath(cleanPath);
-        return new()
-        {
-            RelativePath = cleanPath,
-            CanonicalPath = GetHistoryCanonicalPath(cleanPath, starNoFolders),
-            ActualPath = actualPath,
-            PreviewPath = GetHistoryPreviewPath(cleanPath, mediaMode),
-            Metadata = metadataEntry.Metadata,
-            MediaType = mediaMode,
-            Starred = summary.IsStarred,
-            CreatedAt = summary.CreatedAt,
-            PromptPreview = summary.PromptPreview,
-            Model = summary.Model,
-            Seed = summary.Seed,
-            Width = summary.Width,
-            Height = summary.Height,
-            SearchText = summary.SearchText
-        };
-    }
-
-    private static List<string> GetImmediateHistoryFolders(Session session, string root, string rawPath, string actualPath)
-    {
-        HashSet<string> folders = new(StringComparer.OrdinalIgnoreCase);
-        if (Directory.Exists(actualPath))
-        {
-            foreach (string dir in Directory.EnumerateDirectories(actualPath))
-            {
-                string name = Path.GetFileName(dir);
-                if (!string.IsNullOrWhiteSpace(name) && !name.StartsWithFast('.'))
-                {
-                    folders.Add(name);
-                }
-            }
-        }
-        if (string.IsNullOrWhiteSpace(NormalizeHistoryPath(rawPath)))
-        {
-            foreach (string specialFolder in UserImageHistoryHelper.SharedSpecialFolders.Keys)
-            {
-                string topLevel = NormalizeHistoryPath(specialFolder).Before('/');
-                if (!string.IsNullOrWhiteSpace(topLevel))
-                {
-                    folders.Add(topLevel);
-                }
-            }
-        }
-        return [.. folders.Order(StringComparer.OrdinalIgnoreCase)];
-    }
-
-    private static HistoryQueryResult QueryHistoryItems(Session session, string root, string rawPath, bool recursive, int depth, string query, ImageHistorySortMode sortBy, bool sortReverse, bool starredOnly, ImageHistoryMediaMode mediaType)
-    {
-        rawPath = NormalizeHistoryPath(rawPath);
-        if (!TryResolveHistoryPath(session, root, rawPath, out string actualBasePath, out string userError))
-        {
-            return new() { Error = userError };
-        }
-        try
-        {
-            bool starNoFolders = session.User.Settings.StarNoFolders;
-            HistoryQueryResult result = new()
-            {
-                Folders = GetImmediateHistoryFolders(session, root, rawPath, actualBasePath)
-            };
-            List<(string RelativePath, string ActualPath)> branches = [];
-            if (string.IsNullOrWhiteSpace(rawPath))
-            {
-                branches.Add(("", root));
-                foreach ((string specialFolder, string specialPath) in UserImageHistoryHelper.SharedSpecialFolders)
-                {
-                    string specialName = NormalizeHistoryPath(specialFolder);
-                    if (!string.IsNullOrWhiteSpace(specialName))
-                    {
-                        branches.Add((specialName, specialPath));
-                    }
-                }
-            }
-            else
-            {
-                branches.Add((rawPath, actualBasePath));
-            }
-            int maxDepth = recursive ? Math.Max(depth, 0) : 0;
-            Dictionary<string, HistoryResolvedItem> uniqueItems = new(StringComparer.OrdinalIgnoreCase);
-            string loweredQuery = string.IsNullOrWhiteSpace(query) ? null : query.Trim().ToLowerInvariant();
-            foreach ((string branchRelative, string branchActual) in branches)
-            {
-                if (!Directory.Exists(branchActual))
-                {
-                    continue;
-                }
-                Stack<(string RelativePath, string ActualPath, int Depth)> stack = new();
-                stack.Push((NormalizeHistoryPath(branchRelative), branchActual, 0));
-                while (stack.Count > 0)
-                {
-                    (string currentRelative, string currentActual, int currentDepth) = stack.Pop();
-                    foreach (string file in Directory.EnumerateFiles(currentActual))
-                    {
-                        string cleanFile = file.Replace('\\', '/');
-                        string fileName = cleanFile.AfterLast('/');
-                        if (fileName.StartsWithFast('.'))
-                        {
-                            continue;
-                        }
-                        string extension = cleanFile.AfterLast('.').ToLowerInvariant();
-                        if (!HistoryExtensions.Contains(extension) || cleanFile.EndsWith(".swarmpreview.jpg") || cleanFile.EndsWith(".swarmpreview.webp"))
-                        {
-                            continue;
-                        }
-                        string relativeFile = string.IsNullOrWhiteSpace(currentRelative) ? fileName : $"{currentRelative}/{fileName}";
-                        HistoryResolvedItem item = BuildHistoryResolvedItem(relativeFile, cleanFile, root, starNoFolders);
-                        if (item is null)
-                        {
-                            continue;
-                        }
-                        if (starredOnly && !item.Starred)
-                        {
-                            continue;
-                        }
-                        if (mediaType != ImageHistoryMediaMode.All && item.MediaType != mediaType)
-                        {
-                            continue;
-                        }
-                        if (loweredQuery is not null && !item.SearchText.Contains(loweredQuery))
-                        {
-                            continue;
-                        }
-                        if (uniqueItems.TryGetValue(item.CanonicalPath, out HistoryResolvedItem existing))
-                        {
-                            if (ShouldReplaceHistoryItem(existing, item))
-                            {
-                                uniqueItems[item.CanonicalPath] = item;
-                            }
-                        }
-                        else
-                        {
-                            uniqueItems[item.CanonicalPath] = item;
-                        }
-                    }
-                    if (!recursive || currentDepth >= maxDepth)
-                    {
-                        continue;
-                    }
-                    foreach (string dir in Directory.EnumerateDirectories(currentActual))
-                    {
-                        string dirName = Path.GetFileName(dir);
-                        if (string.IsNullOrWhiteSpace(dirName) || dirName.StartsWithFast('.'))
-                        {
-                            continue;
-                        }
-                        string nextRelative = string.IsNullOrWhiteSpace(currentRelative) ? dirName : $"{currentRelative}/{dirName}";
-                        stack.Push((nextRelative, dir, currentDepth + 1));
-                    }
-                }
-            }
-            List<HistoryResolvedItem> items = [.. uniqueItems.Values];
-            if (sortBy == ImageHistorySortMode.Date)
-            {
-                items = sortReverse
-                    ? [.. items.OrderBy(i => i.CreatedAt).ThenBy(i => i.RelativePath, StringComparer.OrdinalIgnoreCase)]
-                    : [.. items.OrderByDescending(i => i.CreatedAt).ThenBy(i => i.RelativePath, StringComparer.OrdinalIgnoreCase)];
-            }
-            else
-            {
-                items = sortReverse
-                    ? [.. items.OrderByDescending(i => i.RelativePath, StringComparer.OrdinalIgnoreCase)]
-                    : [.. items.OrderBy(i => i.RelativePath, StringComparer.OrdinalIgnoreCase)];
-            }
-            result.Items = items;
-            return result;
-        }
-        catch (Exception ex)
-        {
-            if (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is PathTooLongException)
-            {
-                return new() { Error = "404, path not found." };
-            }
-            Logs.Error($"Error reading file list: {ex.ReadableString()}");
-            return new() { Error = "Error reading file list." };
-        }
-    }
 
     private static JObject GetListAPIInternal(Session session, string rawPath, string root, HashSet<string> extensions, Func<string, bool> isAllowed, int depth, ImageHistorySortMode sortBy, bool sortReverse)
     {
@@ -1401,7 +700,7 @@ public static class T2IAPI
         """)]
     public static async Task<JObject> ListImages(Session session,
         [API.APIParameter("The folder path to start the listing in. Use an empty string for root.")] string path,
-        [API.APIParameter("Maximum depth (number of recursive folders) to search.")] string depth = null,
+        [API.APIParameter("Maximum depth (number of recursive folders) to search.")] int depth,
         [API.APIParameter("What to sort the list by - `Name` or `Date`.")] string sortBy = "Name",
         [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false)
     {
@@ -1410,92 +709,7 @@ public static class T2IAPI
             return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
         }
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        return GetListAPIInternal(session, path, root, HistoryExtensions, f => true, ParseHistoryDepth(depth, 0), sortMode, sortReverse);
-    }
-
-    [API.APIDescription("Gets a paginated list of images in saved image history with media metadata and filters.",
-        """
-            "folders": ["Folder1", "Folder2"],
-            "files":
-            [
-                {
-                    "src": "path/to/image.jpg",
-                    "canonical_src": "path/to/image.jpg",
-                    "preview_src": "/View/local/path/to/image.jpg?preview=true",
-                    "media_type": "Image",
-                    "starred": false,
-                    "created_at": 1736123456,
-                    "prompt_preview": "a photo of a cat",
-                    "model": "example/model",
-                    "width": 1024,
-                    "height": 1024,
-                    "seed": 12345,
-                    "metadata": "{ ... }"
-                }
-            ],
-            "next_cursor": "200",
-            "has_more": true,
-            "truncated": false,
-            "total_count": 4512
-        """)]
-    public static async Task<JObject> ListImagesV2(Session session,
-        [API.APIParameter("The folder path to start the listing in. Use an empty string for root.")] string path = "",
-        [API.APIParameter("If true, search recursively from the path. If false, only inspect the current folder.")] bool recursive = true,
-        [API.APIParameter("Maximum recursive depth relative to the current path. Use a large number for full depth.")] string depth = null,
-        [API.APIParameter("Optional free-text query across path, metadata, prompt, model, seed, and resolution.")] string query = null,
-        [API.APIParameter("What to sort the list by - `Name` or `Date`.")] string sortBy = "Date",
-        [API.APIParameter("If true, reverse the selected sort order.")] bool sortReverse = false,
-        [API.APIParameter("If true, only return starred images.")] bool starredOnly = false,
-        [API.APIParameter("Optional media type filter - `All`, `Image`, `Video`, `Audio`, or `Html`.")] string mediaType = "All",
-        [API.APIParameter("Opaque pagination cursor. Current implementation expects a numeric offset string.")] string cursor = null,
-        [API.APIParameter("Maximum page size. Clamped to 200.")] int limit = 200)
-    {
-        if (!Enum.TryParse(sortBy, true, out ImageHistorySortMode sortMode))
-        {
-            return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
-        }
-        if (!TryParseHistoryMediaMode(mediaType, out ImageHistoryMediaMode mediaMode))
-        {
-            return new JObject() { ["error"] = $"Invalid media type '{mediaType}'." };
-        }
-        if (!int.TryParse(cursor, out int offset))
-        {
-            offset = 0;
-        }
-        offset = Math.Max(offset, 0);
-        limit = Math.Clamp(limit, 1, 200);
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        HistoryQueryResult result = QueryHistoryItems(session, root, path, recursive, ParseHistoryDepth(depth, int.MaxValue), query, sortMode, sortReverse, starredOnly, mediaMode);
-        if (result.Error is not null)
-        {
-            return new JObject() { ["error"] = result.Error };
-        }
-        int totalCount = result.Items.Count;
-        List<HistoryResolvedItem> pageItems = [.. result.Items.Skip(offset).Take(limit)];
-        string nextCursor = offset + pageItems.Count < totalCount ? $"{offset + pageItems.Count}" : null;
-        return new JObject()
-        {
-            ["folders"] = JArray.FromObject(result.Folders),
-            ["files"] = JArray.FromObject(pageItems.Select(item => new
-            {
-                src = item.RelativePath,
-                canonical_src = item.CanonicalPath,
-                preview_src = item.PreviewPath,
-                media_type = item.MediaType.ToString().ToLowerInvariant(),
-                starred = item.Starred,
-                created_at = item.CreatedAt,
-                prompt_preview = item.PromptPreview,
-                model = item.Model,
-                width = item.Width,
-                height = item.Height,
-                seed = item.Seed,
-                metadata = item.Metadata
-            })),
-            ["next_cursor"] = nextCursor,
-            ["has_more"] = nextCursor is not null,
-            ["truncated"] = false,
-            ["total_count"] = totalCount
-        };
+        return GetListAPIInternal(session, path, root, HistoryExtensions, f => true, depth, sortMode, sortReverse);
     }
 
     [API.APIDescription("Open an image folder in the file explorer. Used for local users directly.", "\"success\": true")]
@@ -1538,130 +752,6 @@ public static class T2IAPI
 
     public static string[] DeletableFileExtensions = [".txt", ".metadata.js", ".swarm.json", ".swarmpreview.jpg", ".swarmpreview.webp"];
 
-    [API.APIDescription("Create a folder in image history.", "\"success\": true")]
-    public static async Task<JObject> CreateHistoryFolder(Session session,
-        [API.APIParameter("The history-relative folder path to create.")] string path)
-    {
-        string cleanPath = NormalizeHistoryPath(path);
-        if (string.IsNullOrWhiteSpace(cleanPath))
-        {
-            return new JObject() { ["error"] = "Folder path cannot be empty." };
-        }
-        if (IsReservedHistoryPath(cleanPath))
-        {
-            return new JObject() { ["error"] = "That folder path is reserved and cannot be created here." };
-        }
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        (string actualPath, string consoleError, string userError) = WebServer.CheckFilePath(root, cleanPath);
-        if (consoleError is not null)
-        {
-            Logs.Error(consoleError);
-            return new JObject() { ["error"] = userError };
-        }
-        Directory.CreateDirectory(actualPath);
-        return new JObject() { ["success"] = true, ["path"] = cleanPath };
-    }
-
-    [API.APIDescription("Rename or move a folder in image history.", "\"success\": true")]
-    public static async Task<JObject> RenameHistoryFolder(Session session,
-        [API.APIParameter("The existing history-relative folder path.")] string path,
-        [API.APIParameter("The new history-relative folder path.")] string newPath)
-    {
-        string cleanPath = NormalizeHistoryPath(path);
-        string cleanNewPath = NormalizeHistoryPath(newPath);
-        if (string.IsNullOrWhiteSpace(cleanPath) || string.IsNullOrWhiteSpace(cleanNewPath))
-        {
-            return new JObject() { ["error"] = "Folder paths cannot be empty." };
-        }
-        if (IsReservedHistoryPath(cleanPath) || IsReservedHistoryPath(cleanNewPath))
-        {
-            return new JObject() { ["error"] = "Reserved history folders cannot be renamed or targeted here." };
-        }
-        if (cleanPath.Equals(cleanNewPath, StringComparison.OrdinalIgnoreCase))
-        {
-            return new JObject() { ["success"] = true, ["path"] = cleanNewPath };
-        }
-        if (cleanNewPath.StartsWith($"{cleanPath}/", StringComparison.OrdinalIgnoreCase))
-        {
-            return new JObject() { ["error"] = "Cannot move a folder into itself." };
-        }
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        if (!TryResolveHistoryPath(session, root, cleanPath, out string actualPath, out string userError))
-        {
-            return new JObject() { ["error"] = userError };
-        }
-        if (!TryResolveHistoryPath(session, root, cleanNewPath, out string actualNewPath, out userError))
-        {
-            return new JObject() { ["error"] = userError };
-        }
-        if (!Directory.Exists(actualPath))
-        {
-            return new JObject() { ["error"] = "That source folder does not exist." };
-        }
-        if (Directory.Exists(actualNewPath) || File.Exists(actualNewPath))
-        {
-            return new JObject() { ["error"] = "That target folder already exists." };
-        }
-        string[] priorFiles = [.. EnumerateHistoryMediaFiles(actualPath)];
-        Directory.CreateDirectory(Path.GetDirectoryName(actualNewPath));
-        Directory.Move(actualPath, actualNewPath);
-        foreach (string priorFile in priorFiles)
-        {
-            string relative = Path.GetRelativePath(actualPath, priorFile).Replace('\\', '/');
-            OutputMetadataTracker.RemoveMetadataFor(priorFile.Replace('\\', '/'));
-            OutputMetadataTracker.RemoveMetadataFor($"{actualNewPath.Replace('\\', '/')}/{relative}");
-        }
-        return new JObject() { ["success"] = true, ["path"] = cleanNewPath };
-    }
-
-    [API.APIDescription("Move a saved history image into another history folder.", "\"success\": true")]
-    public static async Task<JObject> MoveHistoryImage(Session session,
-        [API.APIParameter("The history-relative image path to move.")] string path,
-        [API.APIParameter("The history-relative destination folder path.")] string targetFolder)
-    {
-        string cleanPath = NormalizeHistoryPath(path);
-        string cleanTargetFolder = NormalizeHistoryPath(targetFolder);
-        if (string.IsNullOrWhiteSpace(cleanPath) || string.IsNullOrWhiteSpace(cleanTargetFolder))
-        {
-            return new JObject() { ["error"] = "Image path and target folder are both required." };
-        }
-        if (IsReservedHistoryPath(cleanPath) || IsReservedHistoryPath(cleanTargetFolder))
-        {
-            return new JObject() { ["error"] = "Reserved history folders cannot be used for this move." };
-        }
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        if (!TryResolveHistoryPath(session, root, cleanPath, out string actualPath, out string userError))
-        {
-            return new JObject() { ["error"] = userError };
-        }
-        if (!File.Exists(actualPath))
-        {
-            return new JObject() { ["error"] = "That image no longer exists." };
-        }
-        string targetPath = $"{cleanTargetFolder}/{GetHistoryFileName(cleanPath)}";
-        if (!TryResolveHistoryPath(session, root, targetPath, out string actualTargetPath, out userError))
-        {
-            return new JObject() { ["error"] = userError };
-        }
-        if (cleanPath.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
-        {
-            return new JObject() { ["success"] = true, ["path"] = targetPath, ["url"] = BuildHistoryViewPath(targetPath) };
-        }
-        if (File.Exists(actualTargetPath))
-        {
-            return new JObject() { ["error"] = "A file with that name already exists in the target folder." };
-        }
-        try
-        {
-            MoveHistorySidecars(actualPath, actualTargetPath);
-        }
-        catch (SwarmReadableErrorException ex)
-        {
-            return new JObject() { ["error"] = ex.Message };
-        }
-        return new JObject() { ["success"] = true, ["path"] = targetPath, ["url"] = BuildHistoryViewPath(targetPath) };
-    }
-
     [API.APIDescription("Delete an image from history.", "\"success\": true")]
     public static async Task<JObject> DeleteImage(Session session,
         [API.APIParameter("The path to the image to delete.")] string path)
@@ -1695,122 +785,6 @@ public static class T2IAPI
         }
         OutputMetadataTracker.RemoveMetadataFor(path);
         return new JObject() { ["success"] = true };
-    }
-
-    [API.APIDescription("Creates a zip export of selected history files or the current history query and returns a download URL.",
-        """
-            "success": true,
-            "filename": "history-export-20260306-123456.zip",
-            "url": "/HistoryExport/history-export-20260306-123456.zip",
-            "count": 42
-        """)]
-    public static async Task<JObject> ExportHistoryZip(Session session,
-        [API.APIParameter("Optional explicit list of history-relative paths to export. If omitted, the current query filter is exported.")] string[] paths = null,
-        [API.APIParameter("The folder path to start the listing in. Use an empty string for root.")] string path = "",
-        [API.APIParameter("If true, search recursively from the path. If false, only inspect the current folder.")] bool recursive = true,
-        [API.APIParameter("Maximum recursive depth relative to the current path. Use a large number for full depth.")] string depth = null,
-        [API.APIParameter("Optional free-text query across path, metadata, prompt, model, seed, and resolution.")] string query = null,
-        [API.APIParameter("What to sort the list by - `Name` or `Date`.")] string sortBy = "Date",
-        [API.APIParameter("If true, reverse the selected sort order.")] bool sortReverse = false,
-        [API.APIParameter("If true, only return starred images.")] bool starredOnly = false,
-        [API.APIParameter("Optional media type filter - `All`, `Image`, `Video`, `Audio`, or `Html`.")] string mediaType = "All")
-    {
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        List<HistoryResolvedItem> itemsToExport = [];
-        if (paths is not null && paths.Length > 0)
-        {
-            bool starNoFolders = session.User.Settings.StarNoFolders;
-            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-            foreach (string rawItemPath in paths)
-            {
-                if (string.IsNullOrWhiteSpace(rawItemPath))
-                {
-                    continue;
-                }
-                string cleanPath = NormalizeHistoryPath(rawItemPath);
-                if (!seen.Add(cleanPath))
-                {
-                    continue;
-                }
-                if (!TryResolveHistoryPath(session, root, cleanPath, out string actualPath, out string userError))
-                {
-                    return new JObject() { ["error"] = userError };
-                }
-                if (!File.Exists(actualPath))
-                {
-                    continue;
-                }
-                HistoryResolvedItem item = BuildHistoryResolvedItem(cleanPath, actualPath, root, starNoFolders);
-                if (item is not null)
-                {
-                    itemsToExport.Add(item);
-                }
-            }
-        }
-        else
-        {
-            if (!Enum.TryParse(sortBy, true, out ImageHistorySortMode sortMode))
-            {
-                return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
-            }
-            if (!TryParseHistoryMediaMode(mediaType, out ImageHistoryMediaMode mediaMode))
-            {
-                return new JObject() { ["error"] = $"Invalid media type '{mediaType}'." };
-            }
-            HistoryQueryResult result = QueryHistoryItems(session, root, path, recursive, ParseHistoryDepth(depth, int.MaxValue), query, sortMode, sortReverse, starredOnly, mediaMode);
-            if (result.Error is not null)
-            {
-                return new JObject() { ["error"] = result.Error };
-            }
-            itemsToExport = result.Items;
-        }
-        if (itemsToExport.Count == 0)
-        {
-            return new JObject() { ["error"] = "No history items matched the export request." };
-        }
-        string exportRoot = Utilities.CombinePathWithAbsolute(
-            Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.DataDir, "HistoryExports"),
-            session.User.UserID);
-        Directory.CreateDirectory(exportRoot);
-        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        foreach (string oldZip in Directory.EnumerateFiles(exportRoot, "*.zip"))
-        {
-            try
-            {
-                long oldTime = ((DateTimeOffset)File.GetLastWriteTimeUtc(oldZip)).ToUnixTimeSeconds();
-                if (now - oldTime > 60 * 60 * 6)
-                {
-                    File.Delete(oldZip);
-                }
-            }
-            catch (Exception) { }
-        }
-        string fileName = $"history-export-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Random.Shared.Next(1000, 9999)}.zip";
-        string zipPath = Path.Combine(exportRoot, fileName);
-        using (FileStream zipFile = File.Create(zipPath))
-        using (ZipArchive archive = new(zipFile, ZipArchiveMode.Create))
-        {
-            foreach (HistoryResolvedItem item in itemsToExport)
-            {
-                if (!File.Exists(item.ActualPath))
-                {
-                    continue;
-                }
-                string entryName = NormalizeHistoryPath(item.RelativePath);
-                if (string.IsNullOrWhiteSpace(entryName))
-                {
-                    entryName = Path.GetFileName(item.ActualPath);
-                }
-                archive.CreateEntryFromFile(item.ActualPath, entryName, CompressionLevel.Fastest);
-            }
-        }
-        return new JObject()
-        {
-            ["success"] = true,
-            ["filename"] = fileName,
-            ["url"] = $"/HistoryExport/{fileName}",
-            ["count"] = itemsToExport.Count
-        };
     }
 
     [API.APIDescription("Toggle whether an image is starred or not.", "\"new_state\": true")]

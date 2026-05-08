@@ -16,6 +16,9 @@ source ./launchtools/linux-build-logic.sh
 ./src/bin/live_release/SwarmUI $@
 
 # Exit code 42 means restart, anything else = don't.
-if [ $? == 42 ]; then
+exitcode=$?
+if [ $exitcode == 42 ]; then
     . ./launch-macos.sh $@
+elif [ $exitcode != 0 ]; then
+    exit $exitcode
 fi

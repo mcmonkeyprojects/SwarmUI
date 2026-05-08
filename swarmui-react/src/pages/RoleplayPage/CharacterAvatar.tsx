@@ -10,17 +10,19 @@ export function CharacterAvatar({ character, size = 32 }: CharacterAvatarProps) 
     if (!character) return null;
 
     const initial = character.name[0]?.toUpperCase() ?? '?';
+    const avatarSrc = character.headshotUrl || character.avatar;
 
-    if (character.avatar) {
+    if (avatarSrc) {
         return (
             <img
-                src={character.avatar}
+                src={avatarSrc}
                 alt={character.name}
                 style={{
                     width: size,
                     height: size,
                     borderRadius: '50%',
                     objectFit: 'cover',
+                    objectPosition: 'top',
                     flexShrink: 0,
                     border: '1px solid var(--theme-gray-5)',
                 }}

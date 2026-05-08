@@ -39,6 +39,7 @@ export const queryClient = new QueryClient({
 export const queryKeys = {
     backend: {
         bootstrap: ['backend', 'bootstrap'] as const,
+        t2iParams: ['backend', 't2i-params'] as const,
     },
 
     // Models

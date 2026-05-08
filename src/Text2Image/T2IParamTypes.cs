@@ -216,27 +216,37 @@ public class T2IParamTypes
     /// <summary>Map of all currently loaded types, by cleaned name.</summary>
     public static Dictionary<string, T2IParamType> Types = [];
 
+    /// <summary>Map of old parameter IDs to new parameter IDs, for parameters that were deleted, renamed, or consolidated. Avoid recursive remap entries. Do not remap parameters that are still registered.</summary>
+    public static Dictionary<string, string> ParameterRemaps = new()
+    {
+        ["saveintermediateimages"] = "outputintermediateimages", // v0.9.5
+        ["textvideofps"] = "videofps", // v0.9.7
+        ["textvideoboomerang"] = "videoboomerang", // v0.9.7
+        ["textvideoformat"] = "videoformat", // v0.9.7
+    };
+
     /// <summary>Helper to match valid text for use in a parameter type name.</summary>
     public static AsciiMatcher CleanTypeNameMatcher = new(AsciiMatcher.LowercaseLetters);
 
     public static T2IParamDataType SharpTypeToDataType(Type t, bool hasValues)
     {
-        if (t == typeof(int) || t == typeof(long)) return T2IParamDataType.INTEGER;
-        if (t == typeof(float) || t == typeof(double)) return T2IParamDataType.DECIMAL;
-        if (t == typeof(bool)) return T2IParamDataType.BOOLEAN;
-        if (t == typeof(string)) return hasValues ? T2IParamDataType.DROPDOWN : T2IParamDataType.TEXT;
-        if (t.IsAssignableTo(typeof(ImageFile))) return T2IParamDataType.IMAGE;
-        if (t.IsAssignableTo(typeof(T2IModel))) return T2IParamDataType.MODEL;
-        if (t.IsAssignableTo(typeof(List<string>))) return T2IParamDataType.LIST;
-        if (t.IsAssignableTo(typeof(List<Image>))) return T2IParamDataType.IMAGE_LIST;
-        if (t.IsAssignableTo(typeof(AudioFile))) return T2IParamDataType.AUDIO;
-        if (t.IsAssignableTo(typeof(VideoFile))) return T2IParamDataType.VIDEO;
+        if (t == typeof(int) || t == typeof(long)) { return T2IParamDataType.INTEGER; }
+        if (t == typeof(float) || t == typeof(double)) { return T2IParamDataType.DECIMAL; }
+        if (t == typeof(bool)) { return T2IParamDataType.BOOLEAN; }
+        if (t == typeof(string)) { return hasValues ? T2IParamDataType.DROPDOWN : T2IParamDataType.TEXT; }
+        if (t.IsAssignableTo(typeof(ImageFile))) { return T2IParamDataType.IMAGE; }
+        if (t.IsAssignableTo(typeof(T2IModel))) { return T2IParamDataType.MODEL; }
+        if (t.IsAssignableTo(typeof(List<string>))) { return T2IParamDataType.LIST; }
+        if (t.IsAssignableTo(typeof(List<Image>))) { return T2IParamDataType.IMAGE_LIST; }
+        if (t.IsAssignableTo(typeof(AudioFile))) { return T2IParamDataType.AUDIO; }
+        if (t.IsAssignableTo(typeof(VideoFile))) { return T2IParamDataType.VIDEO; }
         return T2IParamDataType.UNSET;
     }
 
     public static Type DataTypeToSharpType(T2IParamDataType t)
     {
-        return t switch {
+        return t switch
+        {
             T2IParamDataType.INTEGER => typeof(long),
             T2IParamDataType.DECIMAL => typeof(double),
             T2IParamDataType.BOOLEAN => typeof(bool),
@@ -319,7 +329,7 @@ public class T2IParamTypes
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale, Text2AudioDuration;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
-    public static T2IRegisteredParam<AudioFile> VideoAudioInput;
+    public static T2IRegisteredParam<AudioFile> VideoAudioInput, VideoAudioReference;
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, VideoExtendModel, VideoExtendSwapModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
@@ -609,13 +619,16 @@ public class T2IParamTypes
             "24", Min: 1, Max: 1024, ViewMax: 30, ViewType: ParamViewType.SLIDER, OrderPriority: 1, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, Toggleable: true
             ));
         VideoBoomerang = Register<bool>(new("Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
-            "false", IgnoreIf: "false", OrderPriority: 2, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1, Toggleable: true
+            "false", IgnoreIf: "false", OrderPriority: 2, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1
             ));
         VideoFormat = Register<string>(new("Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
             "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1, Toggleable: true
             ));
         VideoAudioInput = Register<AudioFile>(new("Video Audio Input", "If generating a video with a model that supports audio input, this is the audio input.",
             null, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, IsAdvanced: true
+            ));
+        VideoAudioReference = Register<AudioFile>(new("Video Audio Reference", "If generating a video with a model that supports reference audio (eg LTX-2.3 IC-Lora), this input adds the reference audio.",
+            null, OrderPriority: 3.5, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, IsAdvanced: true
             ));
         GroupAdvancedVideoObscure = new("Video Obscure Options", Open: false, OrderPriority: 50, IsAdvanced: true, Toggles: false, Description: "You almost never need these.", Parent: GroupAdvancedVideo);
         VideoMinCFG = Register<double>(new("Video Min CFG", "The minimum CFG to use for video generation.\nVideos start with max CFG on first frame, and then reduce to this CFG. Set to -1 to disable.\nOnly used for SVD.",
@@ -1059,7 +1072,7 @@ public class T2IParamTypes
                 }
                 if (val.StartsWith("inputs/") || val.StartsWith("raw/") || val.StartsWith("Starred/"))
                 {
-                    return FilePathToDataString(session, val, $"for param {type.Name}");
+                    return new JObject() { ["filename"] = val, ["data"] = FilePathToDataString(session, val, $"for param {type.Name}") }.ToString();
                 }
                 if (string.IsNullOrWhiteSpace(val))
                 {
@@ -1169,10 +1182,6 @@ public class T2IParamTypes
     public static T2IParamType GetType(string name, T2IParamInput context)
     {
         name = CleanTypeName(name);
-        if (name == "saveintermediateimages") { name = "outputintermediateimages"; } // TODO: Temporary, renamed 0.9.5
-        else if (name == "textvideofps") { name = "videofps"; } // TODO: Temporary, 0.9.7 legacy "Text2Video FPS" separate param dropped
-        else if (name == "textvideoboomerang") { name = "videoboomerang"; }
-        else if (name == "textvideoformat") { name = "videoformat"; }
         T2IParamType result;
         foreach (Func<string, T2IParamInput, T2IParamType> provider in FakeTypeProviders)
         {
@@ -1186,6 +1195,10 @@ public class T2IParamTypes
         if (result is not null)
         {
             return result;
+        }
+        if (ParameterRemaps.TryGetValue(name, out string altName))
+        {
+            return GetType(altName, context);
         }
         return null;
     }

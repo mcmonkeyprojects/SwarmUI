@@ -31,6 +31,7 @@ import {
     IconRefresh,
 } from '@tabler/icons-react';
 import { usePerformanceStore } from '../../stores/performanceStore';
+import { usePerformanceSessionStore } from '../../stores/performanceSessionStore';
 import { profiler } from '../../utils/performanceProfiler';
 import {
     getPerfDiagnosticsSnapshot,
@@ -248,7 +249,7 @@ function PreviewSection() {
             name: 'Preview drops',
             stats: profiler.getStats('ws:preview-drop'),
         },
-    ]), [recentMetrics]);
+    ]), []);
 
     const recentPreviewMetrics = useMemo(() => {
         return recentMetrics
@@ -413,10 +414,141 @@ function DiagnosticsSection({
     );
 }
 
-export function PerformanceDashboard() {
-    if (!isDev) return null;
+function SessionSection() {
+    const diagnostics = usePerformanceSessionStore((state) => state.diagnostics);
+    const eventLoop = usePerformanceSessionStore((state) => state.eventLoop);
+    const routeStats = usePerformanceSessionStore((state) => state.routeStats);
+    const queryStats = usePerformanceSessionStore((state) => state.queryStats);
+    const metricsByName = usePerformanceSessionStore((state) => state.metricsByName);
+    const recentEvents = usePerformanceSessionStore((state) => state.recentEvents);
 
+    const topRoutes = useMemo(() => (
+        Object.values(routeStats)
+            .sort((left, right) => right.total - left.total)
+            .slice(0, 5)
+    ), [routeStats]);
+
+    const topQueries = useMemo(() => (
+        Object.values(queryStats)
+            .sort((left, right) => right.total - left.total)
+            .slice(0, 5)
+    ), [queryStats]);
+
+    const hotspots = useMemo(() => (
+        Object.values(metricsByName)
+            .sort((left, right) => {
+                if (right.total !== left.total) {
+                    return right.total - left.total;
+                }
+                return right.max - left.max;
+            })
+            .slice(0, 6)
+    ), [metricsByName]);
+
+    const severeEvents = useMemo(() => (
+        recentEvents
+            .filter((event) => event.severity !== 'info')
+            .slice(-8)
+            .reverse()
+    ), [recentEvents]);
+
+    return (
+        <Stack gap="xs">
+            <Text size="xs" fw={600}>Session Telemetry</Text>
+            <MetricRow name="API calls" value={diagnostics.apiCallCount} />
+            <MetricRow
+                name="Event-loop lag"
+                value={`${eventLoop.avgLagMs.toFixed(1)}ms`}
+                subValue={`max ${eventLoop.maxLagMs.toFixed(1)}ms`}
+                status={eventLoop.maxLagMs > 150 ? 'bad' : eventLoop.maxLagMs > 50 ? 'warning' : 'good'}
+            />
+            <MetricRow
+                name="Long tasks"
+                value={diagnostics.longTaskCount}
+                subValue={diagnostics.longTaskCount ? `max ${diagnostics.longestLongTaskMs.toFixed(1)}ms` : undefined}
+                status={diagnostics.longTaskCount > 0 ? 'warning' : 'good'}
+            />
+
+            {topRoutes.length > 0 && (
+                <>
+                    <Divider />
+                    <Text size="xs" fw={600}>Routes</Text>
+                    <Stack gap={2}>
+                        {topRoutes.map((route) => (
+                            <MetricRow
+                                key={route.route}
+                                name={route.route}
+                                value={`${route.avg.toFixed(0)}ms`}
+                                subValue={`${route.count} visits`}
+                                status={route.max > 700 ? 'bad' : route.max > 250 ? 'warning' : 'good'}
+                            />
+                        ))}
+                    </Stack>
+                </>
+            )}
+
+            {topQueries.length > 0 && (
+                <>
+                    <Divider />
+                    <Text size="xs" fw={600}>Queries</Text>
+                    <Stack gap={2}>
+                        {topQueries.map((query) => (
+                            <MetricRow
+                                key={query.key}
+                                name={query.key}
+                                value={`${query.avg.toFixed(0)}ms`}
+                                subValue={`${query.count} runs`}
+                                status={query.lastStatus === 'error' || query.max > 1200 ? 'bad' : query.max > 400 ? 'warning' : 'good'}
+                            />
+                        ))}
+                    </Stack>
+                </>
+            )}
+
+            {hotspots.length > 0 && (
+                <>
+                    <Divider />
+                    <Text size="xs" fw={600}>Hotspots</Text>
+                    <Stack gap={2}>
+                        {hotspots.map((metric) => (
+                            <MetricRow
+                                key={metric.name}
+                                name={metric.name}
+                                value={`${metric.avg.toFixed(1)}ms`}
+                                subValue={`max ${metric.max.toFixed(1)}ms`}
+                                status={metric.max > 250 ? 'bad' : metric.max > 50 ? 'warning' : 'good'}
+                            />
+                        ))}
+                    </Stack>
+                </>
+            )}
+
+            {severeEvents.length > 0 && (
+                <>
+                    <Divider />
+                    <Text size="xs" fw={600}>Recent Flags</Text>
+                    <ScrollArea h={120}>
+                        <Stack gap={2}>
+                            {severeEvents.map((event) => (
+                                <MetricRow
+                                    key={event.id}
+                                    name={event.name}
+                                    value={event.duration ? `${event.duration.toFixed(1)}ms` : event.type}
+                                    status={event.severity === 'bad' ? 'bad' : 'warning'}
+                                />
+                            ))}
+                        </Stack>
+                    </ScrollArea>
+                </>
+            )}
+        </Stack>
+    );
+}
+
+export function PerformanceDashboard() {
     const { isVisible, isMinimized, toggleVisible, toggleMinimized, exportAll, clear } = usePerformanceStore();
+    const exportSession = usePerformanceSessionStore((state) => state.exportSession);
+    const clearSession = usePerformanceSessionStore((state) => state.clearSession);
     const [activeTab, setActiveTab] = useState<string | null>('memory');
     const [diagnostics, setDiagnostics] = useState<PerfDiagnosticsSnapshot>(getPerfDiagnosticsSnapshot());
 
@@ -441,13 +573,18 @@ export function PerformanceDashboard() {
         return () => clearInterval(intervalId);
     }, []);
 
+    if (!isDev) return null;
+
     const handleResetDiagnostics = () => {
         resetPerfDiagnostics();
         setDiagnostics(getPerfDiagnosticsSnapshot());
     };
 
     const handleExport = () => {
-        const data = exportAll();
+        const data = JSON.stringify({
+            dashboard: JSON.parse(exportAll()),
+            session: JSON.parse(exportSession()),
+        }, null, 2);
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -508,7 +645,10 @@ export function PerformanceDashboard() {
                         </ActionIcon>
                     </Tooltip>
                     <Tooltip label="Clear Metrics">
-                        <ActionIcon size="xs" variant="subtle" color="red" onClick={clear}>
+                        <ActionIcon size="xs" variant="subtle" color="red" onClick={() => {
+                            clear();
+                            clearSession();
+                        }}>
                             <IconTrash size={12} />
                         </ActionIcon>
                     </Tooltip>
@@ -541,6 +681,9 @@ export function PerformanceDashboard() {
                         <Tabs.Tab value="preview" leftSection={<IconActivity size={12} />}>
                             <Text size="xs">Preview</Text>
                         </Tabs.Tab>
+                        <Tabs.Tab value="session" leftSection={<IconActivity size={12} />}>
+                            <Text size="xs">Session</Text>
+                        </Tabs.Tab>
                         <Tabs.Tab value="diag" leftSection={<IconActivity size={12} />}>
                             <Text size="xs">Diag</Text>
                         </Tabs.Tab>
@@ -564,6 +707,10 @@ export function PerformanceDashboard() {
 
                     <Tabs.Panel value="preview" pt="xs">
                         <PreviewSection />
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="session" pt="xs">
+                        <SessionSection />
                     </Tabs.Panel>
 
                     <Tabs.Panel value="diag" pt="xs">

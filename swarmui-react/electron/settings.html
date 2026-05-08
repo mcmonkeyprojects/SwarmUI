@@ -243,12 +243,8 @@
     </div>
 
     <script>
-        const { ipcRenderer } = require('electron');
-        const remote = require('@electron/remote');
-
-        // Load current settings
-        function loadSettings() {
-            const config = ipcRenderer.sendSync('get-config');
+        async function loadSettings() {
+            const config = await window.settingsBridge.getConfig();
             document.getElementById('minimizeToTray').checked = config.minimizeToTray;
             document.getElementById('startMinimized').checked = config.startMinimized;
             document.getElementById('checkUpdates').checked = config.checkUpdates;
@@ -256,7 +252,7 @@
         }
 
         // Save settings
-        function saveSettings() {
+        async function saveSettings() {
             const config = {
                 minimizeToTray: document.getElementById('minimizeToTray').checked,
                 startMinimized: document.getElementById('startMinimized').checked,
@@ -264,7 +260,7 @@
                 multipleWindows: document.getElementById('multipleWindows').checked
             };
 
-            ipcRenderer.sendSync('save-config', config);
+            await window.settingsBridge.saveConfig(config);
 
             // Show success message
             const message = document.getElementById('successMessage');
@@ -277,12 +273,11 @@
 
         // Close window
         function closeWindow() {
-            const window = remote.getCurrentWindow();
-            window.close();
+            window.settingsBridge.closeWindow();
         }
 
         // Load settings on page load
-        loadSettings();
+        void loadSettings();
     </script>
 </body>
 

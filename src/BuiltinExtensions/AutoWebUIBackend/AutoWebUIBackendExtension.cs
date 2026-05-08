@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticToolkit;
+using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
 using SwarmUI.DataHolders;

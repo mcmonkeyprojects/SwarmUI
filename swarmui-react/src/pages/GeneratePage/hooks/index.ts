@@ -20,3 +20,15 @@ export type { PanelState, PanelConfig } from './usePanelState';
 // Parameter form state and handlers
 export { useParameterForm, DEFAULT_FORM_VALUES } from './useParameterForm';
 export type { ParameterForm, FormInstance, UseParameterFormOptions } from './useParameterForm';
+
+// Local-only Generate UI state
+export { useGenerateTransientUiState } from './useGenerateTransientUiState';
+
+// Deferred supplemental data gate
+export { useSupplementalDataReady } from './useSupplementalDataReady';
+
+// React Query data loading scope policy
+export { useGenerateDataScopes } from './useGenerateDataScopes';
+
+// Generate route/controller orchestration
+export { useGeneratePageController } from './useGeneratePageController';

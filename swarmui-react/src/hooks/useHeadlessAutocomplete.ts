@@ -18,6 +18,8 @@ import { useBackendAutocompletions } from './useBackendBootstrap';
 export interface UseHeadlessAutocompleteOptions {
     /** Whether autocomplete is enabled */
     enabled?: boolean;
+    /** Whether autocomplete should preload on mount */
+    loadOnMount?: boolean;
     /** Sort mode for results */
     sortMode?: SortMode;
     /** Match mode for filtering */
@@ -26,6 +28,19 @@ export interface UseHeadlessAutocompleteOptions {
     maxResults?: number;
     /** Callback when an item is selected */
     onSelect?: (entry: AutoCompleteEntry) => void;
+}
+
+function normalizeAutocompletions(value: unknown): string[] {
+    if (Array.isArray(value)) {
+        return value.filter((item): item is string => typeof item === 'string');
+    }
+    if (value && typeof value === 'object' && 'userData' in value) {
+        const userData = (value as { userData?: { autocompletions?: unknown } }).userData;
+        if (Array.isArray(userData?.autocompletions)) {
+            return userData.autocompletions.filter((item): item is string => typeof item === 'string');
+        }
+    }
+    return [];
 }
 
 /**
@@ -60,6 +75,7 @@ function findWordBounds(text: string, cursorPos: number): { start: number; end: 
 export function useHeadlessAutocomplete(options: UseHeadlessAutocompleteOptions = {}) {
     const {
         enabled = true,
+        loadOnMount = false,
         sortMode = 'Active',
         matchMode = 'Bucketed',
         maxResults = 50,
@@ -84,8 +100,7 @@ export function useHeadlessAutocomplete(options: UseHeadlessAutocompleteOptions 
 
         try {
             const result = await autocompletionsQuery.refetch();
-            const snapshot = result.data as { userData?: { autocompletions?: string[] } } | undefined;
-            const autocompletions = snapshot?.userData?.autocompletions ?? [];
+            const autocompletions = normalizeAutocompletions(result.data);
             if (autocompletions.length > 0) {
                 storeLoad(autocompletions);
             }
@@ -97,18 +112,18 @@ export function useHeadlessAutocomplete(options: UseHeadlessAutocompleteOptions 
     }, [autocompletionsQuery, isLoaded, storeLoad]);
 
     useEffect(() => {
-        if (!enabled || isLoaded || !autocompletionsQuery.data || autocompletionsQuery.data.length === 0) {
+        const autocompletions = normalizeAutocompletions(autocompletionsQuery.data);
+        if (!enabled || isLoaded || autocompletions.length === 0) {
             return;
         }
-        storeLoad(autocompletionsQuery.data);
+        storeLoad(autocompletions);
     }, [autocompletionsQuery.data, enabled, isLoaded, storeLoad]);
 
-    // Auto-load on mount if not loaded
     useEffect(() => {
-        if (enabled && !isLoaded) {
-            loadAutocompletions();
+        if (enabled && loadOnMount && !isLoaded) {
+            void loadAutocompletions();
         }
-    }, [enabled, isLoaded, loadAutocompletions]);
+    }, [enabled, isLoaded, loadOnMount, loadAutocompletions]);
 
     // Handle text input to extract current word and search
     const handleTextChange = useCallback(
@@ -116,7 +131,14 @@ export function useHeadlessAutocomplete(options: UseHeadlessAutocompleteOptions 
             textValueRef.current = text;
             cursorPosRef.current = cursorPos;
 
-            if (!enabled || !isLoaded) {
+            if (!enabled) {
+                setSuggestions([]);
+                setCurrentWord('');
+                return;
+            }
+
+            if (!isLoaded) {
+                void loadAutocompletions();
                 setSuggestions([]);
                 setCurrentWord('');
                 return;
@@ -135,7 +157,7 @@ export function useHeadlessAutocomplete(options: UseHeadlessAutocompleteOptions 
             const results = search(word, { sortMode, matchMode, maxResults });
             setSuggestions(results);
         },
-        [enabled, isLoaded, search, sortMode, matchMode, maxResults]
+        [enabled, isLoaded, loadAutocompletions, search, sortMode, matchMode, maxResults]
     );
 
     // Get replacement text when selecting a suggestion
@@ -192,11 +214,6 @@ export function useHeadlessAutocomplete(options: UseHeadlessAutocompleteOptions 
             }
         },
     });
-
-    // Call getInputProps once to suppress Downshift warning
-    // This hook is designed for external input management (e.g., textareas)
-    // so we don't apply these props to any element, but Downshift requires the call
-    getInputProps({ suppressRefError: true });
 
     // Close menu when suggestions are empty
     useEffect(() => {

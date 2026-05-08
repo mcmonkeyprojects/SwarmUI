@@ -26,6 +26,7 @@ import type {
   LogType,
   LogMessage,
   ServerResourceInfo,
+  RepoUpdateStatus,
   UpdateCheckResponse,
   UpdateAndRestartResponse,
   KohyaDatasetInfo,
@@ -50,6 +51,7 @@ import {
   type RuntimeEndpoints,
 } from '../config/runtimeEndpoints';
 import { recordApiCall } from '../utils/perfDiagnostics';
+import { featureFlags } from '../config/featureFlags';
 
 const ENABLE_VERBOSE_LOGS = import.meta.env.DEV;
 
@@ -94,6 +96,134 @@ function normalizeHistoryDepth(depth: unknown): number | null {
   }
 
   return parsed;
+}
+
+interface UpstreamUpdateBucket {
+  count: number;
+  preview: string[];
+}
+
+function readUpdateBucket(value: unknown): UpstreamUpdateBucket {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { count: 0, preview: [] };
+  }
+
+  const record = value as Record<string, unknown>;
+  const count = typeof record.count === 'number' && Number.isFinite(record.count)
+    ? record.count
+    : 0;
+  const preview = Array.isArray(record.preview)
+    ? record.preview.map((item) => String(item))
+    : [];
+
+  return { count, preview };
+}
+
+function readUpdateBucketEntries(value: unknown): [string, UpstreamUpdateBucket][] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return [];
+  }
+
+  return Object.entries(value as Record<string, unknown>)
+    .map(([name, bucket]): [string, UpstreamUpdateBucket] => [name, readUpdateBucket(bucket)]);
+}
+
+function buildUpdateDetails(preview: string[]): RepoUpdateStatus['update_details'] {
+  return preview.map((line, index) => {
+    const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}):\s*(.*)$/);
+    return {
+      commit: `preview-${index}`,
+      short_commit: '',
+      date_utc: match ? match[1] : '',
+      subject: match ? match[2] : line,
+    };
+  });
+}
+
+function repoStatusFromUpdateBucket(name: string, bucket: UpstreamUpdateBucket): RepoUpdateStatus {
+  return {
+    name,
+    branch: '',
+    upstream: 'origin',
+    current_commit: '',
+    has_local_changes: false,
+    local_changes_preview: [],
+    ahead_count: 0,
+    behind_count: bucket.count,
+    has_updates: bucket.count > 0,
+    is_detached: false,
+    is_diverged: false,
+    can_auto_update: true,
+    can_fast_forward: true,
+    update_preview: bucket.preview,
+    update_details: buildUpdateDetails(bucket.preview),
+    warnings: [],
+  };
+}
+
+function repoStatusFromUpdateName(name: string): RepoUpdateStatus {
+  return repoStatusFromUpdateBucket(name, {
+    count: 1,
+    preview: ['Update available'],
+  });
+}
+
+function mergeMissingUpdateRepos(
+  repos: RepoUpdateStatus[] | undefined,
+  updateNames: string[] | undefined
+): RepoUpdateStatus[] {
+  const merged = [...(repos ?? [])];
+  const knownNames = new Set(merged.map((repo) => repo.name));
+  for (const name of updateNames ?? []) {
+    if (!knownNames.has(name)) {
+      merged.push(repoStatusFromUpdateName(name));
+      knownNames.add(name);
+    }
+  }
+  return merged;
+}
+
+function normalizeUpdateCheckResponse(response: unknown): UpdateCheckResponse {
+  const record = response && typeof response === 'object'
+    ? response as Record<string, unknown>
+    : {};
+
+  if ('server_updates_count' in record || 'server_repo' in record) {
+    const rich = record as unknown as UpdateCheckResponse;
+    const extensionUpdates = rich.extension_updates ?? [];
+    const backendUpdates = rich.backend_updates ?? [];
+    return {
+      ...rich,
+      server_updates_count: rich.server_updates_count ?? 0,
+      server_updates_preview: rich.server_updates_preview ?? [],
+      server_repo: rich.server_repo ?? repoStatusFromUpdateBucket('SwarmUI', {
+        count: rich.server_updates_count ?? 0,
+        preview: rich.server_updates_preview ?? [],
+      }),
+      extension_updates: extensionUpdates,
+      backend_updates: backendUpdates,
+      extension_repos: mergeMissingUpdateRepos(rich.extension_repos, extensionUpdates),
+      backend_repos: mergeMissingUpdateRepos(rich.backend_repos, backendUpdates),
+      warnings: rich.warnings ?? [],
+    };
+  }
+
+  const server = readUpdateBucket(record.server);
+  const extensions = readUpdateBucketEntries(record.extensions);
+  const backends = readUpdateBucketEntries(record.backends);
+
+  return {
+    checked_at_utc: new Date().toISOString(),
+    server_updates_count: server.count,
+    server_updates_preview: server.preview,
+    server_repo: repoStatusFromUpdateBucket('SwarmUI', server),
+    extension_repos: extensions.map(([name, bucket]) => repoStatusFromUpdateBucket(name, bucket)),
+    backend_repos: backends.map(([name, bucket]) => repoStatusFromUpdateBucket(name, bucket)),
+    extension_updates: extensions.filter(([, bucket]) => bucket.count > 0).map(([name]) => name),
+    backend_updates: backends.filter(([, bucket]) => bucket.count > 0).map(([name]) => name),
+    warnings: [],
+    can_auto_update: true,
+  };
 }
 
 function sanitizeApiParams(params: any): any {
@@ -289,17 +419,24 @@ function sortLegacyHistoryItems(items: HistoryImageItem[], sortBy: HistorySortBy
 }
 
 export class SwarmUIClient {
+  private static readonly SESSIONLESS_ENDPOINTS = new Set([
+    'GetNewSession',
+    'Login',
+    'RegisterBasic',
+    'RegisterOAuth',
+  ]);
+
   private baseUrl: string;
   private wsBaseUrl: string;
   private runtimeEndpoints: RuntimeEndpoints;
   private sessionId: string | null = null;
   private userId: string | null = null;
   private sessionListeners: Set<SessionChangedListener> = new Set();
+  private sessionInitPromise: Promise<void> | null = null;
 
   // Cache for TriggerRefresh results (shared by listVAEs, listControlNets, etc.)
   private triggerRefreshCache: { data: any; timestamp: number } | null = null;
   private triggerRefreshPromise: Promise<any> | null = null;
-  private static readonly TRIGGER_REFRESH_CACHE_TTL = 5000; // 5 seconds
 
   constructor(baseUrl?: string) {
     this.runtimeEndpoints = resolveRuntimeEndpoints(baseUrl);
@@ -358,11 +495,12 @@ export class SwarmUIClient {
    */
   private async getCachedTriggerRefresh(): Promise<any> {
     const now = Date.now();
+    const cacheTtlMs = featureFlags.generateTriggerRefreshCacheMs;
 
     // Return cached data if still valid
     if (
       this.triggerRefreshCache &&
-      now - this.triggerRefreshCache.timestamp < SwarmUIClient.TRIGGER_REFRESH_CACHE_TTL
+      now - this.triggerRefreshCache.timestamp < cacheTtlMs
     ) {
       this.log('debug', 'Using cached TriggerRefresh data');
       return this.triggerRefreshCache.data;
@@ -440,6 +578,25 @@ export class SwarmUIClient {
     return resolveApiUrl('/ComfyBackendDirect/', this.runtimeEndpoints);
   }
 
+  private async ensureSession(): Promise<void> {
+    if (this.sessionId) {
+      return;
+    }
+
+    if (this.sessionInitPromise) {
+      await this.sessionInitPromise;
+      return;
+    }
+
+    this.sessionInitPromise = this.initSession('init')
+      .then(() => undefined)
+      .finally(() => {
+        this.sessionInitPromise = null;
+      });
+
+    await this.sessionInitPromise;
+  }
+
   private async getJson<T>(path: string): Promise<T> {
     const response = await fetch(resolveApiUrl(path, this.runtimeEndpoints), {
       method: 'GET',
@@ -475,6 +632,9 @@ export class SwarmUIClient {
     recordApiCall(endpoint);
 
     const cleanedParams = sanitizeApiParams(params);
+    if (!SwarmUIClient.SESSIONLESS_ENDPOINTS.has(endpoint) && !this.sessionId) {
+      await this.ensureSession();
+    }
     const body = this.sessionId ? { session_id: this.sessionId, ...cleanedParams } : cleanedParams;
 
     const timer = profiler.startTimer(`api:${endpoint}`);
@@ -526,10 +686,15 @@ export class SwarmUIClient {
       });
 
       // Handle session expiration
-      if (data && data.error_id === 'invalid_session_id') {
+      const sessionMissing =
+        response.status === 400
+        && typeof data?.error === 'string'
+        && data.error.toLowerCase().includes('missing session id');
+
+      if (data && (data.error_id === 'invalid_session_id' || sessionMissing)) {
         this.log('debug', 'Session expired, refreshing...');
         await this.initSession('refresh');
-        return this.executePost<T>(endpoint, params);
+        return this.executePost<T>(endpoint, params, options);
       }
 
       // If response is not ok but we have logical error in JSON
@@ -933,45 +1098,71 @@ export class SwarmUIClient {
   }
 
   async listUpscalers(): Promise<Model[]> {
-    // Upscalers are found in the 'refinerupscalemethod' parameter
-    const values = await this.listParameterValues('refinerupscalemethod');
-    if (values.length > 0) {
-      return values
-        .map((v: any) => {
-          // Common formats:
-          // - "id///Description"
-          // - "id"
-          // - { name: "id///Description" } or { value: "id///Description" }
-          const raw = typeof v === 'string'
-            ? v
-            : (typeof v?.name === 'string'
-              ? v.name
-              : (typeof v?.value === 'string' ? v.value : ''));
+    // Upscalers are exposed as parameter values for refinerupscalemethod.
+    // Model methods are emitted dynamically by the backend as model-* / latentmodel-* entries.
+    const fallbackValues = [
+      'pixel-lanczos///Pixel: Lanczos',
+      'pixel-bicubic///Pixel: Bicubic',
+      'pixel-area///Pixel: Area',
+      'pixel-bilinear///Pixel: Bilinear',
+      'pixel-nearest-exact///Pixel: Nearest Exact',
+      'latent-bislerp///Latent: Bislerp',
+      'latent-bicubic///Latent: Bicubic',
+      'latent-area///Latent: Area',
+      'latent-bilinear///Latent: Bilinear',
+      'latent-nearest-exact///Latent: Nearest Exact',
+    ];
+    const response = await this.getCachedTriggerRefresh();
+    const responseObject = response && typeof response === 'object'
+      ? response as { list?: unknown }
+      : {};
+    const list = Array.isArray(responseObject.list) ? responseObject.list : [];
+    const param = list.find((entry) => (
+      Boolean(entry)
+      && typeof entry === 'object'
+      && (entry as { id?: unknown }).id === 'refinerupscalemethod'
+    )) as { values?: unknown; value_names?: unknown } | undefined;
+    const values = Array.isArray(param?.values) ? param.values : [];
+    const valueNames = Array.isArray(param?.value_names) ? param.value_names : [];
+    const seen = new Set<string>();
 
-          if (!raw) return null;
+    const parseUpscaler = (value: unknown, index: number): Model | null => {
+      const valueObject = value && typeof value === 'object'
+        ? value as { name?: unknown; value?: unknown; title?: unknown }
+        : {};
+      const raw = typeof value === 'string'
+        ? value
+        : (typeof valueObject.name === 'string'
+          ? valueObject.name
+          : (typeof valueObject.value === 'string' ? valueObject.value : ''));
 
-          const parts = raw.split('///');
-          const id = (parts[0] || '').trim();
-          if (!id) return null;
+      if (!raw) return null;
 
-          const objectTitle = typeof v?.title === 'string' ? v.title : '';
-          const desc = objectTitle || (parts[1]?.trim() || id);
+      const parts = raw.split('///');
+      const id = (parts[0] || '').trim();
+      if (!id || seen.has(id)) return null;
+      seen.add(id);
 
-          return {
-            name: id,
-            title: desc,
-            architecture: 'upscaler',
-            class: 'upscaler',
-            description: desc,
-            hash: '',
-            loaded: false,
-            preview: undefined,
-            metadata: {},
-          } as Model;
-        })
-        .filter((item): item is Model => item !== null);
-    }
-    return [];
+      const objectTitle = typeof valueObject.title === 'string' ? valueObject.title : '';
+      const pairedTitle = typeof valueNames[index] === 'string' ? valueNames[index] : '';
+      const desc = objectTitle || pairedTitle || (parts[1]?.trim() || id);
+
+      return {
+        name: id,
+        title: desc,
+        architecture: 'upscaler',
+        class: 'upscaler',
+        description: desc,
+        hash: '',
+        loaded: false,
+        preview: undefined,
+        metadata: {},
+      } as Model;
+    };
+
+    return [...values, ...fallbackValues]
+      .map(parseUpscaler)
+      .filter((item): item is Model => item !== null);
   }
 
   async listWildcards(): Promise<Model[]> {
@@ -1628,18 +1819,33 @@ export class SwarmUIClient {
   }
 
   async checkForUpdates(): Promise<UpdateCheckResponse> {
-    const response = await this.post<UpdateCheckResponse>('CheckForUpdates', {});
-    return response as UpdateCheckResponse;
+    const response = await this.post<unknown>('CheckForUpdates', {});
+    return normalizeUpdateCheckResponse(response);
   }
 
   async updateAndRestart(params?: {
     updateExtensions?: boolean;
     updateBackends?: boolean;
+    extensionsToUpdate?: string[];
+    backendsToUpdate?: string[];
+    doUpdateServer?: boolean;
+    aggressive?: boolean;
     force?: boolean;
   }): Promise<UpdateAndRestartResponse> {
+    const extensionsToUpdate = params?.extensionsToUpdate ?? [];
+    const backendsToUpdate = params?.backendsToUpdate ?? [];
+    const request = {
+      updateExtensions: params?.updateExtensions ?? extensionsToUpdate.length > 0,
+      updateBackends: params?.updateBackends ?? backendsToUpdate.length > 0,
+      extensionsToUpdate,
+      backendsToUpdate,
+      doUpdateServer: params?.doUpdateServer ?? true,
+      aggressive: params?.aggressive ?? false,
+      force: params?.force ?? false,
+    };
     const response = await this.post<UpdateAndRestartResponse>(
       'UpdateAndRestart',
-      params ?? {}
+      request
     );
     return response as UpdateAndRestartResponse;
   }

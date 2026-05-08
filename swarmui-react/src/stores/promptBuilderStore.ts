@@ -21,6 +21,7 @@ function createDefaultRegion(partial?: Partial<BuilderRegionRule>): BuilderRegio
   return {
     id: partial?.id ?? createId('region'),
     shape: partial?.shape ?? 'rectangle',
+    source: partial?.source,
     label: partial?.label ?? '',
     x: partial?.x ?? 0.25,
     y: partial?.y ?? 0.25,

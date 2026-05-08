@@ -1114,6 +1114,17 @@ function isAudioExt(filename) {
     return false;
 }
 
+/** Returns 'video', 'audio', or 'image' based on the file source. */
+function getMediaType(src) {
+    if (isVideoExt(src)) {
+        return 'video';
+    }
+    if (isAudioExt(src)) {
+        return 'audio';
+    }
+    return 'image';
+}
+
 /** 'string.split' with a count limit, and without the stupid misbehavior of the default JS 'string.split'. */
 function splitWithTail(str, splitter, limit) {
     let parts = str.split(splitter);
@@ -1183,4 +1194,33 @@ async function ungzip(gzippedBytes) {
         chunks.push(value);
     }
     return new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []));
+}
+
+/** Trims leading spaces from a string. */
+function trimStartSpaces(text) {
+    let count = 0;
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] != ' ') {
+            break;
+        }
+        count++;
+    }
+    return text.substring(count);
+}
+
+/** Trims trailing spaces from a string. */
+function trimEndSpaces(text) {
+    let count = 0;
+    for (let i = text.length - 1; i >= 0; i--) {
+        if (text[i] != ' ') {
+            break;
+        }
+        count++;
+    }
+    return text.substring(0, text.length - count);
+}
+
+/** Trims leading and trailing spaces from a string. */
+function trimSpaces(text) {
+    return trimStartSpaces(trimEndSpaces(text));
 }

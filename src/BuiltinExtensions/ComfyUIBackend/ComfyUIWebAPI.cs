@@ -109,14 +109,17 @@ public static class ComfyUIWebAPI
     /// <summary>API route to read a list of available Comfy custom workflows.</summary>
     public static async Task<JObject> ComfyListWorkflows(Session session)
     {
-        return new JObject() { ["workflows"] = JToken.FromObject(ComfyUIBackendExtension.CustomWorkflows.Keys.ToList()
+        return new JObject()
+        {
+            ["workflows"] = JToken.FromObject(ComfyUIBackendExtension.CustomWorkflows.Keys.ToList()
             .Select(ComfyUIBackendExtension.GetWorkflowByName).Where(w => w is not null).OrderBy(w => w.Name).Select(w => new JObject()
             {
                 ["name"] = w.Name,
                 ["image"] = w.Image ?? "/imgs/model_placeholder.jpg",
                 ["description"] = w.Description,
                 ["enable_in_simple"] = w.EnableInSimple
-            }).ToList()) };
+            }).ToList())
+        };
     }
 
     /// <summary>API route to read a delete a saved Comfy custom workflows.</summary>

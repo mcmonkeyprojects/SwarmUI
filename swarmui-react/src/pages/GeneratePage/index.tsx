@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense, memo } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, lazy, Suspense, memo } from 'react';
 import {
     Box,
     Modal,
     Loader,
     Drawer,
-    Menu,
     Stack,
     Group,
     Text,
@@ -14,20 +13,10 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import {
-    IconArrowsMaximize,
-    IconBrain,
-    IconBug,
-    IconColumns,
-    IconDotsVertical,
-    IconKeyboard,
-    IconLayoutGrid,
-    IconRoute2,
-} from '@tabler/icons-react';
+import { useShallow } from 'zustand/react/shallow';
 import {
     useActiveLoras,
     useActiveWildcards,
-    useBatchOutputFolder,
     useSelectedBackend,
     useModeToggles,
     useResetGeneration,
@@ -40,9 +29,7 @@ import { useCanvasWorkflowStore } from '../../stores/canvasWorkflowStore';
 import { useKeyboardShortcuts, KEYBOARD_SHORTCUTS } from '../../hooks/useKeyboardShortcuts';
 import { useGenerationHandlers } from '../../hooks/useGenerationHandlers';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
-import { useRenderProfiler } from '../../hooks/useRenderProfiler';
-import { ResizeHandle, SwarmActionIcon, SwarmBadge, SwarmButton } from '../../components/ui';
-import { QueueStatusBadge } from '../../components/QueueStatusBadge';
+import { ResizeHandle, SwarmButton } from '../../components/ui';
 import { usePromptBuilderStore } from '../../stores/promptBuilderStore';
 import {
     compilePromptBuilder,
@@ -52,11 +39,12 @@ import { buildCanvasApplyPatch, buildCanvasPrompt } from '../../features/canvasW
 import { useGenerateWorkspaceActions, useGenerateWorkspaceLayout } from '../../stores/layoutStore';
 import { imageUrlToDataUrl } from '../../utils/imageData';
 import {
+    useGeneratePageController,
+    useGenerateTransientUiState,
     useModalState,
     useParameterForm,
 } from './hooks';
 import { useAllModelData } from '../../hooks/useModels';
-import { useWebSocketStore } from '../../stores/websocketStore';
 import { DEFAULT_FORM_VALUES } from './hooks/useParameterForm';
 import { getModelMediaCapabilities } from '../../utils/modelCapabilities';
 import type { ImageListItem } from '../../api/types';
@@ -67,6 +55,12 @@ import { applyAssistantPatchToParams } from '../../utils/assistantApply';
 import { useGenerationProductStore } from '../../stores/generationProductStore';
 import { validateGeneration } from '../../features/generation/productTypes';
 import { WorkspaceExperiencePanel } from './components/WorkspaceExperiencePanel';
+import { GenerateStageHeader } from './components/GenerateStageHeader';
+import { CanvasGenerationResultWatcher } from './components/CanvasGenerationResultWatcher';
+import {
+    GeneratePerformanceMilestones,
+    type GenerateDeferredDataset,
+} from './components/GeneratePerformanceMilestones';
 import { useNavigationStore, type GenerateRouteState, type GenerateWorkspaceMode } from '../../stores/navigationStore';
 import { useWorkflowWorkspaceStore } from '../../stores/workflowWorkspaceStore';
 
@@ -151,11 +145,8 @@ interface GeneratePageProps {
 }
 
 export const GeneratePage = memo(function GeneratePage({ routeState }: GeneratePageProps) {
-    useRenderProfiler('GeneratePage');
-
     const { activeLoras, setLoras } = useActiveLoras();
     const { wildcardText, setWildcardText } = useActiveWildcards();
-    const { batchOutputFolder, setBatchOutputFolder, clearBatchOutputFolder } = useBatchOutputFolder();
     const { selectedBackend, setSelectedBackend } = useSelectedBackend();
     const resetStore = useResetGeneration();
 
@@ -172,8 +163,12 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         setEnableVariation,
     } = useModeToggles();
 
-    const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
-    const diagnosticEntries = useGenerationDiagnosticsStore((state) => state.entries);
+    const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore(useShallow((state) => ({
+        addFavorite: state.addFavorite,
+        removeFavorite: state.removeFavorite,
+        isFavorite: state.isFavorite,
+    })));
+    const hasDiagnosticIssue = useGenerationDiagnosticsStore((state) => state.entries[0]?.status === 'error');
     const addQueueJob = useQueueStore((state) => state.addJob);
     const pendingCanvasGenerateRequest = useCanvasWorkflowStore((state) => state.pendingGenerateRequest);
     const awaitingCanvasResult = useCanvasWorkflowStore((state) => state.awaitingResult);
@@ -183,15 +178,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
     const setCanvasPendingResult = useCanvasWorkflowStore((state) => state.setPendingResult);
     const setCanvasFallbackParams = useCanvasWorkflowStore((state) => state.setFallbackParams);
     const canvasSessionOpen = useCanvasWorkflowStore((state) => state.isOpen);
-    const generationPhase = useWebSocketStore((state) => state.generation.phase);
-    const generationError = useWebSocketStore((state) => state.generation.error);
     const isGeneratePageActive = useNavigationStore((state) => state.currentPage === 'generate');
-
-    const dataLoaders = useAllModelData({ autoRefreshBackends: isGeneratePageActive });
-    const modals = useModalState();
-    const paramForm = useParameterForm();
-    const latestFormValuesRef = useRef(paramForm.form.values);
-    latestFormValuesRef.current = paramForm.form.values;
     const workspaceLayout = useGenerateWorkspaceLayout();
     const workspaceActions = useGenerateWorkspaceActions();
     const assistantPanelOpen = useAssistantStore((state) => state.panelOpen);
@@ -211,13 +198,85 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         saveRecipe,
         captureSnapshot,
         setIssues,
-    } = useGenerationProductStore();
+    } = useGenerationProductStore(useShallow((state) => ({
+        currentMode: state.currentMode,
+        activeRecipeId: state.activeRecipeId,
+        recipes: state.recipes,
+        lastSnapshot: state.lastSnapshot,
+        lastIssues: state.lastIssues,
+        setCurrentMode: state.setCurrentMode,
+        applyRecipe: state.applyRecipe,
+        setActiveRecipe: state.setActiveRecipe,
+        saveRecipe: state.saveRecipe,
+        captureSnapshot: state.captureSnapshot,
+        setIssues: state.setIssues,
+    })));
+    const modals = useModalState();
+    const paramForm = useParameterForm();
+    const formValues = paramForm.form.values;
+    const latestFormValuesRef = useRef(formValues);
+
+    useEffect(() => {
+        latestFormValuesRef.current = formValues;
+    }, [formValues]);
+
+    const {
+        routeEnteredAt,
+        supplementalDataReady,
+        usesAdvancedRail,
+        shouldLoadVaeData,
+        shouldLoadControlNetData,
+        shouldLoadUpscalerData,
+        shouldLoadEmbeddings,
+        shouldLoadWildcardData,
+    } = useGeneratePageController({
+        currentMode,
+        openInspectorSections: workspaceLayout.openInspectorSections,
+        openQuickModules: workspaceLayout.openQuickModules,
+        embeddingModalOpened: modals.embeddingModalOpened,
+        enableControlNet,
+        enableRefiner,
+    });
+
+    const dataLoaders = useAllModelData({
+        autoRefreshBackends: isGeneratePageActive,
+        scopes: {
+            models: true,
+            backends: true,
+            vaes: shouldLoadVaeData,
+            controlnets: shouldLoadControlNetData,
+            upscalers: shouldLoadUpscalerData,
+            embeddings: shouldLoadEmbeddings,
+            wildcards: shouldLoadWildcardData,
+        },
+    });
+
+    const validationValues = useMemo(() => ({
+        model: formValues.model,
+        prompt: formValues.prompt,
+        scheduler: formValues.scheduler,
+        controlnetimageinput: formValues.controlnetimageinput,
+        videomodel: formValues.videomodel,
+        text2videoframes: formValues.text2videoframes,
+        initimage: formValues.initimage,
+    }), [
+        formValues.controlnetimageinput,
+        formValues.initimage,
+        formValues.model,
+        formValues.prompt,
+        formValues.scheduler,
+        formValues.text2videoframes,
+        formValues.videomodel,
+    ]);
+    const selectedModelName = typeof formValues.model === 'string' ? formValues.model : '';
+    const promptValue = typeof formValues.prompt === 'string' ? formValues.prompt : '';
+    const negativePromptValue = typeof formValues.negativeprompt === 'string' ? formValues.negativeprompt : '';
 
     const selectedModel = useMemo(
-        () => dataLoaders.models.find((model) => model.name === paramForm.form.values.model) ?? null,
-        [dataLoaders.models, paramForm.form.values.model]
+        () => dataLoaders.models.find((model) => model.name === selectedModelName) ?? null,
+        [dataLoaders.models, selectedModelName]
     );
-    const issues = useMemo(() => validateGeneration(paramForm.form.values, {
+    const issues = useMemo(() => validateGeneration(validationValues, {
         selectedBackend,
         enableControlNet,
         enableVideo,
@@ -226,8 +285,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         enableControlNet,
         enableInitImage,
         enableVideo,
-        paramForm.form.values,
         selectedBackend,
+        validationValues,
     ]);
 
     const handleEmbeddingInsert = ({ embeddingText, targetField }: EmbeddingInsertRequest) => {
@@ -274,6 +333,44 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         },
         mediaCapabilities: modelMediaCapabilities,
     });
+    const deferredDatasets = useMemo<GenerateDeferredDataset[]>(() => ([
+        {
+            key: 'vaes',
+            enabled: shouldLoadVaeData,
+            loading: dataLoaders.loadingStates.vaes,
+        },
+        {
+            key: 'controlnets',
+            enabled: shouldLoadControlNetData,
+            loading: dataLoaders.loadingStates.controlnets,
+        },
+        {
+            key: 'upscalers',
+            enabled: shouldLoadUpscalerData,
+            loading: dataLoaders.loadingStates.upscalers,
+        },
+        {
+            key: 'embeddings',
+            enabled: shouldLoadEmbeddings,
+            loading: dataLoaders.loadingStates.embeddings,
+        },
+        {
+            key: 'wildcards',
+            enabled: shouldLoadWildcardData,
+            loading: dataLoaders.loadingStates.wildcards,
+        },
+    ]), [
+        dataLoaders.loadingStates.controlnets,
+        dataLoaders.loadingStates.embeddings,
+        dataLoaders.loadingStates.upscalers,
+        dataLoaders.loadingStates.vaes,
+        dataLoaders.loadingStates.wildcards,
+        shouldLoadControlNetData,
+        shouldLoadEmbeddings,
+        shouldLoadUpscalerData,
+        shouldLoadVaeData,
+        shouldLoadWildcardData,
+    ]);
 
     const getCanvasActionContext = useCallback(() => {
         const values = latestFormValuesRef.current;
@@ -284,14 +381,21 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         };
     }, []);
 
-    const [presetName, setPresetName] = useState('');
-    const [presetDescription, setPresetDescription] = useState('');
-    const [diagnosticsModalOpen, setDiagnosticsModalOpen] = useState(false);
-    const [galleryDrawerOpen, setGalleryDrawerOpen] = useState(false);
-    const [galleryPinned, setGalleryPinned] = useState(false);
-    const [comparisonOpen, setComparisonOpen] = useState(false);
+    const {
+        presetName,
+        setPresetName,
+        presetDescription,
+        setPresetDescription,
+        diagnosticsModalOpen,
+        setDiagnosticsModalOpen,
+        galleryDrawerOpen,
+        setGalleryDrawerOpen,
+        galleryPinned,
+        setGalleryPinned,
+        comparisonOpen,
+        setComparisonOpen,
+    } = useGenerateTransientUiState();
 
-    const hasDiagnosticIssue = diagnosticEntries[0]?.status === 'error';
     const isGalleryDrawer = useMediaQuery('(max-width: 1199px)');
     const isStacked = useMediaQuery('(max-width: 959px)');
 
@@ -413,7 +517,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             });
             const promptWithManagedBlock = upsertManagedBlock(values.prompt || '', compiled.managedBlock);
             effectiveValues = { ...values, prompt: promptWithManagedBlock };
-            if (promptWithManagedBlock !== paramForm.form.values.prompt) {
+            if (promptWithManagedBlock !== promptValue) {
                 paramForm.form.setFieldValue('prompt', promptWithManagedBlock);
             }
             builderState.markSynced(compiled.managedBlock, compiled.blockHash);
@@ -428,13 +532,28 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             });
         }
 
-        if (enableRefiner) {
+        const requestedRefinerUpscale = typeof effectiveValues.refinerupscale === 'number'
+            ? effectiveValues.refinerupscale
+            : 1;
+        const requestedRefinerControl = effectiveValues.refinercontrolpercentage
+            ?? effectiveValues.refinercontrol
+            ?? 0;
+        const requestedRefinerModel = typeof effectiveValues.refinermodel === 'string'
+            ? effectiveValues.refinermodel.trim()
+            : '';
+        const shouldPrepareRefiner = enableRefiner
+            || requestedRefinerUpscale !== 1
+            || requestedRefinerControl > 0
+            || requestedRefinerModel.length > 0
+            || options?.forceEnableRefiner === true;
+
+        if (shouldPrepareRefiner) {
             const refinerControl = effectiveValues.refinercontrolpercentage
                 ?? effectiveValues.refinercontrol
                 ?? 0;
             effectiveValues = {
                 ...effectiveValues,
-                refinerupscale: effectiveValues.refinerupscale && effectiveValues.refinerupscale > 1 ? effectiveValues.refinerupscale : 2,
+                refinerupscale: effectiveValues.refinerupscale ?? 1,
                 refinerupscalemethod: effectiveValues.refinerupscalemethod || 'pixel-lanczos',
                 refinermethod: effectiveValues.refinermethod || 'PostApply',
                 refinercontrol: refinerControl,
@@ -450,6 +569,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         enableVideo,
         handleGenerate,
         paramForm,
+        promptValue,
         selectedBackend,
         setIssues,
     ]);
@@ -458,9 +578,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         const currentValues = paramForm.form.values;
         const nextValues = {
             ...currentValues,
-            refinerupscale: (currentValues.refinerupscale && currentValues.refinerupscale > 1)
-                ? currentValues.refinerupscale
-                : 2,
+            refinerupscale: 2,
             refinerupscalemethod: currentValues.refinerupscalemethod || 'pixel-lanczos',
             refinermethod: 'PostApply',
             refinercontrol: 0,
@@ -543,46 +661,9 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         setEnableInitImage,
     ]);
 
-    useEffect(() => {
-        if (!awaitingCanvasResult) {
-            return;
-        }
-
-        if (generatedImages.length > awaitingCanvasImageCount) {
-            const latestImage = generatedImages[generatedImages.length - 1];
-            if (latestImage) {
-                setCanvasPendingResult({
-                    imageUrl: latestImage,
-                    source: 'generate',
-                });
-            }
-            return;
-        }
-
-        if (!generating && (generationPhase === 'error' || generationPhase === 'complete')) {
-            markCanvasAwaitingResult(false);
-            if (generationPhase === 'error' && generationError) {
-                notifications.show({
-                    title: 'Canvas Generation Failed',
-                    message: generationError,
-                    color: 'red',
-                });
-            }
-        }
-    }, [
-        awaitingCanvasImageCount,
-        awaitingCanvasResult,
-        generating,
-        generatedImages,
-        generationError,
-        generationPhase,
-        markCanvasAwaitingResult,
-        setCanvasPendingResult,
-    ]);
-
     useKeyboardShortcuts({
         isGenerating: generating,
-        onGenerate: () => handleGenerateWithBuilder(paramForm.form.values),
+        onGenerate: () => handleGenerateWithBuilder(formValues),
         onStop: handleInterrupt,
         onNextImage: goToNextImage,
         onPrevImage: goToPrevImage,
@@ -597,8 +678,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                     addFavorite({
                         path: currentImage,
                         timestamp: Date.now(),
-                        prompt: paramForm.form.values.prompt,
-                        model: paramForm.form.values.model,
+                        prompt: promptValue,
+                        model: selectedModelName,
                     });
                 }
             }
@@ -687,12 +768,22 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         }
     };
 
-    const usesAdvancedRail = currentMode === 'advanced' || currentMode === 'video';
     const showSidebar = !workspaceLayout.focusMode;
     const showGalleryRail = galleryPinned && usesAdvancedRail && !workspaceLayout.focusMode && !isGalleryDrawer;
     const supportingSidebarWidth = currentMode === 'quick' ? 336 : 352;
     const resolvedSidebarWidth = usesAdvancedRail ? workspaceLayout.sidebarWidth : supportingSidebarWidth;
     const selectedGalleryImage = generatedImages[currentImageIndex] || null;
+    const deferredGalleryImages = useDeferredValue(generatedImages);
+    const galleryImages = generating ? deferredGalleryImages : generatedImages;
+    const galleryPreviewImage = useMemo(() => {
+        if (!selectedGalleryImage) {
+            return null;
+        }
+        if (galleryImages.includes(selectedGalleryImage)) {
+            return selectedGalleryImage;
+        }
+        return galleryImages[galleryImages.length - 1] || null;
+    }, [galleryImages, selectedGalleryImage]);
     const activeRecipe = useMemo(
         () => recipes.find((recipe) => recipe.id === activeRecipeId) ?? null,
         [activeRecipeId, recipes]
@@ -721,12 +812,12 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             media_type: 'image' as const,
             created_at: generatedImages.length - recent.length + index,
             prompt_preview: null,
-            model: paramForm.form.values.model || null,
+            model: selectedModelName || null,
             width: null,
             height: null,
             seed: null,
         })) as [ImageListItem, ImageListItem];
-    }, [generatedImages, paramForm.form.values.model]);
+    }, [generatedImages, selectedModelName]);
     const modeStageCopy = currentMode === 'quick'
         ? 'A minimal run path with the canvas front and center.'
         : currentMode === 'guided'
@@ -761,36 +852,62 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         paramForm.form.setValues({
             ...paramForm.form.values,
             ...recipe.params,
-            prompt: recipe.promptTemplate || paramForm.form.values.prompt,
+            prompt: recipe.promptTemplate || promptValue,
         });
-    }, [activeRecipeId, applyRecipe, paramForm.form, routeState?.recipe]);
+    }, [activeRecipeId, applyRecipe, paramForm.form, promptValue, routeState?.recipe]);
+
+    const issuesSignature = useMemo(
+        () => issues.map((issue) => `${issue.id}:${issue.severity}:${issue.message}`).join('|'),
+        [issues]
+    );
+    const lastIssuesSignatureRef = useRef<string>('');
 
     useEffect(() => {
+        if (lastIssuesSignatureRef.current === issuesSignature) {
+            return;
+        }
+
+        lastIssuesSignatureRef.current = issuesSignature;
         setIssues(issues);
-    }, [issues, setIssues]);
+    }, [issues, issuesSignature, setIssues]);
 
     useEffect(() => {
+        let idleHandle: number | null = null;
         const snapshotId = window.setTimeout(() => {
-            captureSnapshot({
-                id: 'last-session',
-                capturedAt: Date.now(),
-                mode: currentMode,
-                params: paramForm.form.values,
-                openQuickModules: workspaceLayout.openQuickModules,
-                openInspectorSections: workspaceLayout.openInspectorSections,
-                galleryDensity: workspaceLayout.galleryDensity,
-                sidebarWidth: workspaceLayout.sidebarWidth,
-                galleryWidth: workspaceLayout.galleryWidth,
-                sessionImages: generatedImages,
-            });
-        }, 250);
+            const runCapture = () => {
+                captureSnapshot({
+                    id: 'last-session',
+                    capturedAt: Date.now(),
+                    mode: currentMode,
+                    params: formValues,
+                    openQuickModules: workspaceLayout.openQuickModules,
+                    openInspectorSections: workspaceLayout.openInspectorSections,
+                    galleryDensity: workspaceLayout.galleryDensity,
+                    sidebarWidth: workspaceLayout.sidebarWidth,
+                    galleryWidth: workspaceLayout.galleryWidth,
+                    sessionImages: generatedImages,
+                });
+            };
 
-        return () => window.clearTimeout(snapshotId);
+            if ('requestIdleCallback' in window) {
+                idleHandle = window.requestIdleCallback(runCapture, { timeout: 1000 });
+                return;
+            }
+
+            runCapture();
+        }, 750);
+
+        return () => {
+            window.clearTimeout(snapshotId);
+            if (idleHandle !== null && 'cancelIdleCallback' in window) {
+                window.cancelIdleCallback(idleHandle);
+            }
+        };
     }, [
         captureSnapshot,
         currentMode,
+        formValues,
         generatedImages,
-        paramForm.form.values,
         workspaceLayout.galleryDensity,
         workspaceLayout.galleryWidth,
         workspaceLayout.openInspectorSections,
@@ -817,7 +934,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         paramForm.form.setValues({
             ...paramForm.form.values,
             ...recipe.params,
-            prompt: recipe.promptTemplate || paramForm.form.values.prompt,
+            prompt: recipe.promptTemplate || promptValue,
         });
         setGenerateModeRoute(recipe.mode);
         notifications.show({
@@ -828,8 +945,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
     };
 
     const handleSaveRecipe = () => {
-        const recipeName = window.prompt('Name this recipe:', paramForm.form.values.model
-            ? `${paramForm.form.values.model} Recipe`
+        const recipeName = window.prompt('Name this recipe:', selectedModelName
+            ? `${selectedModelName} Recipe`
             : 'New Recipe');
 
         if (!recipeName?.trim()) {
@@ -840,13 +957,13 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             name: recipeName.trim(),
             description: `Saved from the ${currentMode} workspace.`,
             mode: currentMode,
-            promptTemplate: paramForm.form.values.prompt || '',
+            promptTemplate: promptValue,
             params: {
-                ...paramForm.form.values,
+                ...formValues,
                 prompt: undefined,
                 negativeprompt: undefined,
             },
-            tags: [currentMode, paramForm.form.values.model || 'unassigned-model'],
+            tags: [currentMode, selectedModelName || 'unassigned-model'],
         });
 
         setActiveRecipe(recipeId);
@@ -885,8 +1002,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         setWorkflowHandoff({
             source: 'generate',
             templateId: currentMode === 'quick' ? 'text-to-image' : null,
-            params: paramForm.form.values,
-            imageSrc: enableInitImage ? String(paramForm.form.values.initimage || '') || null : null,
+            params: formValues,
+            imageSrc: enableInitImage ? String(formValues.initimage || '') || null : null,
             note: activeRecipe ? `Promoted from recipe ${activeRecipe.name}` : 'Promoted from Generate workspace',
         });
         navigateToWorkflows({ mode: 'wizard' });
@@ -912,6 +1029,21 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                 overflow: 'hidden',
             }}
         >
+            <CanvasGenerationResultWatcher
+                awaitingCanvasResult={awaitingCanvasResult}
+                awaitingCanvasImageCount={awaitingCanvasImageCount}
+                generating={generating}
+                generatedImages={generatedImages}
+                markCanvasAwaitingResult={markCanvasAwaitingResult}
+                setCanvasPendingResult={setCanvasPendingResult}
+            />
+            <GeneratePerformanceMilestones
+                routeEnteredAt={routeEnteredAt}
+                loadingModels={dataLoaders.loadingModels}
+                loadingBackends={dataLoaders.loadingBackends}
+                supplementalDataReady={supplementalDataReady}
+                deferredDatasets={deferredDatasets}
+            />
             <WorkspaceExperiencePanel
                 mode={currentMode}
                 onModeChange={handleModeChange}
@@ -923,7 +1055,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                 lastSnapshot={lastSnapshot}
                 onRestoreSnapshot={handleRestoreSnapshot}
                 issues={lastIssues}
-                selectedModel={paramForm.form.values.model || ''}
+                selectedModel={selectedModelName}
                 backendCount={dataLoaders.backends.length}
                 diffCount={recipeDiffCount}
             />
@@ -1023,9 +1155,6 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                         wildcardOptions={dataLoaders.wildcardOptions}
                                         wildcardText={wildcardText}
                                         onWildcardTextChange={setWildcardText}
-                                        batchOutputFolder={batchOutputFolder}
-                                        onBatchOutputFolderChange={setBatchOutputFolder}
-                                        onClearBatchOutputFolder={clearBatchOutputFolder}
                                         quickModules={workspaceLayout.openQuickModules}
                                         onQuickModulesChange={workspaceActions.setOpenQuickModules}
                                         inspectorSections={workspaceLayout.openInspectorSections}
@@ -1056,9 +1185,6 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                         onOpenLoraBrowser={modals.openLoraModal}
                                         onOpenEmbeddingBrowser={modals.openEmbeddingModal}
                                         onPromoteWorkflow={handlePromoteToWorkflow}
-                                        batchOutputFolder={batchOutputFolder}
-                                        onBatchOutputFolderChange={setBatchOutputFolder}
-                                        onClearBatchOutputFolder={clearBatchOutputFolder}
                                         enableRefiner={enableRefiner}
                                         setEnableRefiner={setEnableRefiner}
                                         enableInitImage={enableInitImage}
@@ -1089,127 +1215,27 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
 
                 <Box className="generate-studio__stage-column">
                     <Box className="generate-studio__stage-header">
-                        <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-                            <Stack gap={4}>
-                                <Group gap="xs" wrap="wrap">
-                                    <Text size="xs" fw={700} tt="uppercase" c="var(--theme-text-secondary)">
-                                        Canvas Stage
-                                    </Text>
-                                    <SwarmBadge tone="brand" emphasis="soft">
-                                        {currentMode === 'quick' ? 'Quick'
-                                          : currentMode === 'guided' ? 'Guided'
-                                          : currentMode === 'video' ? 'Video'
-                                          : 'Advanced'}
-                                    </SwarmBadge>
-                                    <SwarmBadge tone={generating ? 'info' : 'success'} emphasis="soft" contrast="strong">
-                                        {generating ? 'Generating' : 'Ready'}
-                                    </SwarmBadge>
-                                    {selectedBackend ? (
-                                        <SwarmBadge tone="secondary" emphasis="soft">
-                                            {selectedBackend}
-                                        </SwarmBadge>
-                                    ) : null}
-                                    {generatedImages.length > 0 ? (
-                                        <SwarmBadge tone="secondary" emphasis="soft">
-                                            {generatedImages.length} in session
-                                        </SwarmBadge>
-                                    ) : null}
-                                    <QueueStatusBadge compact />
-                                </Group>
-                                <Text size="sm" fw={600}>
-                                    {paramForm.form.values.model || 'No model selected yet'}
-                                </Text>
-                                <Text size="xs" c="var(--theme-text-secondary)">
-                                    {stageHeaderCopy}
-                                </Text>
-                            </Stack>
-
-                            <Group gap="xs" wrap="wrap">
-                                {isGalleryDrawer ? (
-                                    <SwarmButton
-                                        tone="secondary"
-                                        emphasis="soft"
-                                        leftSection={<IconLayoutGrid size={14} />}
-                                        onClick={() => setGalleryDrawerOpen(true)}
-                                    >
-                                        Session Gallery
-                                    </SwarmButton>
-                                ) : usesAdvancedRail ? (
-                                    <SwarmButton
-                                        tone={showGalleryRail ? 'brand' : 'secondary'}
-                                        emphasis={showGalleryRail ? 'soft' : 'soft'}
-                                        leftSection={<IconLayoutGrid size={14} />}
-                                        onClick={() => setGalleryPinned((value) => !value)}
-                                    >
-                                        {showGalleryRail ? 'Hide Gallery' : 'Show Gallery'}
-                                    </SwarmButton>
-                                ) : (
-                                    <SwarmButton
-                                        tone="secondary"
-                                        emphasis="soft"
-                                        leftSection={<IconLayoutGrid size={14} />}
-                                        onClick={() => setGalleryDrawerOpen(true)}
-                                    >
-                                        Session Gallery
-                                    </SwarmButton>
-                                )}
-                                <SwarmActionIcon
-                                    tone={workspaceLayout.focusMode ? 'warning' : 'secondary'}
-                                    emphasis="soft"
-                                    label={workspaceLayout.focusMode ? 'Exit focus mode' : 'Enter focus mode'}
-                                    onClick={workspaceActions.toggleFocusMode}
-                                >
-                                    <IconArrowsMaximize size={16} />
-                                </SwarmActionIcon>
-                                <SwarmActionIcon
-                                    tone="secondary"
-                                    emphasis="ghost"
-                                    label="Compare the two most recent outputs"
-                                    onClick={() => setComparisonOpen(true)}
-                                    disabled={generatedImages.length < 2}
-                                >
-                                    <IconColumns size={16} />
-                                </SwarmActionIcon>
-                                <Menu shadow="md" position="bottom-end" withinPortal>
-                                    <Menu.Target>
-                                        <SwarmActionIcon
-                                            tone="secondary"
-                                            emphasis="ghost"
-                                            label="Open stage actions"
-                                        >
-                                            <IconDotsVertical size={16} />
-                                        </SwarmActionIcon>
-                                    </Menu.Target>
-                                    <Menu.Dropdown>
-                                        <Menu.Item
-                                            leftSection={<IconBrain size={14} />}
-                                            onClick={() => setAssistantPanelOpen(!assistantPanelOpen)}
-                                        >
-                                            {assistantPanelOpen ? 'Close Prompt Assistant' : 'Open Prompt Assistant'}
-                                        </Menu.Item>
-                                        <Menu.Item
-                                            leftSection={<IconBug size={14} />}
-                                            onClick={() => setDiagnosticsModalOpen(true)}
-                                        >
-                                            Show Diagnostics
-                                        </Menu.Item>
-                                        <Menu.Item
-                                            leftSection={<IconKeyboard size={14} />}
-                                            onClick={modals.openShortcutsModal}
-                                        >
-                                            Keyboard Shortcuts
-                                        </Menu.Item>
-                                        <Menu.Divider />
-                                        <Menu.Item
-                                            leftSection={<IconRoute2 size={14} />}
-                                            onClick={handlePromoteToWorkflow}
-                                        >
-                                            Send To Workflow
-                                        </Menu.Item>
-                                    </Menu.Dropdown>
-                                </Menu>
-                            </Group>
-                        </Group>
+                        <GenerateStageHeader
+                            currentMode={currentMode}
+                            generating={generating}
+                            selectedBackend={selectedBackend}
+                            selectedModelName={selectedModelName}
+                            generatedImageCount={generatedImages.length}
+                            stageHeaderCopy={stageHeaderCopy}
+                            isGalleryDrawer={isGalleryDrawer}
+                            usesAdvancedRail={usesAdvancedRail}
+                            showGalleryRail={showGalleryRail}
+                            focusMode={workspaceLayout.focusMode}
+                            assistantPanelOpen={assistantPanelOpen}
+                            onOpenGalleryDrawer={() => setGalleryDrawerOpen(true)}
+                            onToggleGalleryPinned={() => setGalleryPinned((value) => !value)}
+                            onToggleFocusMode={workspaceActions.toggleFocusMode}
+                            onOpenComparison={() => setComparisonOpen(true)}
+                            onToggleAssistantPanel={() => setAssistantPanelOpen(!assistantPanelOpen)}
+                            onOpenDiagnostics={() => setDiagnosticsModalOpen(true)}
+                            onOpenShortcuts={modals.openShortcutsModal}
+                            onPromoteToWorkflow={handlePromoteToWorkflow}
+                        />
                     </Box>
 
                     <Box className="generate-studio__stage-body">
@@ -1228,6 +1254,10 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 hasDiagnosticIssue={hasDiagnosticIssue}
                                 getImageActionContext={getCanvasActionContext}
                                 showWorkspaceTools={false}
+                                workspaceMode={currentMode}
+                                selectedModel={selectedModelName}
+                                selectedBackend={selectedBackend}
+                                generationParams={formValues}
                             />
                         </Suspense>
                     </Box>
@@ -1251,8 +1281,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                         >
                             <Suspense fallback={<PanelLoader />}>
                                 <GalleryPanel
-                                    generatedImages={generatedImages}
-                                    previewImage={selectedGalleryImage}
+                                    generatedImages={galleryImages}
+                                    previewImage={galleryPreviewImage}
                                     generating={generating}
                                     density={workspaceLayout.galleryDensity}
                                     onDensityChange={workspaceActions.setGalleryDensity}
@@ -1280,8 +1310,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                     <Box className="generate-studio__gallery-drawer-body">
                         <Suspense fallback={<PanelLoader />}>
                             <GalleryPanel
-                                generatedImages={generatedImages}
-                                previewImage={selectedGalleryImage}
+                                generatedImages={galleryImages}
+                                previewImage={galleryPreviewImage}
                                 generating={generating}
                                 density={workspaceLayout.galleryDensity}
                                 onDensityChange={workspaceActions.setGalleryDensity}
@@ -1394,7 +1424,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                             paramForm.form.setFieldValue('loraweights', loraWeights);
                         }}
                         onAddToPrompt={(text) => {
-                            const currentPrompt = paramForm.form.values.prompt || '';
+                            const currentPrompt = promptValue;
                             const separator = currentPrompt.endsWith(' ') || currentPrompt === '' ? '' : ' ';
                             paramForm.form.setFieldValue('prompt', currentPrompt + separator + text);
                         }}
@@ -1417,7 +1447,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                     <ModelBrowser
                         opened={modals.modelBrowserOpened}
                         onClose={modals.closeModelBrowser}
-                        selectedModel={paramForm.form.values.model || ''}
+                        selectedModel={selectedModelName}
                         onModelSelect={paramForm.handleModelSelect}
                         onClearModel={() => paramForm.form.setFieldValue('model', '')}
                     />
@@ -1438,7 +1468,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                         <HistoryPanel
                             onLoad={(entry) => {
                                 paramForm.form.setValues({
-                                    ...paramForm.form.values,
+                                    ...formValues,
                                     ...entry.params,
                                     prompt: entry.prompt,
                                     negativeprompt: entry.negativePrompt,
@@ -1463,7 +1493,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                         opened={modals.scheduleModalOpen}
                         onClose={modals.closeScheduleModal}
                         onSchedule={(options) => {
-                            addQueueJob(paramForm.form.values, {
+                            addQueueJob(formValues, {
                                 name: options.name,
                                 priority: options.priority,
                                 scheduledAt: options.scheduledAt,
@@ -1483,7 +1513,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 color: 'green',
                             });
                         }}
-                        params={paramForm.form.values}
+                        params={formValues}
                     />
                 </Suspense>
             )}
@@ -1508,9 +1538,9 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                         opened={assistantPanelOpen}
                         onClose={() => setAssistantPanelOpen(false)}
                         context={{
-                            prompt: paramForm.form.values.prompt || '',
-                            negativePrompt: paramForm.form.values.negativeprompt || '',
-                            model: paramForm.form.values.model || '',
+                            prompt: promptValue,
+                            negativePrompt: negativePromptValue,
+                            model: selectedModelName,
                             activeLoras: activeLoras.map((item) => item.lora),
                             activeEmbeddings: Array.isArray(paramForm.form.values['embeddings'])
                                 ? (paramForm.form.values['embeddings'] as string[])

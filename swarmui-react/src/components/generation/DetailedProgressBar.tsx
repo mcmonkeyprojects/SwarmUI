@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Box,
     Group,
@@ -7,7 +7,7 @@ import {
     Image,
     Paper,
 } from '@mantine/core';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { IconClock, IconLoader } from '@tabler/icons-react';
 import { livePreviewPulse, instantSpring } from '../../utils/animations';
 
@@ -65,11 +65,27 @@ export function DetailedProgressBar({
     startTime,
     isGenerating,
 }: DetailedProgressBarProps) {
+    const prefersReducedMotion = useReducedMotion();
+    const disableMotion = prefersReducedMotion || isGenerating;
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        if (!isGenerating) {
+            return;
+        }
+
+        const intervalId = window.setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
+
+        return () => window.clearInterval(intervalId);
+    }, [isGenerating]);
+
     // Calculate ETA based on elapsed time and progress
     const eta = useMemo(() => {
         if (!startTime || progress <= 0 || progress >= 100) return null;
 
-        const elapsed = Date.now() - startTime;
+        const elapsed = now - startTime;
         const estimatedTotal = elapsed / (progress / 100);
         const remaining = estimatedTotal - elapsed;
 
@@ -80,7 +96,7 @@ export function DetailedProgressBar({
         const minutes = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${minutes}m ${secs}s`;
-    }, [startTime, progress]);
+    }, [now, startTime, progress]);
 
     // Format step display with bounds checking
     const stepDisplay = useMemo(() => {
@@ -142,27 +158,49 @@ export function DetailedProgressBar({
             <Group gap="md" align="flex-start" wrap="nowrap">
                 {/* Live preview thumbnail with pulse animation */}
                 {previewImage && (
-                    <motion.div
-                        variants={livePreviewPulse}
-                        animate={isGenerating ? 'animate' : undefined}
-                        style={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: 8,
-                            overflow: 'hidden',
-                            border: '1px solid var(--theme-gray-5)',
-                            backgroundColor: 'var(--theme-gray-8)',
-                            flexShrink: 0,
-                        }}
-                    >
-                        <Image
-                            src={previewImage}
-                            alt="Preview"
-                            fit="cover"
-                            w={80}
-                            h={80}
-                        />
-                    </motion.div>
+                    disableMotion ? (
+                        <Box
+                            style={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: 8,
+                                overflow: 'hidden',
+                                border: '1px solid var(--theme-gray-5)',
+                                backgroundColor: 'var(--theme-gray-8)',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Image
+                                src={previewImage}
+                                alt="Preview"
+                                fit="cover"
+                                w={80}
+                                h={80}
+                            />
+                        </Box>
+                    ) : (
+                        <motion.div
+                            variants={livePreviewPulse}
+                            animate={isGenerating ? 'animate' : undefined}
+                            style={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: 8,
+                                overflow: 'hidden',
+                                border: '1px solid var(--theme-gray-5)',
+                                backgroundColor: 'var(--theme-gray-8)',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Image
+                                src={previewImage}
+                                alt="Preview"
+                                fit="cover"
+                                w={80}
+                                h={80}
+                            />
+                        </motion.div>
+                    )
                 )}
 
                 {/* Progress info */}
@@ -189,23 +227,39 @@ export function DetailedProgressBar({
                             boxShadow: 'inset 0 1px 1px color-mix(in srgb, black 30%, transparent)',
                         }}
                     >
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={instantSpring}
-                            style={{
-                                height: '100%',
-                                background: isGenerating
-                                    ? 'var(--theme-progress-fill)'
-                                    : 'var(--theme-progress-fill-complete)',
-                                borderRadius: 3,
-                                boxShadow: isGenerating
-                                    ? '0 0 12px var(--theme-progress-glow)'
-                                    : '0 0 10px var(--theme-progress-glow-complete)',
-                            }}
-                        />
+                        {disableMotion ? (
+                            <Box
+                                style={{
+                                    width: `${progress}%`,
+                                    height: '100%',
+                                    background: isGenerating
+                                        ? 'var(--theme-progress-fill)'
+                                        : 'var(--theme-progress-fill-complete)',
+                                    borderRadius: 3,
+                                    boxShadow: isGenerating
+                                        ? '0 0 12px var(--theme-progress-glow)'
+                                        : '0 0 10px var(--theme-progress-glow-complete)',
+                                }}
+                            />
+                        ) : (
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progress}%` }}
+                                transition={instantSpring}
+                                style={{
+                                    height: '100%',
+                                    background: isGenerating
+                                        ? 'var(--theme-progress-fill)'
+                                        : 'var(--theme-progress-fill-complete)',
+                                    borderRadius: 3,
+                                    boxShadow: isGenerating
+                                        ? '0 0 12px var(--theme-progress-glow)'
+                                        : '0 0 10px var(--theme-progress-glow-complete)',
+                                }}
+                            />
+                        )}
                         {/* Animated shimmer overlay during generation */}
-                        {isGenerating && (
+                        {isGenerating && !disableMotion && (
                             <motion.div
                                 animate={{ x: ['-100%', '200%'] }}
                                 transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
@@ -226,16 +280,22 @@ export function DetailedProgressBar({
                     <Group gap="md" justify="space-between">
                         <Group gap="sm">
                             {/* Percentage with animated counter effect */}
-                            <motion.div
-                                key={Math.round(progress)}
-                                initial={{ opacity: 0.5, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.1 }}
-                            >
+                            {disableMotion ? (
                                 <Text size="xs" fw={600} style={{ color: 'var(--theme-progress-label)' }}>
                                     {hasProgressEvent ? `${Math.round(progress)}%` : '...'}
                                 </Text>
-                            </motion.div>
+                            ) : (
+                                <motion.div
+                                    key={Math.round(progress)}
+                                    initial={{ opacity: 0.5, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.1 }}
+                                >
+                                    <Text size="xs" fw={600} style={{ color: 'var(--theme-progress-label)' }}>
+                                        {hasProgressEvent ? `${Math.round(progress)}%` : '...'}
+                                    </Text>
+                                </motion.div>
+                            )}
 
                             {/* Step counter */}
                             {stepDisplay && (

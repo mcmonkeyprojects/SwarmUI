@@ -1,14 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
-  commitCartWords,
+  commitCartSections,
   createEmptyPresetCartState,
   parseWordsFromText,
   stagePresetInCart,
   unstagePresetFromCart,
   unstageWordFromCart,
 } from '../features/presetLibrary/staging';
-import type { LibraryPreset, PresetCategory } from '../features/presetLibrary/types';
+import type {
+  LibraryPreset,
+  PresetCategory,
+  PresetPromptSection,
+} from '../features/presetLibrary/types';
 
 export const PRESET_LIBRARY_STORAGE_KEY = 'swarmui:presetLibrary:v1';
 export const PRESET_LIBRARY_MIGRATION_FLAG_KEY = 'swarmui:presetLibrary:migratedFromWizard:v1';
@@ -20,12 +24,14 @@ interface PresetLibraryState {
   showExplicit: boolean;
   stagedWords: string[];
   stagedFromPresetIds: string[];
+  stagedSections: PresetPromptSection[];
   searchQuery: string;
   stagePreset: (preset: LibraryPreset) => void;
   unstagePreset: (presetId: string) => void;
   unstageWord: (displayWord: string) => void;
   clearStaged: () => void;
   commitStaged: () => string;
+  commitStagedSections: () => PresetPromptSection[];
   migrateFromWizardStore: () => Promise<void>;
   addUserPreset: (
     preset: Omit<LibraryPreset, 'id' | 'isDefault' | 'createdAt' | 'updatedAt'>
@@ -45,15 +51,19 @@ let privateCartState = createEmptyPresetCartState();
 
 function syncCartState(
   cartState: ReturnType<typeof createEmptyPresetCartState>
-): Pick<PresetLibraryState, 'stagedWords' | 'stagedFromPresetIds'> {
+): Pick<PresetLibraryState, 'stagedWords' | 'stagedFromPresetIds' | 'stagedSections'> {
   privateCartState = cartState;
   return {
     stagedWords: cartState.stagedWords,
     stagedFromPresetIds: cartState.stagedFromPresetIds,
+    stagedSections: commitCartSections(cartState),
   };
 }
 
-function clearPrivateCartState(): Pick<PresetLibraryState, 'stagedWords' | 'stagedFromPresetIds'> {
+function clearPrivateCartState(): Pick<
+  PresetLibraryState,
+  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections'
+> {
   return syncCartState(createEmptyPresetCartState());
 }
 
@@ -95,6 +105,7 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
       showExplicit: false,
       stagedWords: [],
       stagedFromPresetIds: [],
+      stagedSections: [],
       searchQuery: '',
 
       stagePreset: (preset) => {
@@ -120,9 +131,17 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
       },
 
       commitStaged: () => {
-        const committedText = commitCartWords(get().stagedWords);
+        const committedText = commitCartSections(privateCartState)
+          .map((section) => section.text)
+          .join('\n');
         set(clearPrivateCartState());
         return committedText;
+      },
+
+      commitStagedSections: () => {
+        const committedSections = commitCartSections(privateCartState);
+        set(clearPrivateCartState());
+        return committedSections;
       },
 
       migrateFromWizardStore: async () => {

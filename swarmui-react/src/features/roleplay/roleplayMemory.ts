@@ -6,6 +6,7 @@ import type {
     RoleplayMemoryFact,
     RoleplayMemoryState,
 } from '../../types/roleplay';
+import { getMessageContent } from './roleplayMessageUtils';
 
 /** Maximum number of memory facts stored per session. */
 export const ROLEPLAY_MAX_MEMORY_FACTS = 50;
@@ -38,7 +39,9 @@ export function getMessagesForMemoryRefresh(
     messages: ChatMessage[],
     maxMessages = 20,
 ): ChatMessage[] {
-    return messages.slice(-maxMessages);
+    return messages
+        .filter((message) => message.includedInPrompt !== false)
+        .slice(-maxMessages);
 }
 
 /**
@@ -46,7 +49,7 @@ export function getMessagesForMemoryRefresh(
  */
 export function formatMessagesForMemoryRefresh(messages: ChatMessage[]): string {
     return messages
-        .map((m) => `[${m.role}]: ${m.content}`)
+        .map((m) => `[${m.role}]: ${getMessageContent(m)}`)
         .join('\n\n');
 }
 

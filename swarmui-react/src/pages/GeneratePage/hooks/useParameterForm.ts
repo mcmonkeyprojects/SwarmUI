@@ -11,6 +11,8 @@ import {
 } from '../../../store/generationStore';
 import { useModelLoading } from '../../../hooks/useModelLoading';
 import { useT2IParams } from '../../../hooks/useT2IParams';
+import { usePromptEnhanceStore } from '../../../stores/promptEnhanceStore';
+import { unloadLocalTextModelNow } from '../../../services/localModelVramCoordinator';
 
 /**
  * Default form values for generation parameters.
@@ -98,6 +100,9 @@ export function useParameterForm(options: UseParameterFormOptions = {}) {
     const { params: storedParams, setParams } = useGenerationParams();
     const { selectedModel: storedSelectedModel, setSelectedModel: setStoreSelectedModel } = useSelectedModel();
     const { activeLoras, setLoras } = useActiveLoras();
+    const enhanceEndpointUrl = usePromptEnhanceStore((state) => state.endpointUrl);
+    const enhanceModelId = usePromptEnhanceStore((state) => state.modelId);
+    const enhanceServerMode = usePromptEnhanceStore((state) => state.detectedServerMode);
 
     // Dynamic parameter data from backend
     const { paramDefaults, isLoaded: t2iParamsLoaded } = useT2IParams();
@@ -346,7 +351,7 @@ export function useParameterForm(options: UseParameterFormOptions = {}) {
     }, [loadingModel, modelLoadProgress, modelLoadError, modelName, onModelLoadStart, onModelLoadProgress, onModelLoadComplete, onModelLoadError]);
 
     // Handle model selection via WebSocket store
-    const handleModelSelect = useCallback((modelName: string | null) => {
+    const handleModelSelect = useCallback(async (modelName: string | null) => {
         if (!modelName) {
             form.setFieldValue('model', '');
             setStoreSelectedModel('');
@@ -359,9 +364,22 @@ export function useParameterForm(options: UseParameterFormOptions = {}) {
         form.setFieldValue('model', modelName);
         setStoreSelectedModel(modelName);
 
+        const unloadResult = await unloadLocalTextModelNow({
+            endpointUrl: enhanceEndpointUrl,
+            modelId: enhanceModelId,
+            serverMode: enhanceServerMode,
+        });
+        if (unloadResult.attempted && !unloadResult.success) {
+            notifications.show({
+                title: 'Assistant Model Still Loaded',
+                message: unloadResult.error || 'The assistant model could not be unloaded before loading the image model.',
+                color: 'yellow',
+            });
+        }
+
         // Trigger backend load via useModelLoading hook
         loadModel(modelName);
-    }, [form, setStoreSelectedModel, loadModel]);
+    }, [enhanceEndpointUrl, enhanceModelId, enhanceServerMode, form, setStoreSelectedModel, loadModel]);
 
     // Handle LoRA changes
     const handleLoraChange = useCallback((loras: LoRASelection[]) => {

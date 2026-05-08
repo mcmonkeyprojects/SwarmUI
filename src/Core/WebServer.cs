@@ -134,7 +134,7 @@ public class WebServer
         // I don't know who's to blame, probably half Microsoft half AWS, but if this is enabled (which it is by default on all profiles, even production?!),
         // it creates a persistent filewatcher which locks up hard. So, forcibly disable it. Which it should be disabled anyway. Obviously.
         Environment.SetEnvironmentVariable("ASPNETCORE_hostBuilder:reloadConfigOnChange", "false");
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { WebRootPath = "src/wwwroot" });
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions() { WebRootPath = "src/wwwroot" });
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Limits.MaxRequestHeadersTotalSize = 1024 * 1024;
@@ -327,13 +327,13 @@ public class WebServer
             foreach (string script in e.ScriptFiles)
             {
                 string fname = $"ExtensionFile/{e.ExtensionName}/{script}";
-                ExtensionSharedFiles.Add(fname, new (() => File.ReadAllText($"{e.FilePath}{script}")));
+                ExtensionSharedFiles.Add(fname, new(() => File.ReadAllText($"{e.FilePath}{script}")));
                 scripts.Append($"<script src=\"{fname}?vary={Utilities.VaryID}\"></script>\n");
             }
             foreach (string css in e.StyleSheetFiles)
             {
                 string fname = $"ExtensionFile/{e.ExtensionName}/{css}";
-                ExtensionSharedFiles.Add(fname, new (() => File.ReadAllText($"{e.FilePath}{css}")));
+                ExtensionSharedFiles.Add(fname, new(() => File.ReadAllText($"{e.FilePath}{css}")));
                 stylesheets.Append($"<link rel=\"stylesheet\" href=\"{fname}?vary={Utilities.VaryID}\" />");
             }
             foreach (string file in e.OtherAssets)
@@ -342,9 +342,9 @@ public class WebServer
                 string toRead = $"{e.FilePath}{file}";
                 ExtensionAssets.Add(fname, new(() => File.ReadAllBytes(toRead)));
             }
-            if (Directory.Exists($"{e.FilePath}/Tabs/Text2Image/"))
+            if (Directory.Exists($"{e.FilePath}Tabs/Text2Image/"))
             {
-                foreach (string file in Directory.EnumerateFiles($"{e.FilePath}/Tabs/Text2Image/", "*.html"))
+                foreach (string file in Directory.EnumerateFiles($"{e.FilePath}Tabs/Text2Image/", "*.html"))
                 {
                     string simpleName = file.AfterLast('/').BeforeLast('.');
                     string id = T2IParamTypes.CleanTypeName(simpleName);

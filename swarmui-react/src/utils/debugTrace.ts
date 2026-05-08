@@ -35,6 +35,14 @@ export function getRecentDebugTrace(): string {
     return traceBuffer.join('\n');
 }
 
+export function recordDebugTrace(name: string, values: Record<string, unknown>) {
+    const payload = Object.fromEntries(
+        Object.entries(values).map(([key, value]) => [key, summarizeValue(value)])
+    );
+    logger.info(`[Trace:${name}] event`, payload);
+    pushTraceLine(`[Trace:${name}] event ${formatTracePayload(payload)}`);
+}
+
 export function useDebugTrace(name: string, values: Record<string, unknown>) {
     const renderCountRef = useRef(0);
     const previousRef = useRef<Record<string, unknown> | null>(null);

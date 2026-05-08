@@ -18,6 +18,7 @@
 [Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Modern, Great Quality, lightweight |
 [Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
+[ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -33,6 +34,8 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 [HiDream i1](/docs/Obscure%20Model%20Support.md#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
 [OmniGen 2](/docs/Obscure%20Model%20Support.md#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality, quickly outclassed |
 [Ovis](/docs/Obscure%20Model%20Support.md#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
+[LongCat-Image](/docs/Obscure%20Model%20Support.md#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
+[Zeta Chroma](/docs/Obscure%20Model%20Support.md#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -283,7 +286,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - Select via the advanced `Mistral Model` parameter
 - **Parameters:**
     - **Prompt:** Prompting guide from the model creators here <https://docs.bfl.ai/guides/prompting_guide_flux2>
-        - Notably, they trained heavily on complex JSON structured prompts to allow for very complex scene control, though this is not required
+        - Their docs recommend a JSON structured prompting, but this does not seem all that much more useful in practice, and the JSON syntax in a prompt may trigger parsing issues
         - They used a powerful LLM for inputs, allow for multiple languages and a variety of ways of phrasing/formatting text to work out
     - **Resolution:** Flux2 supports just about any resolution you can think of, from 64x64 up to 4 megapixels (2048x2048)
     - **CFG Scale:** `1`
@@ -561,6 +564,31 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Resolution:** Side length 1024 recommend, but any lower value works too. Higher values do not work well. Refiner upscale needs tiling due to corruption at high res.
     - **Sampler:** Defaults to `ER-SDE-Solver`, but all common samplers work. They officially recommend also trying out `Euler Ancestral` or `DPM++ 2M SDE`
     - **Scheduler:** Default is fine (`Simple`), or you can experiment at will. The model is adaptable.
+
+# ERNIE
+
+![img](/docs/images/models/ernie.jpg)
+
+*(ERNIE Base, Steps=20, CFG=4)*
+
+- Baidu's [ERNIE Image](<https://huggingface.co/baidu/ERNIE-Image>) is supported in SwarmUI!
+- It is an 8B model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
+    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/ERNIE-Image - turbo](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors>)
+    - Or the base version (in fat BF16) [Comfy-Org/ERNIE-Image - base](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image.safetensors>)
+    - FP8 links pending
+    - Save in `diffusion_models`
+- Uses the Flux.2 VAE, will be downloaded and handled automatically
+- Uses the Ministral 3 3b text encoder, will be downloaded and handled automatically
+- **Parameters:**
+    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply.
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `4`)
+    - **Steps:** For Turbo `8` is recommended. For Base, 20+ steps as normal.
+    - **Resolution:** Side length `1024` is the standard.
+        - Down to 512 works still, up to 1536 is fine.
+        - Out of range doesn't corrupt immediately but will fail at composition.
+        - Prefers aspects from square to 16:9, gets funny in 21:9
 
 # Video Models
 

@@ -1,4 +1,4 @@
-import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, type ReactNode, Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Accordion,
     Box,
@@ -53,19 +53,25 @@ import {
 import { PromptSection } from './ParameterPanel/PromptSection';
 import { DimensionControls } from './ParameterPanel/DimensionControls';
 import { PresetControls } from './ParameterPanel/PresetControls';
-import { BatchOutputFolderControl } from './ParameterPanel/BatchOutputFolderControl';
 import { GenerateButton } from './ParameterPanel/GenerateButton';
 import {
-    ControlNetAccordion,
     InitImageAccordion,
     ModelAddonsAccordion,
     OptionsAccordion,
-    RefinerAccordion,
     SamplerAccordion,
     VariationAccordion,
-    VideoAccordion,
 } from './accordions';
 import type { ModelMediaCapabilities } from '../../../utils/modelCapabilities';
+
+const ControlNetAccordion = lazy(() =>
+    import('./accordions/ControlNetAccordion').then((module) => ({ default: module.ControlNetAccordion }))
+);
+const RefinerAccordion = lazy(() =>
+    import('./accordions/RefinerAccordion').then((module) => ({ default: module.RefinerAccordion }))
+);
+const VideoAccordion = lazy(() =>
+    import('./accordions/VideoAccordion').then((module) => ({ default: module.VideoAccordion }))
+);
 
 interface WorkspaceSidebarProps {
     form: UseFormReturnType<GenerateParams>;
@@ -119,9 +125,6 @@ interface WorkspaceSidebarProps {
     wildcardOptions: { value: string; label: string }[];
     wildcardText: string;
     onWildcardTextChange: (text: string) => void;
-    batchOutputFolder: string;
-    onBatchOutputFolderChange: (folder: string) => void;
-    onClearBatchOutputFolder: () => void;
     quickModules: QuickModuleKey[];
     onQuickModulesChange: (sections: QuickModuleKey[]) => void;
     inspectorSections: string[];
@@ -141,6 +144,8 @@ const REFINER_METHOD_LABELS: Record<string, string> = {
     StepSwapNoisy: 'Step Swap Noisy',
 };
 
+const DEFAULT_UPSCALE_METHOD = 'pixel-lanczos';
+
 function updateLoRAWeight(activeLoras: LoRASelection[], index: number, weight: number): LoRASelection[] {
     return activeLoras.map((lora, currentIndex) => (
         currentIndex === index ? { ...lora, weight } : lora
@@ -155,6 +160,27 @@ function humanizeToken(value: string): string {
     return value
         .replace(/[_-]+/g, ' ')
         .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function formatUpscaleMethodLabel(model: Model): string {
+    const value = model.name || '';
+    const title = model.title || '';
+    if (title && title !== value) {
+        return title;
+    }
+    if (value.startsWith('model-')) {
+        return `Model: ${value.slice('model-'.length)}`;
+    }
+    if (value.startsWith('latentmodel-')) {
+        return `Latent Model: ${value.slice('latentmodel-'.length)}`;
+    }
+    if (value.startsWith('pixel-')) {
+        return `Pixel: ${humanizeToken(value.slice('pixel-'.length))}`;
+    }
+    if (value.startsWith('latent-')) {
+        return `Latent: ${humanizeToken(value.slice('latent-'.length))}`;
+    }
+    return humanizeToken(value);
 }
 
 function mergeUniqueItems<T extends string>(items: readonly T[], additions: readonly T[]): T[] {
@@ -243,6 +269,18 @@ function SectionItemLabel({
     );
 }
 
+function AccordionLoader() {
+    return (
+        <ElevatedCard elevation="paper" tone="neutral" className="generate-studio__empty-panel generate-studio__empty-panel--compact">
+            <Stack gap={4} align="center" py="sm">
+                <Text size="xs" c="var(--theme-text-secondary)">
+                    Loading controls...
+                </Text>
+            </Stack>
+        </ElevatedCard>
+    );
+}
+
 export const WorkspaceSidebar = memo(function WorkspaceSidebar({
     form,
     onGenerate,
@@ -290,9 +328,6 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
     wildcardOptions,
     wildcardText,
     onWildcardTextChange,
-    batchOutputFolder,
-    onBatchOutputFolderChange,
-    onClearBatchOutputFolder,
     quickModules,
     onQuickModulesChange,
     inspectorSections,
@@ -379,11 +414,31 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
     const refinerMethodLabel = REFINER_METHOD_LABELS[form.values.refinermethod as string]
         || humanizeToken(String(form.values.refinermethod || 'PostApply'));
 
+    const selectedUpscaleMethod = String(form.values.refinerupscalemethod || DEFAULT_UPSCALE_METHOD);
+
     const upscaleMethodLabel = useMemo(() => {
-        const selectedMethod = String(form.values.refinerupscalemethod || 'pixel-lanczos');
-        const matchingModel = upscaleModels.find((model) => model.name === selectedMethod);
-        return matchingModel?.title || matchingModel?.name || humanizeToken(selectedMethod);
-    }, [form.values.refinerupscalemethod, upscaleModels]);
+        const matchingModel = upscaleModels.find((model) => model.name === selectedUpscaleMethod);
+        return matchingModel ? formatUpscaleMethodLabel(matchingModel) : humanizeToken(selectedUpscaleMethod);
+    }, [selectedUpscaleMethod, upscaleModels]);
+
+    const quickUpscaleMethodOptions = useMemo(() => {
+        const seen = new Set<string>();
+        const options: { value: string; label: string }[] = [];
+        const pushOption = (value: string, label: string) => {
+            if (!value || seen.has(value)) {
+                return;
+            }
+            seen.add(value);
+            options.push({ value, label });
+        };
+
+        pushOption(DEFAULT_UPSCALE_METHOD, 'Pixel: Lanczos');
+        for (const model of upscaleModels) {
+            pushOption(model.name, formatUpscaleMethodLabel(model));
+        }
+        pushOption(selectedUpscaleMethod, humanizeToken(selectedUpscaleMethod));
+        return options;
+    }, [selectedUpscaleMethod, upscaleModels]);
 
     const refinerModelOptions = useMemo(() => [
         { value: '', label: 'Use Base Model' },
@@ -412,6 +467,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
         () => mergeUniqueItems(manualImageSetupSections, forcedImageSetupSections),
         [forcedImageSetupSections, manualImageSetupSections]
     );
+    const imageSetupExpanded = inspectorSections.includes('image-setup');
 
     useEffect(() => {
         if (modelMediaCapabilities.supportsVideo && !previousVideoSupportRef.current) {
@@ -570,8 +626,8 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                         <Box className="generate-studio__sidebar-sticky">
                             <SectionHero
                                 className="generate-studio__sidebar-hero"
-                                title="Studio Workspace"
-                                subtitle="Simple essentials first, with faster access to the advanced stack you actually use."
+                                title="Generate Setup"
+                                subtitle="Model, prompt, size, then generate."
                                 icon={<IconSparkles size={18} color="var(--theme-brand)" />}
                                 badges={[
                                     {
@@ -615,6 +671,27 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                     onDeletePreset={onDeletePreset}
                                     onDuplicatePreset={onDuplicatePreset}
                                 />
+
+                                <Box className="generate-studio__run-status-strip">
+                                    <Box className="generate-studio__run-status-item" data-ready={selectedModel ? 'true' : undefined}>
+                                        <Text size="xs" fw={700} c="var(--theme-text-secondary)">Model</Text>
+                                        <Text size="xs" fw={600} truncate>
+                                            {selectedModel?.title || selectedModel?.name || 'Choose one'}
+                                        </Text>
+                                    </Box>
+                                    <Box className="generate-studio__run-status-item" data-ready={String(form.values.prompt || '').trim() ? 'true' : undefined}>
+                                        <Text size="xs" fw={700} c="var(--theme-text-secondary)">Prompt</Text>
+                                        <Text size="xs" fw={600}>
+                                            {String(form.values.prompt || '').trim() ? 'Ready' : 'Empty'}
+                                        </Text>
+                                    </Box>
+                                    <Box className="generate-studio__run-status-item" data-ready="true">
+                                        <Text size="xs" fw={700} c="var(--theme-text-secondary)">Canvas</Text>
+                                        <Text size="xs" fw={600}>
+                                            {form.values.width || 1024} x {form.values.height || 1024}
+                                        </Text>
+                                    </Box>
+                                </Box>
 
                                 <ElevatedCard elevation="paper" tone="brand" className="generate-studio__model-card">
                                     <Stack gap="xs">
@@ -727,12 +804,6 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                         </Group>
                                     </Stack>
                                 </ElevatedCard>
-
-                                <BatchOutputFolderControl
-                                    value={batchOutputFolder}
-                                    onChange={onBatchOutputFolderChange}
-                                    onClear={onClearBatchOutputFolder}
-                                />
 
                                 <GenerateButton
                                     generating={generating}
@@ -971,7 +1042,13 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                         label="Enable Refiner"
                                                         size="sm"
                                                         checked={enableRefiner}
-                                                        onChange={(event) => setEnableRefiner(event.currentTarget.checked)}
+                                                        onChange={(event) => {
+                                                            const checked = event.currentTarget.checked;
+                                                            setEnableRefiner(checked);
+                                                            if (checked && refinerUpscale <= 1 && refinerControl <= 0 && !form.values.refinermodel) {
+                                                                form.setFieldValue('refinerupscale', 2);
+                                                            }
+                                                        }}
                                                     />
                                                     <SwarmBadge tone={enableRefiner ? 'warning' : 'secondary'} emphasis="soft">
                                                         {enableRefiner ? 'Active' : 'Optional'}
@@ -1008,11 +1085,31 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                     decimalScale={2}
                                                 />
 
+                                                <Select
+                                                    label="Upscale Method"
+                                                    placeholder="Select upscale method"
+                                                    data={quickUpscaleMethodOptions}
+                                                    value={selectedUpscaleMethod}
+                                                    onChange={(value) => {
+                                                        const nextValue = value || DEFAULT_UPSCALE_METHOD;
+                                                        form.setFieldValue('refinerupscalemethod', nextValue);
+                                                        if (!enableRefiner) {
+                                                            setEnableRefiner(true);
+                                                        }
+                                                        if (refinerUpscale <= 1) {
+                                                            form.setFieldValue('refinerupscale', 2);
+                                                        }
+                                                    }}
+                                                    searchable
+                                                    nothingFoundMessage="No upscale methods found"
+                                                />
+
                                                 <SliderWithInput
                                                     label="Refiner Control"
                                                     value={refinerControl}
                                                     onChange={(value) => {
                                                         form.setFieldValue('refinercontrol', value);
+                                                        form.setFieldValue('refinercontrolpercentage', value);
                                                         if (value > 0 && !enableRefiner) {
                                                             setEnableRefiner(true);
                                                         }
@@ -1217,48 +1314,52 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                 />
                                             </Accordion.Control>
                                             <Accordion.Panel>
+                                                {imageSetupExpanded ? (
                                                     <Accordion
-                                                    multiple
-                                                    value={imageSetupSections}
-                                                    onChange={(value) => setManualImageSetupSections(value)}
-                                                >
-                                                    <InitImageAccordion
-                                                        form={form}
-                                                        enabled={enableInitImage}
-                                                        onToggle={setEnableInitImage}
-                                                        initImagePreview={quickInitImagePreview}
-                                                        onUpload={onInitImageUpload}
-                                                        onClear={onClearInitImage}
-                                                    />
-                                                    <VariationAccordion
-                                                        form={form}
-                                                        enabled={enableVariation}
-                                                        onToggle={setEnableVariation}
-                                                    />
-                                                    <ControlNetAccordion
-                                                        form={form}
-                                                        enabled={enableControlNet}
-                                                        onToggle={setEnableControlNet}
-                                                        controlNetOptions={controlNetOptions}
-                                                        loadingControlNets={loadingControlNets}
-                                                        onRefreshModels={onRefreshControlNets}
-                                                    />
-                                                    <RefinerAccordion
-                                                        form={form}
-                                                        enabled={enableRefiner}
-                                                        onToggle={setEnableRefiner}
-                                                        models={models}
-                                                        upscaleModels={upscaleModels}
-                                                        vaeOptions={vaeOptions}
-                                                    />
-                                                    <VideoAccordion
-                                                        form={form}
-                                                        enabled={enableVideo}
-                                                        onToggle={setEnableVideo}
-                                                        capabilities={modelMediaCapabilities}
-                                                        modelLabel={selectedModel?.title || selectedModel?.name || form.values.model || undefined}
-                                                    />
-                                                </Accordion>
+                                                        multiple
+                                                        value={imageSetupSections}
+                                                        onChange={(value) => setManualImageSetupSections(value)}
+                                                    >
+                                                        <InitImageAccordion
+                                                            form={form}
+                                                            enabled={enableInitImage}
+                                                            onToggle={setEnableInitImage}
+                                                            initImagePreview={quickInitImagePreview}
+                                                            onUpload={onInitImageUpload}
+                                                            onClear={onClearInitImage}
+                                                        />
+                                                        <VariationAccordion
+                                                            form={form}
+                                                            enabled={enableVariation}
+                                                            onToggle={setEnableVariation}
+                                                        />
+                                                        <Suspense fallback={<AccordionLoader />}>
+                                                            <ControlNetAccordion
+                                                                form={form}
+                                                                enabled={enableControlNet}
+                                                                onToggle={setEnableControlNet}
+                                                                controlNetOptions={controlNetOptions}
+                                                                loadingControlNets={loadingControlNets}
+                                                                onRefreshModels={onRefreshControlNets}
+                                                            />
+                                                            <RefinerAccordion
+                                                                form={form}
+                                                                enabled={enableRefiner}
+                                                                onToggle={setEnableRefiner}
+                                                                models={models}
+                                                                upscaleModels={upscaleModels}
+                                                                vaeOptions={vaeOptions}
+                                                            />
+                                                            <VideoAccordion
+                                                                form={form}
+                                                                enabled={enableVideo}
+                                                                onToggle={setEnableVideo}
+                                                                capabilities={modelMediaCapabilities}
+                                                                modelLabel={selectedModel?.title || selectedModel?.name || form.values.model || undefined}
+                                                            />
+                                                        </Suspense>
+                                                    </Accordion>
+                                                ) : null}
                                             </Accordion.Panel>
                                         </Accordion.Item>
                                     </Box>
@@ -1296,7 +1397,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                             </Accordion.Control>
                                             <Accordion.Panel>
                                                 <Stack gap="md">
-                                                    <OptionsAccordion form={form} />
+                                                <OptionsAccordion form={form} />
                                                     <ElevatedCard elevation="paper" tone="neutral">
                                                         <Stack gap="xs">
                                                             <Group justify="space-between" align="center">

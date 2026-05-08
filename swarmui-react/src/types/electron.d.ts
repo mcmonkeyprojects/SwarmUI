@@ -6,6 +6,9 @@ interface ElectronNativeSpellIssue {
 }
 
 interface ElectronBridge {
+    getPerformanceMetricsPath?: () => Promise<string>;
+    readPerformanceMetrics?: () => Promise<string | null>;
+    writePerformanceMetrics?: (payload: string) => Promise<{ success: boolean; path: string; error?: string }>;
     getSwarmUIStatus?: () => Promise<{ running: boolean; serverReady: boolean; port: number }>;
     restartSwarmUI?: () => Promise<{ success: boolean }>;
     shutdownApp?: () => Promise<boolean>;

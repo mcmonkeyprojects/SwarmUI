@@ -287,6 +287,15 @@ function save_new_preset() {
             let selected = [...elem.selectedOptions].map(o => o.value);
             data[type.id] = selected.join(',');
         }
+        else if (type.type == "image_list") {
+            continue;
+        }
+        else if (type.type == "image" || type.type == "audio" || type.type == "video") {
+            let val = getInputVal(elem);
+            if (val && typeof val == 'string' && !val.startsWith('data:')) {
+                data[type.id] = val;
+            }
+        }
         else {
             data[type.id] = elem.value;
         }

@@ -298,8 +298,11 @@ export const RefinerAccordion = memo(function RefinerAccordion({
 
                     <SliderWithInput
                         label="Refiner Control Percentage"
-                        value={form.values.refinercontrol ?? 0.2}
-                        onChange={(value) => form.setFieldValue('refinercontrol', value)}
+                        value={form.values.refinercontrolpercentage ?? form.values.refinercontrol ?? 0.2}
+                        onChange={(value) => {
+                            form.setFieldValue('refinercontrol', value);
+                            form.setFieldValue('refinercontrolpercentage', value);
+                        }}
                         min={0}
                         max={1}
                         step={0.05}

@@ -76,7 +76,6 @@ class GenPageBrowserClass {
         this.container = getRequiredElementById(container);
         this.listFoldersAndFiles = listFoldersAndFiles;
         this.id = id;
-        this.defaultDepth = defaultDepth;
         this.format = localStorage.getItem(`browser_${this.id}_format`) || getCookie(`${id}_format`) || defaultFormat; // TODO: Remove the old cookie
         this.describe = describe;
         this.select = select;
@@ -85,7 +84,7 @@ class GenPageBrowserClass {
         this.extraHeader = extraHeader;
         this.navCaller = this.navigate.bind(this);
         this.tree = new BrowserTreePart('', false, true, null, '');
-        this.depth = this.cleanDepthValue(localStorage.getItem(`browser_${id}_depth`));
+        this.depth = localStorage.getItem(`browser_${id}_depth`) || defaultDepth;
         this.filter = localStorage.getItem(`browser_${id}_filter`) || '';
         this.folderTreeVerticalSpacing = '0';
         this.splitterMinWidth = 100;
@@ -108,17 +107,6 @@ class GenPageBrowserClass {
         this.runAfterUpdate = [];
         this.refreshHandler = (callback) => callback();
         this.checkIsSmall();
-    }
-
-    /**
-     * Cleans a browser depth value so requests always send a valid integer.
-     */
-    cleanDepthValue(depth) {
-        let parsed = parseInt(depth);
-        if (Number.isNaN(parsed) || parsed < 1) {
-            return this.defaultDepth;
-        }
-        return Math.min(parsed, 100);
     }
 
     /**
@@ -436,9 +424,10 @@ class GenPageBrowserClass {
             }
             let div = createDiv(null, `${desc.className}`);
             let popoverId = `${this.id}-${id}`;
-            if (desc.buttons.length > 0) {
+            let buttons = desc.buttons.filter(b => !b.multi_only);
+            if (buttons.length > 0) {
                 let menuDiv = createDiv(`popover_${popoverId}`, 'sui-popover sui_popover_model');
-                for (let button of desc.buttons) {
+                for (let button of buttons) {
                     let buttonElem;
                     if (button.href) {
                         buttonElem = document.createElement('a');
@@ -468,6 +457,7 @@ class GenPageBrowserClass {
             img.addEventListener('click', () => {
                 this.select(file, div);
             });
+            img.classList.add('image-block-img-inner');
             div.appendChild(img);
             if (this.format.includes('Cards')) {
                 div.className += ' model-block model-block-hoverable';
@@ -535,7 +525,7 @@ class GenPageBrowserClass {
                     div.appendChild(textBlock);
                 }
             }
-            if (desc.buttons.length > 0) {
+            if (buttons.length > 0) {
                 let menu = createDiv(null, 'model-block-menu-button');
                 menu.innerHTML = '&#x2630;';
                 menu.addEventListener('click', () => {
@@ -547,6 +537,7 @@ class GenPageBrowserClass {
                 div.addEventListener('mouseenter', () => div.title = stripHtmlToText(desc.description), { once: true });
             }
             div.dataset.name = file.name;
+            div.dataset.src = file.data.src;
             img.classList.add('lazyload');
             img.dataset.src = desc.image;
             if (desc.dragimage) {
@@ -668,8 +659,7 @@ class GenPageBrowserClass {
             let inputArr = buttons.getElementsByTagName('input');
             let depthInput = inputArr[0];
             depthInput.addEventListener('change', () => {
-                this.depth = this.cleanDepthValue(depthInput.value);
-                depthInput.value = this.depth;
+                this.depth = depthInput.value;
                 localStorage.setItem(`browser_${this.id}_depth`, this.depth);
                 this.lightRefresh();
             });
@@ -727,7 +717,7 @@ class GenPageBrowserClass {
                     barSpot = 100; // TODO: Swipeable width
                 }
                 this.folderTreeDiv.style.width = `${barSpot}px`;
-                this.fullContentDiv.style.width = `calc(100% - ${barSpot}px - 0.6rem)`;
+                this.fullContentDiv.style.width = `calc(100% - ${barSpot + 1}px - 0.6rem)`;
                 if (this.sizeChangedEvent) {
                     this.sizeChangedEvent();
                 }

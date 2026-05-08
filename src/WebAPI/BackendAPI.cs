@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
@@ -321,7 +321,6 @@ public class BackendAPI
             return new JObject() { ["result"] = false, ["count"] = 0 };
         }
         await Task.WhenAll(tasks);
-        Program.Backends.ReassignLoadedModelsList();
         Utilities.CleanRAM();
         return new JObject() { ["result"] = true, ["count"] = tasks.Where(t => t.Result).Count() };
     }

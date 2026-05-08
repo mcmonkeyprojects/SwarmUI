@@ -13,6 +13,7 @@ import { swarmClient } from '../api/client';
 import { featureFlags } from '../config/featureFlags';
 import { logger } from '../utils/logger';
 import { summarizeDiagnosticValue, useGenerationDiagnosticsStore } from './generationDiagnosticsStore';
+import { usePerformanceSessionStore } from './performanceSessionStore';
 import {
     initWSManager,
     getWSManager,
@@ -202,7 +203,8 @@ const initialState: WebSocketStoreState = {
 };
 
 const PROGRESS_UPDATE_MIN_INTERVAL_MS = 50;
-const PREVIEW_UPDATE_MIN_INTERVAL_MS = 100;
+const PREVIEW_QUEUE_DELAY_WARNING_MS = 50;
+const PREVIEW_DATA_URL_PREFIX = 'data:';
 const IS_TEST_ENV = import.meta.env.MODE === 'test';
 
 /**
@@ -269,20 +271,79 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             let lastProgressUpdate = 0;
             let pendingProgressData: GenerationProgressData | null = null;
             let rafId: number | null = null;
-            let lastPreviewCommitAt = 0;
             let lastPreviewSignature: string | null = null;
             let pendingPreviewData: GenerationProgressData | null = null;
             let pendingPreviewSignature: string | null = null;
-            let previewTimeoutId: ReturnType<typeof setTimeout> | null = null;
+            let previewRafId: number | null = null;
+            let pendingPreviewQueuedAt = 0;
+            let previewEventCount = 0;
+            let previewCommitCount = 0;
+            let previewDedupedCount = 0;
+            let previewSupersededCount = 0;
+            let previewDataUrlEventCount = 0;
+            let firstPreviewEventRecorded = false;
+            let firstPreviewCommitRecorded = false;
+
+            const resetPreviewTelemetry = () => {
+                pendingPreviewQueuedAt = 0;
+                previewEventCount = 0;
+                previewCommitCount = 0;
+                previewDedupedCount = 0;
+                previewSupersededCount = 0;
+                previewDataUrlEventCount = 0;
+                firstPreviewEventRecorded = false;
+                firstPreviewCommitRecorded = false;
+            };
+
+            const emitPreviewSummary = (reason: 'complete' | 'error' | 'stop' | 'clear') => {
+                const generation = get().generation;
+                if (!generation.startTime) {
+                    return;
+                }
+                usePerformanceSessionStore.getState().recordSessionEvent(
+                    'generate:preview-summary',
+                    previewDedupedCount > 0 || previewSupersededCount > 0 ? 'warning' : 'info',
+                    {
+                        reason,
+                        generationId: generation.generationId ?? '',
+                        requestId: generation.requestId ?? '',
+                        previewEventCount,
+                        previewDataUrlEventCount,
+                        previewCommitCount,
+                        previewDedupedCount,
+                        previewSupersededCount,
+                        previewRevision: generation.previewRevision,
+                        commitStrategy: 'animation_frame_coalesced',
+                    }
+                );
+                if (generation.generationId) {
+                    useGenerationDiagnosticsStore.getState().appendEvent(generation.generationId, {
+                        type: 'preview_pipeline_summary',
+                        level: previewDedupedCount > 0 || previewSupersededCount > 0 ? 'warn' : 'info',
+                        message: 'Live preview pipeline summary.',
+                        details: {
+                            reason,
+                            requestId: generation.requestId ?? '',
+                            previewEventCount,
+                            previewDataUrlEventCount,
+                            previewCommitCount,
+                            previewDedupedCount,
+                            previewSupersededCount,
+                            previewRevision: generation.previewRevision,
+                            commitStrategy: 'animation_frame_coalesced',
+                        },
+                    });
+                }
+            };
 
             const resetPreviewBuffer = () => {
                 pendingPreviewData = null;
                 pendingPreviewSignature = null;
                 lastPreviewSignature = null;
-                lastPreviewCommitAt = 0;
-                if (previewTimeoutId !== null) {
-                    clearTimeout(previewTimeoutId);
-                    previewTimeoutId = null;
+                pendingPreviewQueuedAt = 0;
+                if (previewRafId !== null) {
+                    cancelAnimationFrame(previewRafId);
+                    previewRafId = null;
                 }
             };
 
@@ -294,8 +355,10 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 const data = pendingPreviewData;
                 const nextPreview = data.previewImage ?? null;
                 const nextPreviewSignature = pendingPreviewSignature;
+                const queueDelay = pendingPreviewQueuedAt > 0 ? performance.now() - pendingPreviewQueuedAt : 0;
                 pendingPreviewData = null;
                 pendingPreviewSignature = null;
+                pendingPreviewQueuedAt = 0;
 
                 set((state) => {
                     if (isStaleGenerationEvent(state.generation.generationId, data.generationId)) {
@@ -314,8 +377,35 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     };
                 });
 
-                lastPreviewCommitAt = performance.now();
+                previewCommitCount += 1;
                 lastPreviewSignature = nextPreviewSignature;
+                usePerformanceSessionStore.getState().recordTiming(
+                    'ws:preview-queue-delay',
+                    queueDelay,
+                    {
+                        generationId: data.generationId ?? '',
+                        requestId: data.requestId ?? '',
+                        stageId: data.stageId ?? '',
+                        stageLabel: data.stageLabel ?? '',
+                    },
+                    queueDelay > PREVIEW_QUEUE_DELAY_WARNING_MS ? 'warning' : 'info'
+                );
+
+                const generationStartTime = get().generation.startTime;
+                if (generationStartTime && !firstPreviewCommitRecorded) {
+                    firstPreviewCommitRecorded = true;
+                    usePerformanceSessionStore.getState().recordTiming(
+                        'generate:first-preview-commit',
+                        Date.now() - generationStartTime,
+                        {
+                            generationId: data.generationId ?? '',
+                            requestId: data.requestId ?? '',
+                            stageId: data.stageId ?? '',
+                            stageLabel: data.stageLabel ?? '',
+                            queueDelayMs: queueDelay,
+                        }
+                    );
+                }
             };
 
             const schedulePreviewUpdate = (data: GenerationProgressData, force = false) => {
@@ -323,29 +413,56 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     return;
                 }
 
+                previewEventCount += 1;
+                if (data.previewImage.startsWith(PREVIEW_DATA_URL_PREFIX)) {
+                    previewDataUrlEventCount += 1;
+                }
+                const generationStartTime = get().generation.startTime;
+                if (generationStartTime && !firstPreviewEventRecorded) {
+                    firstPreviewEventRecorded = true;
+                    usePerformanceSessionStore.getState().recordTiming(
+                        'generate:first-preview-event',
+                        Date.now() - generationStartTime,
+                        {
+                            generationId: data.generationId ?? '',
+                            requestId: data.requestId ?? '',
+                            stageId: data.stageId ?? '',
+                            stageLabel: data.stageLabel ?? '',
+                        }
+                    );
+                }
+
                 const nextPreviewSignature = buildPreviewEventSignature(data);
                 if (nextPreviewSignature === lastPreviewSignature || nextPreviewSignature === pendingPreviewSignature) {
+                    previewDedupedCount += 1;
                     return;
+                }
+
+                if (pendingPreviewData && pendingPreviewSignature && pendingPreviewSignature !== nextPreviewSignature) {
+                    previewSupersededCount += 1;
                 }
 
                 pendingPreviewData = data;
                 pendingPreviewSignature = nextPreviewSignature;
+                pendingPreviewQueuedAt = performance.now();
 
-                if (previewTimeoutId !== null) {
-                    clearTimeout(previewTimeoutId);
-                    previewTimeoutId = null;
-                }
-
-                const elapsed = performance.now() - lastPreviewCommitAt;
-                if (force || elapsed >= PREVIEW_UPDATE_MIN_INTERVAL_MS) {
+                if (force) {
+                    if (previewRafId !== null) {
+                        cancelAnimationFrame(previewRafId);
+                        previewRafId = null;
+                    }
                     flushPreviewUpdate();
                     return;
                 }
 
-                previewTimeoutId = setTimeout(() => {
-                    previewTimeoutId = null;
+                if (previewRafId !== null) {
+                    return;
+                }
+
+                previewRafId = requestAnimationFrame(() => {
+                    previewRafId = null;
                     flushPreviewUpdate();
-                }, PREVIEW_UPDATE_MIN_INTERVAL_MS - elapsed);
+                });
             };
 
             const flushProgressUpdate = () => {
@@ -479,6 +596,26 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                             currentStep: data.currentStep,
                             totalSteps: data.totalSteps,
                         });
+                    }
+                    if (
+                        diagnosticGenerationId &&
+                        data.backendPreview &&
+                        (data.backendPreview.isFinal || data.backendPreview.previewEventCount === 1 || !!data.backendPreview.warning)
+                    ) {
+                        diagnostics.appendEvent(diagnosticGenerationId, {
+                            type: data.backendPreview.isFinal ? 'backend_preview_summary' : 'backend_preview_telemetry',
+                            level: data.backendPreview.warning ? 'warn' : 'info',
+                            message: data.backendPreview.isFinal
+                                ? 'Received final backend preview telemetry summary.'
+                                : 'Received backend preview telemetry update.',
+                            details: data.backendPreview,
+                        });
+                        usePerformanceSessionStore.getState().recordSessionEvent(
+                            'backend:preview-telemetry',
+                            data.backendPreview.warning ? 'warning' : 'info',
+                            data.backendPreview,
+                            undefined,
+                        );
                     }
 
                     // Always update on significant changes or first update
@@ -619,6 +756,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                                     },
                         };
                     });
+                    emitPreviewSummary('complete');
                 });
 
                 manager.on('generation:error', (event) => {
@@ -684,6 +822,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                             },
                         };
                     });
+                    emitPreviewSummary('error');
                 });
 
                 // Subscribe to model loading events
@@ -1027,8 +1166,9 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             // Generation Actions
             // ========================================================================
 
-                startGeneration: (params: GenerateParams, providedGenerationId?: string) => {
+            startGeneration: (params: GenerateParams, providedGenerationId?: string) => {
                 resetPreviewBuffer();
+                resetPreviewTelemetry();
                 const parsedSteps = Number(params.steps);
                 const totalSteps = Number.isFinite(parsedSteps) && parsedSteps > 0 ? parsedSteps : 20;
                 const parsedImages = Number(params.images);
@@ -1160,10 +1300,14 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         lastEventAt: Date.now(),
                     },
                 }));
+                emitPreviewSummary('stop');
+                resetPreviewTelemetry();
             },
 
             clearGeneration: () => {
                 resetPreviewBuffer();
+                emitPreviewSummary('clear');
+                resetPreviewTelemetry();
                 set({ generation: initialGenerationState });
             },
 

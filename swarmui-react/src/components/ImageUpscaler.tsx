@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import {
   Modal,
@@ -19,6 +19,9 @@ import type { GenerateParams } from '../api/types';
 import { imageUrlToDataUrl, toRuntimeImageUrl } from '../utils/imageData';
 import { useQueueStore, type QueueJob } from '../stores/queue';
 import { SwarmButton, SwarmSegmentedControl, SwarmSlider } from './ui';
+import { useUpscalers } from '../hooks/useModels';
+import { swarmClient } from '../api/client';
+import { queryClient, queryKeys } from '../api/queryClient';
 
 interface ImageUpscalerProps {
   opened: boolean;
@@ -32,6 +35,12 @@ interface ImageUpscalerProps {
 }
 
 type UpscaleMethod = 'hires-fix' | 'model-based';
+
+const DEFAULT_UPSCALE_METHOD = 'pixel-lanczos';
+
+const isModelUpscaleMethod = (value: string): boolean => {
+  return value.startsWith('model-') || value.startsWith('latentmodel-');
+};
 
 function buildUpscaleResultUrl(imageData: unknown): string {
   if (typeof imageData === 'string') {
@@ -72,26 +81,45 @@ export function ImageUpscaler({
   const [upscaling, setUpscaling] = useState(false);
   const [progress, setProgress] = useState(0);
   const [upscaleMethod, setUpscaleMethod] = useState<UpscaleMethod>('hires-fix');
-  const [upscaleModel, setUpscaleModel] = useState('model-Remacri_-_Original.safetensors');
+  const [upscaleModel, setUpscaleModel] = useState(DEFAULT_UPSCALE_METHOD);
   const [scaleFactor, setScaleFactor] = useState(2);
   const [creativity, setCreativity] = useState(0.4); // For hi-res fix
   const [modelCreativity, setModelCreativity] = useState(0.1); // For model-based
   const [steps, setSteps] = useState(20);
   const [cfgScale, setCfgScale] = useState(7);
   const [upscaledImage, setUpscaledImage] = useState<string | null>(null);
+  const [refreshingUpscalers, setRefreshingUpscalers] = useState(false);
+  const upscalersQuery = useUpscalers({ enabled: opened });
 
-  // Model-based upscale methods from SwarmUI backend
-  const upscaleModels = [
-    // Model-based upscalers (best quality)
-    { value: 'model-Remacri_-_Original.safetensors', label: 'Remacri (Best Quality)' },
-    { value: 'model-4xNMKDSuperscale_4xNMKDSuperscale.pt', label: '4x NMKD Superscale' },
-    { value: 'model-4xNMKDYandereneoxl_v10.pt', label: '4x NMKD Yandereneoxl' },
-    { value: 'model-4xRealisticrescaler_100000G.pt', label: '4x Realistic Rescaler' },
-    { value: 'model-8xNMKDSuperscale_150000G.pt', label: '8x NMKD Superscale' },
-    // Pixel-based methods (fast, simple)
-    { value: 'pixel-lanczos', label: 'Pixel Lanczos (Fast)' },
-    { value: 'pixel-bicubic', label: 'Pixel Bicubic' },
-  ];
+  const upscaleModels = useMemo(() => {
+    return (upscalersQuery.data ?? [])
+      .map((model) => ({
+        value: model.name,
+        label: model.title || model.name,
+      }))
+      .filter((model) => model.value.trim().length > 0);
+  }, [upscalersQuery.data]);
+
+  const modelUpscaleOptions = useMemo(() => {
+    return upscaleModels.filter((model) => isModelUpscaleMethod(model.value));
+  }, [upscaleModels]);
+
+  useEffect(() => {
+    if (upscaling) {
+      return;
+    }
+
+    if (upscaleMethod === 'model-based') {
+      if (!isModelUpscaleMethod(upscaleModel)) {
+        setUpscaleModel(modelUpscaleOptions[0]?.value || '');
+      }
+      return;
+    }
+
+    if (!upscaleModel) {
+      setUpscaleModel(DEFAULT_UPSCALE_METHOD);
+    }
+  }, [modelUpscaleOptions, upscaleMethod, upscaleModel, upscaling]);
 
   // Extract generation params from metadata
   const getParamsFromMetadata = (): {
@@ -203,6 +231,15 @@ export function ImageUpscaler({
       return;
     }
 
+    if (upscaleMethod === 'model-based' && !isModelUpscaleMethod(upscaleModel)) {
+      notifications.show({
+        title: 'No Upscale Model Selected',
+        message: 'Model-based upscale requires a model from upscale_models or latent_upscale_models.',
+        color: 'orange',
+      });
+      return;
+    }
+
     logger.debug('[Upscaler] Using method:', upscaleMethod);
     logger.debug('[Upscaler] Using model:', params.model);
     if (upscaleMethod === 'hires-fix') {
@@ -268,10 +305,15 @@ export function ImageUpscaler({
           initimage: imageBase64,
           initimagecreativity: creativity,
           aspectratio: 'Custom',
-          width: Math.round((params.width || 1024) * scaleFactor),
-          height: Math.round((params.height || 1024) * scaleFactor),
-          steps: 20,
-          cfgscale: 7,
+          width: params.width || 1024,
+          height: params.height || 1024,
+          refinermethod: 'PostApply',
+          refinercontrol: 0,
+          refinercontrolpercentage: 0,
+          refinerupscale: scaleFactor,
+          refinerupscalemethod: upscaleModel || DEFAULT_UPSCALE_METHOD,
+          steps: steps,
+          cfgscale: cfgScale,
           images: 1,
           seed: params.seed || -1,
         }
@@ -309,8 +351,6 @@ export function ImageUpscaler({
         message: 'This upscale is now tracked in Queue, so you can safely navigate away.',
         color: 'blue',
       });
-
-      const { swarmClient } = await import('../api/client');
 
       const methodLabel = upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : selectedUpscaleModelLabel;
       const initImageValue = typeof upscaleParams.initimage === 'string' ? upscaleParams.initimage : '';
@@ -448,6 +488,28 @@ export function ImageUpscaler({
 
   const originalImageUrl = getProxyUrl(imagePath);
 
+  const handleRefreshUpscalers = async () => {
+    setRefreshingUpscalers(true);
+    try {
+      await swarmClient.triggerModelRefresh();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.upscalers.all });
+      await upscalersQuery.refetch();
+      notifications.show({
+        title: 'Upscalers Refreshed',
+        message: 'Checked the backend model list for upscale_models and latent_upscale_models.',
+        color: 'green',
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Refresh Failed',
+        message: error instanceof Error ? error.message : 'Could not refresh upscaler models.',
+        color: 'red',
+      });
+    } finally {
+      setRefreshingUpscalers(false);
+    }
+  };
+
   return (
     <Modal
       opened={opened}
@@ -501,17 +563,55 @@ export function ImageUpscaler({
         </Stack>
 
         {/* Upscale Model - always show for model-based, optional for hi-res fix */}
-        <Select
-          label={upscaleMethod === 'hires-fix' ? 'Upscaler (Optional)' : 'Upscale Model'}
-          description={upscaleMethod === 'hires-fix'
-            ? 'Optional: Use an upscale model for final pass'
-            : 'Select the upscale model to use'}
-          data={upscaleModels}
-          value={upscaleModel}
-          onChange={(value) => value && setUpscaleModel(value)}
-          disabled={upscaling}
-          clearable={upscaleMethod === 'hires-fix'}
-        />
+        <Stack gap="xs">
+          <Select
+            label={upscaleMethod === 'hires-fix' ? 'Upscaler Method' : 'Upscale Model'}
+            description={upscaleMethod === 'hires-fix'
+              ? 'Choose the backend resize/model method used by hi-res fix'
+              : 'Select a model from upscale_models or latent_upscale_models'}
+            data={upscaleMethod === 'model-based' ? modelUpscaleOptions : upscaleModels}
+            value={upscaleModel}
+            onChange={(value) => {
+              if (upscaleMethod === 'hires-fix') {
+                setUpscaleModel(value || DEFAULT_UPSCALE_METHOD);
+                return;
+              }
+              if (value) {
+                setUpscaleModel(value);
+              }
+            }}
+            disabled={upscaling || upscalersQuery.isLoading || (upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0)}
+            clearable={upscaleMethod === 'hires-fix'}
+            searchable
+            placeholder={upscalersQuery.isLoading ? 'Loading upscalers...' : 'Select upscale method'}
+            nothingFoundMessage={
+              upscaleMethod === 'model-based'
+                ? 'No model upscalers found. Refresh after adding files to upscale_models or latent_upscale_models.'
+                : 'No upscale methods found'
+            }
+          />
+          <Group justify="space-between" align="center">
+            <Text size="xs" c="dimmed">
+              Added files under Models/upscale_models appear here after backend model refresh.
+            </Text>
+            <SwarmButton
+              size="xs"
+              emphasis="soft"
+              tone="secondary"
+              onClick={handleRefreshUpscalers}
+              loading={refreshingUpscalers}
+              disabled={upscaling || upscalersQuery.isLoading}
+            >
+              Refresh Upscalers
+            </SwarmButton>
+          </Group>
+        </Stack>
+
+        {upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0 && !upscalersQuery.isLoading && (
+          <Text size="xs" c="orange">
+            No model upscalers are currently available. Download one into upscale_models or latent_upscale_models, then refresh model data.
+          </Text>
+        )}
 
         {/* Creativity slider - for hi-res fix */}
         {upscaleMethod === 'hires-fix' && (
@@ -540,56 +640,52 @@ export function ImageUpscaler({
           </Stack>
         )}
 
-        {/* Model-based controls: creativity, CFG, steps */}
+        {/* Model-based creativity */}
         {upscaleMethod === 'model-based' && (
-          <Stack gap="md">
-            {/* Creativity for model-based */}
-            <Stack gap="xs">
-              <Group justify="space-between">
-                <Text size="sm" fw={500}>Creativity</Text>
-                <Text size="sm" c="dimmed">{modelCreativity.toFixed(2)}</Text>
-              </Group>
-              <SwarmSlider
-                value={modelCreativity}
-                onChange={setModelCreativity}
-                min={0}
-                max={0.5}
-                step={0.05}
-                disabled={upscaling}
-                mb="xl"
-                marks={[
-                  { value: 0, label: 'None' },
-                  { value: 0.1, label: 'Low' },
-                  { value: 0.3, label: 'Med' },
-                ]}
-              />
-            </Stack>
-
-            {/* CFG Scale */}
-            <NumberInput
-              label="CFG Scale"
-              description="How strongly to follow the prompt"
-              min={1}
-              max={20}
-              step={0.5}
-              value={cfgScale}
-              onChange={(value) => typeof value === 'number' && setCfgScale(value)}
+          <Stack gap="xs">
+            <Group justify="space-between">
+              <Text size="sm" fw={500}>Creativity</Text>
+              <Text size="sm" c="dimmed">{modelCreativity.toFixed(2)}</Text>
+            </Group>
+            <SwarmSlider
+              value={modelCreativity}
+              onChange={setModelCreativity}
+              min={0}
+              max={0.5}
+              step={0.05}
               disabled={upscaling}
-            />
-
-            {/* Steps */}
-            <NumberInput
-              label="Steps"
-              description="More steps = higher quality, slower"
-              min={10}
-              max={50}
-              step={5}
-              value={steps}
-              onChange={(value) => typeof value === 'number' && setSteps(value)}
-              disabled={upscaling}
+              mb="xl"
+              marks={[
+                { value: 0, label: 'None' },
+                { value: 0.1, label: 'Low' },
+                { value: 0.3, label: 'Med' },
+              ]}
             />
           </Stack>
         )}
+
+        <Group grow align="flex-start">
+          <NumberInput
+            label="CFG Scale"
+            description="How strongly to follow the prompt"
+            min={1}
+            max={20}
+            step={0.5}
+            value={cfgScale}
+            onChange={(value) => typeof value === 'number' && setCfgScale(value)}
+            disabled={upscaling}
+          />
+          <NumberInput
+            label="Steps"
+            description="More steps = higher quality, slower"
+            min={10}
+            max={50}
+            step={5}
+            value={steps}
+            onChange={(value) => typeof value === 'number' && setSteps(value)}
+            disabled={upscaling}
+          />
+        </Group>
 
         <NumberInput
           label="Scale Factor"

@@ -20,8 +20,8 @@ import {
     IconSparkles,
 } from '@tabler/icons-react';
 import { useModels } from '../hooks/useModels';
+import { useSortedFavorites } from '../hooks/useEntities';
 import { usePromptCacheStore } from '../stores/promptCacheStore';
-import { useFavoritesStore } from '../stores/favoritesStore';
 import { useGenerationStore } from '../store/generationStore';
 import { useNavigationStore, type GenerateWorkspaceMode } from '../stores/navigationStore';
 
@@ -50,7 +50,7 @@ export function CommandPalette({ opened, onClose, onOpenAssetCatalog }: CommandP
     const navigate = useNavigationStore((state) => state.navigate);
     const models = useModels();
     const promptEntryMap = usePromptCacheStore((state) => state.entries);
-    const favorites = useFavoritesStore((state) => state.favorites);
+    const favorites = useSortedFavorites();
     const [query, setQuery] = useState('');
     const promptEntries = useMemo(() => Object.values(promptEntryMap), [promptEntryMap]);
 
@@ -153,19 +153,17 @@ export function CommandPalette({ opened, onClose, onOpenAssetCatalog }: CommandP
             }));
 
         const imageItems: CommandItem[] = favorites
-            .slice()
-            .sort((left, right) => right.timestamp - left.timestamp)
             .slice(0, 12)
             .map((image) => ({
-                id: `favorite-${image.path}`,
-                title: image.prompt?.slice(0, 72) || image.path.split('/').pop() || 'Open favorite image',
-                subtitle: image.model || image.path,
+                id: `favorite-${image.id}`,
+                title: image.prompt?.slice(0, 72) || image.id.split('/').pop() || 'Open favorite image',
+                subtitle: image.model || image.id,
                 group: 'Images',
-                keywords: ['image', 'favorite', image.path, image.model || '', image.prompt || ''],
+                keywords: ['image', 'favorite', image.id, image.model || '', image.prompt || ''],
                 action: () => navigate({
                     page: 'history',
                     history: {
-                        image: image.path,
+                        image: image.id,
                     },
                 }),
             }));

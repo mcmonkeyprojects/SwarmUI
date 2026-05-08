@@ -208,6 +208,10 @@ body {
     object-fit: contain;
     object-position: top left;
 }
+.current_image_sideblock > .current-image-img {
+    position: sticky;
+    top: 0px;
+}
 .current_image_batch {
     display: inline-block;
     overflow-x: hidden;
@@ -849,43 +853,6 @@ body {
     padding-bottom: 3rem;
     white-space: normal;
 }
-.gen-save-folder-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-    margin: 0.45rem 0 0 2.1rem;
-}
-.gen-save-folder-label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-}
-.gen-save-folder-input {
-    min-width: 16rem;
-    max-width: 24rem;
-}
-.gen-save-folder-status {
-    color: var(--text-soft);
-    font-size: 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: min(28rem, 100%);
-}
-.browser-header-action-button {
-    margin-left: 0.35rem;
-}
-.small-window .gen-save-folder-bar {
-    margin-left: 0;
-}
-.small-window .gen-save-folder-input {
-    min-width: 11rem;
-    flex: 1 1 11rem;
-}
-.small-window .gen-save-folder-status {
-    max-width: 100%;
-    white-space: normal;
-}
 .browser_container {
     display: block;
     height: 100%;
@@ -945,6 +912,10 @@ body {
     white-space: nowrap;
     cursor: pointer;
     vertical-align: top;
+}
+.browser-details-list-entry-text-separator {
+    font-weight: bold;
+    color: var(--text-strong);
 }
 .browser-details-list-entry img {
     max-height: 1.25rem;
@@ -1088,6 +1059,9 @@ body {
     border-right: none !important;
     margin-left: 2px;
 }
+.simple-generate-button {
+    width: calc(100% - 40px);
+}
 .alt-prompt-center-button {
     border-radius: 0 !important;
 }
@@ -1108,6 +1082,7 @@ body {
     position: relative;
     background-color: color-mix(in srgb, transparent 80%, var(--background));
     transition: background-color 0.2s ease-out;
+    margin: 0 2px;
 }
 .alt-prompt-image {
     max-height: 128px;
@@ -1143,6 +1118,10 @@ body {
     background-color: color-mix(in srgb, var(--red) 70%, black) !important;
     border: 1px solid black;
     cursor: pointer;
+}
+.alt-prompt-image-container.image-drop-replace-target .alt-prompt-image {
+    outline: 4px solid var(--emphasis);
+    border-radius: 5px;
 }
 .image-clear-button {
     vertical-align: middle;
@@ -1695,7 +1674,7 @@ body {
 }
 .simpleinput-top-section {
     width: 100%;
-    height: calc(100% - 5rem);
+    height: calc(100% - 6rem);
     overflow: auto;
 }
 .simpleinputsidebar .auto-input-prompt-tokencount {
@@ -1706,7 +1685,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 5rem;
+    height: 6rem;
     padding-top: 1rem;
     border-top: 1px solid var(--light-border);
 }
@@ -1896,4 +1875,24 @@ body {
 .auth-tokens-list {
     max-height: 30rem;
     overflow: auto;
+}
+.update-check-block {
+    max-height: 25rem;
+    overflow: auto;
+}
+.update-check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+.update-check-row .update-check-checkbox {
+    margin-top: 0.3rem;
+    flex-shrink: 0;
+}
+.update-check-label {
+    white-space: pre-wrap;
+}
+.update-check-preview {
+    opacity: 0.75;
 }

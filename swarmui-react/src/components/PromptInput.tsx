@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Textarea, TextInput, Text, Group, Tooltip, Popover, Stack, Switch, Select, Loader, Chip, Badge } from '@mantine/core';
+import { Textarea, TextInput, Text, Group, Tooltip, Popover, Stack, Switch, Select, Loader, Chip, Badge, Modal, Paper, Divider } from '@mantine/core';
 import { IconSparkles, IconWand, IconClearAll, IconClipboard, IconTextCaption, IconArrowsUpDown, IconLanguage, IconSettings, IconBrain } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { getTokenWarning } from '../utils/tokenCounter';
@@ -13,10 +13,10 @@ import { RegionSyntaxModal } from './modals/RegionSyntaxModal';
 import { HeadlessAutocomplete, type HeadlessAutocompleteHandle } from './headless/HeadlessAutocomplete';
 import { type AutoCompleteEntry } from '../stores/autoCompleteStore';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from './ContextMenu';
-import { usePromptEnhanceStore, PROMPT_STYLE_PRESETS } from '../stores/promptEnhanceStore';
-import { enhancePrompt as enhancePromptApi, probeAssistantConnection } from '../services/magicPromptService';
+import { usePromptEnhanceStore, PROMPT_STYLE_PRESETS, type PromptEnhanceCreativeStrength, type PromptPresetKey } from '../stores/promptEnhanceStore';
+import { enhancePrompt as enhancePromptApi, inferPromptFormatPreset, probeAssistantConnection, unloadMagicPromptModel, type PromptEnhancementDraft } from '../services/magicPromptService';
 import { useAssistantStore } from '../stores/assistantStore';
-import { SwarmActionIcon as ActionIcon } from './ui';
+import { SwarmActionIcon as ActionIcon, SwarmButton } from './ui';
 import '../styles/autocomplete.css';
 
 interface PromptInputProps {
@@ -30,6 +30,9 @@ interface PromptInputProps {
     autosize?: boolean;
     /** Show the prompt syntax insertion button */
     showSyntaxButton?: boolean;
+    promptRole?: 'prompt' | 'negative';
+    contextModel?: string;
+    onNegativePromptChange?: (value: string) => void;
 }
 
 export interface PromptInputHandle {
@@ -47,8 +50,12 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
     required = false,
     autosize = true,
     showSyntaxButton = false,
+    promptRole,
+    contextModel = '',
+    onNegativePromptChange,
 }, ref) => {
     const targetIdRef = useRef(`prompt-input-${Math.random().toString(36).slice(2)}`);
+    const resolvedPromptRole = promptRole || (label.toLowerCase().includes('negative') ? 'negative' : 'prompt');
 
     // Local state for immediate typing feedback
     const [localValue, setLocalValue] = useState(value);
@@ -187,12 +194,21 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
     const setAvailableModels = usePromptEnhanceStore((s) => s.setAvailableModels);
     const setLastSuccessfulModelId = usePromptEnhanceStore((s) => s.setLastSuccessfulModelId);
     const activePresetKey = usePromptEnhanceStore((s) => s.activePresetKey);
+    const formatMode = usePromptEnhanceStore((s) => s.formatMode);
+    const creativeStrength = usePromptEnhanceStore((s) => s.creativeStrength);
+    const unloadModelAfterEnhance = usePromptEnhanceStore((s) => s.unloadModelAfterEnhance);
+    const setFormatMode = usePromptEnhanceStore((s) => s.setFormatMode);
+    const setCreativeStrength = usePromptEnhanceStore((s) => s.setCreativeStrength);
+    const setUnloadModelAfterEnhance = usePromptEnhanceStore((s) => s.setUnloadModelAfterEnhance);
     const applyPreset = usePromptEnhanceStore((s) => s.applyPreset);
     const setAssistantConnection = useAssistantStore((s) => s.setConnection);
     const setAssistantSelectedModelId = useAssistantStore((s) => s.setSelectedModelId);
 
     const [enhanceSettingsOpen, setEnhanceSettingsOpen] = useState(false);
     const [loadingModels, setLoadingModels] = useState(false);
+    const [enhanceReviewOpen, setEnhanceReviewOpen] = useState(false);
+    const [enhanceOriginalValue, setEnhanceOriginalValue] = useState('');
+    const [enhanceDraft, setEnhanceDraft] = useState<PromptEnhancementDraft | null>(null);
 
     const loadModels = useCallback(async () => {
         setLoadingModels(true);
@@ -281,16 +297,37 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                 enhanceModelId,
                 enhanceSystemPrompt,
                 enhanceEndpointUrl,
-                detectedServerMode
+                detectedServerMode,
+                {
+                    formatMode,
+                    creativeStrength,
+                    imageModelId: contextModel,
+                    promptRole: resolvedPromptRole,
+                }
             );
             if (result.success && result.response) {
-                setLocalValue(result.response);
-                onChange(result.response);
+                let nextDraft = result.draft || {
+                    message: 'Enhanced prompt draft ready.',
+                    promptDraft: result.response,
+                    negativePromptDraft: null,
+                    formatPreset: formatMode === 'auto' ? inferPromptFormatPreset(contextModel) : formatMode,
+                    reasoningNote: null,
+                };
+                if (resolvedPromptRole === 'negative' && !nextDraft.negativePromptDraft && nextDraft.promptDraft) {
+                    nextDraft = {
+                        ...nextDraft,
+                        negativePromptDraft: nextDraft.promptDraft,
+                        promptDraft: null,
+                    };
+                }
+                setEnhanceOriginalValue(localValue);
+                setEnhanceDraft(nextDraft);
+                setEnhanceReviewOpen(true);
                 setLastSuccessfulModelId(enhanceModelId);
                 notifications.show({
-                    title: 'Prompt Enhanced',
-                    message: `Prompt successfully enhanced using "${enhanceModelId}".`,
-                    color: 'green',
+                    title: 'Enhancement Draft Ready',
+                    message: `Review the draft from "${enhanceModelId}" before applying it.`,
+                    color: 'teal',
                 });
             } else {
                 const errMsg = result.error || 'Enhancement failed';
@@ -310,6 +347,17 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                 color: 'red',
             });
         } finally {
+            if (unloadModelAfterEnhance && detectedServerMode === 'legacy-lmstudio' && enhanceModelId) {
+                const unloadResult = await unloadMagicPromptModel(enhanceEndpointUrl, enhanceModelId);
+                if (!unloadResult.success) {
+                    setEnhanceError(unloadResult.error || 'Failed to unload assistant model');
+                    notifications.show({
+                        title: 'Assistant Model Still Loaded',
+                        message: unloadResult.error || 'The assistant server did not unload the enhancement model.',
+                        color: 'yellow',
+                    });
+                }
+            }
             setEnhancing(false);
         }
     }, [
@@ -317,13 +365,77 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
         enhanceEndpointUrl,
         enhanceModelId,
         enhanceSystemPrompt,
+        formatMode,
+        creativeStrength,
+        unloadModelAfterEnhance,
+        contextModel,
         isEnhancing,
         localValue,
-        onChange,
+        resolvedPromptRole,
         setEnhanceError,
         setEnhancing,
         setLastSuccessfulModelId,
     ]);
+
+    const applyCurrentPromptDraft = useCallback((mode: 'replace' | 'append') => {
+        if (!enhanceDraft) {
+            return;
+        }
+        const draftText = resolvedPromptRole === 'negative'
+            ? enhanceDraft.negativePromptDraft || enhanceDraft.promptDraft || ''
+            : enhanceDraft.promptDraft || '';
+        const trimmedDraft = draftText.trim();
+        if (!trimmedDraft) {
+            return;
+        }
+        const nextValue = mode === 'append' && localValue.trim()
+            ? `${localValue.trim()}, ${trimmedDraft}`
+            : trimmedDraft;
+        setLocalValue(nextValue);
+        onChange(nextValue);
+        setEnhanceReviewOpen(false);
+    }, [enhanceDraft, localValue, onChange, resolvedPromptRole]);
+
+    const applyNegativePromptDraft = useCallback(() => {
+        if (!enhanceDraft?.negativePromptDraft) {
+            return;
+        }
+        const nextNegative = enhanceDraft.negativePromptDraft.trim();
+        if (!nextNegative) {
+            return;
+        }
+        if (resolvedPromptRole === 'negative') {
+            setLocalValue(nextNegative);
+            onChange(nextNegative);
+        } else if (onNegativePromptChange) {
+            onNegativePromptChange(nextNegative);
+        }
+        setEnhanceReviewOpen(false);
+    }, [enhanceDraft, onChange, onNegativePromptChange, resolvedPromptRole]);
+
+    const copyEnhancementDraft = useCallback(async () => {
+        if (!enhanceDraft) {
+            return;
+        }
+        const text = [
+            enhanceDraft.promptDraft ? `Prompt:\n${enhanceDraft.promptDraft}` : '',
+            enhanceDraft.negativePromptDraft ? `Negative Prompt:\n${enhanceDraft.negativePromptDraft}` : '',
+        ].filter(Boolean).join('\n\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            notifications.show({
+                title: 'Copied',
+                message: 'Enhancement draft copied to clipboard.',
+                color: 'teal',
+            });
+        } catch {
+            notifications.show({
+                title: 'Copy Failed',
+                message: 'Clipboard access was not available.',
+                color: 'red',
+            });
+        }
+    }, [enhanceDraft]);
 
     useEffect(() => {
         const unregister = registerPromptTargetHandlers(targetIdRef.current, {
@@ -584,6 +696,13 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
         }
     }, [autocompleteEnabled]);
 
+    const handleFocus = useCallback(() => {
+        setActivePromptTarget(targetIdRef.current);
+        if (autocompleteEnabled) {
+            autocompleteRef.current?.ensureLoaded();
+        }
+    }, [autocompleteEnabled]);
+
     // Token counting: immediate local estimate, then accurate server count
     const { tokenCount, isEstimate } = useTokenCount(localValue, { debounceMs: 500, skipPromptSyntax: true });
     const tokenWarning = useMemo(() => getTokenWarning(tokenCount, 'sdxl'), [tokenCount]);
@@ -615,6 +734,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
             <Textarea
                 ref={textareaRef}
                 spellCheck={true}
+                onFocus={handleFocus}
                 label={
                     <Group justify="space-between" mb={4} style={{ width: '100%' }}>
                         <Group gap="xs">
@@ -638,6 +758,9 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                     onClick={() => {
                                         const newState = !autocompleteEnabled;
                                         setAutocompleteEnabled(newState);
+                                        if (newState) {
+                                            autocompleteRef.current?.ensureLoaded();
+                                        }
                                         if (!newState) {
                                             autocompleteRef.current?.close();
                                         }
@@ -723,8 +846,9 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                             }
                                         />
                                         <Select
-                                            label="Model"
-                                            placeholder={loadingModels ? 'Loading models...' : 'Select LLM model'}
+                                            label="Enhancement Model"
+                                            description="Local LLM used only for prompt enhancement and assistant chat."
+                                            placeholder={loadingModels ? 'Loading models...' : 'Select enhancement LLM'}
                                             data={availableModels.map((m) => ({ value: m.id, label: `${m.name || m.id} (${m.id})` }))}
                                             value={enhanceModelId || null}
                                             onChange={(val) => {
@@ -743,17 +867,35 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                             searchable
                                             clearable
                                         />
+                                        <Switch
+                                            label="Unload enhancement model after draft"
+                                            description={detectedServerMode === 'legacy-lmstudio'
+                                                ? 'Releases the LM Studio LLM after enhancement so image generation has more free VRAM.'
+                                                : 'Only LM Studio exposes a supported unload endpoint; other servers manage this themselves.'}
+                                            checked={unloadModelAfterEnhance}
+                                            onChange={(e) => setUnloadModelAfterEnhance(e.currentTarget.checked)}
+                                        />
                                         <div>
-                                            <Text size="xs" fw={500} mb={4}>Style Preset</Text>
+                                            <Text size="xs" fw={500} mb={4}>Prompt Format</Text>
                                             <Chip.Group
-                                                value={activePresetKey || ''}
+                                                value={formatMode}
                                                 onChange={(val) => {
-                                                    if (val && typeof val === 'string') {
-                                                        applyPreset(val as any);
+                                                    if (val === 'auto') {
+                                                        setFormatMode('auto');
+                                                    } else if (val && typeof val === 'string') {
+                                                        applyPreset(val as PromptPresetKey);
                                                     }
                                                 }}
                                             >
                                                 <Group gap={4}>
+                                                    <Chip
+                                                        value="auto"
+                                                        size="xs"
+                                                        variant="outline"
+                                                        color="violet"
+                                                    >
+                                                        Auto
+                                                    </Chip>
                                                     {PROMPT_STYLE_PRESETS.map((preset) => (
                                                         <Chip
                                                             key={preset.key}
@@ -767,10 +909,27 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                                     ))}
                                                 </Group>
                                             </Chip.Group>
+                                            {formatMode === 'auto' && (
+                                                <Text size="xs" c="dimmed" mt={4}>
+                                                    Auto currently resolves to {PROMPT_STYLE_PRESETS.find((p) => p.key === inferPromptFormatPreset(contextModel))?.label || 'SD / SDXL'} from the selected model.
+                                                </Text>
+                                            )}
                                         </div>
+                                        <Select
+                                            label="Creative Strength"
+                                            size="xs"
+                                            value={creativeStrength}
+                                            onChange={(val) => val && setCreativeStrength(val as PromptEnhanceCreativeStrength)}
+                                            data={[
+                                                { value: 'balanced', label: 'Balanced' },
+                                                { value: 'conservative', label: 'Conservative' },
+                                                { value: 'rich', label: 'Cinematic rich' },
+                                            ]}
+                                            allowDeselect={false}
+                                        />
                                         <Textarea
                                             label="System Prompt"
-                                            description={activePresetKey ? `Using ${PROMPT_STYLE_PRESETS.find((p) => p.key === activePresetKey)?.label} preset (editable)` : 'Custom instructions for the LLM'}
+                                            description={activePresetKey ? `Using ${PROMPT_STYLE_PRESETS.find((p) => p.key === activePresetKey)?.label} preset (editable)` : 'Base instructions for the LLM'}
                                             placeholder="Instructions for the LLM..."
                                             value={enhanceSystemPrompt}
                                             onChange={(e) => setEnhanceSystemPrompt(e.currentTarget.value)}
@@ -802,7 +961,6 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 onContextMenu={handleContextMenu}
-                onFocus={() => setActivePromptTarget(targetIdRef.current)}
                 onBlur={() => setActivePromptTarget(null)}
                 minRows={minRows}
                 maxRows={maxRows}
@@ -840,6 +998,90 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                 items={contextMenuItems}
                 onClose={contextMenu.close}
             />
+
+            <Modal
+                opened={enhanceReviewOpen}
+                onClose={() => setEnhanceReviewOpen(false)}
+                title="Review Enhancement Draft"
+                size="lg"
+                centered
+            >
+                <Stack gap="md">
+                    <Group justify="space-between" align="center">
+                        <Badge color="violet" variant="light">
+                            {PROMPT_STYLE_PRESETS.find((preset) => preset.key === enhanceDraft?.formatPreset)?.label || 'Prompt'}
+                        </Badge>
+                        <Text size="xs" c="dimmed">
+                            {creativeStrength.replace('_', ' ')}
+                        </Text>
+                    </Group>
+
+                    <Paper withBorder p="sm" radius="sm" className="swarm-contrast-panel">
+                        <Text size="xs" fw={600} mb={4}>Original</Text>
+                        <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+                            {enhanceOriginalValue}
+                        </Text>
+                    </Paper>
+
+                    {enhanceDraft?.promptDraft && (
+                        <Paper withBorder p="sm" radius="sm" className="swarm-contrast-panel">
+                            <Text size="xs" fw={600} mb={4}>Enhanced prompt</Text>
+                            <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+                                {enhanceDraft.promptDraft}
+                            </Text>
+                        </Paper>
+                    )}
+
+                    {enhanceDraft?.negativePromptDraft && (
+                        <Paper withBorder p="sm" radius="sm" className="swarm-contrast-panel">
+                            <Text size="xs" fw={600} mb={4}>Negative prompt draft</Text>
+                            <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+                                {enhanceDraft.negativePromptDraft}
+                            </Text>
+                        </Paper>
+                    )}
+
+                    {enhanceDraft?.reasoningNote && (
+                        <>
+                            <Divider />
+                            <Text size="xs" c="dimmed" style={{ whiteSpace: 'pre-wrap' }}>
+                                {enhanceDraft.reasoningNote}
+                            </Text>
+                        </>
+                    )}
+
+                    <Group justify="space-between" align="center" wrap="wrap">
+                        <Group gap="xs" wrap="wrap">
+                            {(resolvedPromptRole === 'negative' ? enhanceDraft?.negativePromptDraft || enhanceDraft?.promptDraft : enhanceDraft?.promptDraft) && (
+                                <>
+                                    <SwarmButton size="xs" tone="primary" emphasis="soft" onClick={() => applyCurrentPromptDraft('replace')}>
+                                        {resolvedPromptRole === 'negative' ? 'Replace Negative' : 'Replace Prompt'}
+                                    </SwarmButton>
+                                    <SwarmButton size="xs" tone="secondary" emphasis="ghost" onClick={() => applyCurrentPromptDraft('append')}>
+                                        {resolvedPromptRole === 'negative' ? 'Append Negative' : 'Append Prompt'}
+                                    </SwarmButton>
+                                </>
+                            )}
+                            {enhanceDraft?.negativePromptDraft && resolvedPromptRole === 'prompt' && onNegativePromptChange && (
+                                <SwarmButton size="xs" tone="primary" emphasis="soft" onClick={applyNegativePromptDraft}>
+                                    Replace Negative
+                                </SwarmButton>
+                            )}
+                            <SwarmButton size="xs" tone="secondary" emphasis="ghost" onClick={copyEnhancementDraft}>
+                                Copy
+                            </SwarmButton>
+                        </Group>
+                        <Group gap="xs">
+                            <SwarmButton size="xs" tone="secondary" emphasis="ghost" onClick={() => void handleEnhancePrompt()} disabled={isEnhancing}>
+                                Regenerate
+                            </SwarmButton>
+                            <SwarmButton size="xs" tone="secondary" emphasis="ghost" onClick={() => setEnhanceReviewOpen(false)}>
+                                Discard
+                            </SwarmButton>
+                        </Group>
+                    </Group>
+                </Stack>
+            </Modal>
         </div>
     );
 }));

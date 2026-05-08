@@ -30,6 +30,19 @@ describe('presetLibrary.json', () => {
     expect(unique.size).toBe(names.length);
   });
 
+  it('all preset word sets are unique', () => {
+    const seen = new Map<string, string>();
+
+    for (const p of library) {
+      const key = p.words
+        .map(word => word.toLowerCase().trim())
+        .sort()
+        .join('|');
+      expect(seen.get(key), `${p.id} duplicates words from ${seen.get(key)}`).toBeUndefined();
+      seen.set(key, p.id);
+    }
+  });
+
   it('ids follow pl-<category>-<slug> convention', () => {
     for (const p of library) {
       expect(p.id, `${p.name} id wrong format`).toMatch(
@@ -49,7 +62,10 @@ describe('presetLibrary.json', () => {
     const byCategory: Record<string, string[]> = {};
     for (const p of library) {
       if (!byCategory[p.category]) byCategory[p.category] = [];
-      byCategory[p.category].push(p.thumbnail);
+      expect(p.thumbnail, `${p.id} missing thumbnail`).toBeTruthy();
+      if (p.thumbnail) {
+        byCategory[p.category].push(p.thumbnail);
+      }
     }
     for (const [category, thumbs] of Object.entries(byCategory)) {
       const dupes = thumbs.filter((t, i) => thumbs.indexOf(t) !== i);
