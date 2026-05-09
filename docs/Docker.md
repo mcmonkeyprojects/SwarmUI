@@ -85,6 +85,11 @@ In all cases you don't need to be an expert, but will need a bit of familiarity 
 - cd `SwarmUI`
 - Run `./launchtools/launch-standard-docker.sh` or `./launchtools/launch-open-docker.sh`. Do not give it any CLI args.
 - Open a browser to http://localhost:7801
+# AMD
+- Install AMD Container Toolkit
+- Install AMDGPU
+- Install ROCm
+- Follow the ROCm install instructions to either add a group with full access to the GPU or allow all users access via udev rules https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/prerequisites.html#using-udev-rules
 
 ## Windows
 
