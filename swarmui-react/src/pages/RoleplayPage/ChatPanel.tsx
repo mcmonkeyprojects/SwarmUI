@@ -57,6 +57,11 @@ import {
   parseSceneTag,
   streamRoleplayChat,
 } from '../../services/roleplayChatService';
+import { embedRoleplayTexts } from '../../services/roleplayEmbeddingService';
+import {
+  executeRoleplayScript,
+  type RoleplayScriptEffect,
+} from '../../features/roleplay/roleplayActionRuntime';
 import {
   cancelScheduledLocalTextModelUnload,
   scheduleLocalTextModelUnload,
@@ -289,9 +294,14 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     activeSessionId,
     characters,
     chatSessions,
+    roleplayKnowledgeDocuments,
+    roleplayEmbeddingModelId,
+    roleplayVectorRetrievalEnabled,
     personas,
     isStreamingChat,
     streamingContent,
+    roleplayScriptVariables,
+    roleplayQuickReplies,
     connectionStatus,
     chatProvider,
     chatApiKey,
@@ -327,15 +337,25 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     applyGeneratedMemory,
     addMemoryFact,
     addContinuityThread,
+    setRoleplayScriptVariable,
+    removeRoleplayScriptVariable,
+    addPromptInjection,
+    clearPromptInjections,
+    addScriptTrace,
     markSessionVisited,
   } = useRoleplayStore(
     useShallow((state) => ({
       activeSessionId: state.activeSessionId,
       characters: state.characters,
       chatSessions: state.chatSessions,
+      roleplayKnowledgeDocuments: state.roleplayKnowledgeDocuments,
+      roleplayEmbeddingModelId: state.roleplayEmbeddingModelId,
+      roleplayVectorRetrievalEnabled: state.roleplayVectorRetrievalEnabled,
       personas: state.personas,
       isStreamingChat: state.isStreamingChat,
       streamingContent: state.streamingContent,
+      roleplayScriptVariables: state.roleplayScriptVariables,
+      roleplayQuickReplies: state.roleplayQuickReplies,
       connectionStatus: state.connectionStatus,
       chatProvider: state.chatProvider,
       chatApiKey: state.chatApiKey,
@@ -371,6 +391,11 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       applyGeneratedMemory: state.applyGeneratedMemory,
       addMemoryFact: state.addMemoryFact,
       addContinuityThread: state.addContinuityThread,
+      setRoleplayScriptVariable: state.setRoleplayScriptVariable,
+      removeRoleplayScriptVariable: state.removeRoleplayScriptVariable,
+      addPromptInjection: state.addPromptInjection,
+      clearPromptInjections: state.clearPromptInjections,
+      addScriptTrace: state.addScriptTrace,
       markSessionVisited: state.markSessionVisited,
     }))
   );
@@ -506,11 +531,13 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       persona: activePersona,
       groupCharacters: participantCharacters,
       lorebooks,
+      knowledgeDocuments: roleplayKnowledgeDocuments,
       maxHistoryMessages: selectedMaxHistoryMessages,
       maxContextTokens: selectedContextTokens,
       reservedResponseTokens: chatMaxTokens,
       promptBudgetMode: selectedPromptBudgetMode,
       loreEntryLimit: selectedLoreEntryLimit,
+      scriptVariables: roleplayScriptVariables,
     });
   }, [
     activeCharacter,
@@ -520,6 +547,8 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
     compareBranchId,
     lorebooks,
     participantCharacters,
+    roleplayScriptVariables,
+    roleplayKnowledgeDocuments,
     selectedContextTokens,
     selectedLoreEntryLimit,
     selectedMaxHistoryMessages,
@@ -534,11 +563,13 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
             persona: activePersona,
             groupCharacters: participantCharacters,
             lorebooks,
+            knowledgeDocuments: roleplayKnowledgeDocuments,
             maxHistoryMessages: selectedMaxHistoryMessages,
             maxContextTokens: selectedContextTokens,
             reservedResponseTokens: chatMaxTokens,
             promptBudgetMode: selectedPromptBudgetMode,
             loreEntryLimit: selectedLoreEntryLimit,
+            scriptVariables: roleplayScriptVariables,
           })
         : null,
     [
@@ -548,6 +579,8 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       chatMaxTokens,
       lorebooks,
       participantCharacters,
+      roleplayScriptVariables,
+      roleplayKnowledgeDocuments,
       selectedContextTokens,
       selectedLoreEntryLimit,
       selectedMaxHistoryMessages,
@@ -867,6 +900,34 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       const promptGroupCharacters = promptSession.participantCharacterIds
         .map((characterId) => latestCharacterById.get(characterId))
         .filter((character): character is RoleplayCharacter => Boolean(character));
+      let retrievalQueryEmbedding: number[] | null = null;
+      if (roleplayVectorRetrievalEnabled && roleplayEmbeddingModelId.trim()) {
+        try {
+          const queryText = baseMessages
+            .filter(
+              (message) =>
+                (message.role === 'user' || message.role === 'assistant') &&
+                message.includedInPrompt !== false
+            )
+            .slice(-8)
+            .map((message) => getMessageContent(message))
+            .join('\n');
+          const embeddings = await embedRoleplayTexts({
+            endpointUrl: lmStudioEndpoint,
+            serverMode: detectedServerMode,
+            modelId: roleplayEmbeddingModelId,
+            texts: [queryText],
+            requestConfig: {
+              provider: chatProvider,
+              apiKey: chatApiKey,
+              title: 'SwarmUI Roleplay',
+            },
+          });
+          retrievalQueryEmbedding = embeddings[0]?.length ? embeddings[0] : null;
+        } catch (error) {
+          recordRoleplayChatTelemetry('vector-retrieval-failed', baseTelemetry, error);
+        }
+      }
 
       const compiledPrompt = compileRoleplayPrompt({
         character: promptCharacter,
@@ -874,6 +935,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         persona: promptPersona,
         groupCharacters: promptGroupCharacters,
         lorebooks,
+        knowledgeDocuments: roleplayKnowledgeDocuments,
         pendingMessages: baseMessages
           .filter(
             (message) =>
@@ -890,6 +952,9 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         reservedResponseTokens: chatMaxTokens,
         promptBudgetMode: selectedPromptBudgetMode,
         loreEntryLimit: selectedLoreEntryLimit,
+        scriptVariables: roleplayScriptVariables,
+        retrievalQueryEmbedding,
+        retrievalEmbeddingModel: roleplayEmbeddingModelId,
       });
       const promptTelemetry = summarizeCompiledPrompt(compiledPrompt);
 
@@ -1021,6 +1086,10 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
 
   const sendUserText = async (rawInput: string, replaceFromMessageId?: string | null) => {
     if (!rawInput.trim() || !activeSessionId || !activeCharacter || !activeSession) {
+      return;
+    }
+    if (!replaceFromMessageId && rawInput.trim().startsWith('/')) {
+      await runRoleplayScript(rawInput, 'slash', 'Slash Command');
       return;
     }
     if (connectionStatus !== 'connected' || !detectedServerMode || !selectedModelId) {
@@ -1166,6 +1235,137 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       message: 'Memory and lore context were refreshed without adding a chat turn.',
       color: 'green',
     });
+  };
+
+  const applyRoleplayScriptEffects = async (
+    effects: RoleplayScriptEffect[],
+    sourceLabel: string
+  ) => {
+    if (!activeSessionId) {
+      return;
+    }
+    let shouldContinue = false;
+    let shouldSwipe = false;
+    let shouldRegenerate = false;
+    let shouldImpersonate = false;
+    let shouldQuiet = false;
+
+    for (const effect of effects) {
+      if (effect.type === 'message') {
+        const currentMessages = getLatestSessionMessages(activeSessionId);
+        addMessage(activeSessionId, {
+          id: crypto.randomUUID(),
+          role: effect.role,
+          content: effect.content,
+          includedInPrompt: true,
+          variants: [],
+          activeVariantId: null,
+          timestamp: (currentMessages[currentMessages.length - 1]?.timestamp ?? 0) + 1,
+          sceneImageUrl: null,
+          suggestedImagePrompt: null,
+        });
+      } else if (effect.type === 'inject') {
+        addPromptInjection(activeSessionId, {
+          label: effect.label,
+          content: effect.content,
+          role: effect.role,
+          position: effect.position,
+          depth: effect.depth,
+          order: 850,
+          enabled: true,
+        });
+      } else if (effect.type === 'clear-injections') {
+        clearPromptInjections(activeSessionId);
+      } else if (effect.type === 'set-variable') {
+        setRoleplayScriptVariable(activeSessionId, effect.name, effect.value);
+      } else if (effect.type === 'unset-variable') {
+        removeRoleplayScriptVariable(activeSessionId, effect.name);
+      } else if (effect.type === 'remember') {
+        addMemoryFact(activeSessionId, effect.content);
+      } else if (effect.type === 'thread') {
+        addContinuityThread(activeSessionId, effect.content);
+      } else if (effect.type === 'notice') {
+        notifications.show({
+          title: sourceLabel,
+          message: effect.message,
+          color: 'blue',
+        });
+      } else if (effect.type === 'generation') {
+        shouldContinue = shouldContinue || effect.mode === 'continue';
+        shouldSwipe = shouldSwipe || effect.mode === 'swipe';
+        shouldRegenerate = shouldRegenerate || effect.mode === 'regenerate';
+        shouldImpersonate = shouldImpersonate || effect.mode === 'impersonate';
+        shouldQuiet = shouldQuiet || effect.mode === 'quiet';
+      }
+    }
+
+    if (shouldQuiet) {
+      await refreshSessionMemory(activeSessionId, getLatestSessionMessages(activeSessionId));
+    }
+    if (shouldContinue && lastAssistantMessageId) {
+      await streamAssistantReply(getLatestSessionMessages(activeSessionId), {
+        generationMode: 'continue',
+        appendToMessageId: lastAssistantMessageId,
+      });
+    }
+    if (shouldSwipe && lastAssistantMessageId) {
+      const currentMessages = getLatestSessionMessages(activeSessionId);
+      const assistantIndex = currentMessages.findIndex((message) => message.id === lastAssistantMessageId);
+      if (assistantIndex >= 0) {
+        await streamAssistantReply(currentMessages.slice(0, assistantIndex), {
+          generationMode: 'swipe',
+          targetVariantMessageId: lastAssistantMessageId,
+        });
+      }
+    }
+    if (shouldRegenerate && lastAssistantMessageId) {
+      const currentMessages = getLatestSessionMessages(activeSessionId);
+      const assistantIndex = currentMessages.findIndex((message) => message.id === lastAssistantMessageId);
+      if (assistantIndex >= 0) {
+        await streamAssistantReply(currentMessages.slice(0, assistantIndex), {
+          generationMode: 'regenerate',
+          replaceMessageId: lastAssistantMessageId,
+        });
+      }
+    }
+    if (shouldImpersonate) {
+      await streamAssistantReply(getLatestSessionMessages(activeSessionId), {
+        generationMode: 'impersonate',
+        outputRole: 'user',
+      });
+    }
+  };
+
+  const runRoleplayScript = async (
+    script: string,
+    source: 'slash' | 'quick-reply' | 'hook',
+    label: string
+  ) => {
+    if (!activeSessionId || !activeSession) {
+      return;
+    }
+    const result = executeRoleplayScript(script, {
+      globalVariables: roleplayScriptVariables,
+      sessionVariables: activeSession.scriptVariables,
+      quickReplies: roleplayQuickReplies,
+    });
+    addScriptTrace({
+      source,
+      label,
+      input: script,
+      status: result.ok ? 'success' : 'error',
+      message: result.message,
+      commandCount: result.commandCount,
+    });
+    if (!result.ok) {
+      notifications.show({
+        title: 'Roleplay Script Failed',
+        message: result.message,
+        color: 'red',
+      });
+      return;
+    }
+    await applyRoleplayScriptEffects(result.effects, label);
   };
 
   const handleRememberMessage = (message: ChatMessage) => {
@@ -1585,6 +1785,30 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
           ) : null}
         </Stack>
       </ScrollArea>
+
+      {roleplayQuickReplies.some((reply) => reply.enabled) ? (
+        <Group
+          gap="xs"
+          p="xs"
+          style={{ borderTop: '1px solid var(--theme-gray-5)' }}
+        >
+          {roleplayQuickReplies
+            .filter((reply) => reply.enabled)
+            .slice(0, 8)
+            .map((reply) => (
+              <SwarmButton
+                key={reply.id}
+                tone="secondary"
+                emphasis="ghost"
+                size="xs"
+                disabled={isStreamingChat}
+                onClick={() => void runRoleplayScript(reply.script, 'quick-reply', reply.label)}
+              >
+                {reply.label}
+              </SwarmButton>
+            ))}
+        </Group>
+      ) : null}
 
       <Group
         gap="xs"

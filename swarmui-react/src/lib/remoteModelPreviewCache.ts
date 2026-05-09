@@ -376,13 +376,13 @@ async function fetchCivitSourceByHash(
     if (!byHash || byHash.error) {
       continue;
     }
-    const modelId = coerceIdString((byHash as CivitAIModelVersionLookup).modelId);
+    const modelId = coerceIdString((byHash as unknown as CivitAIModelVersionLookup).modelId);
     if (!modelId) {
       continue;
     }
     return {
       modelId,
-      versionId: coerceIdString((byHash as CivitAIModelVersionLookup).id),
+      versionId: coerceIdString((byHash as unknown as CivitAIModelVersionLookup).id),
     };
   }
   return null;
@@ -481,7 +481,7 @@ export async function resolveRemoteSourceForModel(
     );
     const versionModelId =
       versionLookup && !versionLookup.error
-        ? coerceIdString((versionLookup as CivitAIModelVersionLookup).modelId)
+        ? coerceIdString((versionLookup as unknown as CivitAIModelVersionLookup).modelId)
         : null;
     if (versionModelId) {
       sourceType = 'civitai';
@@ -624,13 +624,13 @@ async function buildCivitaiCacheEntry(
   if (
     !response ||
     response.error ||
-    !Array.isArray((response as CivitAIMetadata).modelVersions) ||
-    (response as CivitAIMetadata).modelVersions.length === 0
+    !Array.isArray((response as unknown as CivitAIMetadata).modelVersions) ||
+    (response as unknown as CivitAIMetadata).modelVersions.length === 0
   ) {
     return null;
   }
 
-  const data = response as CivitAIMetadata;
+  const data = response as unknown as CivitAIMetadata;
   const hintedFileName = modelNameHint ? modelNameHint.split(/[\\/]/).pop() || '' : '';
   const hintedToken = hintedFileName ? normalizeModelToken(hintedFileName) : '';
   const firstDownloadableVersion =

@@ -63,6 +63,12 @@ export function PromptInspectorModal({
             <Badge size="sm" variant="light">
               Lore {compiledPrompt.diagnostics.loreTokens}
             </Badge>
+            <Badge size="sm" variant="light">
+              Knowledge {compiledPrompt.diagnostics.retrievedKnowledgeTokens}
+            </Badge>
+            <Badge size="sm" variant="light">
+              Vectors {compiledPrompt.diagnostics.retrievedKnowledgeVectorEntries}
+            </Badge>
             {compiledPrompt.diagnostics.droppedLoreEntries > 0 ? (
               <Badge size="sm" color="orange" variant="light">
                 Lore capped {compiledPrompt.diagnostics.droppedLoreEntries}
@@ -224,6 +230,41 @@ export function PromptInspectorModal({
             ) : (
               <Text size="xs" c="dimmed">
                 No history budget trace available.
+              </Text>
+            )}
+          </Stack>
+        </ScrollArea>
+
+        <Text size="sm" fw={600}>
+          Retrieved Knowledge ({compiledPrompt?.retrievedKnowledgeEntries.length ?? 0})
+        </Text>
+        <ScrollArea h={140}>
+          <Stack gap="xs">
+            {compiledPrompt?.retrievedKnowledgeEntries.length ? (
+              compiledPrompt.retrievedKnowledgeEntries.map((entry) => (
+                <div key={entry.chunkId}>
+                  <Group gap={4} mb={3}>
+                    <Badge size="xs" variant="outline">
+                      {entry.retrievalMode}
+                    </Badge>
+                    <Badge size="xs" variant="outline">
+                      {entry.scope}
+                    </Badge>
+                    <Text size="xs" fw={600}>
+                      {entry.documentTitle} / {entry.chunkTitle}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      score {entry.score.toFixed(2)} / ~{entry.tokenEstimate}
+                    </Text>
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    {entry.reason}
+                  </Text>
+                </div>
+              ))
+            ) : (
+              <Text size="xs" c="dimmed">
+                No knowledge chunks retrieved.
               </Text>
             )}
           </Stack>

@@ -1,0 +1,1 @@
+import{x as e,j as m}from"./vendor-react-core-D8r34Vjg.js";import{S as o}from"./vendor-mantine-core-B-V8qhRW.js";function n(r){const t=e.c(2);let i;return t[0]!==r?(i=m.jsx(o,{...r}),t[0]=r,t[1]=i):i=t[1],i}export{n as S};

@@ -146,7 +146,9 @@ function base64ToBytes(value: string): Uint8Array {
 }
 
 function createFileFromBytes(bytes: Uint8Array, fileName: string, mimeType: string): File {
-  return new File([bytes], fileName, { type: mimeType });
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return new File([buffer], fileName, { type: mimeType });
 }
 
 function createFetchedCardFromResponse(

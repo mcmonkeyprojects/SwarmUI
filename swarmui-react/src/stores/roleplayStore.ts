@@ -20,11 +20,17 @@ import type {
   RoleplayChatProvider,
   RoleplayLorebook,
   RoleplayLorebookEntry,
+  RoleplayKnowledgeDocument,
+  RoleplayKnowledgeScope,
   RoleplayMemoryFact,
   RoleplayMemoryStatus,
   RoleplayModelCompatibilitySettings,
   RoleplayPersona,
+  RoleplayPromptInjection,
   RoleplayPromptStack,
+  RoleplayQuickReply,
+  RoleplayScriptTraceEntry,
+  RoleplayScriptVariable,
   RoleplaySessionVisualState,
   RoleplayVisualCharacterState,
 } from '../types/roleplay';
@@ -42,7 +48,6 @@ import {
 import {
   createRoleplayCompatibilityFromProfile,
   getRoleplayLocalModelProfile,
-  ROLEPLAY_LOCAL_MODEL_PROFILE_DEFAULT_ID,
 } from '../data/roleplayLocalModelProfiles';
 import {
   ROLEPLAY_MAX_MEMORY_FACTS,
@@ -54,6 +59,7 @@ import {
   normalizeRoleplayPersonalityProfile,
 } from '../features/roleplay/roleplayCharacterPrompting';
 import type { RoleplayBundleData } from '../features/roleplay/roleplayBundle';
+import { chunkRoleplayKnowledgeDocument } from '../features/roleplay/roleplayKnowledgeRetrieval';
 
 const DEFAULT_CHAT_MAX_TOKENS = 768;
 export const DEFAULT_PERSONA_ID = 'default-persona';
@@ -77,8 +83,81 @@ type LegacyRoleplayState = Partial<RoleplayStoreState> & {
   conversations?: Record<string, ChatMessage[]>;
 };
 
-function createDefaultModelCompatibilitySettings(): RoleplayModelCompatibilitySettings {
-  return createRoleplayCompatibilityFromProfile(ROLEPLAY_LOCAL_MODEL_PROFILE_DEFAULT_ID);
+function createKnowledgeDocument(input: {
+  title: string;
+  description?: string;
+  scope: RoleplayKnowledgeScope;
+  characterId?: string | null;
+  personaId?: string | null;
+  sessionId?: string | null;
+  sourceType?: RoleplayKnowledgeDocument['sourceType'];
+  content: string;
+  enabled?: boolean;
+}): RoleplayKnowledgeDocument {
+  const now = Date.now();
+  const id = crypto.randomUUID();
+  const title = normalizeString(input.title, 'Knowledge Note');
+  const content = normalizeString(input.content);
+  return {
+    id,
+    title,
+    description: normalizeString(input.description),
+    scope: input.scope,
+    characterId: input.characterId ?? null,
+    personaId: input.personaId ?? null,
+    sessionId: input.sessionId ?? null,
+    sourceType: input.sourceType ?? 'note',
+    content,
+    chunks: chunkRoleplayKnowledgeDocument({ documentId: id, title, content }),
+    enabled: input.enabled !== false,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function normalizeKnowledgeDocument(document: Partial<RoleplayKnowledgeDocument>): RoleplayKnowledgeDocument {
+  const now = Date.now();
+  const id = normalizeString(document.id, crypto.randomUUID());
+  const title = normalizeString(document.title, 'Knowledge Note');
+  const content = normalizeString(document.content);
+  const scope =
+    document.scope === 'character' || document.scope === 'persona' || document.scope === 'session'
+      ? document.scope
+      : 'global';
+  const chunks =
+    Array.isArray(document.chunks) && document.chunks.length > 0
+      ? document.chunks.map((chunk, index) => ({
+          id: normalizeString(chunk.id, `${id}-chunk-${index + 1}`),
+          documentId: id,
+          index: normalizeNumber(chunk.index, index),
+          title: normalizeString(chunk.title, `${title} #${index + 1}`),
+          content: normalizeString(chunk.content),
+          tokenEstimate: normalizeNumber(chunk.tokenEstimate, Math.ceil(normalizeString(chunk.content).length / 4)),
+          embedding: Array.isArray(chunk.embedding) ? chunk.embedding : null,
+          embeddingModel: normalizeNullableString(chunk.embeddingModel),
+          updatedAt: chunk.updatedAt ?? now,
+        }))
+      : chunkRoleplayKnowledgeDocument({ documentId: id, title, content });
+  return {
+    id,
+    title,
+    description: normalizeString(document.description),
+    scope,
+    characterId: normalizeNullableString(document.characterId),
+    personaId: normalizeNullableString(document.personaId),
+    sessionId: normalizeNullableString(document.sessionId),
+    sourceType:
+      document.sourceType === 'text-file' ||
+      document.sourceType === 'chat-history' ||
+      document.sourceType === 'external'
+        ? document.sourceType
+        : 'note',
+    content,
+    chunks,
+    enabled: document.enabled !== false,
+    createdAt: document.createdAt ?? now,
+    updatedAt: document.updatedAt ?? now,
+  };
 }
 
 function normalizeModelCompatibilitySettings(
@@ -345,6 +424,71 @@ function createDefaultPromptStack(): RoleplayPromptStack {
   };
 }
 
+function normalizeScriptVariables(
+  variables: Record<string, RoleplayScriptVariable> | undefined
+): Record<string, RoleplayScriptVariable> {
+  const normalized: Record<string, RoleplayScriptVariable> = {};
+  for (const [name, variable] of Object.entries(variables ?? {})) {
+    const normalizedName = normalizeString(variable?.name, name).trim();
+    if (!normalizedName) {
+      continue;
+    }
+    normalized[normalizedName] = {
+      name: normalizedName,
+      value: normalizeString(variable?.value),
+      updatedAt: normalizeNumber(variable?.updatedAt, Date.now()),
+    };
+  }
+  return normalized;
+}
+
+function normalizePromptInjection(injection: Partial<RoleplayPromptInjection>): RoleplayPromptInjection {
+  const now = Date.now();
+  const position = injection.position === 'after-history' || injection.position === 'in-history'
+    ? injection.position
+    : 'before-history';
+  const role = injection.role === 'user' || injection.role === 'assistant' ? injection.role : 'system';
+  return {
+    id: normalizeString(injection.id, crypto.randomUUID()),
+    label: normalizeString(injection.label, 'Script Injection'),
+    content: normalizeString(injection.content),
+    role,
+    position,
+    depth: position === 'in-history' ? normalizeNumber(injection.depth, 4) : null,
+    order: normalizeNumber(injection.order, 850),
+    enabled: injection.enabled !== false,
+    createdAt: injection.createdAt ?? now,
+    updatedAt: injection.updatedAt ?? now,
+  };
+}
+
+function normalizeQuickReply(reply: Partial<RoleplayQuickReply>): RoleplayQuickReply {
+  const now = Date.now();
+  return {
+    id: normalizeString(reply.id, crypto.randomUUID()),
+    label: normalizeString(reply.label, 'Quick Reply'),
+    script: normalizeString(reply.script),
+    enabled: reply.enabled !== false,
+    createdAt: reply.createdAt ?? now,
+    updatedAt: reply.updatedAt ?? now,
+  };
+}
+
+function createDefaultRoleplayQuickReplies(): RoleplayQuickReply[] {
+  return [
+    normalizeQuickReply({
+      label: 'Quiet Refresh',
+      script: '/quiet',
+      enabled: true,
+    }),
+    normalizeQuickReply({
+      label: 'Continue',
+      script: '/continue',
+      enabled: true,
+    }),
+  ];
+}
+
 function normalizePromptBlockSettings(
   settings: RoleplayPromptStack['promptBlockSettings'] | undefined
 ): RoleplayPromptStack['promptBlockSettings'] {
@@ -460,34 +604,34 @@ function normalizeGalleryImages(value: unknown): RoleplayCharacterGalleryImage[]
   if (!Array.isArray(value)) {
     return [];
   }
-  return value
-    .map((image, index) => {
-      const source = image as Partial<RoleplayCharacterGalleryImage>;
-      const imageUrl = normalizeString(source.imageUrl).trim();
-      if (!imageUrl) {
-        return null;
-      }
-      const imageSource =
-        source.source === 'portrait' ||
-        source.source === 'scene' ||
-        source.source === 'upload' ||
-        source.source === 'import'
-          ? source.source
-          : 'import';
-      return {
-        id: normalizeString(source.id, `gallery-${index}`),
-        imageUrl,
-        source: imageSource,
-        referenceRole: normalizeGalleryReferenceRole(source.referenceRole),
-        isPrimaryReference: normalizeBoolean(source.isPrimaryReference, false),
-        prompt: normalizeString(source.prompt),
-        negativePrompt: normalizeNullableString(source.negativePrompt),
-        sessionId: normalizeNullableString(source.sessionId),
-        messageId: normalizeNullableString(source.messageId),
-        createdAt: normalizeNumber(source.createdAt, Date.now()),
-      };
-    })
-    .filter((image): image is RoleplayCharacterGalleryImage => image !== null);
+  const normalizedImages: RoleplayCharacterGalleryImage[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    const source = value[index] as Partial<RoleplayCharacterGalleryImage>;
+    const imageUrl = normalizeString(source.imageUrl).trim();
+    if (!imageUrl) {
+      continue;
+    }
+    const imageSource =
+      source.source === 'portrait' ||
+      source.source === 'scene' ||
+      source.source === 'upload' ||
+      source.source === 'import'
+        ? source.source
+        : 'import';
+    normalizedImages.push({
+      id: normalizeString(source.id, `gallery-${index}`),
+      imageUrl,
+      source: imageSource,
+      referenceRole: normalizeGalleryReferenceRole(source.referenceRole),
+      isPrimaryReference: normalizeBoolean(source.isPrimaryReference, false),
+      prompt: normalizeString(source.prompt),
+      negativePrompt: normalizeNullableString(source.negativePrompt),
+      sessionId: normalizeNullableString(source.sessionId),
+      messageId: normalizeNullableString(source.messageId),
+      createdAt: normalizeNumber(source.createdAt, Date.now()),
+    });
+  }
+  return normalizedImages;
 }
 
 function normalizeCharacter(character: LegacyRoleplayCharacter): RoleplayCharacter {
@@ -740,6 +884,10 @@ function normalizeSession(
       promptBlockSettings,
       promptBlockSettingsByPresetId,
     },
+    scriptVariables: normalizeScriptVariables(session.scriptVariables),
+    promptInjections: (session.promptInjections ?? [])
+      .map((injection) => normalizePromptInjection(injection))
+      .filter((injection) => injection.content.trim()),
     messages: normalizedMessages,
     activeBranchId: effectiveActiveBranchId,
     branches,
@@ -1238,11 +1386,17 @@ export interface RoleplayStoreState {
   characters: RoleplayCharacter[];
   personas: RoleplayPersona[];
   lorebooks: RoleplayLorebook[];
+  roleplayKnowledgeDocuments: RoleplayKnowledgeDocument[];
+  roleplayEmbeddingModelId: string;
+  roleplayVectorRetrievalEnabled: boolean;
   chatSessions: RoleplayChatSession[];
   activeCharacterId: string | null;
   activeSessionId: string | null;
   isStreamingChat: boolean;
   streamingContent: string;
+  roleplayScriptVariables: Record<string, RoleplayScriptVariable>;
+  roleplayQuickReplies: RoleplayQuickReply[];
+  roleplayScriptTrace: RoleplayScriptTraceEntry[];
   connectionStatus: RoleplayConnectionState;
   connectionMessage: string | null;
   chatProvider: RoleplayChatProvider;
@@ -1292,6 +1446,24 @@ export interface RoleplayStoreState {
   addLorebook: (lorebook: RoleplayLorebook) => void;
   updateLorebook: (id: string, updates: Partial<Omit<RoleplayLorebook, 'id'>>) => void;
   removeLorebook: (id: string) => void;
+  addKnowledgeDocument: (input: {
+    title: string;
+    description?: string;
+    scope: RoleplayKnowledgeScope;
+    characterId?: string | null;
+    personaId?: string | null;
+    sessionId?: string | null;
+    sourceType?: RoleplayKnowledgeDocument['sourceType'];
+    content: string;
+    enabled?: boolean;
+  }) => void;
+  updateKnowledgeDocument: (id: string, updates: Partial<Omit<RoleplayKnowledgeDocument, 'id' | 'chunks' | 'createdAt'>>) => void;
+  setKnowledgeDocumentChunkEmbeddings: (
+    id: string,
+    embeddingModel: string,
+    embeddings: Array<{ chunkId: string; embedding: number[] }>
+  ) => void;
+  removeKnowledgeDocument: (id: string) => void;
   createSession: (characterId: string, title?: string) => void;
   duplicateSession: (sessionId: string) => void;
   renameSession: (sessionId: string, title: string) => void;
@@ -1365,6 +1537,15 @@ export interface RoleplayStoreState {
   addContinuityThread: (sessionId: string, text: string) => void;
   removeContinuityThread: (sessionId: string, threadIndex: number) => void;
   moveContinuityThread: (sessionId: string, threadIndex: number, direction: -1 | 1) => void;
+  setRoleplayScriptVariable: (sessionId: string | null, name: string, value: string) => void;
+  removeRoleplayScriptVariable: (sessionId: string | null, name: string) => void;
+  addPromptInjection: (sessionId: string, injection: Omit<RoleplayPromptInjection, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  removePromptInjection: (sessionId: string, injectionId: string) => void;
+  clearPromptInjections: (sessionId: string) => void;
+  addQuickReply: (reply: Omit<RoleplayQuickReply, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateQuickReply: (replyId: string, updates: Partial<Omit<RoleplayQuickReply, 'id'>>) => void;
+  removeQuickReply: (replyId: string) => void;
+  addScriptTrace: (entry: Omit<RoleplayScriptTraceEntry, 'id' | 'timestamp'>) => void;
   markSessionVisited: (sessionId: string, visitedAt?: number) => void;
   setConnectionStatus: (status: RoleplayConnectionState) => void;
   setConnectionMessage: (message: string | null) => void;
@@ -1374,6 +1555,8 @@ export interface RoleplayStoreState {
   setSelectedModelId: (modelId: string) => void;
   setDetectedServerMode: (mode: AssistantServerMode | null) => void;
   setAvailableModels: (models: AssistantModel[]) => void;
+  setRoleplayEmbeddingModelId: (modelId: string) => void;
+  setRoleplayVectorRetrievalEnabled: (enabled: boolean) => void;
   setModelCompatibility: (
     modelId: string,
     updates: Partial<RoleplayModelCompatibilitySettings>
@@ -1401,11 +1584,17 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
         characters: DEFAULT_CHARACTERS,
         personas: DEFAULT_PERSONAS,
         lorebooks: [],
+        roleplayKnowledgeDocuments: [],
+        roleplayEmbeddingModelId: '',
+        roleplayVectorRetrievalEnabled: true,
         chatSessions: DEFAULT_CHAT_SESSIONS,
         activeCharacterId: DEFAULT_CHARACTERS[0].id,
         activeSessionId: DEFAULT_CHAT_SESSIONS[0].id,
         isStreamingChat: false,
         streamingContent: '',
+        roleplayScriptVariables: {},
+        roleplayQuickReplies: createDefaultRoleplayQuickReplies(),
+        roleplayScriptTrace: [],
         connectionStatus: 'idle',
         connectionMessage: null,
         chatProvider: 'local',
@@ -1815,6 +2004,66 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               ...session,
               boundLorebookIds: session.boundLorebookIds.filter((lorebookId) => lorebookId !== id),
             })),
+          })),
+        addKnowledgeDocument: (input) =>
+          set((state) => ({
+            roleplayKnowledgeDocuments: [
+              createKnowledgeDocument(input),
+              ...state.roleplayKnowledgeDocuments,
+            ],
+          })),
+        updateKnowledgeDocument: (id, updates) =>
+          set((state) => ({
+            roleplayKnowledgeDocuments: state.roleplayKnowledgeDocuments.map((document) => {
+              if (document.id !== id) {
+                return document;
+              }
+              const nextDocument = {
+                ...document,
+                ...updates,
+                updatedAt: Date.now(),
+              };
+              const contentChanged = Object.hasOwn(updates, 'content') || Object.hasOwn(updates, 'title');
+              return normalizeKnowledgeDocument({
+                ...nextDocument,
+                chunks: contentChanged ? [] : nextDocument.chunks,
+              });
+            }),
+          })),
+        setKnowledgeDocumentChunkEmbeddings: (id, embeddingModel, embeddings) =>
+          set((state) => {
+            const embeddingByChunkId = new Map(
+              embeddings.map((entry) => [entry.chunkId, entry.embedding])
+            );
+            return {
+              roleplayKnowledgeDocuments: state.roleplayKnowledgeDocuments.map((document) => {
+                if (document.id !== id) {
+                  return document;
+                }
+                return {
+                  ...document,
+                  chunks: document.chunks.map((chunk) => {
+                    const embedding = embeddingByChunkId.get(chunk.id);
+                    if (!embedding) {
+                      return chunk;
+                    }
+                    return {
+                      ...chunk,
+                      embedding,
+                      embeddingModel,
+                      updatedAt: Date.now(),
+                    };
+                  }),
+                  updatedAt: Date.now(),
+                };
+              }),
+            };
+          }),
+        removeKnowledgeDocument: (id) =>
+          set((state) => ({
+            roleplayKnowledgeDocuments: state.roleplayKnowledgeDocuments.filter(
+              (document) => document.id !== id
+            ),
           })),
         createSession: (characterId, title = 'New Chat') =>
           set((state) => {
@@ -2577,6 +2826,126 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               };
             }),
           })),
+        setRoleplayScriptVariable: (sessionId, name, value) =>
+          set((state) => {
+            const normalizedName = name.trim();
+            if (!normalizedName) {
+              return {};
+            }
+            const variable: RoleplayScriptVariable = {
+              name: normalizedName,
+              value,
+              updatedAt: Date.now(),
+            };
+            if (!sessionId) {
+              return {
+                roleplayScriptVariables: {
+                  ...state.roleplayScriptVariables,
+                  [normalizedName]: variable,
+                },
+              };
+            }
+            return {
+              chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
+                ...session,
+                scriptVariables: {
+                  ...session.scriptVariables,
+                  [normalizedName]: variable,
+                },
+                updatedAt: Date.now(),
+              })),
+            };
+          }),
+        removeRoleplayScriptVariable: (sessionId, name) =>
+          set((state) => {
+            const normalizedName = name.trim();
+            if (!normalizedName) {
+              return {};
+            }
+            if (!sessionId) {
+              const nextVariables = { ...state.roleplayScriptVariables };
+              delete nextVariables[normalizedName];
+              return { roleplayScriptVariables: nextVariables };
+            }
+            return {
+              chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => {
+                const nextVariables = { ...session.scriptVariables };
+                delete nextVariables[normalizedName];
+                return {
+                  ...session,
+                  scriptVariables: nextVariables,
+                  updatedAt: Date.now(),
+                };
+              }),
+            };
+          }),
+        addPromptInjection: (sessionId, injection) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
+              ...session,
+              promptInjections: [
+                ...session.promptInjections,
+                normalizePromptInjection({
+                  ...injection,
+                  id: crypto.randomUUID(),
+                }),
+              ],
+              updatedAt: Date.now(),
+            })),
+          })),
+        removePromptInjection: (sessionId, injectionId) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
+              ...session,
+              promptInjections: session.promptInjections.filter((injection) => injection.id !== injectionId),
+              updatedAt: Date.now(),
+            })),
+          })),
+        clearPromptInjections: (sessionId) =>
+          set((state) => ({
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
+              ...session,
+              promptInjections: [],
+              updatedAt: Date.now(),
+            })),
+          })),
+        addQuickReply: (reply) =>
+          set((state) => ({
+            roleplayQuickReplies: [
+              ...state.roleplayQuickReplies,
+              normalizeQuickReply({
+                ...reply,
+                id: crypto.randomUUID(),
+              }),
+            ],
+          })),
+        updateQuickReply: (replyId, updates) =>
+          set((state) => ({
+            roleplayQuickReplies: state.roleplayQuickReplies.map((reply) =>
+              reply.id === replyId
+                ? normalizeQuickReply({
+                    ...reply,
+                    ...updates,
+                    updatedAt: Date.now(),
+                  })
+                : reply
+            ),
+          })),
+        removeQuickReply: (replyId) =>
+          set((state) => ({
+            roleplayQuickReplies: state.roleplayQuickReplies.filter((reply) => reply.id !== replyId),
+          })),
+        addScriptTrace: (entry) =>
+          set((state) => ({
+            roleplayScriptTrace: [
+              {
+                id: crypto.randomUUID(),
+                timestamp: Date.now(),
+                ...entry,
+              },
+              ...state.roleplayScriptTrace,
+            ].slice(0, 50),
+          })),
         markSessionVisited: (sessionId, visitedAt = Date.now()) =>
           set((state) => ({
             chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
@@ -2593,6 +2962,9 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
         setSelectedModelId: (modelId) => set({ selectedModelId: modelId }),
         setDetectedServerMode: (mode) => set({ detectedServerMode: mode }),
         setAvailableModels: (models) => set({ availableModels: models }),
+        setRoleplayEmbeddingModelId: (modelId) => set({ roleplayEmbeddingModelId: modelId }),
+        setRoleplayVectorRetrievalEnabled: (enabled) =>
+          set({ roleplayVectorRetrievalEnabled: enabled }),
         setModelCompatibility: (modelId, updates) =>
           set((state) => {
             const normalizedModelId = modelId.trim();
@@ -2695,7 +3067,7 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
       {
         name: 'swarmui-roleplay-v2',
         storage: createJSONStorage(() => createIndexedDbStorage('swarmui-roleplay')),
-        version: 17,
+        version: 20,
         migrate: (persistedState) => {
           const state = persistedState as LegacyRoleplayState;
           const normalizedCharacters =
@@ -2747,6 +3119,14 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
             characters: normalizedCharacters,
             personas,
             lorebooks,
+            roleplayKnowledgeDocuments: (state.roleplayKnowledgeDocuments ?? []).map((document) =>
+              normalizeKnowledgeDocument(document)
+            ),
+            roleplayEmbeddingModelId:
+              typeof state.roleplayEmbeddingModelId === 'string'
+                ? state.roleplayEmbeddingModelId
+                : '',
+            roleplayVectorRetrievalEnabled: state.roleplayVectorRetrievalEnabled !== false,
             chatSessions,
             activeCharacterId,
             activeSessionId,
@@ -2769,6 +3149,13 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               typeof state.selectedModelId === 'string' ? state.selectedModelId : '',
             chatTemperature:
               typeof state.chatTemperature === 'number' ? state.chatTemperature : 0.8,
+            roleplayScriptVariables: normalizeScriptVariables(state.roleplayScriptVariables),
+            roleplayQuickReplies: Array.isArray(state.roleplayQuickReplies)
+              ? state.roleplayQuickReplies.map((reply) => normalizeQuickReply(reply))
+              : createDefaultRoleplayQuickReplies(),
+            roleplayScriptTrace: Array.isArray(state.roleplayScriptTrace)
+              ? state.roleplayScriptTrace.slice(0, 50)
+              : [],
             modelCompatibilityByModelId: Object.fromEntries(
               Object.entries(state.modelCompatibilityByModelId ?? {}).map(([modelId, settings]) => [
                 modelId,
@@ -2781,9 +3168,15 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
           characters: state.characters,
           personas: state.personas,
           lorebooks: state.lorebooks,
+          roleplayKnowledgeDocuments: state.roleplayKnowledgeDocuments,
+          roleplayEmbeddingModelId: state.roleplayEmbeddingModelId,
+          roleplayVectorRetrievalEnabled: state.roleplayVectorRetrievalEnabled,
           chatSessions: state.chatSessions,
           activeCharacterId: state.activeCharacterId,
           activeSessionId: state.activeSessionId,
+          roleplayScriptVariables: state.roleplayScriptVariables,
+          roleplayQuickReplies: state.roleplayQuickReplies,
+          roleplayScriptTrace: state.roleplayScriptTrace,
           chatProvider: state.chatProvider,
           chatApiKey: state.chatApiKey,
           lmStudioEndpoint: state.lmStudioEndpoint,

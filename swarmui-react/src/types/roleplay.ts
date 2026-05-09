@@ -8,6 +8,13 @@ export type RoleplayCharacterSourceFormat = 'native' | 'catalog' | 'swarm-bundle
 export type RoleplayCharacterImportMode = 'create' | 'replace' | 'duplicate';
 export type RoleplayChatProvider = 'local' | 'openrouter' | 'openai-compatible';
 export type RoleplayPromptBudgetMode = 'full' | 'compact' | 'micro';
+export type RoleplayKnowledgeScope = 'global' | 'character' | 'persona' | 'session';
+
+export interface RoleplayScriptVariable {
+  name: string;
+  value: string;
+  updatedAt: number;
+}
 
 export interface RoleplayCharacterSourceMetadata {
   sourceUrl?: string;
@@ -103,6 +110,80 @@ export interface RoleplayPromptStack {
   includeLore: boolean;
   promptBlockSettings: Record<string, RoleplayPromptBlockSettings>;
   promptBlockSettingsByPresetId: Record<string, Record<string, RoleplayPromptBlockSettings>>;
+}
+
+export interface RoleplayPromptInjection {
+  id: string;
+  label: string;
+  content: string;
+  role: RoleplayPromptBlockRole;
+  position: RoleplayPromptBlockPosition;
+  depth: number | null;
+  order: number;
+  enabled: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface RoleplayQuickReply {
+  id: string;
+  label: string;
+  script: string;
+  enabled: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface RoleplayScriptTraceEntry {
+  id: string;
+  timestamp: number;
+  source: 'slash' | 'quick-reply' | 'hook';
+  label: string;
+  input: string;
+  status: 'success' | 'error';
+  message: string;
+  commandCount: number;
+}
+
+export interface RoleplayKnowledgeChunk {
+  id: string;
+  documentId: string;
+  index: number;
+  title: string;
+  content: string;
+  tokenEstimate: number;
+  embedding?: number[] | null;
+  embeddingModel?: string | null;
+  updatedAt: number;
+}
+
+export interface RoleplayKnowledgeDocument {
+  id: string;
+  title: string;
+  description: string;
+  scope: RoleplayKnowledgeScope;
+  characterId: string | null;
+  personaId: string | null;
+  sessionId: string | null;
+  sourceType: 'note' | 'text-file' | 'chat-history' | 'external';
+  content: string;
+  chunks: RoleplayKnowledgeChunk[];
+  enabled: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface RoleplayRetrievedKnowledgeChunk {
+  documentId: string;
+  documentTitle: string;
+  chunkId: string;
+  chunkTitle: string;
+  scope: RoleplayKnowledgeScope;
+  score: number;
+  reason: string;
+  retrievalMode: 'vector' | 'lexical';
+  content: string;
+  tokenEstimate: number;
 }
 
 export interface RoleplayLorebookEntry {
@@ -322,6 +403,8 @@ export interface RoleplayChatSession extends RoleplayMemoryState {
   chatBackgroundImage: string | null;
   boundLorebookIds: string[];
   promptStack: RoleplayPromptStack;
+  scriptVariables: Record<string, RoleplayScriptVariable>;
+  promptInjections: RoleplayPromptInjection[];
   messages: ChatMessage[];
   activeBranchId: string;
   branches: RoleplayChatBranch[];
@@ -381,7 +464,7 @@ export interface RoleplayPromptBlock {
   triggerModes: RoleplayGenerationMode[];
   tokenBudget: number | null;
   tokenEstimate: number;
-  source: 'main' | 'preset' | 'character' | 'persona' | 'memory' | 'lore' | 'note' | 'mode';
+  source: 'main' | 'preset' | 'character' | 'persona' | 'memory' | 'retrieval' | 'lore' | 'note' | 'mode' | 'script';
 }
 
 export interface RoleplayPromptBlockSettings {
@@ -415,6 +498,9 @@ export interface RoleplayPromptDiagnostics {
   includedLoreEntries: number;
   droppedLoreEntries: number;
   loreEntryLimit: number | null;
+  retrievedKnowledgeEntries: number;
+  retrievedKnowledgeTokens: number;
+  retrievedKnowledgeVectorEntries: number;
   promptPressure: number;
   warnings: string[];
 }
@@ -467,6 +553,7 @@ export interface CompiledRoleplayPrompt {
   apiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
   activatedLoreEntries: ActivatedRoleplayLoreEntry[];
   loreActivationDebug: RoleplayLoreActivationDebugEntry[];
+  retrievedKnowledgeEntries: RoleplayRetrievedKnowledgeChunk[];
   diagnostics: RoleplayPromptDiagnostics;
   tokenEstimate: number;
 }

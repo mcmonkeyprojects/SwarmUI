@@ -64,7 +64,10 @@ import {
   buildCharacterPersonalityBlock,
   getEffectiveSystemPrompt,
 } from '../../features/roleplay/roleplayCharacterPrompting';
-import { getLastAssistantMessage } from '../../features/roleplay/roleplayMessageUtils';
+import {
+  getLastAssistantMessage,
+  getMessageContent,
+} from '../../features/roleplay/roleplayMessageUtils';
 import { useModelLoading } from '../../hooks/useModelLoading';
 import { useModels } from '../../hooks/useModels';
 import {
@@ -72,6 +75,7 @@ import {
   generateSceneDescription,
   testRoleplayServerReply,
 } from '../../services/roleplayChatService';
+import { embedRoleplayTexts } from '../../services/roleplayEmbeddingService';
 import {
   enhanceRoleplayImagePrompt,
 } from '../../services/magicPromptService';
@@ -86,6 +90,7 @@ import { useNavigationStore } from '../../stores/navigationStore';
 import type {
   RoleplayGenerationMode,
   RoleplayChatSession,
+  RoleplayKnowledgeScope,
   RoleplayMemoryFact,
   RoleplayPromptBlock,
   RoleplayPromptBlockSettings,
@@ -240,6 +245,12 @@ export function ControlsPanel({
   const [promptInspectorOpen, setPromptInspectorOpen] = useState(false);
   const [activeDirectorTab, setActiveDirectorTab] = useState<string | null>('roleplay');
   const [roleplayImageEnhanceEnabled, setRoleplayImageEnhanceEnabled] = useState(true);
+  const [quickReplyLabelDraft, setQuickReplyLabelDraft] = useState('');
+  const [quickReplyScriptDraft, setQuickReplyScriptDraft] = useState('');
+  const [knowledgeTitleDraft, setKnowledgeTitleDraft] = useState('');
+  const [knowledgeContentDraft, setKnowledgeContentDraft] = useState('');
+  const [knowledgeScopeDraft, setKnowledgeScopeDraft] = useState<RoleplayKnowledgeScope>('session');
+  const [isVectorizingKnowledge, setIsVectorizingKnowledge] = useState(false);
   const [lastImagePromptPreview, setLastImagePromptPreview] =
     useState<RoleplayImagePromptPreview | null>(null);
   const [openSections, setOpenSections] = useState<string[]>([
@@ -256,6 +267,12 @@ export function ControlsPanel({
     lorebooks,
     chatSessions,
     activeSessionId,
+    roleplayScriptVariables,
+    roleplayKnowledgeDocuments,
+    roleplayEmbeddingModelId,
+    roleplayVectorRetrievalEnabled,
+    roleplayQuickReplies,
+    roleplayScriptTrace,
     connectionStatus,
     connectionMessage,
     chatProvider,
@@ -302,6 +319,17 @@ export function ControlsPanel({
     toggleMemoryFactPinned,
     removeContinuityThread,
     moveContinuityThread,
+    addQuickReply,
+    updateQuickReply,
+    removeQuickReply,
+    removePromptInjection,
+    clearPromptInjections,
+    addKnowledgeDocument,
+    updateKnowledgeDocument,
+    setKnowledgeDocumentChunkEmbeddings,
+    removeKnowledgeDocument,
+    setRoleplayEmbeddingModelId,
+    setRoleplayVectorRetrievalEnabled,
     importBundle,
   } = useRoleplayStore(
     useShallow((state) => ({
@@ -310,6 +338,12 @@ export function ControlsPanel({
       lorebooks: state.lorebooks,
       chatSessions: state.chatSessions,
       activeSessionId: state.activeSessionId,
+      roleplayScriptVariables: state.roleplayScriptVariables,
+      roleplayKnowledgeDocuments: state.roleplayKnowledgeDocuments,
+      roleplayEmbeddingModelId: state.roleplayEmbeddingModelId,
+      roleplayVectorRetrievalEnabled: state.roleplayVectorRetrievalEnabled,
+      roleplayQuickReplies: state.roleplayQuickReplies,
+      roleplayScriptTrace: state.roleplayScriptTrace,
       connectionStatus: state.connectionStatus,
       connectionMessage: state.connectionMessage,
       chatProvider: state.chatProvider,
@@ -356,6 +390,17 @@ export function ControlsPanel({
       toggleMemoryFactPinned: state.toggleMemoryFactPinned,
       removeContinuityThread: state.removeContinuityThread,
       moveContinuityThread: state.moveContinuityThread,
+      addQuickReply: state.addQuickReply,
+      updateQuickReply: state.updateQuickReply,
+      removeQuickReply: state.removeQuickReply,
+      removePromptInjection: state.removePromptInjection,
+      clearPromptInjections: state.clearPromptInjections,
+      addKnowledgeDocument: state.addKnowledgeDocument,
+      updateKnowledgeDocument: state.updateKnowledgeDocument,
+      setKnowledgeDocumentChunkEmbeddings: state.setKnowledgeDocumentChunkEmbeddings,
+      removeKnowledgeDocument: state.removeKnowledgeDocument,
+      setRoleplayEmbeddingModelId: state.setRoleplayEmbeddingModelId,
+      setRoleplayVectorRetrievalEnabled: state.setRoleplayVectorRetrievalEnabled,
       importBundle: state.importBundle,
     }))
   );
@@ -649,6 +694,8 @@ export function ControlsPanel({
             reservedResponseTokens: chatMaxTokens,
             promptBudgetMode: selectedPromptBudgetMode,
             loreEntryLimit: selectedLoreEntryLimit,
+            scriptVariables: roleplayScriptVariables,
+            knowledgeDocuments: roleplayKnowledgeDocuments,
           })
         : null,
     [
@@ -658,6 +705,8 @@ export function ControlsPanel({
       activeSession,
       chatMaxTokens,
       lorebooks,
+      roleplayScriptVariables,
+      roleplayKnowledgeDocuments,
       selectedContextTokens,
       selectedLoreEntryLimit,
       selectedMaxHistoryMessages,
@@ -1161,6 +1210,7 @@ export function ControlsPanel({
       addQueueJob(
         {
           ...brief.generateParams,
+          prompt: brief.generateParams.prompt ?? brief.prompt,
           seed: Math.floor(Math.random() * 2147483647),
         },
         {
@@ -1601,6 +1651,194 @@ export function ControlsPanel({
     setNewMemoryFactText('');
   };
 
+  const handleAddQuickReply = () => {
+    const label = quickReplyLabelDraft.trim();
+    const script = quickReplyScriptDraft.trim();
+    if (!label || !script) {
+      return;
+    }
+    addQuickReply({
+      label,
+      script,
+      enabled: true,
+    });
+    setQuickReplyLabelDraft('');
+    setQuickReplyScriptDraft('');
+  };
+
+  const scopedKnowledgeDocuments = useMemo(
+    () =>
+      roleplayKnowledgeDocuments.filter((document) => {
+        if (!activeCharacter || !activeSession) {
+          return document.scope === 'global';
+        }
+        if (document.scope === 'global') {
+          return true;
+        }
+        if (document.scope === 'character') {
+          return document.characterId === activeCharacter.id;
+        }
+        if (document.scope === 'persona') {
+          return Boolean(activePersona?.id && document.personaId === activePersona.id);
+        }
+        return document.sessionId === activeSession.id;
+      }),
+    [activeCharacter, activePersona?.id, activeSession, roleplayKnowledgeDocuments]
+  );
+
+  const handleAddKnowledgeDocument = () => {
+    if (!knowledgeTitleDraft.trim() || !knowledgeContentDraft.trim()) {
+      return;
+    }
+    addKnowledgeDocument({
+      title: knowledgeTitleDraft.trim(),
+      content: knowledgeContentDraft.trim(),
+      scope: knowledgeScopeDraft,
+      characterId: knowledgeScopeDraft === 'character' ? activeCharacter?.id : null,
+      personaId: knowledgeScopeDraft === 'persona' ? activePersona?.id : null,
+      sessionId: knowledgeScopeDraft === 'session' ? activeSession?.id : null,
+      sourceType: 'note',
+      enabled: true,
+    });
+    setKnowledgeTitleDraft('');
+    setKnowledgeContentDraft('');
+  };
+
+  const handleImportKnowledgeDocument = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+    if (knowledgeScopeDraft === 'session' && !activeSession) {
+      notifications.show({
+        title: 'No Active Chat',
+        message: 'Choose a chat before importing session-scoped knowledge.',
+        color: 'orange',
+      });
+      return;
+    }
+    try {
+      const content = (await file.text()).trim();
+      if (!content) {
+        notifications.show({
+          title: 'Knowledge Import Empty',
+          message: 'This file did not contain text that can be indexed.',
+          color: 'orange',
+        });
+        return;
+      }
+      addKnowledgeDocument({
+        title: file.name,
+        description: 'Imported text file.',
+        content,
+        scope: knowledgeScopeDraft,
+        characterId: knowledgeScopeDraft === 'character' ? activeCharacter?.id : null,
+        personaId: knowledgeScopeDraft === 'persona' ? activePersona?.id : null,
+        sessionId: knowledgeScopeDraft === 'session' ? activeSession?.id ?? null : null,
+        sourceType: 'text-file',
+        enabled: true,
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Knowledge Import Failed',
+        message: error instanceof Error ? error.message : 'Could not read this file.',
+        color: 'red',
+      });
+    }
+  };
+
+  const handleIndexCurrentChat = () => {
+    if (!activeSession || activeSession.messages.length === 0) {
+      return;
+    }
+    const content = activeSession.messages
+      .filter((message) => message.includedInPrompt !== false)
+      .map((message) => `[${message.role}] ${getMessageContent(message).trim()}`)
+      .filter((message) => message.trim().length > 0)
+      .join('\n\n');
+    if (!content) {
+      return;
+    }
+    addKnowledgeDocument({
+      title: `${activeSession.title || 'Current Chat'} History`,
+      description: 'Indexed chat transcript for retrieval.',
+      content,
+      scope: 'session',
+      sessionId: activeSession.id,
+      sourceType: 'chat-history',
+      enabled: true,
+    });
+  };
+
+  const handleVectorizeScopedKnowledge = async () => {
+    const embeddingModel = roleplayEmbeddingModelId.trim();
+    if (!embeddingModel) {
+      notifications.show({
+        title: 'Embedding Model Required',
+        message: 'Enter the local embedding model ID exposed by your server.',
+        color: 'orange',
+      });
+      return;
+    }
+    const vectorizableDocuments = scopedKnowledgeDocuments.filter(
+      (document) =>
+        document.enabled &&
+        document.chunks.some(
+          (chunk) => !chunk.embedding?.length || chunk.embeddingModel !== embeddingModel
+        )
+    );
+    if (vectorizableDocuments.length === 0) {
+      notifications.show({
+        title: 'Knowledge Already Vectorized',
+        message: 'All enabled scoped chunks already have embeddings for this model.',
+        color: 'blue',
+      });
+      return;
+    }
+
+    setIsVectorizingKnowledge(true);
+    try {
+      for (const document of vectorizableDocuments) {
+        const chunks = document.chunks.filter(
+          (chunk) => !chunk.embedding?.length || chunk.embeddingModel !== embeddingModel
+        );
+        const embeddings = await embedRoleplayTexts({
+          endpointUrl: lmStudioEndpoint,
+          serverMode: detectedServerMode,
+          modelId: embeddingModel,
+          texts: chunks.map((chunk) => chunk.content),
+          requestConfig: {
+            provider: chatProvider,
+            apiKey: chatApiKey,
+            title: 'SwarmUI Roleplay',
+          },
+        });
+        setKnowledgeDocumentChunkEmbeddings(
+          document.id,
+          embeddingModel,
+          chunks
+            .map((chunk, index) => ({
+              chunkId: chunk.id,
+              embedding: embeddings[index] ?? [],
+            }))
+            .filter((entry) => entry.embedding.length > 0)
+        );
+      }
+      notifications.show({
+        title: 'Knowledge Vectorized',
+        message: `${vectorizableDocuments.length} document(s) updated for vector retrieval.`,
+        color: 'green',
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Vectorization Failed',
+        message: error instanceof Error ? error.message : 'Could not create embeddings.',
+        color: 'red',
+      });
+    } finally {
+      setIsVectorizingKnowledge(false);
+    }
+  };
+
   const handleExportBundle = () => {
     if (!activeCharacter) {
       return;
@@ -1855,8 +2093,8 @@ export function ControlsPanel({
                       </Badge>
                     </Group>
                     <SwarmButton
-                      tone="neutral"
-                      emphasis="light"
+                      tone="secondary"
+                      emphasis="soft"
                       size="xs"
                       leftSection={<IconSend size={14} />}
                       onClick={handleTestRoleplayServerReply}
@@ -2043,6 +2281,286 @@ export function ControlsPanel({
                             {activeRoleplayPreset.blocks.length} sections
                           </Badge>
                         </Group>
+                      ) : null}
+                    </Stack>
+                  </ElevatedCard>
+
+                  <ElevatedCard elevation="floor">
+                    <Stack gap="xs">
+                      <Group justify="space-between" align="flex-start" wrap="nowrap">
+                        <Stack gap={2} style={{ flex: 1 }}>
+                          <Text size="xs" fw={600}>
+                            Knowledge Bank
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Scoped notes are chunked, retrieved against recent chat, and inserted before lore.
+                          </Text>
+                        </Stack>
+                        <Badge size="sm" variant="light">
+                          {scopedKnowledgeDocuments.length} in scope
+                        </Badge>
+                      </Group>
+                      <Group gap="xs" align="flex-end">
+                        <TextInput
+                          label="Title"
+                          size="xs"
+                          placeholder="Location notes"
+                          value={knowledgeTitleDraft}
+                          onChange={(event) => setKnowledgeTitleDraft(event.currentTarget.value)}
+                          style={{ flex: 1 }}
+                        />
+                        <Select
+                          label="Scope"
+                          size="xs"
+                          allowDeselect={false}
+                          value={knowledgeScopeDraft}
+                          data={[
+                            { value: 'session', label: 'Session' },
+                            { value: 'character', label: 'Character' },
+                            { value: 'persona', label: 'Persona' },
+                            { value: 'global', label: 'Global' },
+                          ]}
+                          onChange={(value) => setKnowledgeScopeDraft((value as RoleplayKnowledgeScope) ?? 'session')}
+                          style={{ width: 130 }}
+                        />
+                        <SwarmButton
+                          tone="brand"
+                          emphasis="soft"
+                          size="xs"
+                          leftSection={<IconBook2 size={12} />}
+                          onClick={handleAddKnowledgeDocument}
+                          disabled={!knowledgeTitleDraft.trim() || !knowledgeContentDraft.trim()}
+                        >
+                          Add
+                        </SwarmButton>
+                      </Group>
+                      <Group gap="xs">
+                        <Checkbox
+                          label="Vector retrieval"
+                          size="xs"
+                          checked={roleplayVectorRetrievalEnabled}
+                          onChange={(event) =>
+                            setRoleplayVectorRetrievalEnabled(event.currentTarget.checked)
+                          }
+                        />
+                        <TextInput
+                          size="xs"
+                          placeholder="Embedding model ID"
+                          value={roleplayEmbeddingModelId}
+                          onChange={(event) => setRoleplayEmbeddingModelId(event.currentTarget.value)}
+                          style={{ flex: 1, minWidth: 180 }}
+                        />
+                        <SwarmButton
+                          tone="brand"
+                          emphasis="ghost"
+                          size="xs"
+                          loading={isVectorizingKnowledge}
+                          onClick={() => void handleVectorizeScopedKnowledge()}
+                          disabled={!roleplayEmbeddingModelId.trim() || scopedKnowledgeDocuments.length === 0}
+                        >
+                          Vectorize
+                        </SwarmButton>
+                      </Group>
+                      <Group gap="xs">
+                        <FileButton
+                          onChange={(file) => void handleImportKnowledgeDocument(file)}
+                          accept=".txt,.md,.json,.csv,text/plain,text/markdown,application/json"
+                        >
+                          {(props) => (
+                            <SwarmButton
+                              {...props}
+                              tone="secondary"
+                              emphasis="ghost"
+                              size="xs"
+                              leftSection={<IconFileImport size={12} />}
+                            >
+                              Import Text
+                            </SwarmButton>
+                          )}
+                        </FileButton>
+                        <SwarmButton
+                          tone="secondary"
+                          emphasis="ghost"
+                          size="xs"
+                          leftSection={<IconBook2 size={12} />}
+                          onClick={handleIndexCurrentChat}
+                          disabled={!activeSession || activeSession.messages.length === 0}
+                        >
+                          Index Chat
+                        </SwarmButton>
+                      </Group>
+                      <Textarea
+                        label="Knowledge Text"
+                        size="xs"
+                        placeholder="Paste world notes, character history, previous events, rules, or reference material."
+                        value={knowledgeContentDraft}
+                        onChange={(event) => setKnowledgeContentDraft(event.currentTarget.value)}
+                        minRows={3}
+                        autosize
+                      />
+                      <Stack gap={6}>
+                        {scopedKnowledgeDocuments.slice(0, 12).map((document) => (
+                          <Group key={document.id} gap={6} wrap="nowrap">
+                            <Checkbox
+                              checked={document.enabled}
+                              onChange={(event) =>
+                                updateKnowledgeDocument(document.id, {
+                                  enabled: event.currentTarget.checked,
+                                })
+                              }
+                              size="xs"
+                              aria-label={`Toggle ${document.title}`}
+                            />
+                            <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                              <Text size="xs" fw={600} truncate>
+                                {document.title}
+                              </Text>
+                              <Text size="xs" c="dimmed" truncate>
+                                {document.scope} | {document.chunks.length} chunks |{' '}
+                                {
+                                  document.chunks.filter(
+                                    (chunk) =>
+                                      chunk.embedding?.length &&
+                                      chunk.embeddingModel === roleplayEmbeddingModelId
+                                  ).length
+                                }{' '}
+                                vectors
+                              </Text>
+                            </Stack>
+                            <ActionIcon
+                              variant="subtle"
+                              size="xs"
+                              color="red"
+                              onClick={() => removeKnowledgeDocument(document.id)}
+                              aria-label={`Remove ${document.title}`}
+                            >
+                              <IconTrash size={12} />
+                            </ActionIcon>
+                          </Group>
+                        ))}
+                        {scopedKnowledgeDocuments.length === 0 ? (
+                          <Text size="xs" c="dimmed">
+                            No scoped knowledge yet.
+                          </Text>
+                        ) : null}
+                      </Stack>
+                    </Stack>
+                  </ElevatedCard>
+
+                  <ElevatedCard elevation="floor">
+                    <Stack gap="xs">
+                      <Group justify="space-between" align="flex-start" wrap="nowrap">
+                        <Stack gap={2} style={{ flex: 1 }}>
+                          <Text size="xs" fw={600}>
+                            Roleplay Scripts
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Slash commands, quick replies, variables, and prompt injections for this chat.
+                          </Text>
+                        </Stack>
+                        <Badge size="sm" variant="light">
+                          {activeSession.promptInjections.length} injects
+                        </Badge>
+                      </Group>
+                      <Group gap="xs" align="flex-end">
+                        <TextInput
+                          label="Quick Reply"
+                          size="xs"
+                          placeholder="Button label"
+                          value={quickReplyLabelDraft}
+                          onChange={(event) => setQuickReplyLabelDraft(event.currentTarget.value)}
+                          style={{ flex: 1 }}
+                        />
+                        <SwarmButton
+                          tone="brand"
+                          emphasis="soft"
+                          size="xs"
+                          onClick={handleAddQuickReply}
+                          disabled={!quickReplyLabelDraft.trim() || !quickReplyScriptDraft.trim()}
+                        >
+                          Add
+                        </SwarmButton>
+                      </Group>
+                      <Textarea
+                        label="Quick Reply Script"
+                        size="xs"
+                        placeholder="/sendas user I look around.\n/continue"
+                        value={quickReplyScriptDraft}
+                        onChange={(event) => setQuickReplyScriptDraft(event.currentTarget.value)}
+                        minRows={2}
+                        autosize
+                      />
+                      <Stack gap={6}>
+                        {roleplayQuickReplies.map((reply) => (
+                          <Group key={reply.id} gap={6} wrap="nowrap">
+                            <Checkbox
+                              checked={reply.enabled}
+                              onChange={(event) =>
+                                updateQuickReply(reply.id, { enabled: event.currentTarget.checked })
+                              }
+                              size="xs"
+                              aria-label={`Toggle ${reply.label}`}
+                            />
+                            <Text size="xs" fw={600} style={{ flex: 1 }} truncate>
+                              {reply.label}
+                            </Text>
+                            <Text size="xs" c="dimmed" style={{ flex: 2 }} truncate>
+                              {reply.script}
+                            </Text>
+                            <ActionIcon
+                              variant="subtle"
+                              size="xs"
+                              color="red"
+                              onClick={() => removeQuickReply(reply.id)}
+                              aria-label={`Remove ${reply.label}`}
+                            >
+                              <IconTrash size={12} />
+                            </ActionIcon>
+                          </Group>
+                        ))}
+                      </Stack>
+                      {activeSession.promptInjections.length > 0 ? (
+                        <Stack gap={6}>
+                          <Group justify="space-between">
+                            <Text size="xs" fw={600}>
+                              Active Injections
+                            </Text>
+                            <SwarmButton
+                              tone="danger"
+                              emphasis="ghost"
+                              size="xs"
+                              onClick={() => activeSessionId && clearPromptInjections(activeSessionId)}
+                            >
+                              Clear
+                            </SwarmButton>
+                          </Group>
+                          {activeSession.promptInjections.map((injection) => (
+                            <Group key={injection.id} gap={6} wrap="nowrap">
+                              <Badge size="xs" variant="outline">
+                                {injection.position}
+                              </Badge>
+                              <Text size="xs" fw={600} style={{ flex: 1 }} truncate>
+                                {injection.label}
+                              </Text>
+                              <ActionIcon
+                                variant="subtle"
+                                size="xs"
+                                color="red"
+                                onClick={() =>
+                                  activeSessionId && removePromptInjection(activeSessionId, injection.id)
+                                }
+                                aria-label={`Remove ${injection.label}`}
+                              >
+                                <IconTrash size={12} />
+                              </ActionIcon>
+                            </Group>
+                          ))}
+                        </Stack>
+                      ) : null}
+                      {roleplayScriptTrace[0] ? (
+                        <Text size="xs" c={roleplayScriptTrace[0].status === 'success' ? 'dimmed' : 'red'}>
+                          Last script: {roleplayScriptTrace[0].message}
+                        </Text>
                       ) : null}
                     </Stack>
                   </ElevatedCard>

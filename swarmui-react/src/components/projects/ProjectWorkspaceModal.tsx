@@ -87,7 +87,7 @@ export function ProjectWorkspaceModal({ opened, onClose }: ProjectWorkspaceModal
   const selectedQueueJobModels = useMemo(
     () => selectedQueueJobs
       .map((id) => queueJobs.find((job) => job.id === id))
-      .filter(Boolean),
+      .filter((job): job is (typeof queueJobs)[number] => Boolean(job)),
     [queueJobs, selectedQueueJobs]
   );
 

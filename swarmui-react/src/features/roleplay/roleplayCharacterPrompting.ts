@@ -20,6 +20,7 @@ type EffectivePromptCharacterInput = Pick<
 /** Create a default prompt stack for new sessions. */
 export function createDefaultPromptSet(): RoleplayPromptStack {
   return {
+    roleplayPresetId: 'none',
     mainPromptOverride: '',
     authorNote: '',
     postHistoryNote: '',
@@ -30,6 +31,7 @@ export function createDefaultPromptSet(): RoleplayPromptStack {
     includeMemory: true,
     includeLore: true,
     promptBlockSettings: {},
+    promptBlockSettingsByPresetId: {},
   };
 }
 

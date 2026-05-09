@@ -512,7 +512,9 @@ export async function downloadTavernV2Png(
   const chara = encodeBase64Utf8(json);
   const avatarPng = await getAvatarPngBytes(character);
   const pngWithMetadata = insertTextChunkBeforeIend(avatarPng, 'chara', chara);
-  const blob = new Blob([pngWithMetadata], { type: 'image/png' });
+  const pngBuffer = new ArrayBuffer(pngWithMetadata.byteLength);
+  new Uint8Array(pngBuffer).set(pngWithMetadata);
+  const blob = new Blob([pngBuffer], { type: 'image/png' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

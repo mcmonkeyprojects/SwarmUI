@@ -7,6 +7,7 @@ import type {
   RoleplayContextBudgetReport,
   RoleplayGenerationMode,
   RoleplayHistoryBudgetTrace,
+  RoleplayKnowledgeDocument,
   RoleplayLoreActivationDebugEntry,
   RoleplayCharacter,
   RoleplayChatSession,
@@ -18,6 +19,7 @@ import type {
   RoleplayPromptBlockPosition,
   RoleplayPromptBlockRole,
   RoleplayPromptBudgetMode,
+  RoleplayScriptVariable,
 } from '../../types/roleplay';
 import {
   buildCharacterPersonalityBlock,
@@ -25,6 +27,10 @@ import {
 } from './roleplayCharacterPrompting';
 import { getRoleplayPresetStack } from '../../data/roleplayPresetStacks';
 import { getMessageContent } from './roleplayMessageUtils';
+import {
+  buildRetrievedKnowledgeBlock,
+  retrieveRoleplayKnowledge,
+} from './roleplayKnowledgeRetrieval';
 
 type HistoryMessage = { role: 'user' | 'assistant'; content: string };
 type ApiMessage = { role: 'system' | 'user' | 'assistant'; content: string };
@@ -84,6 +90,7 @@ function getBudgetedPromptBlockTokenLimit(
     'stage-direction': 160,
     examples: 220,
     memory: 320,
+    retrieval: 360,
     'author-note': 160,
     'post-history-note': 160,
   };
@@ -99,11 +106,15 @@ function getBudgetedPromptBlockTokenLimit(
     'stage-direction': 100,
     examples: 120,
     memory: 220,
+    retrieval: 240,
     'author-note': 100,
     'post-history-note': 100,
   };
   if (source === 'preset') {
     return budgetMode === 'micro' ? 120 : 180;
+  }
+  if (source === 'retrieval') {
+    return budgetMode === 'micro' ? 240 : 360;
   }
   if (source === 'lore') {
     return budgetMode === 'micro' ? MICRO_LORE_TOKEN_BUDGET : COMPACT_LORE_TOKEN_BUDGET;
@@ -768,6 +779,7 @@ function expandPromptMacros(
     original: string;
     character: RoleplayCharacter;
     persona?: RoleplayPersona | null;
+    scriptVariables?: Record<string, RoleplayScriptVariable>;
   }
 ): string {
   return content
@@ -776,7 +788,9 @@ function expandPromptMacros(
     .replaceAll('{{user}}', context.persona?.name || 'User')
     .replaceAll('{{persona}}', context.persona?.description || context.persona?.notes || '')
     .replaceAll('{{scenario}}', context.character.scenario)
-    .replaceAll('{{greeting}}', context.character.openingRoleplayMessage || context.character.openingChatMessage);
+    .replaceAll('{{greeting}}', context.character.openingRoleplayMessage || context.character.openingChatMessage)
+    .replace(/\{\{var:([\w.-]+)\}\}/g, (_match, name: string) => context.scriptVariables?.[name]?.value ?? '')
+    .replace(/\$([A-Za-z_][\w.-]*)/g, (_match, name: string) => context.scriptVariables?.[name]?.value ?? '');
 }
 
 export function compileRoleplayPrompt(options: {
@@ -792,6 +806,12 @@ export function compileRoleplayPrompt(options: {
   reservedResponseTokens?: number;
   promptBudgetMode?: RoleplayPromptBudgetMode;
   loreEntryLimit?: number | null;
+  scriptVariables?: Record<string, RoleplayScriptVariable>;
+  knowledgeDocuments?: RoleplayKnowledgeDocument[];
+  retrievalQueryEmbedding?: number[] | null;
+  retrievalEmbeddingModel?: string | null;
+  retrievalMaxChunks?: number;
+  retrievalMaxTokens?: number;
 }): CompiledRoleplayPrompt {
   const {
     character,
@@ -806,6 +826,12 @@ export function compileRoleplayPrompt(options: {
     reservedResponseTokens = DEFAULT_RESERVED_RESPONSE_TOKENS,
     promptBudgetMode = 'full',
     loreEntryLimit = null,
+    scriptVariables = {},
+    knowledgeDocuments = [],
+    retrievalQueryEmbedding = null,
+    retrievalEmbeddingModel = null,
+    retrievalMaxChunks = 4,
+    retrievalMaxTokens = promptBudgetMode === 'full' ? 900 : promptBudgetMode === 'compact' ? 520 : 320,
   } = options;
   const promptStack = {
     roleplayPresetId: session.promptStack?.roleplayPresetId ?? 'none',
@@ -864,7 +890,15 @@ export function compileRoleplayPrompt(options: {
   const promptBlocks: RoleplayPromptBlock[] = [];
   const originalMainPrompt = getEffectiveSystemPrompt(character);
   const rawMainPrompt = getEffectiveSystemPrompt(character, session);
-  const macroContext = { original: originalMainPrompt, character, persona };
+  const macroContext = {
+    original: originalMainPrompt,
+    character,
+    persona,
+    scriptVariables: {
+      ...scriptVariables,
+      ...(session.scriptVariables ?? {}),
+    },
+  };
   const activePreset = getRoleplayPresetStack(promptStack.roleplayPresetId);
   if (!activePreset.replacesMainPrompt) {
     appendPromptBlock(promptBlocks, {
@@ -997,6 +1031,46 @@ export function compileRoleplayPrompt(options: {
       order: 70,
       budgetMode: promptBudgetMode,
       source: 'memory',
+    });
+  }
+
+  const retrievedKnowledgeEntries = retrieveRoleplayKnowledge({
+    character,
+    session,
+    persona,
+    documents: knowledgeDocuments,
+    queryText: historyMessages.slice(-8).map((message) => message.content).join('\n'),
+    queryEmbedding: retrievalQueryEmbedding,
+    embeddingModel: retrievalEmbeddingModel,
+    maxChunks: retrievalMaxChunks,
+    maxTokens: retrievalMaxTokens,
+  });
+
+  if (retrievedKnowledgeEntries.length > 0) {
+    appendPromptBlock(promptBlocks, {
+      id: 'retrieved-knowledge',
+      label: 'Retrieved Knowledge',
+      content: buildRetrievedKnowledgeBlock(retrievedKnowledgeEntries),
+      order: 75,
+      budgetMode: promptBudgetMode,
+      source: 'retrieval',
+    });
+  }
+
+  for (const injection of session.promptInjections ?? []) {
+    if (!injection.enabled) {
+      continue;
+    }
+    appendPromptBlock(promptBlocks, {
+      id: `script-${injection.id}`,
+      label: `Script: ${injection.label}`,
+      content: expandPromptMacros(injection.content, macroContext),
+      order: injection.order,
+      role: injection.role,
+      position: injection.position,
+      depth: injection.depth,
+      budgetMode: promptBudgetMode,
+      source: 'script',
     });
   }
 
@@ -1163,6 +1237,12 @@ export function compileRoleplayPrompt(options: {
   const loreTokens = finalActiveBlocks
     .filter((block) => block.source === 'lore')
     .reduce((sum, block) => sum + block.tokenEstimate, 0);
+  const retrievedKnowledgeTokens = finalActiveBlocks
+    .filter((block) => block.source === 'retrieval')
+    .reduce((sum, block) => sum + block.tokenEstimate, 0);
+  const retrievedKnowledgeVectorEntries = retrievedKnowledgeEntries.filter(
+    (entry) => entry.retrievalMode === 'vector'
+  ).length;
   const promptPressure =
     budgetedHistory.contextBudget.availableInputTokens > 0
       ? budgetedHistory.contextBudget.promptBlockTokens /
@@ -1186,6 +1266,11 @@ export function compileRoleplayPrompt(options: {
       } capped by the selected model profile.`
     );
   }
+  if (retrievedKnowledgeEntries.length >= retrievalMaxChunks) {
+    diagnosticsWarnings.push(
+      `Knowledge retrieval hit the ${retrievalMaxChunks} chunk cap; narrow the Knowledge Bank or raise the profile budget.`
+    );
+  }
   if (promptBudgetMode !== 'full') {
     diagnosticsWarnings.push(
       `${promptBudgetMode === 'micro' ? 'Micro' : 'Compact'} prompt budgeting is active for local model efficiency.`
@@ -1206,6 +1291,7 @@ export function compileRoleplayPrompt(options: {
     apiMessages,
     activatedLoreEntries: includedLoreEntries,
     loreActivationDebug,
+    retrievedKnowledgeEntries,
     diagnostics: {
       promptBudgetMode,
       memoryTokens,
@@ -1214,6 +1300,9 @@ export function compileRoleplayPrompt(options: {
       includedLoreEntries: promptStack.includeLore ? includedLoreEntries.length : 0,
       droppedLoreEntries: droppedLoreEntryCount,
       loreEntryLimit: effectiveLoreEntryLimit,
+      retrievedKnowledgeEntries: retrievedKnowledgeEntries.length,
+      retrievedKnowledgeTokens,
+      retrievedKnowledgeVectorEntries,
       promptPressure,
       warnings: diagnosticsWarnings,
     },
