@@ -137,8 +137,8 @@ export const QuickModeIndicator = memo(function QuickModeIndicator({
                 <Tooltip label={quickModeEnabled ? 'Using quick mode' : 'Click to enable quick mode'}>
                     <ActionIcon
                         size="sm"
-                        variant={quickModeEnabled ? 'filled' : 'light'}
-                        color="green"
+                        tone="success"
+                        emphasis={quickModeEnabled ? 'solid' : 'soft'}
                         onClick={() => onQuickModeChange(!quickModeEnabled)}
                     >
                         <IconBolt size={14} />
@@ -151,8 +151,8 @@ export const QuickModeIndicator = memo(function QuickModeIndicator({
                 <Tooltip label="Cache this prompt for future quick variations">
                     <ActionIcon
                         size="sm"
-                        variant="subtle"
-                        color="gray"
+                        tone="secondary"
+                        emphasis="ghost"
                         onClick={cachePrompt}
                     >
                         <IconRefresh size={14} />

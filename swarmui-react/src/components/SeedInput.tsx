@@ -94,8 +94,8 @@ export const SeedInput = memo(function SeedInput({
                     <Tooltip label="Reset to random (-1)" withArrow>
                         <ActionIcon
                             size="sm"
-                            variant="subtle"
-                            color="invokeBrand"
+                            tone="primary"
+                            emphasis="ghost"
                             onClick={handleReset}
                             aria-label="Reset seed to random"
                         >

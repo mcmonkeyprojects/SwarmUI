@@ -200,17 +200,21 @@ public static class Logs
     /// <summary>All current log trackers.</summary>
     public static LogTracker[] Trackers = new LogTracker[(int)LogLevel.None];
 
+    /// <summary>Aggregate tracker that receives every normal server log message.</summary>
+    public static LogTracker AllTracker = new() { Color = "#FFFFFF", Identifier = "All" };
+
     /// <summary>Named set of other log trackers (eg backends).</summary>
     public static Dictionary<string, LogTracker> OtherTrackers = [];
 
     static Logs()
     {
-        Trackers[(int)LogLevel.Verbose] = new() { Color = "#606060" };
-        Trackers[(int)LogLevel.Debug] = new() { Color = "#808080" };
-        Trackers[(int)LogLevel.Info] = new() { Color = "#00FFFF" };
-        Trackers[(int)LogLevel.Init] = new() { Color = "#00FF00" };
-        Trackers[(int)LogLevel.Warning] = new() { Color = "#FFFF00" };
-        Trackers[(int)LogLevel.Error] = new() { Color = "#FF0000" };
+        Trackers[(int)LogLevel.Verbose] = new() { Color = "#606060", Identifier = "Verbose" };
+        Trackers[(int)LogLevel.Debug] = new() { Color = "#808080", Identifier = "Debug" };
+        Trackers[(int)LogLevel.Info] = new() { Color = "#00FFFF", Identifier = "Info" };
+        Trackers[(int)LogLevel.Init] = new() { Color = "#00FF00", Identifier = "Init" };
+        Trackers[(int)LogLevel.Warning] = new() { Color = "#FFFF00", Identifier = "Warning" };
+        Trackers[(int)LogLevel.Error] = new() { Color = "#FF0000", Identifier = "Error" };
+        OtherTrackers["All"] = AllTracker;
         for (int i = 0; i < (int)LogLevel.None; i++)
         {
             OtherTrackers[$"{(LogLevel)i}"] = Trackers[i];
@@ -222,6 +226,7 @@ public static class Logs
     {
         lock (ConsoleLock)
         {
+            AllTracker.Track($"[{prefix}] {message}");
             Trackers[(int)level].Track(message);
             if (MinimumLevel > level)
             {

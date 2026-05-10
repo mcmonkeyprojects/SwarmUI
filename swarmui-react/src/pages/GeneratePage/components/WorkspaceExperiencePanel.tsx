@@ -110,7 +110,7 @@ export function WorkspaceExperiencePanel({
                             <Menu shadow="md" position="bottom-end" width={260} withinPortal>
                                 <Menu.Target>
                                     <SwarmButton
-                                        tone={activeRecipe ? 'brand' : 'secondary'}
+                                        tone={activeRecipe ? 'primary' : 'secondary'}
                                         emphasis={activeRecipe ? 'soft' : 'ghost'}
                                         size="xs"
                                         leftSection={<IconBookmark size={14} />}

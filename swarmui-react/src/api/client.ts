@@ -1112,7 +1112,7 @@ export class SwarmUIClient {
       'latent-bilinear///Latent: Bilinear',
       'latent-nearest-exact///Latent: Nearest Exact',
     ];
-    const response = await this.listT2IParams().catch(async () => this.getCachedTriggerRefresh());
+    const response = await this.getCachedTriggerRefresh();
     const responseObject = response && typeof response === 'object'
       ? response as { list?: unknown }
       : {};
@@ -1160,127 +1160,9 @@ export class SwarmUIClient {
       } as Model;
     };
 
-    const parsedValues = values
+    return [...values, ...fallbackValues]
       .map(parseUpscaler)
       .filter((item): item is Model => item !== null);
-
-    const hasModelUpscalers = parsedValues.some((model) => (
-      model.name.startsWith('model-') || model.name.startsWith('latentmodel-')
-    ));
-    const comfyUpscalers = hasModelUpscalers ? [] : await this.listComfyUpscalersFromObjectInfo();
-
-    return [...parsedValues, ...comfyUpscalers, ...fallbackValues.map(parseUpscaler)]
-      .filter((item): item is Model => item !== null);
-  }
-
-  private extractComfyInputValues(objectInfo: unknown, nodeName: string, inputName: string): string[] {
-    const objectInfoRecord = objectInfo && typeof objectInfo === 'object'
-      ? objectInfo as Record<string, unknown>
-      : {};
-    const node = objectInfoRecord[nodeName] && typeof objectInfoRecord[nodeName] === 'object'
-      ? objectInfoRecord[nodeName] as Record<string, unknown>
-      : {};
-    const input = node.input && typeof node.input === 'object'
-      ? node.input as Record<string, unknown>
-      : {};
-    const required = input.required && typeof input.required === 'object'
-      ? input.required as Record<string, unknown>
-      : {};
-    const rawValue = required[inputName];
-
-    if (!Array.isArray(rawValue)) {
-      return [];
-    }
-
-    const candidate = Array.isArray(rawValue[0]) ? rawValue[0] : rawValue;
-    return candidate.filter((value): value is string => (
-      typeof value === 'string' && value.trim().length > 0
-    ));
-  }
-
-  private extractUpscalersFromObjectInfo(objectInfo: unknown): Model[] {
-    const modelUpscalers = this.extractComfyInputValues(objectInfo, 'UpscaleModelLoader', 'model_name')
-      .map((name) => ({
-        name: `model-${name}`,
-        title: `Model: ${name}`,
-        architecture: 'upscaler',
-        class: 'upscaler',
-        description: `Model: ${name}`,
-        hash: '',
-        loaded: false,
-        preview: undefined,
-        metadata: {},
-      } as Model));
-    const latentModelUpscalers = this.extractComfyInputValues(objectInfo, 'LatentUpscaleModelLoader', 'model_name')
-      .map((name) => ({
-        name: `latentmodel-${name}`,
-        title: `Latent Model: ${name}`,
-        architecture: 'upscaler',
-        class: 'upscaler',
-        description: `Latent Model: ${name}`,
-        hash: '',
-        loaded: false,
-        preview: undefined,
-        metadata: {},
-      } as Model));
-
-    return [...modelUpscalers, ...latentModelUpscalers];
-  }
-
-  private async fetchComfyObjectInfo(backendId?: string): Promise<unknown | null> {
-    try {
-      const headers: Record<string, string> = {};
-      if (backendId) {
-        headers['X-Swarm-Backend-ID'] = backendId;
-      }
-      const response = await fetch(resolveApiUrl('/ComfyBackendDirect/object_info', this.runtimeEndpoints), {
-        method: 'GET',
-        headers,
-      });
-      if (!response.ok) {
-        return null;
-      }
-      return await response.json() as unknown;
-    } catch {
-      return null;
-    }
-  }
-
-  private async listComfyUpscalersFromObjectInfo(): Promise<Model[]> {
-    const seen = new Set<string>();
-    const results: Model[] = [];
-    const append = (models: Model[]) => {
-      for (const model of models) {
-        if (!seen.has(model.name)) {
-          seen.add(model.name);
-          results.push(model);
-        }
-      }
-    };
-
-    const defaultObjectInfo = await this.fetchComfyObjectInfo();
-    if (defaultObjectInfo) {
-      append(this.extractUpscalersFromObjectInfo(defaultObjectInfo));
-    }
-
-    if (results.length > 0) {
-      return results;
-    }
-
-    const backends = await this.listBackends({ fullData: true }).catch(() => []);
-    const comfyBackends = backends.filter((backend) => (
-      String(backend.type || backend.class || '').toLowerCase().includes('comfy')
-      && String(backend.status || '').toLowerCase() === 'running'
-    ));
-
-    for (const backend of comfyBackends) {
-      const objectInfo = await this.fetchComfyObjectInfo(backend.id);
-      if (objectInfo) {
-        append(this.extractUpscalersFromObjectInfo(objectInfo));
-      }
-    }
-
-    return results;
   }
 
   async listWildcards(): Promise<Model[]> {

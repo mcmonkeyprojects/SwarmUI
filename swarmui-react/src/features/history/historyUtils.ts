@@ -23,6 +23,14 @@ export interface HistoryMetadataSummary {
     metadataText: string;
 }
 
+export interface HistoryUpscalePreviewInfo {
+    scale: number;
+    method: string | null;
+    sourceResolution: string | null;
+    outputResolution: string | null;
+    badgeLabel: string;
+}
+
 export const DEFAULT_HISTORY_PREFERENCES: HistoryPreferences = {
     viewMode: 'gallery',
     sortBy: 'Date',
@@ -203,6 +211,42 @@ export function getHistoryMetadataSummary(item: {
     };
 }
 
+export function getHistoryUpscalePreviewInfo(item: {
+    metadata: string | Record<string, unknown> | null;
+    width?: number | null;
+    height?: number | null;
+}): HistoryUpscalePreviewInfo | null {
+    const metadataObject = parseHistoryMetadata(item.metadata);
+    const params = asRecord(metadataObject?.sui_image_params)
+        || asRecord(metadataObject?.swarm)
+        || metadataObject;
+
+    const scale = readNumber(params, 'refinerupscale') ?? readNumber(metadataObject, 'refinerupscale');
+    if (!scale || scale <= 1) {
+        return null;
+    }
+
+    const method = firstString(
+        readString(params, 'refinerupscalemethod'),
+        readString(metadataObject, 'refinerupscalemethod')
+    );
+    const width = readNumber(params, 'width') ?? readNumber(metadataObject, 'width') ?? normalizeNumber(item.width);
+    const height = readNumber(params, 'height') ?? readNumber(metadataObject, 'height') ?? normalizeNumber(item.height);
+    const outputWidth = width ? Math.round(width * scale) : null;
+    const outputHeight = height ? Math.round(height * scale) : null;
+    const outputResolution = outputWidth && outputHeight ? `${outputWidth}x${outputHeight}` : null;
+    const sourceResolution = width && height ? `${width}x${height}` : null;
+    const scaleLabel = formatScaleLabel(scale);
+
+    return {
+        scale,
+        method,
+        sourceResolution,
+        outputResolution,
+        badgeLabel: outputResolution ? `Upscaled ${outputResolution}` : `Upscaled ${scaleLabel}`,
+    };
+}
+
 export function isImageMedia(item: { media_type?: HistoryMediaType | null }): boolean {
     return (item.media_type || 'image') === 'image';
 }
@@ -216,11 +260,26 @@ function readString(source: Record<string, unknown> | null | undefined, key: str
     return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
+function readNumber(source: Record<string, unknown> | null | undefined, key: string): number | null {
+    return normalizeNumber(readValue(source, key));
+}
+
 function readValue(source: Record<string, unknown> | null | undefined, key: string): unknown {
     if (!source) {
         return null;
     }
     return source[key];
+}
+
+function normalizeNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+    if (typeof value === 'string' && value.trim()) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
 }
 
 function normalizeValue(value: unknown): string | null {
@@ -237,4 +296,11 @@ function firstString(...values: Array<string | null | undefined>): string | null
         }
     }
     return null;
+}
+
+function formatScaleLabel(scale: number): string {
+    if (Number.isInteger(scale)) {
+        return `${scale}x`;
+    }
+    return `${Number(scale.toFixed(2))}x`;
 }

@@ -21,6 +21,10 @@ interface DisplayLogMessage extends LogMessage {
     color: string;
 }
 
+function getLogTypeIdentifier(type: LogType): string {
+    return type.identifier || type.name;
+}
+
 export function LogsTab() {
     const isInitialized = useSessionStore((s) => s.isInitialized);
     const [logTypes, setLogTypes] = useState<LogType[]>([]);
@@ -39,8 +43,8 @@ export function LogsTab() {
         try {
             const types = await swarmClient.listLogTypes();
             setLogTypes(types);
-            // Enable all types by default
-            setEnabledTypes(new Set(types.map(t => t.identifier)));
+            const allType = types.find(t => getLogTypeIdentifier(t) === 'All' || t.name === 'All');
+            setEnabledTypes(allType ? new Set([getLogTypeIdentifier(allType)]) : new Set(types.map(getLogTypeIdentifier)));
         } catch {
             // Silently ignore
         }
@@ -55,7 +59,7 @@ export function LogsTab() {
             if (response && response.data) {
                 const newMessages: DisplayLogMessage[] = [];
                 for (const [typeName, msgs] of Object.entries(response.data)) {
-                    const logType = logTypes.find(t => t.identifier === typeName);
+                    const logType = logTypes.find(t => getLogTypeIdentifier(t) === typeName || t.name === typeName);
                     for (const msg of msgs) {
                         newMessages.push({
                             ...msg,
@@ -124,11 +128,18 @@ export function LogsTab() {
     }, [messages, autoScroll]);
 
     const toggleType = (identifier: string) => {
+        setMessages([]);
+        lastSeqRef.current = {};
         setEnabledTypes(prev => {
             const next = new Set(prev);
             if (next.has(identifier)) {
                 next.delete(identifier);
             } else {
+                if (identifier === 'All') {
+                    next.clear();
+                } else {
+                    next.delete('All');
+                }
                 next.add(identifier);
             }
             return next;
@@ -147,7 +158,7 @@ export function LogsTab() {
                 <Group gap="md">
                     {logTypes.map(lt => (
                         <Checkbox
-                            key={lt.identifier}
+                            key={getLogTypeIdentifier(lt)}
                             label={
                                 <Text
                                     size="xs"
@@ -164,8 +175,8 @@ export function LogsTab() {
                                     {lt.name}
                                 </Text>
                             }
-                            checked={enabledTypes.has(lt.identifier)}
-                            onChange={() => toggleType(lt.identifier)}
+                            checked={enabledTypes.has(getLogTypeIdentifier(lt))}
+                            onChange={() => toggleType(getLogTypeIdentifier(lt))}
                             size="xs"
                         />
                     ))}

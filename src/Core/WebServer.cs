@@ -144,6 +144,8 @@ public class WebServer
         timer.Check("[Web] WebApp builder prep");
         builder.Services.AddRazorPages();
         builder.Services.AddResponseCompression();
+        builder.Logging.ClearProviders();
+        builder.Logging.AddProvider(new SwarmLoggerProvider());
         builder.Logging.SetMinimumLevel(LogLevel);
         WebApp = builder.Build();
         WebApp.Use(async (context, next) =>

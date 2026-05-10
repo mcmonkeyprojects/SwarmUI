@@ -33,6 +33,7 @@ interface GenerateStageHeaderProps {
     onOpenDiagnostics: () => void;
     onOpenShortcuts: () => void;
     onPromoteToWorkflow: () => void;
+    uxRefresh?: boolean;
 }
 
 export function GenerateStageHeader({
@@ -55,20 +56,23 @@ export function GenerateStageHeader({
     onOpenDiagnostics,
     onOpenShortcuts,
     onPromoteToWorkflow,
+    uxRefresh = false,
 }: GenerateStageHeaderProps) {
+    const modeLabel = currentMode === 'quick' ? 'Quick'
+        : currentMode === 'guided' ? 'Guided'
+            : currentMode === 'video' ? 'Video'
+                : 'Advanced';
+
     return (
         <>
-            <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-                <Stack gap={4}>
+            <Group justify="space-between" align={uxRefresh ? 'center' : 'flex-start'} wrap="wrap" gap={uxRefresh ? 'sm' : 'md'}>
+                <Stack gap={uxRefresh ? 2 : 4}>
                     <Group gap="xs" wrap="wrap">
                         <Text size="xs" fw={700} tt="uppercase" c="var(--theme-text-secondary)">
-                            Canvas Stage
+                            {uxRefresh ? 'Stage' : 'Canvas Stage'}
                         </Text>
-                        <SwarmBadge tone="brand" emphasis="soft">
-                            {currentMode === 'quick' ? 'Quick'
-                              : currentMode === 'guided' ? 'Guided'
-                              : currentMode === 'video' ? 'Video'
-                              : 'Advanced'}
+                        <SwarmBadge tone="primary" emphasis="soft">
+                            {modeLabel}
                         </SwarmBadge>
                         <SwarmBadge tone={generating ? 'info' : 'success'} emphasis="soft" contrast="strong">
                             {generating ? 'Generating' : 'Ready'}
@@ -88,9 +92,11 @@ export function GenerateStageHeader({
                     <Text size="sm" fw={600}>
                         {selectedModelName || 'No model selected yet'}
                     </Text>
-                    <Text size="xs" c="var(--theme-text-secondary)">
-                        {stageHeaderCopy}
-                    </Text>
+                    {(!uxRefresh || generating) && (
+                        <Text size="xs" c="var(--theme-text-secondary)">
+                            {stageHeaderCopy}
+                        </Text>
+                    )}
                 </Stack>
 
                 <Group gap="xs" wrap="wrap">
@@ -105,7 +111,7 @@ export function GenerateStageHeader({
                         </SwarmButton>
                     ) : usesAdvancedRail ? (
                         <SwarmButton
-                            tone={showGalleryRail ? 'brand' : 'secondary'}
+                            tone={showGalleryRail ? 'primary' : 'secondary'}
                             emphasis="soft"
                             leftSection={<IconLayoutGrid size={14} />}
                             onClick={onToggleGalleryPinned}

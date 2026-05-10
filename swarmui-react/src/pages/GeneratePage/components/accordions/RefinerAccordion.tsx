@@ -254,6 +254,12 @@ export const RefinerAccordion = memo(function RefinerAccordion({
         || selectedUpscaleMethodValue.startsWith('latentmodel-')
         ? selectedUpscaleMethodValue
         : '';
+    const selectedUpscaleModelLabel = selectedUpscaleModelValue
+        ? upscaleModelOptions.find((option) => option.value === selectedUpscaleModelValue)?.label || selectedUpscaleModelValue
+        : '';
+    const selectedRefinerModelLabel = hasRefinerModel
+        ? modelOptions.find((option) => option.value === form.values.refinermodel)?.label || form.values.refinermodel
+        : '';
 
     return (
         <Accordion.Item value="refiner">
@@ -270,7 +276,7 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                         Hi-res fix lives inside Refiner / Upscale. Turning this off keeps all refiner and hi-res settings out of the generate request.
                     </Text>
                     <Select
-                        label="Refiner Model"
+                        label="Diffusion Refiner Model"
                         placeholder="Use Base Model"
                         data={modelOptions}
                         searchable
@@ -282,7 +288,7 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                                 onToggle(true);
                             }
                         }}
-                        description="Optional secondary model for refinement (SDXL Refiner, etc.)"
+                        description="Optional secondary diffusion checkpoint for refinement. This is separate from the upscaler model."
                     />
 
                     <Select
@@ -342,7 +348,7 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                     {refinerUpscale > 1 && (
                         <>
                             <Select
-                                label="Upscale Method"
+                                label="Upscale Method / Upscaler Model"
                                 data={upscaleMethodOptions}
                                 value={selectedUpscaleMethodValue}
                                 onChange={(value) => {
@@ -391,6 +397,17 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                                     }}
                                     description="Choose a custom model from Models/upscale_models (or latent_upscale_models)."
                                 />
+                            )}
+
+                            {(selectedUpscaleModelValue || hasRefinerModel) && (
+                                <Text size="xs" c="dimmed">
+                                    {selectedUpscaleModelValue
+                                        ? `Upscale with ${selectedUpscaleModelLabel}. `
+                                        : `Upscale with ${selectedUpscaleMethodValue}. `}
+                                    {hasRefinerModel
+                                        ? `Then refine with diffusion model ${selectedRefinerModelLabel}.`
+                                        : 'No separate diffusion refiner model is selected.'}
+                                </Text>
                             )}
 
                             <Checkbox

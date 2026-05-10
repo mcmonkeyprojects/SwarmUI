@@ -28,7 +28,7 @@ import {
 import { DetailedProgressBar } from './DetailedProgressBar';
 import { previewFadeVariants, livePreviewPulse } from '../../utils/animations';
 import type { GenerateParams } from '../../api/types';
-import { SwarmActionIcon, SwarmButton as Button } from '../ui';
+import { SwarmActionIcon, SwarmBadge, SwarmButton as Button } from '../ui';
 import { useCanvasWorkflowStore, type CanvasWorkflowStep } from '../../stores/canvasWorkflowStore';
 import type { GenerateWorkspaceMode } from '../../stores/navigationStore';
 
@@ -90,6 +90,10 @@ interface CanvasViewportProps {
   selectedModel?: string;
   selectedBackend?: string;
   generationParams?: Partial<GenerateParams>;
+  uxRefresh?: boolean;
+  onChooseModel?: () => void;
+  onFocusPrompt?: () => void;
+  onOpenGenerationSettings?: () => void;
 }
 
 const CanvasViewport = memo(function CanvasViewport({
@@ -102,6 +106,10 @@ const CanvasViewport = memo(function CanvasViewport({
   selectedModel,
   selectedBackend,
   generationParams,
+  uxRefresh = false,
+  onChooseModel,
+  onFocusPrompt,
+  onOpenGenerationSettings,
 }: CanvasViewportProps) {
   const modeLabel = workspaceMode.charAt(0).toUpperCase() + workspaceMode.slice(1);
   const width = generationParams?.width || 1024;
@@ -204,6 +212,17 @@ const CanvasViewport = memo(function CanvasViewport({
   };
 
   const renderEmptyState = (animated: boolean) => {
+    const emptyTitle = totalImages > 0
+      ? 'Canvas Stage'
+      : uxRefresh
+        ? 'Ready for first image'
+        : `${modeLabel} workspace ready`;
+    const emptyDescription = totalImages > 0
+      ? 'Select a session image to inspect it here'
+      : uxRefresh
+        ? 'Choose a model and add a prompt to start the next run.'
+        : 'Your next generation will appear here with live progress, preview updates, and review tools.';
+
     const emptyState = (
       <Box
         className="generate-studio-canvas__empty"
@@ -219,21 +238,50 @@ const CanvasViewport = memo(function CanvasViewport({
         <Stack align="center" gap="md">
           <IconPhoto size={48} color="var(--mantine-color-invokeGray-4)" />
           <Text size="xl" c="invokeGray.2" fw={600}>
-            {totalImages > 0 ? 'Canvas Stage' : `${modeLabel} workspace ready`}
+            {emptyTitle}
           </Text>
           <Text size="md" c="invokeGray.3">
-            {totalImages > 0
-              ? 'Select a session image to inspect it here'
-              : 'Your next generation will appear here with live progress, preview updates, and review tools.'}
+            {emptyDescription}
           </Text>
           {selectedModel ? (
             <Badge color="gray" variant="light" className="generate-studio-canvas__empty-model">
               {selectedModel}
             </Badge>
-          ) : (
+          ) : uxRefresh ? null : (
             <Text size="sm" c="invokeGray.4">
               Select a base model in the left rail, then tune the run before generating.
             </Text>
+          )}
+          {uxRefresh && totalImages === 0 && (
+            <Group gap="xs" justify="center" wrap="wrap" className="generate-studio-canvas__empty-actions">
+              <Button
+                size="sm"
+                tone={selectedModel ? 'secondary' : 'primary'}
+                emphasis={selectedModel ? 'soft' : 'solid'}
+                onClick={onChooseModel}
+                disabled={!onChooseModel}
+              >
+                {selectedModel ? 'Change Model' : 'Choose Model'}
+              </Button>
+              <Button
+                size="sm"
+                tone={promptReady ? 'secondary' : 'primary'}
+                emphasis="soft"
+                onClick={onFocusPrompt}
+                disabled={!onFocusPrompt}
+              >
+                {promptReady ? 'Edit Prompt' : 'Write Prompt'}
+              </Button>
+              <Button
+                size="sm"
+                tone="secondary"
+                emphasis="ghost"
+                onClick={onOpenGenerationSettings}
+                disabled={!onOpenGenerationSettings}
+              >
+                Open Settings
+              </Button>
+            </Group>
           )}
           <Box className="generate-studio-canvas__empty-dashboard">
             <Box className="generate-studio-canvas__empty-tile" data-ready="true">
@@ -261,6 +309,11 @@ const CanvasViewport = memo(function CanvasViewport({
               <Text size="sm" fw={700}>{promptReady ? 'Ready' : 'Empty'}</Text>
             </Box>
           </Box>
+          {uxRefresh && totalImages === 0 && !selectedModel && (
+            <Text size="xs" c="var(--theme-text-secondary)" maw={420}>
+              Model selection is the only required setup before the prompt and Generate controls can do useful work.
+            </Text>
+          )}
         </Stack>
       </Box>
     );
@@ -383,6 +436,14 @@ interface CanvasPanelProps {
   selectedBackend?: string;
   /** Current generation params for empty-state context */
   generationParams?: Partial<GenerateParams>;
+  /** Enables the refreshed Generate empty state presentation. */
+  uxRefresh?: boolean;
+  /** Opens model selection from the empty state. */
+  onChooseModel?: () => void;
+  /** Moves focus to the prompt field from the empty state. */
+  onFocusPrompt?: () => void;
+  /** Opens the primary generation settings from the empty state. */
+  onOpenGenerationSettings?: () => void;
 }
 
 /**
@@ -423,6 +484,10 @@ export const CanvasPanel = memo(function CanvasPanel({
   selectedModel,
   selectedBackend,
   generationParams,
+  uxRefresh = false,
+  onChooseModel,
+  onFocusPrompt,
+  onOpenGenerationSettings,
 }: CanvasPanelProps) {
   const openSession = useCanvasWorkflowStore((state) => state.openSession);
   const prefersReducedMotion = useReducedMotion();
@@ -477,13 +542,13 @@ export const CanvasPanel = memo(function CanvasPanel({
           <Group justify="space-between">
             <Group gap="sm">
               {isLivePreview ? (
-                <Badge color="blue" variant="filled" className="icon-pulse">
+                <SwarmBadge tone="info" emphasis="solid" className="icon-pulse">
                   Generating...
-                </Badge>
+                </SwarmBadge>
               ) : selectedImage ? (
-                <Badge color="green" variant="light" className="status-complete">
+                <SwarmBadge tone="success" emphasis="soft" className="status-complete">
                   {currentImageIndex + 1} / {totalImages}
-                </Badge>
+                </SwarmBadge>
               ) : (
                 <Text size="sm" c="invokeGray.3">
                   No image selected
@@ -642,6 +707,10 @@ export const CanvasPanel = memo(function CanvasPanel({
         selectedModel={selectedModel}
         selectedBackend={selectedBackend}
         generationParams={generationParams}
+        uxRefresh={uxRefresh}
+        onChooseModel={onChooseModel}
+        onFocusPrompt={onFocusPrompt}
+        onOpenGenerationSettings={onOpenGenerationSettings}
       />
 
       {/* Progress Bar at Bottom of Canvas */}

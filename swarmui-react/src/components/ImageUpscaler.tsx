@@ -18,8 +18,8 @@ import { logger } from '../utils/logger';
 import type { GenerateParams } from '../api/types';
 import { imageUrlToDataUrl, toRuntimeImageUrl } from '../utils/imageData';
 import { useQueueStore, type QueueJob } from '../stores/queue';
-import { SwarmButton, SwarmSegmentedControl, SwarmSlider } from './ui';
-import { useUpscalers } from '../hooks/useModels';
+import { SwarmButton, SwarmSegmentedControl, SwarmSlider, SwarmSwitch } from './ui';
+import { useModels, useUpscalers } from '../hooks/useModels';
 import { swarmClient } from '../api/client';
 import { queryClient, queryKeys } from '../api/queryClient';
 
@@ -89,7 +89,10 @@ export function ImageUpscaler({
   const [cfgScale, setCfgScale] = useState(7);
   const [upscaledImage, setUpscaledImage] = useState<string | null>(null);
   const [refreshingUpscalers, setRefreshingUpscalers] = useState(false);
+  const [useSeparateRefinerModel, setUseSeparateRefinerModel] = useState(false);
+  const [refinerModel, setRefinerModel] = useState('');
   const upscalersQuery = useUpscalers({ enabled: opened });
+  const diffusionModelsQuery = useModels('Stable-Diffusion', { enabled: opened && useSeparateRefinerModel });
 
   const upscaleModels = useMemo(() => {
     return (upscalersQuery.data ?? [])
@@ -103,6 +106,16 @@ export function ImageUpscaler({
   const modelUpscaleOptions = useMemo(() => {
     return upscaleModels.filter((model) => isModelUpscaleMethod(model.value));
   }, [upscaleModels]);
+
+  const diffusionModelOptions = useMemo(() => {
+    return [
+      { value: '', label: 'Use Source Image Model' },
+      ...(diffusionModelsQuery.data ?? []).map((model) => ({
+        value: model.name,
+        label: model.title || model.name,
+      })),
+    ];
+  }, [diffusionModelsQuery.data]);
 
   useEffect(() => {
     if (upscaling) {
@@ -258,6 +271,10 @@ export function ImageUpscaler({
     let queueFinalized = false;
     let latestImageUrl = '';
     const selectedUpscaleModelLabel = upscaleModels.find((model) => model.value === upscaleModel)?.label || upscaleModel;
+    const selectedRefinerModel = useSeparateRefinerModel && refinerModel.trim().length > 0 ? refinerModel.trim() : '';
+    const selectedRefinerModelLabel = selectedRefinerModel
+      ? diffusionModelOptions.find((model) => model.value === selectedRefinerModel)?.label || selectedRefinerModel
+      : '';
 
     const queueJobName = upscaleMethod === 'hires-fix'
       ? `Upscale ${scaleFactor}x - Hi-Res Fix`
@@ -312,6 +329,7 @@ export function ImageUpscaler({
           refinercontrolpercentage: 0,
           refinerupscale: scaleFactor,
           refinerupscalemethod: upscaleModel || DEFAULT_UPSCALE_METHOD,
+          ...(selectedRefinerModel ? { refinermodel: selectedRefinerModel } : {}),
           steps: steps,
           cfgscale: cfgScale,
           images: 1,
@@ -328,6 +346,7 @@ export function ImageUpscaler({
           refinercontrolpercentage: 0,
           refinerupscale: scaleFactor,
           refinerupscalemethod: upscaleModel,
+          ...(selectedRefinerModel ? { refinermodel: selectedRefinerModel } : {}),
           steps: steps,
           cfgscale: cfgScale,
           images: 1,
@@ -352,7 +371,9 @@ export function ImageUpscaler({
         color: 'blue',
       });
 
-      const methodLabel = upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : selectedUpscaleModelLabel;
+      const methodLabel = selectedRefinerModelLabel
+        ? `${upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : selectedUpscaleModelLabel} with ${selectedRefinerModelLabel}`
+        : (upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : selectedUpscaleModelLabel);
       const initImageValue = typeof upscaleParams.initimage === 'string' ? upscaleParams.initimage : '';
       logger.debug('[Upscaler] Starting upscale with params (base64 truncated):', {
         ...upscaleParams,
@@ -610,6 +631,44 @@ export function ImageUpscaler({
         {upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0 && !upscalersQuery.isLoading && (
           <Text size="xs" c="orange">
             No model upscalers are currently available. Download one into upscale_models or latent_upscale_models, then refresh model data.
+          </Text>
+        )}
+
+        <Stack gap="xs">
+          <SwarmSwitch
+            label="Use separate diffusion refiner model"
+            size="xs"
+            checked={useSeparateRefinerModel}
+            onChange={(event) => setUseSeparateRefinerModel(event.currentTarget.checked)}
+            disabled={upscaling}
+          />
+          <Text size="xs" c="dimmed">
+            Off uses the source image model. On sends a separate diffusion refiner checkpoint in addition to the upscaler method.
+          </Text>
+          {useSeparateRefinerModel && (
+            <Select
+              label="Diffusion Refiner Model"
+              description="Optional checkpoint used for the refinement stage. This is separate from the upscaler model."
+              data={diffusionModelOptions}
+              value={refinerModel}
+              onChange={(value) => setRefinerModel(value || '')}
+              searchable
+              clearable
+              disabled={upscaling || diffusionModelsQuery.isLoading}
+              placeholder={diffusionModelsQuery.isLoading ? 'Loading models...' : 'Use source image model'}
+              nothingFoundMessage="No diffusion models found"
+            />
+          )}
+        </Stack>
+
+        {(isModelUpscaleMethod(upscaleModel) || (useSeparateRefinerModel && refinerModel)) && (
+          <Text size="xs" c="dimmed">
+            {isModelUpscaleMethod(upscaleModel)
+              ? `Upscale method model: ${upscaleModels.find((model) => model.value === upscaleModel)?.label || upscaleModel}. `
+              : `Upscale method: ${upscaleModels.find((model) => model.value === upscaleModel)?.label || upscaleModel}. `}
+            {useSeparateRefinerModel && refinerModel
+              ? `Then refine with diffusion model: ${diffusionModelOptions.find((model) => model.value === refinerModel)?.label || refinerModel}.`
+              : 'No separate diffusion refiner model is selected.'}
           </Text>
         )}
 

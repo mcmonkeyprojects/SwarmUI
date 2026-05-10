@@ -63,6 +63,7 @@ import {
 } from './components/GeneratePerformanceMilestones';
 import { useNavigationStore, type GenerateRouteState, type GenerateWorkspaceMode } from '../../stores/navigationStore';
 import { useWorkflowWorkspaceStore } from '../../stores/workflowWorkspaceStore';
+import { featureFlags } from '../../config/featureFlags';
 
 const LoRABrowser = lazy(() =>
     import('../../components/LoRABrowser').then((module) => ({ default: module.LoRABrowser }))
@@ -398,6 +399,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
 
     const isGalleryDrawer = useMediaQuery('(max-width: 1199px)');
     const isStacked = useMediaQuery('(max-width: 959px)');
+    const generateUxRefresh = featureFlags.generateUxRefresh;
 
     const sidebarPanel = useResizablePanel({
         initialSize: workspaceLayout.sidebarWidth,
@@ -824,7 +826,9 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             ? 'Curated controls on the left, with the stage ready for review and iteration.'
             : currentMode === 'video'
                 ? 'Focused video generation with text-to-video and image-to-video controls.'
-                : 'Full studio workspace with the canvas leading and support tools around it.';
+                : generateUxRefresh
+                    ? 'Ready for the next image.'
+                    : 'Full studio workspace with the canvas leading and support tools around it.';
     const stageHeaderCopy = generating
         ? 'Generation in progress. Live preview and detailed status are shown on the canvas.'
         : modeStageCopy;
@@ -919,6 +923,31 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         setCurrentMode(mode);
         setGenerateModeRoute(mode);
     };
+
+    const focusPromptField = useCallback(() => {
+        if (workspaceLayout.focusMode) {
+            workspaceActions.setFocusMode(false);
+        }
+
+        window.requestAnimationFrame(() => {
+            const promptField = document.querySelector(
+                'textarea[placeholder="A beautiful landscape with mountains..."], textarea[aria-label*="Prompt"], [contenteditable="true"][aria-label*="Prompt"]'
+            ) as HTMLElement | null;
+            if (!promptField) {
+                return;
+            }
+            promptField.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            promptField.focus({ preventScroll: true });
+        });
+    }, [workspaceActions, workspaceLayout.focusMode]);
+
+    const openGenerationSettings = useCallback(() => {
+        if (workspaceLayout.focusMode) {
+            workspaceActions.setFocusMode(false);
+        }
+        workspaceActions.setOpenQuickModules(['sampling']);
+        workspaceActions.setOpenInspectorSections([]);
+    }, [workspaceActions, workspaceLayout.focusMode]);
 
     const handleRecipeApply = (recipeId: string | null) => {
         if (!recipeId) {
@@ -1161,6 +1190,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                         onInspectorSectionsChange={workspaceActions.setOpenInspectorSections}
                                         lastInspectorJumpTarget={workspaceLayout.lastInspectorJumpTarget}
                                         onLastInspectorJumpTargetChange={workspaceActions.setLastInspectorJumpTarget}
+                                        uxRefresh={generateUxRefresh}
                                     />
                                 ) : (
                                     <WorkspaceModeDeck
@@ -1214,7 +1244,12 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                 )}
 
                 <Box className="generate-studio__stage-column">
-                    <Box className="generate-studio__stage-header">
+                    <Box
+                        className={[
+                            'generate-studio__stage-header',
+                            generateUxRefresh ? 'generate-studio__stage-header--quiet' : '',
+                        ].filter(Boolean).join(' ')}
+                    >
                         <GenerateStageHeader
                             currentMode={currentMode}
                             generating={generating}
@@ -1235,6 +1270,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                             onOpenDiagnostics={() => setDiagnosticsModalOpen(true)}
                             onOpenShortcuts={modals.openShortcutsModal}
                             onPromoteToWorkflow={handlePromoteToWorkflow}
+                            uxRefresh={generateUxRefresh}
                         />
                     </Box>
 
@@ -1258,6 +1294,10 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 selectedModel={selectedModelName}
                                 selectedBackend={selectedBackend}
                                 generationParams={formValues}
+                                uxRefresh={generateUxRefresh}
+                                onChooseModel={modals.openModelBrowser}
+                                onFocusPrompt={focusPromptField}
+                                onOpenGenerationSettings={openGenerationSettings}
                             />
                         </Suspense>
                     </Box>

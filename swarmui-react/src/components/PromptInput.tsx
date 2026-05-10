@@ -753,8 +753,8 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                             }>
                                 <ActionIcon
                                     size="xs"
-                                    variant={autocompleteEnabled ? 'filled' : 'subtle'}
-                                    color={autocompleteEnabled ? 'blue' : 'gray'}
+                                    tone={autocompleteEnabled ? 'info' : 'secondary'}
+                                    emphasis={autocompleteEnabled ? 'solid' : 'ghost'}
                                     onClick={() => {
                                         const newState = !autocompleteEnabled;
                                         setAutocompleteEnabled(newState);
@@ -774,8 +774,8 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                 <Tooltip label={isEnhancing ? 'Enhancing...' : (!enhanceModelId ? 'Select a model in settings' : 'Enhance prompt with AI')}>
                                     <ActionIcon
                                         size="xs"
-                                        variant="filled"
-                                        color="violet"
+                                        tone="primary"
+                                        emphasis="solid"
                                         onClick={handleEnhancePrompt}
                                         disabled={!localValue.trim() || isEnhancing || !enhanceModelId}
                                         loading={isEnhancing}
@@ -795,8 +795,8 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                     <Tooltip label="Prompt enhancement settings">
                                         <ActionIcon
                                             size="xs"
-                                            variant={enhanceEnabled ? 'filled' : 'subtle'}
-                                            color={enhanceEnabled ? 'violet' : 'gray'}
+                                            tone={enhanceEnabled ? 'primary' : 'secondary'}
+                                            emphasis={enhanceEnabled ? 'solid' : 'ghost'}
                                             onClick={() => {
                                                 setEnhanceSettingsOpen((o) => !o);
                                                 if (!enhanceSettingsOpen && availableModels.length === 0) {
@@ -839,7 +839,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                             size="xs"
                                             rightSection={
                                                 <Tooltip label="Refresh models">
-                                                    <ActionIcon size="xs" variant="subtle" onClick={() => void loadModels()} loading={loadingModels}>
+                                                    <ActionIcon size="xs" tone="secondary" emphasis="ghost" onClick={() => void loadModels()} loading={loadingModels}>
                                                         <IconSparkles size={12} />
                                                     </ActionIcon>
                                                 </Tooltip>

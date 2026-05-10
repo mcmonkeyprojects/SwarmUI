@@ -6,6 +6,7 @@ import type { ImageListItem } from '../api/types';
 import { LazyImage } from './LazyImage';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from './ContextMenu';
 import { SwarmActionIcon, SwarmBadge } from './ui';
+import { getHistoryUpscalePreviewInfo } from '../features/history/historyUtils';
 
 interface ImageCardProps {
     /** The image data */
@@ -98,6 +99,7 @@ export const ImageCard = memo(function ImageCard({
     const mediaLabel = image.media_type && image.media_type !== 'image'
         ? image.media_type.charAt(0).toUpperCase() + image.media_type.slice(1)
         : null;
+    const upscaleInfo = getHistoryUpscalePreviewInfo(image);
 
     // Build context menu items based on available actions
     const actionItems: ContextMenuItem[] = [
@@ -361,6 +363,51 @@ export const ImageCard = memo(function ImageCard({
                         </div>
                     ) : null
                 )}
+
+                {enableMotion ? (
+                    <AnimatePresence>
+                        {upscaleInfo ? (
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                style={{ position: 'absolute', bottom: 8, left: 8, maxWidth: 'calc(100% - 16px)' }}
+                            >
+                                <SwarmBadge
+                                    tone="info"
+                                    emphasis="solid"
+                                    size="sm"
+                                    title={[
+                                        upscaleInfo.outputResolution ? `Output: ${upscaleInfo.outputResolution}` : null,
+                                        upscaleInfo.sourceResolution ? `Source: ${upscaleInfo.sourceResolution}` : null,
+                                        upscaleInfo.method ? `Method: ${upscaleInfo.method}` : null,
+                                    ].filter(Boolean).join('\n')}
+                                    style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                >
+                                    {upscaleInfo.badgeLabel}
+                                </SwarmBadge>
+                            </motion.div>
+                        ) : null}
+                    </AnimatePresence>
+                ) : (
+                    upscaleInfo ? (
+                        <div style={{ position: 'absolute', bottom: 8, left: 8, maxWidth: 'calc(100% - 16px)' }}>
+                            <SwarmBadge
+                                tone="info"
+                                emphasis="solid"
+                                size="sm"
+                                title={[
+                                    upscaleInfo.outputResolution ? `Output: ${upscaleInfo.outputResolution}` : null,
+                                    upscaleInfo.sourceResolution ? `Source: ${upscaleInfo.sourceResolution}` : null,
+                                    upscaleInfo.method ? `Method: ${upscaleInfo.method}` : null,
+                                ].filter(Boolean).join('\n')}
+                                style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            >
+                                {upscaleInfo.badgeLabel}
+                            </SwarmBadge>
+                        </div>
+                    ) : null
+                )}
             </Card>
 
             <ContextMenu
@@ -406,6 +453,9 @@ export const ImageCard = memo(function ImageCard({
     return (
         prevProps.image.src === nextProps.image.src &&
         prevProps.image.starred === nextProps.image.starred &&
+        prevProps.image.metadata === nextProps.image.metadata &&
+        prevProps.image.width === nextProps.image.width &&
+        prevProps.image.height === nextProps.image.height &&
         prevProps.isHovered === nextProps.isHovered &&
         prevProps.height === nextProps.height &&
         prevProps.animationDelay === nextProps.animationDelay &&

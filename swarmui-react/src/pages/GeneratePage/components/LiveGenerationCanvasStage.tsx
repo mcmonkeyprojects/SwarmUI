@@ -39,6 +39,10 @@ interface LiveGenerationCanvasStageProps {
     selectedModel?: string;
     selectedBackend?: string;
     generationParams?: Partial<GenerateParams>;
+    uxRefresh?: boolean;
+    onChooseModel?: () => void;
+    onFocusPrompt?: () => void;
+    onOpenGenerationSettings?: () => void;
 }
 
 function resolvePreviewAsset(previewImage: string | null): string | null {
@@ -162,6 +166,10 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
     selectedModel,
     selectedBackend,
     generationParams,
+    uxRefresh = false,
+    onChooseModel,
+    onFocusPrompt,
+    onOpenGenerationSettings,
 }: LiveGenerationCanvasStageProps) {
     useRenderProfiler('LiveGenerationCanvasStage');
 
@@ -244,6 +252,10 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
             selectedModel={selectedModel}
             selectedBackend={selectedBackend}
             generationParams={generationParams}
+            uxRefresh={uxRefresh}
+            onChooseModel={onChooseModel}
+            onFocusPrompt={onFocusPrompt}
+            onOpenGenerationSettings={onOpenGenerationSettings}
         />
     );
 });

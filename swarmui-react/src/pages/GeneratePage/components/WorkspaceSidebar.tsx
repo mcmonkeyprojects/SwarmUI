@@ -131,6 +131,7 @@ interface WorkspaceSidebarProps {
     onInspectorSectionsChange: (sections: string[]) => void;
     lastInspectorJumpTarget: string | null;
     onLastInspectorJumpTargetChange: (target: string | null) => void;
+    uxRefresh?: boolean;
 }
 
 const QUICK_IMAGE_PREP: QuickModuleKey = 'image-prep';
@@ -334,9 +335,12 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
     onInspectorSectionsChange,
     lastInspectorJumpTarget,
     onLastInspectorJumpTargetChange,
+    uxRefresh = false,
 }: WorkspaceSidebarProps) {
     const { paramRanges, paramDefaults, samplerOptions, schedulerOptions } = useT2IParams();
-    const [sidebarSections, setSidebarSections] = useState<string[]>(['quick-access-shell', 'inspector-shell']);
+    const [sidebarSections, setSidebarSections] = useState<string[]>(() => (
+        uxRefresh ? [] : ['quick-access-shell', 'inspector-shell']
+    ));
     const inspectorCardRef = useRef<HTMLDivElement | null>(null);
     const assetsSectionRef = useRef<HTMLDivElement | null>(null);
     const imageSetupSectionRef = useRef<HTMLDivElement | null>(null);
@@ -617,6 +621,17 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
             ))}
         </Stack>
     ) : null;
+    const heroTitle = uxRefresh ? 'Create Image' : 'Generate Setup';
+    const heroSubtitle = uxRefresh ? 'Model, prompt, size, generate.' : 'Model, prompt, size, then generate.';
+    const quickAccessDescription = uxRefresh
+        ? 'Sampling, image prep, and model stack.'
+        : 'Prep, model stack, and sampling controls kept close to generate.';
+    const inspectorDescription = uxRefresh
+        ? 'Full controls for assets, setup, sampling, and output.'
+        : 'Assets, setup, sampling, and output utilities in one full workspace.';
+    const coreGenerationDescription = uxRefresh
+        ? 'Set canvas shape, steps, seed, and hi-res.'
+        : 'Set the canvas shape here, then tune sampling strength and seed for the run.';
 
     return (
         <Box className="generate-studio__sidebar">
@@ -626,8 +641,8 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                         <Box className="generate-studio__sidebar-sticky">
                             <SectionHero
                                 className="generate-studio__sidebar-hero"
-                                title="Generate Setup"
-                                subtitle="Model, prompt, size, then generate."
+                                title={heroTitle}
+                                subtitle={heroSubtitle}
                                 icon={<IconSparkles size={18} color="var(--theme-brand)" />}
                                 badges={[
                                     {
@@ -723,14 +738,14 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                             />
                                             {modelMediaCapabilities.supportsVideo && (
                                                 <Group gap="xs" wrap="wrap">
-                                                    <SwarmBadge tone="info" emphasis="soft">
-                                                        Video Ready
-                                                    </SwarmBadge>
-                                                    {modelMediaCapabilities.supportsTextToVideo && (
-                                                        <SwarmBadge tone="brand" emphasis="soft">
-                                                            Text-to-Video
-                                                        </SwarmBadge>
-                                                    )}
+                                            <SwarmBadge tone="info" emphasis="soft">
+                                                Video Ready
+                                            </SwarmBadge>
+                                            {modelMediaCapabilities.supportsTextToVideo && (
+                                                <SwarmBadge tone="primary" emphasis="soft">
+                                                    Text-to-Video
+                                                </SwarmBadge>
+                                            )}
                                                     {modelMediaCapabilities.supportsImageToVideo && (
                                                         <SwarmBadge tone="warning" emphasis="soft">
                                                             Image-to-Video
@@ -749,8 +764,8 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                     <Stack gap="sm">
                                         <SectionBodyHeader
                                             eyebrow="Size & Generation"
-                                            title="Framing and core tuning"
-                                            description="Set the canvas shape here, then tune sampling strength and seed for the run."
+                                            title={uxRefresh ? 'Canvas and sampling' : 'Framing and core tuning'}
+                                            description={coreGenerationDescription}
                                             badge={(
                                                 <Stack gap={4} align="flex-end" className="generate-studio__core-generation-toggle">
                                                     <Text size="xs" fw={700} c="var(--theme-text-secondary)">
@@ -790,7 +805,9 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                         />
                                         <Group justify="space-between" align="center" wrap="wrap">
                                             <Text size="xs" c="var(--theme-text-secondary)">
-                                                Images, batch size, and save behavior live in Output &amp; Utilities.
+                                                {uxRefresh
+                                                    ? 'Batch and save options are in Output.'
+                                                    : 'Images, batch size, and save behavior live in Output & Utilities.'}
                                             </Text>
                                             <SwarmButton
                                                 size="xs"
@@ -832,28 +849,39 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                 <Accordion.Control className="generate-studio__section-shell-control">
                                     <ShellControlSummary
                                         title="Quick Access"
-                                        description="Prep, model stack, and sampling controls kept close to generate."
+                                        description={quickAccessDescription}
                                         badge={(
                                             <SwarmBadge tone="info" emphasis="soft">
-                                                Fast Panels
+                                                {uxRefresh
+                                                    ? (quickModules.length > 0 ? `${quickModules.length} Open` : 'Collapsed')
+                                                    : 'Fast Panels'}
                                             </SwarmBadge>
                                         )}
                                     />
                                 </Accordion.Control>
                                 <Accordion.Panel className="generate-studio__section-shell-panel">
-                                    <ElevatedCard elevation="table" tone="neutral" className="generate-studio__quick-access-card">
-                                        <Box className="generate-studio__quick-access-header">
-                                            <SectionBodyHeader
-                                                eyebrow="Quick Access"
-                                                title="Fast reach controls"
-                                                description="Sampling, prep, hi-res fix, and model stack are grouped here so you can iterate without bouncing into the full inspector."
-                                                badge={(
-                                                    <SwarmBadge tone="info" emphasis="soft">
-                                                        {quickModules.length > 0 ? `${quickModules.length} Open` : 'Ready'}
-                                                    </SwarmBadge>
-                                                )}
-                                            />
-                                        </Box>
+                                    <ElevatedCard
+                                        elevation="table"
+                                        tone="neutral"
+                                        className={[
+                                            'generate-studio__quick-access-card',
+                                            uxRefresh ? 'generate-studio__quick-access-card--quiet' : '',
+                                        ].filter(Boolean).join(' ')}
+                                    >
+                                        {!uxRefresh && (
+                                            <Box className="generate-studio__quick-access-header">
+                                                <SectionBodyHeader
+                                                    eyebrow="Quick Access"
+                                                    title="Fast reach controls"
+                                                    description="Sampling, prep, hi-res fix, and model stack are grouped here so you can iterate without bouncing into the full inspector."
+                                                    badge={(
+                                                        <SwarmBadge tone="info" emphasis="soft">
+                                                            {quickModules.length > 0 ? `${quickModules.length} Open` : 'Ready'}
+                                                        </SwarmBadge>
+                                                    )}
+                                                />
+                                            </Box>
+                                        )}
                                         <Accordion
                                             multiple
                                             value={quickModules}
@@ -865,7 +893,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                             <SectionItemLabel
                                                 icon={<IconAdjustments size={16} />}
                                                 title="Sampling"
-                                                description="Sampler, scheduler, and clip skip close to the generate button"
+                                                description={uxRefresh ? 'Sampler, scheduler, clip skip' : 'Sampler, scheduler, and clip skip close to the generate button'}
                                             />
                                         </Accordion.Control>
                                         <Accordion.Panel>
@@ -918,7 +946,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                             <SectionItemLabel
                                                 icon={<IconLayersIntersect size={16} />}
                                                 title="Image Prep"
-                                                description="Init image, creativity, and canvas-driven starting controls"
+                                                description={uxRefresh ? 'Init image and starting controls' : 'Init image, creativity, and canvas-driven starting controls'}
                                                 aside={(
                                                     <Group gap="xs" wrap="nowrap">
                                                         {quickInitImagePreview ? (
@@ -1022,7 +1050,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                             <SectionItemLabel
                                                 icon={<IconSparkles size={16} />}
                                                 title="Hi-Res Fix"
-                                                description="Refiner model, upscale amount, and hi-res method controls"
+                                                description={uxRefresh ? 'Refiner, upscale, method' : 'Refiner model, upscale amount, and hi-res method controls'}
                                                 aside={(
                                                     <Group gap="xs" wrap="nowrap">
                                                         {enableRefiner ? (
@@ -1056,7 +1084,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                 </Group>
 
                                                 <Select
-                                                    label="Refiner Model"
+                                                    label="Diffusion Refiner Model"
                                                     placeholder="Use Base Model"
                                                     data={refinerModelOptions}
                                                     searchable
@@ -1086,7 +1114,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                 />
 
                                                 <Select
-                                                    label="Upscale Method"
+                                                    label="Upscale Method / Upscaler Model"
                                                     placeholder="Select upscale method"
                                                     data={quickUpscaleMethodOptions}
                                                     value={selectedUpscaleMethod}
@@ -1143,11 +1171,11 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                             <SectionItemLabel
                                                 icon={<IconBlocks size={16} />}
                                                 title="Model Stack"
-                                                description="VAE, LoRAs, and embeddings without opening the full asset inspector"
+                                                description={uxRefresh ? 'VAE, LoRAs, embeddings' : 'VAE, LoRAs, and embeddings without opening the full asset inspector'}
                                                 aside={(
                                                     <Group gap="xs" wrap="nowrap">
                                                         {activeLoras.length > 0 ? (
-                                                            <SwarmBadge tone="brand" emphasis="soft">{activeLoras.length} LoRA</SwarmBadge>
+                                                            <SwarmBadge tone="primary" emphasis="soft">{activeLoras.length} LoRA</SwarmBadge>
                                                         ) : null}
                                                         {activeEmbeddings.length > 0 ? (
                                                             <SwarmBadge tone="info" emphasis="soft">{activeEmbeddings.length} Embed</SwarmBadge>
@@ -1233,10 +1261,10 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                 <Accordion.Control className="generate-studio__section-shell-control">
                                     <ShellControlSummary
                                         title="Inspector"
-                                        description="Assets, setup, sampling, and output utilities in one full workspace."
+                                        description={inspectorDescription}
                                         badge={(
-                                            <SwarmBadge tone="brand" emphasis="soft">
-                                                {inspectorSections.length > 0 ? `${inspectorSections.length} Open` : 'Full Controls'}
+                                            <SwarmBadge tone="primary" emphasis="soft">
+                                                {inspectorSections.length > 0 ? `${inspectorSections.length} Open` : uxRefresh ? 'Collapsed' : 'Full Controls'}
                                             </SwarmBadge>
                                         )}
                                     />
@@ -1246,20 +1274,25 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                         ref={inspectorCardRef}
                                         elevation="table"
                                         tone="neutral"
-                                        className="generate-studio__inspector-card"
+                                        className={[
+                                            'generate-studio__inspector-card',
+                                            uxRefresh ? 'generate-studio__inspector-card--quiet' : '',
+                                        ].filter(Boolean).join(' ')}
                                     >
-                                        <Box className="generate-studio__inspector-header">
-                                            <SectionBodyHeader
-                                                eyebrow="Inspector"
-                                                title="Full advanced workspace"
-                                                description="Assets, image setup, sampling depth, and output utilities stay visible here when you need the whole stack."
-                                                badge={(
-                                                    <SwarmBadge tone="brand" emphasis="soft">
-                                                        {inspectorSections.length > 0 ? `${inspectorSections.length} Open` : 'Full Controls'}
-                                                    </SwarmBadge>
-                                                )}
-                                            />
-                                        </Box>
+                                        {!uxRefresh && (
+                                            <Box className="generate-studio__inspector-header">
+                                                <SectionBodyHeader
+                                                    eyebrow="Inspector"
+                                                    title="Full advanced workspace"
+                                                    description="Assets, image setup, sampling depth, and output utilities stay visible here when you need the whole stack."
+                                                    badge={(
+                                                        <SwarmBadge tone="primary" emphasis="soft">
+                                                            {inspectorSections.length > 0 ? `${inspectorSections.length} Open` : 'Full Controls'}
+                                                        </SwarmBadge>
+                                                    )}
+                                                />
+                                            </Box>
+                                        )}
 
                                         <Accordion
                                             multiple
@@ -1273,7 +1306,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                 <SectionItemLabel
                                                     icon={<IconBlocks size={16} />}
                                                     title="Assets"
-                                                    description="Wildcard sets and advanced prompt asset helpers"
+                                                    description={uxRefresh ? 'Wildcards and prompt assets' : 'Wildcard sets and advanced prompt asset helpers'}
                                                 />
                                             </Accordion.Control>
                                             <Accordion.Panel>
@@ -1310,7 +1343,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                 <SectionItemLabel
                                                     icon={<IconLayersIntersect size={16} />}
                                                     title="Image Setup"
-                                                    description="Init image, variation, ControlNet, refiner, and video"
+                                                    description={uxRefresh ? 'Init, variation, ControlNet, video' : 'Init image, variation, ControlNet, refiner, and video'}
                                                 />
                                             </Accordion.Control>
                                             <Accordion.Panel>
@@ -1370,7 +1403,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                 <SectionItemLabel
                                                     icon={<IconAdjustments size={16} />}
                                                     title="Sampling &amp; Quality"
-                                                    description="Scheduler depth, CLIP tuning, and model add-ons"
+                                                    description={uxRefresh ? 'Scheduler, CLIP, add-ons' : 'Scheduler depth, CLIP tuning, and model add-ons'}
                                                 />
                                             </Accordion.Control>
                                             <Accordion.Panel>
@@ -1392,7 +1425,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                                 <SectionItemLabel
                                                     icon={<IconArrowWaveRightUp size={16} />}
                                                     title="Output &amp; Utilities"
-                                                    description="Save behavior, output flags, and workflow shortcuts"
+                                                    description={uxRefresh ? 'Save, output, workflow shortcuts' : 'Save behavior, output flags, and workflow shortcuts'}
                                                 />
                                             </Accordion.Control>
                                             <Accordion.Panel>

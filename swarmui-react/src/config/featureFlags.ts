@@ -5,6 +5,7 @@ export interface FrontendFeatureFlags {
   virtualizedBrowsersV2: boolean;
   devRenderProfiling: boolean;
   devPerformanceDashboard: boolean;
+  generateUxRefresh: boolean;
   generateBootstrapRefreshMs: number;
   generateBootstrapCooldownMs: number;
   generateTriggerRefreshCacheMs: number;
@@ -57,6 +58,10 @@ export const featureFlags: FrontendFeatureFlags = {
   ),
   devPerformanceDashboard: parseBooleanEnv(
     import.meta.env.VITE_DEV_PERFORMANCE_DASHBOARD as string | undefined,
+    true
+  ),
+  generateUxRefresh: parseBooleanEnv(
+    import.meta.env.VITE_GENERATE_UX_REFRESH as string | undefined,
     true
   ),
   generateBootstrapRefreshMs: parseNumberEnv(

@@ -26,8 +26,8 @@ import {
     IconCopy,
 } from '@tabler/icons-react';
 import type { ImageListItem } from '../api/types';
-import { getHistoryMetadataSummary, isImageMedia } from '../features/history/historyUtils';
-import { SwarmActionIcon as ActionIcon, SwarmButton as Button } from './ui';
+import { getHistoryMetadataSummary, getHistoryUpscalePreviewInfo, isImageMedia } from '../features/history/historyUtils';
+import { SwarmActionIcon as ActionIcon, SwarmBadge as Badge, SwarmButton as Button } from './ui';
 
 interface ImageDetailModalProps {
     /** The image to display (null to close modal) */
@@ -95,6 +95,7 @@ export function ImageDetailModal({
     }
 
     const metadataSummary = getHistoryMetadataSummary(image);
+    const upscaleInfo = getHistoryUpscalePreviewInfo(image);
     const canUseImageTools = isImageMedia(image);
     const primaryActionStyles = {
         root: {
@@ -315,7 +316,7 @@ export function ImageDetailModal({
                     )}
                 </Group>
 
-                {(metadataSummary.prompt || metadataSummary.model || metadataSummary.seed || metadataSummary.resolution) && (
+                {(metadataSummary.prompt || metadataSummary.model || metadataSummary.seed || metadataSummary.resolution || upscaleInfo) && (
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                         {metadataSummary.prompt && (
                             <Paper p="sm" radius="sm" withBorder style={{ background: 'color-mix(in srgb, var(--theme-gray-8) 80%, transparent)', borderColor: 'var(--theme-border-subtle)' }}>
@@ -328,6 +329,26 @@ export function ImageDetailModal({
                             {metadataSummary.model && <Text size="sm" c="var(--theme-text-primary)">Model: {metadataSummary.model}</Text>}
                             {metadataSummary.seed && <Text size="sm" c="var(--theme-text-primary)">Seed: {metadataSummary.seed}</Text>}
                             {metadataSummary.resolution && <Text size="sm" c="var(--theme-text-primary)">Resolution: {metadataSummary.resolution}</Text>}
+                            {upscaleInfo && (
+                                <Group gap="xs" mt={6} wrap="wrap">
+                                    <Badge tone="info" emphasis="solid" size="sm">
+                                        {upscaleInfo.badgeLabel}
+                                    </Badge>
+                                    {upscaleInfo.sourceResolution && (
+                                        <Text size="sm" c="var(--theme-text-secondary)">
+                                            Source: {upscaleInfo.sourceResolution}
+                                        </Text>
+                                    )}
+                                    <Text size="sm" c="var(--theme-text-secondary)">
+                                        Scale: {upscaleInfo.scale}x
+                                    </Text>
+                                    {upscaleInfo.method && (
+                                        <Text size="sm" c="var(--theme-text-secondary)">
+                                            Method: {upscaleInfo.method}
+                                        </Text>
+                                    )}
+                                </Group>
+                            )}
                         </Paper>
                     </SimpleGrid>
                 )}

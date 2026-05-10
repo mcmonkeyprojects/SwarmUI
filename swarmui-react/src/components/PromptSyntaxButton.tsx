@@ -64,8 +64,8 @@ export const PromptSyntaxButton = React.memo(function PromptSyntaxButton({
             <Menu.Target>
                 <Tooltip label="Insert prompt syntax" position="top">
                     <ActionIcon
-                        variant="light"
-                        color="blue"
+                        tone="info"
+                        emphasis="soft"
                         size={size}
                         disabled={disabled}
                         aria-label="Insert prompt syntax"

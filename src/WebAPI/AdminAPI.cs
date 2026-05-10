@@ -235,11 +235,12 @@ public static class AdminAPI
         {
             foreach ((string name, Logs.LogTracker tracker) in Logs.OtherTrackers)
             {
+                string identifier = string.IsNullOrWhiteSpace(tracker.Identifier) ? name : tracker.Identifier;
                 types.Add(new JObject()
                 {
                     ["name"] = name,
                     ["color"] = tracker.Color,
-                    ["identifier"] = tracker.Identifier
+                    ["identifier"] = identifier
                 });
             }
         }
@@ -266,7 +267,8 @@ public static class AdminAPI
         long lastSeq = Interlocked.Read(ref Logs.LogTracker.LastSequenceID);
         result["last_sequence_id"] = lastSeq;
         JObject messageData = [];
-        List<string> types = [.. raw["types"].Select(v => $"{v}")];
+        List<string> types = raw["types"] is JArray rawTypes ? [.. rawTypes.Select(v => $"{v}")] : [];
+        JObject lastSequenceIds = raw["last_sequence_ids"] as JObject;
         foreach (string type in types)
         {
             Logs.LogTracker tracker;
@@ -274,13 +276,17 @@ public static class AdminAPI
             {
                 if (!Logs.OtherTrackers.TryGetValue(type, out tracker))
                 {
-                    continue;
+                    tracker = Logs.OtherTrackers.Values.FirstOrDefault(t => t.Identifier == type);
+                    if (tracker is null)
+                    {
+                        continue;
+                    }
                 }
             }
             JArray messages = [];
             messageData[type] = messages;
             long lastSeqId = -1;
-            if ((raw["last_sequence_ids"] as JObject).TryGetValue(type, out JToken lastSeqIdToken))
+            if (lastSequenceIds is not null && lastSequenceIds.TryGetValue(type, out JToken lastSeqIdToken))
             {
                 lastSeqId = lastSeqIdToken.Value<long>();
             }
