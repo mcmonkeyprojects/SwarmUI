@@ -90,7 +90,7 @@ public class ImageFile : MediaFile
         }
         ISImage img = ToIS;
         float factor = 256f / Math.Min(img.Width, img.Height);
-        img.Clone(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
+        img = img.Clone(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
         if (!string.IsNullOrWhiteSpace(metadataText))
         {
             img.Metadata.XmpProfile = null;
