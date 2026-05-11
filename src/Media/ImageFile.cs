@@ -88,6 +88,7 @@ public class ImageFile : MediaFile
         {
             return null;
         }
+        metadataText ??= GetMetadata();
         ISImage img = ToIS;
         float factor = 256f / Math.Min(img.Width, img.Height);
         img = img.Clone(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
