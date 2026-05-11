@@ -1094,10 +1094,6 @@ public class WorkflowGeneratorSteps
                         {
                             g.CurrentMedia = imageNodeActual;
                             g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: "9");
-                            if (imageNodeActual.AttachedAudio is not null)
-                            {
-                                g.Workflow["9"]["inputs"]["fps"] = NodePath((string)imageNodeActual.AttachedAudio.Path[0], 2);
-                            }
                             g.SkipFurtherSteps = true;
                             return;
                         }
