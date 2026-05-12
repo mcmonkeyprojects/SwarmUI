@@ -1023,6 +1023,41 @@ public partial class WorkflowGenerator
                 }
             }
         }
+        else if (IsHiDreamO1())
+        {
+            List<JArray> refImages = [];
+            if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+            {
+                int count = Math.Min(images.Count, 10);
+                for (int i = 0; i < count; i++)
+                {
+                    refImages.Add(GetPromptImage(true, false, i));
+                }
+            }
+            else if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
+            {
+                refImages.Add([MaskShrunkInfo.ScaledImage, 0]);
+            }
+            else if (BasicInputImage is not null)
+            {
+                refImages.Add(BasicInputImage.Path);
+            }
+            if (refImages.Count > 0)
+            {
+                JObject refInputs = new()
+                {
+                    ["positive"] = pos,
+                    ["negative"] = neg
+                };
+                for (int i = 0; i < refImages.Count; i++)
+                {
+                    refInputs[$"images.image_{i + 1}"] = refImages[i];
+                }
+                string refNode = CreateNode("HiDreamO1ReferenceImages", refInputs);
+                pos = [refNode, 0];
+                neg = [refNode, 1];
+            }
+        }
         else if (IsWanVideo()) // TODO: Somehow check if this is actually a phantom model?
         {
             if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
