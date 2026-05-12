@@ -611,6 +611,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
     - **Steps:** For Turbo `28` is recommended. For Base, 40+ steps as normal.
     - **Resolution:** Side length `2048` is the standard.
+- **Flash Lora:**
+    - A low-step flash lora can be downloaded here [Kijai/hidream-O1-image_comfy](<https://huggingface.co/Kijai/hidream-O1-image_comfy/resolve/main/loras/hidream_o1_dev_lora_rank_64_bf16_pruned_v1.safetensors>). It allows use of the base model with lower step count. 8 steps will generate a coherent image of lower quality, 16 steps seems closer to original quality. Use CFG Scale 1.
 
 # Video Models
 
