@@ -201,6 +201,7 @@ public class T2IModelClassSorter
         bool isHiDream(JObject h) => h.ContainsKey("caption_projection.0.linear.weight");
         bool isHiDreamLora(JObject h) => hasKey(h, "double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
         bool isHiDreamO1(JObject h) => (h.ContainsKey("model.t_embedder1.mlp.0.weight") && h.ContainsKey("model.t_embedder1.mlp.0.bias"));
+        bool isHiDreamO1Lora(JObject h) => hasLoraKey(h, "final_layer2.linear") && hasLoraKey(h, "language_model.layers.0.self_attn.q_proj");
         bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
         bool isChromaRadiance(JObject h) => h.ContainsKey("nerf_image_embedder.embedder.0.bias");
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
@@ -728,6 +729,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "hidream-o1", CompatClass = CompatHiDreamO1, Name = "HiDream O1 Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return isHiDreamO1(h);
+        }});
+        Register(new() { ID = "hidream-o1/lora", CompatClass = CompatHiDreamO1, Name = "HiDream O1 LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isHiDreamO1Lora(h);
         }});
         Register(new() { ID = "omnigen-2", CompatClass = CompatOmniGen2, Name = "OmniGen 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
