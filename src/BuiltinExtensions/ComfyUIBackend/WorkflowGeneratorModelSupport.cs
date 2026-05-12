@@ -88,6 +88,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
     public bool IsHiDream() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamI1);
 
+    /// <summary>Returns true if the current model is HiDream-O1 Image.</summary>
+    public bool IsHiDreamO1() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamO1);
+
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
@@ -398,6 +401,15 @@ public partial class WorkflowGenerator
         else if (IsChromaRadiance() || IsZetaChroma())
         {
             return resultImage(CreateNode("EmptyChromaRadianceLatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height,
+                ["width"] = width
+            }, id));
+        }
+        else if (IsHiDreamO1())
+        {
+            return resultImage(CreateNode("EmptyHiDreamO1LatentImage", new JObject()
             {
                 ["batch_size"] = batchSize,
                 ["height"] = height,
@@ -883,7 +895,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance()) // Obligatory due to model issues
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance() || IsHiDreamO1()) // Obligatory due to model issues
                     {
                         dtype = "default";
                     }
@@ -1112,6 +1124,15 @@ public partial class WorkflowGenerator
             });
             LoadingClip = [quadClipLoader, 0];
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsHiDreamO1())
+        {
+            string noiseScaleNode = CreateNode("ModelNoiseScale", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["noise_scale"] = 7.5 // dev happy with 7.5, base might want 8?
+            });
+            LoadingModel = [noiseScaleNode, 0];
         }
         else if (IsOmniGen())
         {

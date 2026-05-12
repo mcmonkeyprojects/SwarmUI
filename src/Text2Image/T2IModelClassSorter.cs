@@ -70,6 +70,7 @@ public class T2IModelClassSorter
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false }),
+        CompatHiDreamO1 = RegisterCompat(new() { ID = "hidream-o1", ShortCode = "HiDrO1", LorasTargetTextEnc = false }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones
@@ -199,6 +200,7 @@ public class T2IModelClassSorter
         bool isWanVace(JObject h) => hasKey(h, "vace_blocks.0.after_proj.bias");
         bool isHiDream(JObject h) => h.ContainsKey("caption_projection.0.linear.weight");
         bool isHiDreamLora(JObject h) => hasKey(h, "double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
+        bool isHiDreamO1(JObject h) => (h.ContainsKey("model.t_embedder1.mlp.0.weight") && h.ContainsKey("model.t_embedder1.mlp.0.bias"));
         bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
         bool isChromaRadiance(JObject h) => h.ContainsKey("nerf_image_embedder.embedder.0.bias");
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
@@ -722,6 +724,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "hidream-i1/lora", CompatClass = CompatHiDreamI1, Name = "HiDream i1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isHiDreamLora(h);
+        }});
+        Register(new() { ID = "hidream-o1", CompatClass = CompatHiDreamO1, Name = "HiDream O1 Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isHiDreamO1(h);
         }});
         Register(new() { ID = "omnigen-2", CompatClass = CompatOmniGen2, Name = "OmniGen 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
