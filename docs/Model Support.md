@@ -19,6 +19,7 @@
 [Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
 [ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
+[HiDream O1](#hidream-o1) | Pixel UiT | 2026 | HiDream | 8B | Minimal | Modern, intelligent, good quality, fast |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -589,6 +590,27 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - Down to 512 works still, up to 1536 is fine.
         - Out of range doesn't corrupt immediately but will fail at composition.
         - Prefers aspects from square to 16:9, gets funny in 21:9
+
+# HiDream-O1
+
+*(HiDream Base, Steps=40, CFG=5)*
+
+- HiDream's [HiDream O1](<https://huggingface.co/HiDream-ai/HiDream-O1-Image>) is supported in SwarmUI!
+- It is an 8B model, with both a strong base and an official turbo designed to run extremely fast
+    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/HiDream-O1-Image - turbo](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_bf16.safetensors?download=true>)
+        - Turbo FP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - turbo FP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_fp8_scaled.safetensors?download=true>)
+        - Turbo MXFP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - turbo MXFP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_mxfp8.safetensors?download=true>)
+    - Or the base version (in fat BF16) [Comfy-Org/HiDream-O1-Image - base](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_bf16.safetensors?download=true>)
+        - Base FP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - base FP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_fp8_scaled.safetensors?download=true>)
+        - Base MXFP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - base MXFP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_mxfp8.safetensors?download=true>)
+    - Save in `Stable-Diffusion`
+- **Parameters:**
+    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply.
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
+    - **Steps:** For Turbo `28` is recommended. For Base, 40+ steps as normal.
+    - **Resolution:** Side length `2048` is the standard.
 
 # Video Models
 
