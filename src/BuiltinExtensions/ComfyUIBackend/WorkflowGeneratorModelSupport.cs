@@ -1130,9 +1130,20 @@ public partial class WorkflowGenerator
             string noiseScaleNode = CreateNode("ModelNoiseScale", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["noise_scale"] = 7.5 // dev happy with 7.5, base might want 8?
+                ["noise_scale"] = 7.5
             });
             LoadingModel = [noiseScaleNode, 0];
+            string seamSmoothingNode = CreateNode("HiDreamO1PatchSeamSmoothing", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["start_percent"] = 0.8,
+                ["end_percent"] = 1.00,
+                ["pattern"] = "single_shift",
+                ["passes"] = "2",
+                ["blend"] = "average",
+                ["strength"] = 1.00
+            });
+            LoadingModel = [seamSmoothingNode, 0];
         }
         else if (IsOmniGen())
         {
