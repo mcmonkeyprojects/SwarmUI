@@ -593,6 +593,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 # HiDream-O1
 
+![img](/docs/images/models/hidreamo1.jpg)
+
+*(HiDream-o1 Dev FP8, Steps=20, CFG=1, SideLength=2048)*
+
 - HiDream's [HiDream O1](<https://huggingface.co/HiDream-ai/HiDream-O1-Image>) is supported in SwarmUI!
 - It is an 8B model, with both a base and an official 'dev' distill designed to run faster
     - The "Dev" model (in fat BF16) can be downloaded here [Comfy-Org/HiDream-O1-Image - dev](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_bf16.safetensors>)
