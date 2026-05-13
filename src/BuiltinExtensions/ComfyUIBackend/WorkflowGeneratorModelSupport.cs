@@ -895,7 +895,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance() || IsHiDreamO1()) // Obligatory due to model issues
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance()) // Obligatory due to model issues
                     {
                         dtype = "default";
                     }
@@ -1130,11 +1130,11 @@ public partial class WorkflowGenerator
             string noiseScaleNode = CreateNode("ModelNoiseScale", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["noise_scale"] = 7.5
+                ["noise_scale"] = 7.5 // TODO: Configurable?
             });
             LoadingModel = [noiseScaleNode, 0];
             string seamSmoothingNode = CreateNode("HiDreamO1PatchSeamSmoothing", new JObject()
-            {
+            { // TODO: Configurable?
                 ["model"] = LoadingModel,
                 ["start_percent"] = 0.8,
                 ["end_percent"] = 1.00,

@@ -19,7 +19,7 @@
 [Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
 [ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
-[HiDream O1](#hidream-o1) | Pixel UiT | 2026 | HiDream | 8B | Minimal | Modern, intelligent, good quality, fast |
+[HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -593,26 +593,26 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 # HiDream-O1
 
-*(HiDream Base, Steps=40, CFG=5)*
-
 - HiDream's [HiDream O1](<https://huggingface.co/HiDream-ai/HiDream-O1-Image>) is supported in SwarmUI!
-- It is an 8B model, with both a strong base and an official turbo designed to run extremely fast
-    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/HiDream-O1-Image - turbo](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_bf16.safetensors?download=true>)
-        - Turbo FP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - turbo FP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_fp8_scaled.safetensors?download=true>)
-        - Turbo MXFP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - turbo MXFP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_mxfp8.safetensors?download=true>)
-    - Or the base version (in fat BF16) [Comfy-Org/HiDream-O1-Image - base](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_bf16.safetensors?download=true>)
-        - Base FP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - base FP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_fp8_scaled.safetensors?download=true>)
-        - Base MXFP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - base MXFP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_mxfp8.safetensors?download=true>)
+- It is an 8B model, with both a base and an official 'dev' distill designed to run faster
+    - The "Dev" model (in fat BF16) can be downloaded here [Comfy-Org/HiDream-O1-Image - dev](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_bf16.safetensors>)
+        - Dev FP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - dev FP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_dev_fp8_scaled.safetensors>)
+    - Or the base version (in fat BF16) [Comfy-Org/HiDream-O1-Image - base](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_bf16.safetensors>)
+        - Base FP8 version can be downloaded here [Comfy-Org/HiDream-O1-Image - base FP8](<https://huggingface.co/Comfy-Org/HiDream-O1-Image/resolve/main/checkpoints/hidream_o1_image_fp8_scaled.safetensors>)
     - Save in `Stable-Diffusion`
+- It has no VAE, but has in-middle dedicated large patch scaling to compensate
+- Its text encoding is similarly native-integrated
 - **Parameters:**
-    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply.
+    - **Prompt:** Supports general prompting in any format just fine. Speaks at least English and Chinese. Was designed to use LLM-written prompts.
+    - **Prompt Images:** You can upload up to 10 images for image-editing input, but it only strongly obeys single-image input.
     - **Sampler:** Default is fine.
     - **Scheduler:** Default is fine.
-    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
-    - **Steps:** For Turbo `28` is recommended. For Base, 40+ steps as normal.
-    - **Resolution:** Side length `2048` is the standard.
-- **Flash Lora:**
-    - A low-step flash lora can be downloaded here [Kijai/hidream-O1-image_comfy](<https://huggingface.co/Kijai/hidream-O1-image_comfy/resolve/main/loras/hidream_o1_dev_lora_rank_64_bf16_pruned_v1.safetensors>). It allows use of the base model with lower step count. 8 steps will generate a coherent image of lower quality, 16 steps seems closer to original quality. Use CFG Scale 1.
+    - **CFG Scale:** For Dev, `1`, for base normal CFG ranges (around `5`)
+    - **Steps:** For Dev `28` is their recommendation, but even just `4` works fine for simple images. For Base, 50 steps is the official recommendation.
+    - **Resolution:** Side length `2048` is the model's standard, but a wide range works well.
+        - Because of the aggressive patch scaling, 2048 on this model looks more like 1024 on most other models. 1024 on this model looks noticeably worse. Going above 2048 will have some color distortion.
+- **Dev Lora:**
+    - A low-step dev lora can be downloaded here [Kijai/hidream-O1-image_comfy](<https://huggingface.co/Kijai/hidream-O1-image_comfy/resolve/main/loras/hidream_o1_dev_lora_rank_64_bf16_pruned_v1.safetensors>). It allows use of the base model with the distilled behavior from the Dev model. 8 steps will generate a coherent image of lower quality, 16 steps seems closer to original quality. Use CFG Scale 1.
 
 # Video Models
 

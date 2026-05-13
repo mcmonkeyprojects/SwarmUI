@@ -866,6 +866,7 @@ public class T2IModelClassSorter
         Remaps["hunyuanvideo1.5_720p_i2v"] = "hunyuan-video-1_5";
         Remaps["hunyuanvideo1.5_1080p_sr_distilled"] = "hunyuan-video-1_5-sr";
         Remaps["hunyuanvideo1.5_720p_sr_distilled"] = "hunyuan-video-1_5-sr";
+        Remaps["hidream_o1_image"] = "hidream-o1";
     }
 
     /// <summary>Returns the model class that matches this model, or null if none.</summary>
