@@ -88,6 +88,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
     public bool IsHiDream() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamI1);
 
+    /// <summary>Returns true if the current model is HiDream-O1 Image.</summary>
+    public bool IsHiDreamO1() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamO1);
+
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
@@ -398,6 +401,15 @@ public partial class WorkflowGenerator
         else if (IsChromaRadiance() || IsZetaChroma())
         {
             return resultImage(CreateNode("EmptyChromaRadianceLatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height,
+                ["width"] = width
+            }, id));
+        }
+        else if (IsHiDreamO1())
+        {
+            return resultImage(CreateNode("EmptyHiDreamO1LatentImage", new JObject()
             {
                 ["batch_size"] = batchSize,
                 ["height"] = height,
@@ -1112,6 +1124,26 @@ public partial class WorkflowGenerator
             });
             LoadingClip = [quadClipLoader, 0];
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsHiDreamO1())
+        {
+            string noiseScaleNode = CreateNode("ModelNoiseScale", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["noise_scale"] = 7.5 // TODO: Configurable?
+            });
+            LoadingModel = [noiseScaleNode, 0];
+            string seamSmoothingNode = CreateNode("HiDreamO1PatchSeamSmoothing", new JObject()
+            { // TODO: Configurable?
+                ["model"] = LoadingModel,
+                ["start_percent"] = 0.8,
+                ["end_percent"] = 1.00,
+                ["pattern"] = "single_shift",
+                ["passes"] = "2",
+                ["blend"] = "average",
+                ["strength"] = 1.00
+            });
+            LoadingModel = [seamSmoothingNode, 0];
         }
         else if (IsOmniGen())
         {
