@@ -1034,14 +1034,6 @@ public partial class WorkflowGenerator
                     refImages.Add(GetPromptImage(true, false, i));
                 }
             }
-            else if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
-            {
-                refImages.Add([MaskShrunkInfo.ScaledImage, 0]);
-            }
-            else if (BasicInputImage is not null)
-            {
-                refImages.Add(BasicInputImage.Path);
-            }
             if (refImages.Count > 0)
             {
                 JObject refInputs = new()
