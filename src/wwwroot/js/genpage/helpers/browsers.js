@@ -474,12 +474,6 @@ class GenPageBrowserClass {
                 let textBlock = createDiv(null, 'model-descblock');
                 textBlock.tabIndex = 0;
                 textBlock.innerHTML = desc.description;
-                textBlock.addEventListener('click', (e) => {
-                    if (this.handleMultiSelectTileClick(div, e)) {
-                        return;
-                    }
-                    this.select(file, div);
-                });
                 div.appendChild(textBlock);
             }
             else if (this.format.includes('Thumbnails')) {
@@ -870,7 +864,7 @@ class GenPageBrowserClass {
      * Turns multi-select mode on or off; exiting clears the selection.
      */
     setMultiSelectActive(active) {
-        if (!this.allowMultiSelect || this.multiSelectActive == active) {
+        if (!this.allowMultiSelect) {
             return;
         }
         this.multiSelectActive = active;
@@ -929,19 +923,9 @@ class GenPageBrowserClass {
             let desc = this.describe(file);
             let labels = new Set();
             for (let button of desc.buttons) {
-                if (!button.onclick) {
-                    continue;
+                if (button.can_multi && (button.max_selected == null || files.length <= button.max_selected)) {
+                    labels.add(button.label);
                 }
-                if (button.multi_only && files.length < 2) {
-                    continue;
-                }
-                if (!button.can_multi && !button.multi_only) {
-                    continue;
-                }
-                if (button.max_selected != null && files.length > button.max_selected) {
-                    continue;
-                }
-                labels.add(button.label);
             }
             eligiblePerFile.push(labels);
         }

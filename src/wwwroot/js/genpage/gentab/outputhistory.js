@@ -68,7 +68,7 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
         let getMeta = (metadata) => metadata ? (JSON.parse(metadata) || {}) : {};
         let metaParsed = getMeta(metadata);
         let isStarred = (e) => {
-            let currentMeta = e && e.dataset ? getMeta(e.dataset.metadata) : {};
+            let currentMeta = getMeta(e?.dataset?.metadata);
             if (Object.keys(currentMeta).length == 0) {
                 currentMeta = metaParsed;
             }
