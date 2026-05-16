@@ -1036,6 +1036,7 @@ function trt_modal_create() {
     let rangeSelect = getRequiredElementById('tensorrt_aspect_range');
     let batchSize = getRequiredElementById('tensorrt_batch_size');
     let maxBatch = getRequiredElementById('tensorrt_max_batch_size');
+    let contextLen = getRequiredElementById('tensorrt_context');
     let createButton = getRequiredElementById('trt_create_button');
     let resultBox = getRequiredElementById('tensorrt_create_result_box');
     let data = {
@@ -1043,7 +1044,8 @@ function trt_modal_create() {
         'aspect': aspectSelect.value,
         'aspectRange': rangeSelect.value,
         'optBatch': batchSize.value,
-        'maxBatch': maxBatch.value
+        'maxBatch': maxBatch.value,
+        'contextLen': contextLen.value
     };
     createButton.disabled = true;
     resultBox.innerText = 'Creating TensorRT engine, please wait...';
