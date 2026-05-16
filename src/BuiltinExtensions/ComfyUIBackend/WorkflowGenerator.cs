@@ -1033,9 +1033,6 @@ public partial class WorkflowGenerator
                 {
                     refImages.Add(GetPromptImage(true, false, i));
                 }
-            }
-            if (refImages.Count > 0)
-            {
                 JObject refInputs = new()
                 {
                     ["positive"] = pos,
