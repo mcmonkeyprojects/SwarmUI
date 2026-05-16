@@ -616,7 +616,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Resolution:** Side length `2048` is the model's standard, but a wide range works well.
         - Because of the aggressive patch scaling, 2048 on this model looks more like 1024 on most other models. 1024 on this model looks noticeably worse. Going above 2048 will have some color distortion.
 - **Dev Lora:**
-    - A low-step dev lora can be downloaded here [Kijai/hidream-O1-image_comfy](<https://huggingface.co/Kijai/hidream-O1-image_comfy/resolve/main/loras/hidream_o1_dev_lora_rank_64_bf16_pruned_v1.safetensors>). It allows use of the base model with the distilled behavior from the Dev model. 8 steps will generate a coherent image of lower quality, 16 steps seems closer to original quality. Use CFG Scale 1.
+    - A dev lora can be downloaded here [Kijai/hidream-O1-image_comfy](<https://huggingface.co/Kijai/hidream-O1-image_comfy/resolve/main/loras/hidream_o1_dev_lora_rank_64_bf16_pruned_v1.safetensors>). It allows use of the base model with the distilled behavior from the Dev model. 8 steps will generate a coherent image of lower quality, 16 steps seems closer to original quality. Use CFG Scale 1.
 
 # Video Models
 
