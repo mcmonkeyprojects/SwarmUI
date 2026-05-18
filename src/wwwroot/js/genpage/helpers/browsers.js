@@ -927,10 +927,10 @@ class GenPageBrowserClass {
         let eligiblePerFile = [];
         for (let file of files) {
             let desc = this.describe(file);
-            let labels = new Set();
+            let labels = [];
             for (let button of desc.buttons) {
                 if (button.can_multi && (button.max_selected == null || files.length <= button.max_selected)) {
-                    labels.add(button.label);
+                    labels.push(button.label);
                 }
             }
             eligiblePerFile.push(labels);
@@ -938,7 +938,7 @@ class GenPageBrowserClass {
         let first = eligiblePerFile[0];
         let common = [];
         for (let label of first) {
-            if (eligiblePerFile.every(s => s.has(label))) {
+            if (eligiblePerFile.every(arr => arr.includes(label))) {
                 common.push(label);
             }
         }
