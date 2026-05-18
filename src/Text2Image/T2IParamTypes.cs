@@ -1125,7 +1125,7 @@ public class T2IParamTypes
 
     public static string FilePathToDataString(Session session, string filePath, string errorContext)
     {
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        string root = WebServer.GetUserOutputRoot(session.User);
         (string path, string consoleError, string userError) = WebServer.CheckFilePath(root, filePath);
         if (consoleError is not null)
         {
