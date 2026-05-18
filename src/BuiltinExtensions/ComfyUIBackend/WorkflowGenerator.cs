@@ -764,12 +764,8 @@ public partial class WorkflowGenerator
     public (JArray, JArray, JArray, JArray) BuildInputImageHandling(List<JArray> images, JArray pos, JArray neg, JArray latent)
     {
         JArray imgNeg = null;
-        string classId = FinalLoadedModel?.ModelClass?.ID ?? "";
         if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2())
         {
-            JArray img = null;
-            bool onlyExplicit = (IsQwenImage() && !IsQwenImageEdit()) || IsAnyFlux2();
-            bool includeImplicit = IsKontext() || (IsQwenImage() && IsQwenImageEdit());
             if (IsOmniGen() || IsQwenImageEditPlus())
             {
                 imgNeg = neg;
@@ -793,7 +789,7 @@ public partial class WorkflowGenerator
                     imgNeg = [refLatentNodeNeg, 0];
                 }
             }
-            img = images[0];
+            JArray img = images[0];
             makeRefLatent(img);
             for (int i = 1; i < images.Count; i++)
             {
