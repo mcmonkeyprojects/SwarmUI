@@ -765,60 +765,7 @@ public partial class WorkflowGenerator
     {
         JArray imgNeg = null;
         string classId = FinalLoadedModel?.ModelClass?.ID ?? "";
-        static bool isSpecial(T2IModel model)
-        {
-            string modelId = model?.ModelClass?.ID ?? "";
-            return modelId.EndsWith("/lora-depth") || modelId.EndsWith("/lora-canny");
-        }
-        if (classId == "Flux.1-dev/inpaint") // TODO: Correct for split function to use `images`
-        {
-            // Not sure why, but InpaintModelConditioning is required here.
-            JArray img = BasicInputImage?.Path;
-            JArray mask = FinalMask;
-            if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
-            {
-                img = [MaskShrunkInfo.ScaledImage, 0];
-                mask = [MaskShrunkInfo.CroppedMask, 0];
-            }
-            if (mask is null)
-            {
-                string maskNode = CreateNode("SolidMask", new JObject()
-                {
-                    ["value"] = 1,
-                    ["width"] = UserInput.GetImageWidth(),
-                    ["height"] = UserInput.GetImageHeight()
-                });
-                mask = [maskNode, 0];
-            }
-            string inpaintNode = CreateNode("InpaintModelConditioning", new JObject()
-            {
-                ["positive"] = pos,
-                ["negative"] = neg,
-                ["vae"] = CurrentVae.Path,
-                ["pixels"] = img,
-                ["mask"] = mask,
-                ["noise_mask"] = false
-            });
-            pos = [inpaintNode, 0];
-            neg = [inpaintNode, 1];
-            latent = [inpaintNode, 2];
-        }
-        else if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial) || classId == "hidream-i1-edit") // TODO: Correct for split function to use `images`
-        {
-            // TODO: Get the correct image (eg if canny/depth is used as a refiner or something silly it should still work)
-            BasicInputImage ??= new WGNodeData(latent, this, WGNodeData.DT_LATENT_IMAGE, CurrentCompat()).AsRawImage(CurrentVae);
-            string ip2p2condNode = CreateNode("InstructPixToPixConditioning", new JObject()
-            {
-                ["positive"] = pos,
-                ["negative"] = neg,
-                ["vae"] = CurrentVae.Path,
-                ["pixels"] = BasicInputImage.Path
-            });
-            pos = [ip2p2condNode, 0];
-            neg = [ip2p2condNode, 1];
-            latent = [ip2p2condNode, 2];
-        }
-        else if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2())
+        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2())
         {
             JArray img = null;
             bool onlyExplicit = (IsQwenImage() && !IsQwenImageEdit()) || IsAnyFlux2();
@@ -1040,6 +987,60 @@ public partial class WorkflowGenerator
                 model = cascadeModel.Path;
             }
         }
+        string classId = FinalLoadedModel?.ModelClass?.ID ?? "";
+        static bool isSpecial(T2IModel model)
+        {
+            string modelId = model?.ModelClass?.ID ?? "";
+            return modelId.EndsWith("/lora-depth") || modelId.EndsWith("/lora-canny");
+        }
+        if (classId == "Flux.1-dev/inpaint") // TODO: Correct for split function to use `images`
+        {
+            // Not sure why, but InpaintModelConditioning is required here.
+            JArray img = BasicInputImage?.Path;
+            JArray mask = FinalMask;
+            if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
+            {
+                img = [MaskShrunkInfo.ScaledImage, 0];
+                mask = [MaskShrunkInfo.CroppedMask, 0];
+            }
+            if (mask is null)
+            {
+                string maskNode = CreateNode("SolidMask", new JObject()
+                {
+                    ["value"] = 1,
+                    ["width"] = UserInput.GetImageWidth(),
+                    ["height"] = UserInput.GetImageHeight()
+                });
+                mask = [maskNode, 0];
+            }
+            string inpaintNode = CreateNode("InpaintModelConditioning", new JObject()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg,
+                ["vae"] = CurrentVae.Path,
+                ["pixels"] = img,
+                ["mask"] = mask,
+                ["noise_mask"] = false
+            });
+            pos = [inpaintNode, 0];
+            neg = [inpaintNode, 1];
+            latent = [inpaintNode, 2];
+        }
+        else if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial) || classId == "hidream-i1-edit") // TODO: Correct for split function to use `images`
+        {
+            // TODO: Get the correct image (eg if canny/depth is used as a refiner or something silly it should still work)
+            BasicInputImage ??= new WGNodeData(latent, this, WGNodeData.DT_LATENT_IMAGE, CurrentCompat()).AsRawImage(CurrentVae);
+            string ip2p2condNode = CreateNode("InstructPixToPixConditioning", new JObject()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg,
+                ["vae"] = CurrentVae.Path,
+                ["pixels"] = BasicInputImage.Path
+            });
+            pos = [ip2p2condNode, 0];
+            neg = [ip2p2condNode, 1];
+            latent = [ip2p2condNode, 2];
+        }
         if (UserInput.Get(T2IParamTypes.FluxDisableGuidance, false))
         {
             string disabledPos = CreateNode("FluxDisableGuidance", new JObject()
@@ -1168,7 +1169,6 @@ public partial class WorkflowGenerator
             }, id);
             return finalSampler;
         }
-        string classId = FinalLoadedModel?.ModelClass?.ID ?? "";
         if (classId == "stable-diffusion-xl-v1-edit")
         {
             // TODO: Get the correct image (eg if edit is used as a refiner or something silly it should still work)
