@@ -507,7 +507,6 @@ class GenPageBrowserClass {
                     if (this.handleMultiSelectTileClick(div, e)) {
                         return;
                     }
-                    this.select(file, div);
                 });
                 div.appendChild(textBlock);
             }
