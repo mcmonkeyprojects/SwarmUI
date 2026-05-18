@@ -840,11 +840,11 @@ body {
     outline-offset: 1px;
 }
 .browser-multiselect-mode .image-block.image-block-current {
-    outline: none;
+    outline: none !important;
 }
 .browser-multiselect-mode .model-selected {
-    border-color: var(--button-border);
-    background-color: unset;
+    border: 1px solid var(--button-border) !important;
+    background-color: unset !important;
 }
 .browser-multiselect-action-select {
     max-width: 11rem;

@@ -111,7 +111,6 @@ class GenPageBrowserClass {
         this.multiSelectActive = false;
         this.multiSelectToggleButton = null;
         this.multiSelectActionSelect = null;
-        this.preservedMultiSelect = new Set();
     }
 
     /**
@@ -807,7 +806,8 @@ class GenPageBrowserClass {
             });
         }
         else {
-            if (this.preservedMultiSelect.size == 0) {
+            if (!this.preservedMultiSelect) {
+                this.preservedMultiSelect = new Set();
                 for (let el of this.contentDiv.querySelectorAll('.browser-multiselect-item-selected[data-name]')) {
                     this.preservedMultiSelect.add(el.dataset.name);
                 }
@@ -826,15 +826,14 @@ class GenPageBrowserClass {
         applyTranslations(this.headerBar);
         if (!this.noContentUpdates) {
             this.buildContentList(this.contentDiv, files);
-            if (this.preservedMultiSelect.size > 0) {
+            if (this.preservedMultiSelect && this.preservedMultiSelect.size > 0) {
                 for (let child of this.contentDiv.children) {
                     if (child.dataset && child.dataset.name && this.preservedMultiSelect.has(child.dataset.name)) {
                         child.classList.add('browser-multiselect-item-selected');
                     }
                 }
             }
-            this.preservedMultiSelect.clear();
-            this.applyMultiSelectVisuals();
+            this.preservedMultiSelect = null;
             this.syncMultiSelectHeader();
             browserUtil.makeVisible(this.contentDiv);
             if (scrollOffset) {
@@ -889,7 +888,6 @@ class GenPageBrowserClass {
             this.syncMultiSelectHeader();
         }
         this.contentDiv.classList.toggle('browser-multiselect-mode', active);
-        this.applyMultiSelectVisuals();
     }
 
     /**
@@ -915,14 +913,8 @@ class GenPageBrowserClass {
         if (!this.lastFiles) {
             return [];
         }
-        let selectedNames = new Set(this.getMultiSelectedItems().map(entry => entry.dataset.name));
-        let out = [];
-        for (let file of this.lastFiles) {
-            if (selectedNames.has(file.name)) {
-                out.push(file);
-            }
-        }
-        return out;
+        let selectedNames = this.getMultiSelectedItems().map(entry => entry.dataset.name);
+        return this.lastFiles.filter(file => selectedNames.includes(file.name));
     }
 
     /**
@@ -1016,12 +1008,7 @@ class GenPageBrowserClass {
                 continue;
             }
             try {
-                if (div) {
-                    button.onclick(div);
-                }
-                else {
-                    button.onclick(null);
-                }
+                button.onclick(div);
             }
             catch (err) {
                 console.error('Browser bulk action error:', err);
@@ -1035,22 +1022,7 @@ class GenPageBrowserClass {
             this.setMultiSelectActive(false);
         }
         else {
-            this.applyMultiSelectVisuals();
             this.syncMultiSelectHeader();
-        }
-    }
-
-    /**
-     * Applies multi-select highlight classes to visible rows.
-     */
-    applyMultiSelectVisuals() {
-        if (this.multiSelectActive || !this.contentDiv) {
-            return;
-        }
-        for (let child of this.contentDiv.children) {
-            if (child.dataset && child.dataset.name) {
-                child.classList.remove('browser-multiselect-item-selected');
-            }
         }
     }
 }
