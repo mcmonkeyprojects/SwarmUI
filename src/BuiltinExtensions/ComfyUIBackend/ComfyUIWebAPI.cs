@@ -266,7 +266,7 @@ public static class ComfyUIWebAPI
     };
 
     /// <summary>API route to create a TensorRT model.</summary>
-    public static async Task<JObject> DoTensorRTCreateWS(Session session, WebSocket ws, string model, string aspect, string aspectRange, int optBatch, int maxBatch)
+    public static async Task<JObject> DoTensorRTCreateWS(Session session, WebSocket ws, string model, string aspect, string aspectRange, int optBatch, int maxBatch, int contextLen = 75)
     {
         if (ModelsAPI.TryGetRefusalForModel(session, model, out JObject refusal))
         {
@@ -336,7 +336,7 @@ public static class ComfyUIWebAPI
                     ["batch_size_opt"] = optBatch,
                     ["height_opt"] = prefY,
                     ["width_opt"] = prefX,
-                    ["context_opt"] = 1,
+                    ["context_opt"] = contextLen / 75,
                     ["num_video_frames"] = 25
                 }
             };
@@ -360,8 +360,8 @@ public static class ComfyUIWebAPI
                     ["width_opt"] = prefX,
                     ["width_max"] = Math.Clamp(maxX, 256, 4096),
                     ["context_min"] = 1,
-                    ["context_opt"] = 1,
-                    ["context_max"] = 128,
+                    ["context_opt"] = contextLen / 75,
+                    ["context_max"] = Math.Max(contextLen / 75, 128),
                     ["num_video_frames"] = 25
                 }
             };

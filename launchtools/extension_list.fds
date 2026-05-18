@@ -288,3 +288,12 @@ AceStepFun:
     ci-test: true
     tags:
     - tools
+
+AltTriggerPhraseBtn:
+    author: Blomblo
+    description: Changes the appearance of the trigger phrase copy button. 
+    url: https://github.com/mrblomblo/AltTriggerPhraseBtn
+    license: MIT
+    tags:
+    - conflicts
+    - ui

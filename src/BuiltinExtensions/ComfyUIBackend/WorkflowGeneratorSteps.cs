@@ -1081,14 +1081,22 @@ public class WorkflowGeneratorSteps
                     {
                         JArray preprocActual = g.CreatePreprocessor(preprocessor, imageNodeActual);
                         g.NodeHelpers["controlnet_preprocessor"] = $"{preprocActual[0]}";
+                        imageNodeActual = imageNodeActual.WithPath(preprocActual);
+                        string multipleOf8 = g.CreateNode("ResizeImageMaskNode", new JObject()
+                        {
+                            ["input"] = imageNodeActual.Path,
+                            ["resize_type"] = "scale to multiple",
+                            ["resize_type.multiple"] = 8,
+                            ["scale_method"] = "lanczos"
+                        });
+                        imageNodeActual = imageNodeActual.WithPath([multipleOf8, 0]);
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
-                            g.CurrentMedia = imageNodeActual.WithPath(preprocActual);
+                            g.CurrentMedia = imageNodeActual;
                             g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: "9");
                             g.SkipFurtherSteps = true;
                             return;
                         }
-                        imageNodeActual = imageNodeActual.WithPath(preprocActual);
                     }
                     else if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                     {
@@ -1097,6 +1105,16 @@ public class WorkflowGeneratorSteps
                     if (controlModel is null)
                     {
                         throw new SwarmUserErrorException("Cannot use ControlNet without a model selected.");
+                    }
+                    if (imageNodeActual.DataType == WGNodeData.DT_VIDEO && !g.IsVideoModel())
+                    {
+                        string singleFrame = g.CreateNode("ImageFromBatch", new JObject()
+                        {
+                            ["image"] = imageNodeActual.Path,
+                            ["batch_index"] = 0,
+                            ["length"] = 1
+                        });
+                        imageNodeActual = imageNodeActual.WithPath([singleFrame, 0], WGNodeData.DT_IMAGE);
                     }
                     if (controlModel.ModelClass?.ID?.EndsWith("/control-diffpatch") ?? false)
                     {

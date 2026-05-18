@@ -1490,10 +1490,25 @@ function controlnetShowPreview() {
             if (!data.image) {
                 return;
             }
-            let imgElem = document.createElement('img');
-            imgElem.src = data.image;
             let resultBox = createDiv(null, 'controlnet-preview-result');
-            resultBox.append(imgElem);
+            let isVideo = isVideoExt(data.image);
+            if (isVideo) {
+                let vidElem = document.createElement('video');
+                vidElem.loop = true;
+                vidElem.autoplay = true;
+                vidElem.muted = true;
+                vidElem.controls = true;
+                let sourceObj = document.createElement('source');
+                sourceObj.src = data.image;
+                sourceObj.type = isVideo;
+                vidElem.append(sourceObj);
+                resultBox.append(vidElem);
+            }
+            else {
+                let imgElem = document.createElement('img');
+                imgElem.src = data.image;
+                resultBox.append(imgElem);
+            }
             clearPreview();
             previewArea.append(resultBox);
         });

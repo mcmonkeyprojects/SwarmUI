@@ -750,6 +750,132 @@ public partial class WorkflowGenerator
     /// <summary>Default previews type.</summary>
     public string DefaultPreviews = "default";
 
+    public List<JArray> LoadPromptImagesForMainRef(List<Image> images)
+    {
+        List<JArray> result = [];
+        for (int i = 0; i < images.Count; i++)
+        {
+            JArray imgNode = GetPromptImage(true, false, i);
+            result.Add(imgNode);
+        }
+        return result;
+    }
+
+    public (JArray, JArray, JArray, JArray) BuildInputImageHandling(List<JArray> images, JArray pos, JArray neg, JArray latent)
+    {
+        JArray imgNeg = null;
+        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2())
+        {
+            if (IsOmniGen() || IsQwenImageEditPlus())
+            {
+                imgNeg = neg;
+            }
+            void makeRefLatent(JArray image)
+            {
+                string vaeEncode = CreateVAEEncode(CurrentVae.Path, image);
+                string refLatentNode = CreateNode("ReferenceLatent", new JObject()
+                {
+                    ["conditioning"] = pos,
+                    ["latent"] = NodePath(vaeEncode, 0)
+                });
+                pos = [refLatentNode, 0];
+                if (imgNeg is not null)
+                {
+                    string refLatentNodeNeg = CreateNode("ReferenceLatent", new JObject()
+                    {
+                        ["conditioning"] = imgNeg,
+                        ["latent"] = NodePath(vaeEncode, 0)
+                    });
+                    imgNeg = [refLatentNodeNeg, 0];
+                }
+            }
+            JArray img = images[0];
+            makeRefLatent(img);
+            for (int i = 1; i < images.Count; i++)
+            {
+                JArray img2 = images[i];
+                makeRefLatent(img2);
+            }
+            if (img is not null)
+            {
+                if (IsQwenImageEditPlus())
+                {
+                    neg = imgNeg;
+                }
+            }
+        }
+        else if (IsHiDreamO1())
+        {
+            List<JArray> refImages = [];
+            int count = Math.Min(images.Count, 10);
+            for (int i = 0; i < count; i++)
+            {
+                refImages.Add(GetPromptImage(true, false, i));
+            }
+            JObject refInputs = new()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg
+            };
+            for (int i = 0; i < refImages.Count; i++)
+            {
+                refInputs[$"images.image_{i + 1}"] = refImages[i];
+            }
+            string refNode = CreateNode("HiDreamO1ReferenceImages", refInputs);
+            pos = [refNode, 0];
+            neg = [refNode, 1];
+        }
+        else if (IsWanVideo()) // TODO: Somehow check if this is actually a phantom model?
+        {
+            JArray img = images[0];
+            for (int i = 1; i < images.Count; i++)
+            {
+                JArray img2 = images[i];
+                string batched = CreateNode("ImageBatch", new JObject()
+                {
+                    ["image1"] = img,
+                    ["image2"] = img2
+                });
+                img = [batched, 0];
+            }
+            double width = UserInput.GetImageWidth();
+            double height = UserInput.GetImageHeight();
+            if (IsRefinerStage)
+            {
+                double scale = UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
+                int iwidth = (int)Math.Round(width * scale);
+                int iheight = (int)Math.Round(height * scale);
+                width = (iwidth / 16) * 16;
+                height = (iheight / 16) * 16;
+            }
+            // TODO: This node asking for latent info is wacky. Maybe have a reader node that grabs it from the current actual latent, so it's more plug-n-play-ish
+            string phantomNode = CreateNode("WanPhantomSubjectToVideo", new JObject()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg,
+                ["vae"] = CurrentVae.Path,
+                ["images"] = img,
+                ["width"] = (int)width,
+                ["height"] = (int)height,
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 81),
+                ["batch_size"] = 1
+            });
+            string negCombine = CreateNode("ConditioningCombine", new JObject()
+            {
+                ["conditioning_1"] = NodePath(phantomNode, 1),
+                ["conditioning_2"] = NodePath(phantomNode, 2)
+            });
+            pos = [phantomNode, 0];
+            neg = [negCombine, 0];
+            //latent = [phantomNode, 3]; // This latent is actually pretty stupid, it's just inline generating an empty latent for some reason? Ignore it.
+        }
+        else
+        {
+            // TODO: Should this warn? Or at least contextually track if 0 models across all stages of the workflow ever use the input image(s)
+        }
+        return (pos, neg, latent, imgNeg);
+    }
+
     /// <summary>Creates a KSampler and returns its node ID.</summary>
     public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false, string explicitSampler = null, string explicitScheduler = null, int sectionId = 0)
     {
@@ -830,7 +956,8 @@ public partial class WorkflowGenerator
                 latent = [srCond, 2];
             }
         }
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie())
+        // TODO: Registry of model default preferences instead of this
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1())
         {
             defscheduler ??= "simple";
         }
@@ -862,20 +989,7 @@ public partial class WorkflowGenerator
             string modelId = model?.ModelClass?.ID ?? "";
             return modelId.EndsWith("/lora-depth") || modelId.EndsWith("/lora-canny");
         }
-        if (UserInput.Get(T2IParamTypes.FluxDisableGuidance, false))
-        {
-            string disabledPos = CreateNode("FluxDisableGuidance", new JObject()
-            {
-                ["conditioning"] = pos
-            });
-            pos = [disabledPos, 0];
-            string disabledNeg = CreateNode("FluxDisableGuidance", new JObject()
-            {
-                ["conditioning"] = neg
-            });
-            neg = [disabledNeg, 0];
-        }
-        if (classId == "Flux.1-dev/inpaint")
+        if (classId == "Flux.1-dev/inpaint") // TODO: Correct for split function to use `images`
         {
             // Not sure why, but InpaintModelConditioning is required here.
             JArray img = BasicInputImage?.Path;
@@ -908,7 +1022,7 @@ public partial class WorkflowGenerator
             neg = [inpaintNode, 1];
             latent = [inpaintNode, 2];
         }
-        if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial) || classId == "hidream-i1-edit")
+        else if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial) || classId == "hidream-i1-edit") // TODO: Correct for split function to use `images`
         {
             // TODO: Get the correct image (eg if canny/depth is used as a refiner or something silly it should still work)
             BasicInputImage ??= new WGNodeData(latent, this, WGNodeData.DT_LATENT_IMAGE, CurrentCompat()).AsRawImage(CurrentVae);
@@ -923,151 +1037,58 @@ public partial class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        else if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2())
+        if (UserInput.Get(T2IParamTypes.FluxDisableGuidance, false))
         {
-            JArray img = null;
-            JArray imgNeg = null;
-            bool doLatentChain = !IsKontext(); // Arguably even kontext should just do this?
-            bool onlyExplicit = (IsQwenImage() && !IsQwenImageEdit()) || IsAnyFlux2();
-            if (IsOmniGen() || IsQwenImageEditPlus())
+            string disabledPos = CreateNode("FluxDisableGuidance", new JObject()
             {
-                imgNeg = neg;
-            }
-            void makeRefLatent(JArray image)
+                ["conditioning"] = pos
+            });
+            pos = [disabledPos, 0];
+            string disabledNeg = CreateNode("FluxDisableGuidance", new JObject()
             {
-                string vaeEncode = CreateVAEEncode(CurrentVae.Path, image);
-                string refLatentNode = CreateNode("ReferenceLatent", new JObject()
+                ["conditioning"] = neg
+            });
+            neg = [disabledNeg, 0];
+        }
+        JArray imgNeg = null;
+        if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+        {
+            (pos, neg, latent, imgNeg) = BuildInputImageHandling(LoadPromptImagesForMainRef(images), pos, neg, latent);
+        }
+        else
+        {
+            if (IsKontext() || (IsQwenImage() && IsQwenImageEdit()))
+            {
+                if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
                 {
-                    ["conditioning"] = pos,
-                    ["latent"] = NodePath(vaeEncode, 0)
-                });
-                pos = [refLatentNode, 0];
-                if (imgNeg is not null)
-                {
-                    string refLatentNodeNeg = CreateNode("ReferenceLatent", new JObject()
-                    {
-                        ["conditioning"] = imgNeg,
-                        ["latent"] = NodePath(vaeEncode, 0)
-                    });
-                    imgNeg = [refLatentNodeNeg, 0];
+                    JArray img = [MaskShrunkInfo.ScaledImage, 0];
+                    (pos, neg, latent, imgNeg) = BuildInputImageHandling([img], pos, neg, latent);
                 }
-            }
-            if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
-            {
-                img = GetPromptImage(true);
-                if (doLatentChain)
+                else if (BasicInputImage is not null)
                 {
-                    makeRefLatent(img);
-                }
-                for (int i = 1; i < images.Count; i++)
-                {
-                    JArray img2 = GetPromptImage(true, false, i);
-                    if (doLatentChain)
-                    {
-                        makeRefLatent(img2);
-                    }
-                    else
-                    {
-                        string stitched = CreateNode("ImageStitch", new JObject()
-                        {
-                            ["image1"] = img,
-                            ["image2"] = img2,
-                            ["direction"] = "right",
-                            ["match_image_size"] = true,
-                            ["spacing_width"] = 0,
-                            ["spacing_color"] = "white"
-                        });
-                        img = [stitched, 0];
-                    }
-                }
-                if (!doLatentChain)
-                {
-                    makeRefLatent(img);
-                }
-            }
-            else if (!onlyExplicit && MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
-            {
-                img = [MaskShrunkInfo.ScaledImage, 0];
-                makeRefLatent(img);
-            }
-            else if (!onlyExplicit && BasicInputImage is not null)
-            {
-                img = BasicInputImage.Path;
-                makeRefLatent(img);
-            }
-            if (img is not null)
-            {
-                if (IsOmniGen())
-                {
-                    if (UserInput.TryGet(T2IParamTypes.IP2PCFG2, out double cfg2))
-                    {
-                        string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
-                        {
-                            ["model"] = model,
-                            ["cond1"] = pos,
-                            ["cond2"] = imgNeg,
-                            ["negative"] = neg,
-                            ["cfg_conds"] = cfg,
-                            ["cfg_cond2_negative"] = cfg2
-                        });
-                        return emitAsCustomAdvanced([cfgGuiderNode, 0], latent);
-                    }
-                    else
-                    {
-                        neg = imgNeg;
-                    }
-                }
-                else if (IsQwenImageEditPlus())
-                {
-                    neg = imgNeg;
+                    JArray img = BasicInputImage.Path;
+                    (pos, neg, latent, imgNeg) = BuildInputImageHandling([img], pos, neg, latent);
                 }
             }
         }
-        else if (IsWanVideo()) // TODO: Somehow check if this is actually a phantom model?
+        if (imgNeg is not null && IsOmniGen())
         {
-            if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+            if (UserInput.TryGet(T2IParamTypes.IP2PCFG2, out double cfg2))
             {
-                WGNodeData img = LoadImage(images[0], "${promptimages.0}", false);
-                for (int i = 1; i < images.Count; i++)
+                string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
                 {
-                    WGNodeData img2 = LoadImage(images[i], "${promptimages." + i + "}", false);
-                    string batched = CreateNode("ImageBatch", new JObject()
-                    {
-                        ["image1"] = img.Path,
-                        ["image2"] = img2.Path
-                    });
-                    img = img.WithPath([batched, 0]);
-                }
-                double width = UserInput.GetImageWidth();
-                double height = UserInput.GetImageHeight();
-                if (IsRefinerStage)
-                {
-                    double scale = UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
-                    int iwidth = (int)Math.Round(width * scale);
-                    int iheight = (int)Math.Round(height * scale);
-                    width = (iwidth / 16) * 16;
-                    height = (iheight / 16) * 16;
-                }
-                // TODO: This node asking for latent info is wacky. Maybe have a reader node that grabs it from the current actual latent, so it's more plug-n-play-ish
-                string phantomNode = CreateNode("WanPhantomSubjectToVideo", new JObject()
-                {
-                    ["positive"] = pos,
+                    ["model"] = model,
+                    ["cond1"] = pos,
+                    ["cond2"] = imgNeg,
                     ["negative"] = neg,
-                    ["vae"] = CurrentVae.Path,
-                    ["images"] = img.Path,
-                    ["width"] = (int)width,
-                    ["height"] = (int)height,
-                    ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 81),
-                    ["batch_size"] = 1
+                    ["cfg_conds"] = cfg,
+                    ["cfg_cond2_negative"] = cfg2
                 });
-                string negCombine = CreateNode("ConditioningCombine", new JObject()
-                {
-                    ["conditioning_1"] = NodePath(phantomNode, 1),
-                    ["conditioning_2"] = NodePath(phantomNode, 2)
-                });
-                pos = [phantomNode, 0];
-                neg = [negCombine, 0];
-                //latent = [phantomNode, 3]; // This latent is actually pretty stupid, it's just inline generating an empty latent for some reason? Ignore it.
+                return emitAsCustomAdvanced([cfgGuiderNode, 0], latent);
+            }
+            else
+            {
+                neg = imgNeg;
             }
         }
         string emitAsCustomAdvanced(JArray guider, JArray latentImage)
@@ -2137,6 +2158,10 @@ public partial class WorkflowGenerator
                         else if (key == "resolution")
                         {
                             n["inputs"]["resolution"] = (int)Math.Round(Math.Sqrt(UserInput.GetImageWidth() * UserInput.GetImageHeight()) / 64) * 64;
+                        }
+                        else if (key == "bbox_detector" && preprocessor == "DWPreprocessor")
+                        {
+                            n["inputs"]["bbox_detector"] = "yolox_l.torchscript.pt";
                         }
                         else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
                         {
