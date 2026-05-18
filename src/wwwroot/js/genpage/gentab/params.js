@@ -814,7 +814,7 @@ function genInputs(delay_final = false) {
         let controlnetGroup = document.getElementById('input_group_content_controlnet');
         if (controlnetGroup) {
             let firstGroup = controlnetGroup.querySelector('.input-group');
-            let buttonDiv = createDiv(`controlnet_button_preview`, null, `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button> <button class="basic-button" onclick="controlnetSavePreviewToServer()">Save to Server</button>`);
+            let buttonDiv = createDiv(`controlnet_button_preview`, null, `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button> <button id="controlnet_button_save_preview" class="basic-button" onclick="controlnetSavePreviewToServer()" style="display:none;">Save to Server</button>`);
             if (firstGroup) {
                 controlnetGroup.insertBefore(buttonDiv, firstGroup);
             }
@@ -1469,6 +1469,7 @@ function controlnetShowPreview(callback) {
                 result.remove();
             }
             delete previewArea.dataset.controlnetPreviewImage;
+            getRequiredElementById('controlnet_button_save_preview').style.display = 'none';
         };
         clearPreview();
         let imgInput = getRequiredElementById('input_controlnetimageinput');
@@ -1512,6 +1513,7 @@ function controlnetShowPreview(callback) {
             clearPreview();
             previewArea.dataset.controlnetPreviewImage = data.image;
             previewArea.append(resultBox);
+            getRequiredElementById('controlnet_button_save_preview').style.display = '';
             if (callback) {
                 callback(data);
             }
