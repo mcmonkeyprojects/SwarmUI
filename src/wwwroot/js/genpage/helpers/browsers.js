@@ -111,6 +111,7 @@ class GenPageBrowserClass {
         this.multiSelectActive = false;
         this.multiSelectToggleButton = null;
         this.multiSelectActionSelect = null;
+        this.preservedMultiSelect = new Set();
     }
 
     /**
@@ -806,6 +807,11 @@ class GenPageBrowserClass {
             });
         }
         else {
+            if (this.preservedMultiSelect.size == 0) {
+                for (let el of this.contentDiv.querySelectorAll('.browser-multiselect-item-selected[data-name]')) {
+                    this.preservedMultiSelect.add(el.dataset.name);
+                }
+            }
             this.folderTreeDiv.innerHTML = '';
             this.contentDiv.innerHTML = '';
             this.headerPath.remove();
@@ -820,6 +826,14 @@ class GenPageBrowserClass {
         applyTranslations(this.headerBar);
         if (!this.noContentUpdates) {
             this.buildContentList(this.contentDiv, files);
+            if (this.preservedMultiSelect.size > 0) {
+                for (let child of this.contentDiv.children) {
+                    if (child.dataset && child.dataset.name && this.preservedMultiSelect.has(child.dataset.name)) {
+                        child.classList.add('browser-multiselect-item-selected');
+                    }
+                }
+            }
+            this.preservedMultiSelect.clear();
             this.applyMultiSelectVisuals();
             this.syncMultiSelectHeader();
             browserUtil.makeVisible(this.contentDiv);
@@ -874,6 +888,7 @@ class GenPageBrowserClass {
         else {
             this.syncMultiSelectHeader();
         }
+        this.contentDiv.classList.toggle('browser-multiselect-mode', active);
         this.applyMultiSelectVisuals();
     }
 
