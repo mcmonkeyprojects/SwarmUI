@@ -1452,7 +1452,7 @@ function debugShowHiddenParams() {
 }
 
 /** Loads and shows a preview of ControlNet preprocessing to the user. */
-function controlnetShowPreview(callback) {
+function controlnetShowPreview() {
     let toggler = getRequiredElementById('input_group_content_controlnet_toggle');
     if (!toggler.checked) {
         toggler.checked = true;
@@ -1514,21 +1514,18 @@ function controlnetShowPreview(callback) {
             previewArea.dataset.controlnetPreviewImage = data.image;
             previewArea.append(resultBox);
             getRequiredElementById('controlnet_button_save_preview').style.display = '';
-            if (callback) {
-                callback(data);
-            }
         });
     });
 }
 
-/** Saves a ControlNet preview data URL through the existing history save route. */
-function controlnetSavePreviewDataToServer(image) {
+/** Saves the current ControlNet preview to the server. */
+function controlnetSavePreviewToServer() {
     let now = new Date();
     let pad = (val) => `${val}`.padStart(2, '0');
     let millis = `${now.getMilliseconds()}`.padStart(3, '0');
     let name = `controlnet-preview-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}-${millis}`;
     let data = {
-        image: image,
+        image: getRequiredElementById('controlnet_button_preview').dataset.controlnetPreviewImage,
         ['Override Outpath Format']: `inputs/controlnet/${name}`
     };
     genericRequest('AddImageToHistory', data, res => {
@@ -1542,22 +1539,6 @@ function controlnetSavePreviewDataToServer(image) {
         setTimeout(() => {
             saveResult.remove();
         }, 5000);
-    });
-}
-
-/** Saves the current ControlNet preview, generating it first if needed. */
-function controlnetSavePreviewToServer() {
-    let previewArea = getRequiredElementById('controlnet_button_preview');
-    let image = previewArea.dataset.controlnetPreviewImage;
-    if (image) {
-        controlnetSavePreviewDataToServer(image);
-        return;
-    }
-    controlnetShowPreview(data => {
-        if (!data || !data.image) {
-            return;
-        }
-        controlnetSavePreviewDataToServer(data.image);
     });
 }
 
