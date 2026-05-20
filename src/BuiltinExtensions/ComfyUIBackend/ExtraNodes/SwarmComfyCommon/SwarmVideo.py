@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class SwarmVideoResampleFPS(io.ComfyNode):
-    MIN_FPS: float = 0.1
+    MIN_FPS: float = 0.01
     MAX_FPS: float = 99999.9
     STEP_FPS: float = 1.0
     DEFAULT_FPS_OUT: float = 24.0
