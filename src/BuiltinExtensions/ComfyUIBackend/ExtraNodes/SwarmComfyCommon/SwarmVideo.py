@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 class SwarmVideoResampleFPS(io.ComfyNode):
     MIN_FPS: float = 1.0
-    MAX_FPS: float = 1000.0
+    MAX_FPS_IN: float = 1000.0
+    MAX_FPS_OUT: float = 120.0
     STEP_FPS: float = 1.0
     DEFAULT_FPS_OUT: float = 24.0
     METHOD_LINEAR: str = "linear"
@@ -26,8 +27,8 @@ class SwarmVideoResampleFPS(io.ComfyNode):
             description="Resample a video from fps_in to fps_out while preserving total duration.",
             inputs=[
                 io.Image.Input("images", tooltip="The images to resample."),
-                io.Float.Input("fps_in", min=cls.MIN_FPS, max=cls.MAX_FPS, step=cls.STEP_FPS, tooltip="Source frame rate."),
-                io.Float.Input("fps_out", default=cls.DEFAULT_FPS_OUT, min=cls.MIN_FPS, max=cls.MAX_FPS, step=cls.STEP_FPS, tooltip="Target frame rate."),
+                io.Float.Input("fps_in", min=cls.MIN_FPS, max=cls.MAX_FPS_IN, step=cls.STEP_FPS, tooltip="Source frame rate."),
+                io.Float.Input("fps_out", default=cls.DEFAULT_FPS_OUT, min=cls.MIN_FPS, max=cls.MAX_FPS_OUT, step=cls.STEP_FPS, tooltip="Target frame rate."),
                 io.Combo.Input("method", options=[cls.METHOD_LINEAR, cls.METHOD_NEAREST], default=cls.METHOD_LINEAR,
                     tooltip=(
                         "linear: each output frame is a linear blend of the two source frames bracketing its timestamp. "
