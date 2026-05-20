@@ -57,7 +57,7 @@ class SwarmVideoResampleFPS(io.ComfyNode):
 
         duration_sec = frame_count_in / fps_in
         frame_count_out = max(1, round(duration_sec * fps_out))
-        source_positions = cls._source_positions(frame_count_out, fps_in, fps_out, images.device)
+        source_positions = torch.arange(frame_count_out, dtype=torch.float64, device=images.device) / fps_out * fps_in
 
         if method == cls.METHOD_NEAREST:
             resampled = cls._sample_nearest(images, source_positions)
@@ -66,20 +66,6 @@ class SwarmVideoResampleFPS(io.ComfyNode):
 
         logger.info(f"SwarmVideoResampleFPS: {frame_count_in} frames @ {fps_in} fps -> {frame_count_out} frames @ {fps_out} fps ({method})")
         return io.NodeOutput(resampled, float(fps_out))
-
-    @classmethod
-    def _source_positions(cls, frame_count_out: int, fps_in: float, fps_out: float, device: torch.device) -> torch.Tensor:
-        """For each output frame, the (fractional) source-frame index it should display.
-
-        Computed in two steps:
-        1. Convert each output-frame index into the timestamp (in seconds) at
-           which that frame will be shown:  timestamp = index / fps_out.
-        2. Convert that timestamp into the source-frame index visible at the
-           same moment in the original video:  source_index = timestamp * fps_in.
-        """
-        output_indices = torch.arange(frame_count_out, dtype=torch.float64, device=device)
-        output_timestamps_sec = output_indices / fps_out
-        return output_timestamps_sec * fps_in
 
     @classmethod
     def _sample_nearest(cls, source_frames: torch.Tensor, source_positions: torch.Tensor) -> torch.Tensor:
