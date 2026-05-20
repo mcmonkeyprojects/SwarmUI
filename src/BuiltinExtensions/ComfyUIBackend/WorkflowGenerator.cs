@@ -471,6 +471,7 @@ public partial class WorkflowGenerator
                     {
                         ["video"] = NodePath(result, 0)
                     });
+                    NodeHelpers["video_components_split"] = splitNode;
                     result = splitNode;
                     attachedAudio = new([splitNode, 1], this, WGNodeData.DT_AUDIO, CurrentCompat());
                 }

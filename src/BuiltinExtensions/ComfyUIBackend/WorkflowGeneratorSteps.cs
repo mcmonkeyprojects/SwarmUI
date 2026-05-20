@@ -1090,6 +1090,17 @@ public class WorkflowGeneratorSteps
                             ["scale_method"] = "lanczos"
                         });
                         imageNodeActual = imageNodeActual.WithPath([multipleOf8, 0]);
+                        if (imageNodeActual.DataType == WGNodeData.DT_VIDEO && g.NodeHelpers.TryGetValue("video_components_split", out string splitNodeId))
+                        {
+                            string resampleNode = g.CreateNode("SwarmVideoResampleFPS", new JObject()
+                            {
+                                ["images"] = imageNodeActual.Path,
+                                ["fps_in"] = NodePath(splitNodeId, 2),
+                                ["fps_out"] = 24.0,
+                                ["method"] = "linear"
+                            });
+                            imageNodeActual = imageNodeActual.WithPath([resampleNode, 0]);
+                        }
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
                             g.CurrentMedia = imageNodeActual;
