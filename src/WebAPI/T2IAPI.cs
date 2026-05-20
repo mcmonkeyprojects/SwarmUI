@@ -127,7 +127,10 @@ public static class T2IAPI
         tasks.TryAdd(handle, handle);
         while (Volatile.Read(ref retain) || tasks.Any())
         {
-            await Task.WhenAny(tasks.Keys.ToList());
+            if (tasks.Any())
+            {
+                await Task.WhenAny(tasks.Keys.ToList());
+            }
             foreach (Task t in tasks.Keys.Where(t => t.IsCompleted).ToList())
             {
                 tasks.TryRemove(t, out _);
