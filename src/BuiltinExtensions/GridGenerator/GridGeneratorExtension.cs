@@ -509,13 +509,13 @@ public class GridGeneratorExtension : Extension
             {
                 throw mainRun.Exception;
             }
-            if (grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE && grid.Axes.Count <= 3)
+            ImageFile[] images = [.. data.GeneratedOutputs.Values.Select(i => i as ImageFile).Where(i => i is not null)];
+            if (grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE && grid.Axes.Count <= 3 && !dryRun && images.Length > 0)
             {
                 (string, string) proc(AxisValue val) => (val.Title, T2IParamTypes.CleanNameGeneric(val.Key));
                 List<(string, string)> xAxis = [.. grid.Axes[0].Values.Where(v => !v.Skip).Select(proc)];
                 List<(string, string)> yAxis = grid.Axes.Count > 1 ? [.. grid.Axes[1].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
                 List<(string, string)> y2Axis = grid.Axes.Count > 2 ? [.. grid.Axes[2].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
-                ImageFile[] images = [.. data.GeneratedOutputs.Values.Select(i => i as ImageFile).Where(i => i is not null)];
                 int maxWidth = images.Max(x => x.ToIS.Width);
                 int maxHeight = images.Max(x => x.ToIS.Height);
                 float extraSizeMult = 1;
