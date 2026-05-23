@@ -1520,10 +1520,7 @@ function controlnetShowPreview() {
 
 /** Saves the current ControlNet preview to the server. */
 function controlnetSavePreviewToServer() {
-    let now = new Date();
-    let pad = (val) => `${val}`.padStart(2, '0');
-    let millis = `${now.getMilliseconds()}`.padStart(3, '0');
-    let name = `controlnet-preview-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}-${millis}`;
+    let name = `controlnet-preview-${formatDateTime(new Date()).replaceAll(':', '-').replaceAll(' ', '_')}`;
     let data = {
         image: getRequiredElementById('controlnet_button_preview').dataset.controlnetPreviewImage,
         ['Override Outpath Format']: `inputs/controlnet/${name}`
