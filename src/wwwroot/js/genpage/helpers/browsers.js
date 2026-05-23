@@ -917,13 +917,14 @@ class GenPageBrowserClass {
     }
 
     /**
-     * Labels for bulk actions shared by every selected item, respecting `can_multi` / `multi_only`.
+     * Labels for bulk actions shared by every selected item.
      */
     getCommonMultiSelectActionLabels() {
         let files = this.getMultiSelectedFiles();
         if (files.length == 0) {
             return [];
         }
+        // TODO: This is a messy hack for compatibility validation and it should not be done this way.
         let eligiblePerFile = [];
         for (let file of files) {
             let desc = this.describe(file);
@@ -995,6 +996,7 @@ class GenPageBrowserClass {
             let div = this.getVisibleEntry(file.name);
             let desc = this.describe(file);
             let button = null;
+            // TODO: Re-grabbing the button for each item is hacky, it should not be done this way.
             for (let b of desc.buttons) {
                 if (b.label == label && b.onclick) {
                     button = b;
