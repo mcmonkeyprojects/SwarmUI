@@ -1045,6 +1045,10 @@ textarea, input, select {
     flex: 1;
     min-width: 8px;
 }
+.wide_block {
+    display: block;
+    width: 100%;
+}
 
 
 

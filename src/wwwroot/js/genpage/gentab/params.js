@@ -814,7 +814,7 @@ function genInputs(delay_final = false) {
         let controlnetGroup = document.getElementById('input_group_content_controlnet');
         if (controlnetGroup) {
             let firstGroup = controlnetGroup.querySelector('.input-group');
-            let buttonDiv = createDiv(`controlnet_button_preview`, null, `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button>`);
+            let buttonDiv = createDiv(`controlnet_button_preview`, 'wide_block', `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button> <button id="controlnet_button_save_preview" class="basic-button" onclick="controlnetSavePreviewToServer()" style="display:none;">Save to Server</button>`);
             if (firstGroup) {
                 controlnetGroup.insertBefore(buttonDiv, firstGroup);
             }
@@ -1465,10 +1465,11 @@ function controlnetShowPreview() {
         }
         let previewArea = getRequiredElementById('controlnet_button_preview');
         let clearPreview = () => {
-            let lastResult = previewArea.querySelector('.controlnet-preview-result');
-            if (lastResult) {
-                lastResult.remove();
+            for (let result of previewArea.querySelectorAll('.controlnet-preview-result, .controlnet-save-result')) {
+                result.remove();
             }
+            delete previewArea.dataset.controlnetPreviewImage;
+            getRequiredElementById('controlnet_button_save_preview').style.display = 'none';
         };
         clearPreview();
         let imgInput = getRequiredElementById('input_controlnetimageinput');
@@ -1510,8 +1511,31 @@ function controlnetShowPreview() {
                 resultBox.append(imgElem);
             }
             clearPreview();
+            previewArea.dataset.controlnetPreviewImage = data.image;
             previewArea.append(resultBox);
+            getRequiredElementById('controlnet_button_save_preview').style.display = '';
         });
+    });
+}
+
+/** Saves the current ControlNet preview to the server. */
+function controlnetSavePreviewToServer() {
+    let name = `controlnet-preview-${formatDateTime(new Date()).replaceAll(':', '-').replaceAll(' ', '_')}`;
+    let data = {
+        image: getRequiredElementById('controlnet_button_preview').dataset.controlnetPreviewImage,
+        ['Override Outpath Format']: `inputs/controlnet/${name}`
+    };
+    genericRequest('AddImageToHistory', data, res => {
+        let previewArea = getRequiredElementById('controlnet_button_preview');
+        let oldSaveResult = previewArea.querySelector('.controlnet-save-result');
+        if (oldSaveResult) {
+            oldSaveResult.remove();
+        }
+        let saveResult = createDiv(null, 'controlnet-save-result modal_success_bottom', 'Saved ControlNet preview.');
+        previewArea.append(saveResult);
+        setTimeout(() => {
+            saveResult.remove();
+        }, 5000);
     });
 }
 
