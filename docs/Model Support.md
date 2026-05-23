@@ -20,6 +20,7 @@
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
 [ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
+[Lens](#lens) | MMDiT | 2026 | Microsoft | 3.8B | Minimal | Modern, Great Quality, lightweight |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -617,6 +618,22 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - Because of the aggressive patch scaling, 2048 on this model looks more like 1024 on most other models. 1024 on this model looks noticeably worse. Going above 2048 will have some color distortion.
 - **Dev Lora:**
     - A dev lora can be downloaded here [Kijai/hidream-O1-image_comfy](<https://huggingface.co/Kijai/hidream-O1-image_comfy/resolve/main/loras/hidream_o1_dev_lora_rank_64_bf16_pruned_v1.safetensors>). It allows use of the base model with the distilled behavior from the Dev model. 8 steps will generate a coherent image of lower quality, 16 steps seems closer to original quality. Use CFG Scale 1.
+
+# Lens
+
+- Microsoft's [Lens](<https://huggingface.co/microsoft/Lens>) is supported in SwarmUI!
+- It is a 3.8B MMDiT model, with a base model and an official turbo distill designed to run fast.
+    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/Lens - turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_turbo_bf16.safetensors?download=true>)
+    - Or the base version (in fat BF16) [Comfy-Org/Lens - base](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_bf16.safetensors?download=true>)
+    - Save in `diffusion_models`
+- Uses the Flux.2 VAE, will be downloaded and handled automatically
+- Uses the GPT-OSS 20B text encoder, will be downloaded and handled automatically
+- **Parameters:**
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
+    - **Steps:** For Turbo, `4` is recommended, `8` works well. For Base, `20` as normal.
+    - **Resolution:** Side length `1440` is the standard.
 
 # Video Models
 
