@@ -835,16 +835,16 @@ body {
     margin-left: 0.5rem;
     opacity: 0.8;
 }
+.browser-multiselect-mode .image-block.image-block-current {
+    outline: none;
+}
+.browser-multiselect-mode .model-selected {
+    border: 1px solid var(--button-border);
+    background-color: unset;
+}
 .browser-multiselect-toggle-active, .browser-multiselect-item-selected {
     outline: 2px solid var(--emphasis) !important;
     outline-offset: 1px;
-}
-.browser-multiselect-mode .image-block.image-block-current {
-    outline: none !important;
-}
-.browser-multiselect-mode .model-selected {
-    border: 1px solid var(--button-border) !important;
-    background-color: unset !important;
 }
 .browser-multiselect-action-select {
     max-width: 11rem;
