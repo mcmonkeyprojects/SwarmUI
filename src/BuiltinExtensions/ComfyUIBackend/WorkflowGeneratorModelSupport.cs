@@ -1069,13 +1069,22 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("lens", helpers.GetGptOss_20bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
-            string cfgNormNode = CreateNode("CFGNorm", new JObject()
+            string lensSamplingNode = CreateNode("ModelSamplingFlux", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["width"] = UserInput.GetImageWidth(),
+                ["height"] = UserInput.GetImageHeight(),
+                ["max_shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1.15, sectionId: sectionId),
+                ["base_shift"] = 0.5
+            });
+            LoadingModel = [lensSamplingNode, 0];
+            string lensCfgNormNode = CreateNode("CFGNorm", new JObject()
             {
                 ["model"] = LoadingModel,
                 ["strength"] = 1.0,
                 ["pre_cfg"] = true
             });
-            LoadingModel = [cfgNormNode, 0];
+            LoadingModel = [lensCfgNormNode, 0];
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
@@ -1343,7 +1352,7 @@ public partial class WorkflowGenerator
         }
         if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal, sectionId: sectionId))
         {
-            if (IsFlux() || IsAnyFlux2() || IsLens())
+            if (IsFlux() || IsAnyFlux2())
             {
                 string samplingNode = CreateNode("ModelSamplingFlux", new JObject()
                 {
