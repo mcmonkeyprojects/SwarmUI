@@ -814,7 +814,7 @@ function genInputs(delay_final = false) {
         let controlnetGroup = document.getElementById('input_group_content_controlnet');
         if (controlnetGroup) {
             let firstGroup = controlnetGroup.querySelector('.input-group');
-            let buttonDiv = createDiv(`controlnet_button_preview`, null, `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button> <button id="controlnet_button_save_preview" class="basic-button" onclick="controlnetSavePreviewToServer()" style="display:none;">Save to Server</button>`);
+            let buttonDiv = createDiv(`controlnet_button_preview`, 'wide_block', `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button> <button id="controlnet_button_save_preview" class="basic-button" onclick="controlnetSavePreviewToServer()" style="display:none;">Save to Server</button>`);
             if (firstGroup) {
                 controlnetGroup.insertBefore(buttonDiv, firstGroup);
             }
