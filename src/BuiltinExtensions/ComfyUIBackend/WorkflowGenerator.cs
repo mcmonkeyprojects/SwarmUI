@@ -461,6 +461,7 @@ public partial class WorkflowGenerator
             else
             {
                 WGNodeData attachedAudio = null;
+                JToken fpsRef = null;
                 if (img.Type.MetaType == MediaMetaType.Video)
                 {
                     result = CreateNode("SwarmLoadVideoB64", new JObject()
@@ -471,9 +472,9 @@ public partial class WorkflowGenerator
                     {
                         ["video"] = NodePath(result, 0)
                     });
-                    NodeHelpers["video_components_split"] = splitNode;
                     result = splitNode;
                     attachedAudio = new([splitNode, 1], this, WGNodeData.DT_AUDIO, CurrentCompat());
+                    fpsRef = NodePath(splitNode, 2);
                 }
                 else
                 {
@@ -497,7 +498,7 @@ public partial class WorkflowGenerator
                         ["crop"] = "disabled"
                     }, nodeId);
                 }
-                return new([result, 0], this, WGNodeData.DT_VIDEO, CurrentCompat()) { AttachedAudio = attachedAudio, Width = imgWidth, Height = imgHeight };
+                return new([result, 0], this, WGNodeData.DT_VIDEO, CurrentCompat()) { AttachedAudio = attachedAudio, Width = imgWidth, Height = imgHeight, FPS = fpsRef };
             }
         }
         else

@@ -48,7 +48,17 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
     public int? Frames = null;
 
     /// <summary>The frames per second of a video, if known and valid.</summary>
-    public int? FPS = null;
+    public JToken FPS = null;
+
+    /// <summary>Returns the FPS as an int, or null if it is a node-ref or unset.</summary>
+    public int? GetRawFPS()
+    {
+        if (FPS is JValue v && v.Type == JTokenType.Integer)
+        {
+            return v.Value<int>();
+        }
+        return null;
+    }
 
     /// <summary>If this is a video data object, and audio is separate but tracked, this is the audio associated.</summary>
     public WGNodeData AttachedAudio = null;

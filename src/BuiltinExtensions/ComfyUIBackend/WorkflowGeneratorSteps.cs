@@ -1090,16 +1090,17 @@ public class WorkflowGeneratorSteps
                             ["scale_method"] = "lanczos"
                         });
                         imageNodeActual = imageNodeActual.WithPath([multipleOf8, 0]);
-                        if (imageNodeActual.DataType == WGNodeData.DT_VIDEO && g.NodeHelpers.TryGetValue("video_components_split", out string splitNodeId))
+                        if (imageNodeActual.DataType == WGNodeData.DT_VIDEO && imageNodeActual.FPS is not null)
                         {
                             string resampleNode = g.CreateNode("SwarmVideoResampleFPS", new JObject()
                             {
                                 ["images"] = imageNodeActual.Path,
-                                ["fps_in"] = NodePath(splitNodeId, 2),
+                                ["fps_in"] = imageNodeActual.FPS,
                                 ["fps_out"] = 24.0,
                                 ["method"] = "linear"
                             });
                             imageNodeActual = imageNodeActual.WithPath([resampleNode, 0]);
+                            imageNodeActual.FPS = 24;
                         }
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
@@ -1878,7 +1879,7 @@ public class WorkflowGeneratorSteps
                         }
                         JArray newInterp = g.DoInterpolation(g.CurrentMedia.Path, method, mult);
                         g.CurrentMedia = g.CurrentMedia.WithPath(newInterp);
-                        int fps = g.CurrentMedia.FPS ?? g.Text2VideoFPS();
+                        int fps = g.CurrentMedia.GetRawFPS() ?? g.Text2VideoFPS();
                         fps *= mult;
                         g.CurrentMedia.FPS = fps;
                         g.T2VFPSOverride = fps;
@@ -2135,7 +2136,7 @@ public class WorkflowGeneratorSteps
                     JArray interp = g.DoInterpolation(g.CurrentMedia.Path, method, mult);
                     g.CurrentMedia = g.CurrentMedia.WithPath(interp);
                     videoFps *= mult;
-                    g.CurrentMedia.FPS = videoFps;
+                    g.CurrentMedia.FPS = videoFps.HasValue ? videoFps.Value : null;
                 }
                 g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, "9");
             }
