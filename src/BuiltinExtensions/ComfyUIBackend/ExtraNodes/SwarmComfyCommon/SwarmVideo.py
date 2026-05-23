@@ -1,9 +1,5 @@
 from __future__ import annotations
-
-import logging
-import math
-
-import torch
+import logging, math, torch
 from comfy_api.latest import io
 
 logger = logging.getLogger(__name__)
@@ -35,7 +31,7 @@ class SwarmVideoResampleFPS(io.ComfyNode):
                     ),
                 ),
             ],
-            outputs=[io.Image.Output("images"), io.Float.Output("fps")],
+            outputs=[io.Image.Output("images")],
         )
 
     @classmethod
@@ -46,7 +42,7 @@ class SwarmVideoResampleFPS(io.ComfyNode):
 
         frame_count_in = int(images.shape[0])
         if frame_count_in <= 1 or math.isclose(fps_in, fps_out):
-            return io.NodeOutput(images, float(fps_out))
+            return io.NodeOutput(images)
 
         # Compute output frame count and the fractional source-frame position for each output frame: 4 frames @ 2fps -> 4fps yields 8 frames at source positions [0, 0.5, 1.0, ..., 3.5]
         frame_count_out = max(1, round(frame_count_in / fps_in * fps_out))
@@ -58,7 +54,7 @@ class SwarmVideoResampleFPS(io.ComfyNode):
             resampled = cls._sample_linear(images, source_positions)
 
         logger.info(f"SwarmVideoResampleFPS: {frame_count_in} frames @ {fps_in} fps -> {frame_count_out} frames @ {fps_out} fps ({method})")
-        return io.NodeOutput(resampled, float(fps_out))
+        return io.NodeOutput(resampled)
 
     @classmethod
     def _sample_nearest(cls, source_frames: torch.Tensor, source_positions: torch.Tensor) -> torch.Tensor:

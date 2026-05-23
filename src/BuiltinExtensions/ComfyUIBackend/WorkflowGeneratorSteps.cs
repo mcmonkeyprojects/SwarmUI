@@ -1079,6 +1079,19 @@ public class WorkflowGeneratorSteps
                     }
                     if (preprocessor.ToLowerFast() != "none")
                     {
+                        if (imageNodeActual.DataType == WGNodeData.DT_VIDEO && imageNodeActual.FPS is not null)
+                        {
+                            int fps = g.Text2VideoFPS();
+                            string resampleNode = g.CreateNode("SwarmVideoResampleFPS", new JObject()
+                            {
+                                ["images"] = imageNodeActual.Path,
+                                ["fps_in"] = imageNodeActual.FPS,
+                                ["fps_out"] = fps,
+                                ["method"] = "linear"
+                            });
+                            imageNodeActual = imageNodeActual.WithPath([resampleNode, 0]);
+                            imageNodeActual.FPS = fps;
+                        }
                         JArray preprocActual = g.CreatePreprocessor(preprocessor, imageNodeActual);
                         g.NodeHelpers["controlnet_preprocessor"] = $"{preprocActual[0]}";
                         imageNodeActual = imageNodeActual.WithPath(preprocActual);
@@ -1090,18 +1103,6 @@ public class WorkflowGeneratorSteps
                             ["scale_method"] = "lanczos"
                         });
                         imageNodeActual = imageNodeActual.WithPath([multipleOf8, 0]);
-                        if (imageNodeActual.DataType == WGNodeData.DT_VIDEO && imageNodeActual.FPS is not null)
-                        {
-                            string resampleNode = g.CreateNode("SwarmVideoResampleFPS", new JObject()
-                            {
-                                ["images"] = imageNodeActual.Path,
-                                ["fps_in"] = imageNodeActual.FPS,
-                                ["fps_out"] = 24.0,
-                                ["method"] = "linear"
-                            });
-                            imageNodeActual = imageNodeActual.WithPath([resampleNode, 0]);
-                            imageNodeActual.FPS = 24;
-                        }
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
                             g.CurrentMedia = imageNodeActual;
@@ -2136,7 +2137,7 @@ public class WorkflowGeneratorSteps
                     JArray interp = g.DoInterpolation(g.CurrentMedia.Path, method, mult);
                     g.CurrentMedia = g.CurrentMedia.WithPath(interp);
                     videoFps *= mult;
-                    g.CurrentMedia.FPS = videoFps.HasValue ? videoFps.Value : null;
+                    g.CurrentMedia.FPS = videoFps;
                 }
                 g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, "9");
             }
