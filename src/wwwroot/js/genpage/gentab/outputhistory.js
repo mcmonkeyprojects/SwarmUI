@@ -86,6 +86,7 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             label: 'Enable Starred',
             title: 'Marks all selected images as starred if they are not already',
             onclick: (e) => {
+                // TODO: Pull the reference from the event, not from register context - or register specifically as a bulk handler
                 if (!isStarred(e)) {
                     toggleStar(fullsrc, src);
                 }
