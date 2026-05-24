@@ -622,7 +622,7 @@ public class T2IParamTypes
             "false", IgnoreIf: "false", OrderPriority: 2, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1
             ));
         VideoFormat = Register<string>(new("Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
-            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1, Toggleable: true
+            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1, Toggleable: true, IsAdvanced: true
             ));
         VideoAudioInput = Register<AudioFile>(new("Video Audio Input", "If generating a video with a model that supports audio input, this is the audio input.",
             null, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, IsAdvanced: true
