@@ -1167,7 +1167,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             includeLinkButton(added.label, added.href, added.is_download, added.title);
         }
         else {
-            includeButton(added.label, added.onclick, '', added.title);
+            includeButton(added.label, added.onclick, '', added.title, null, added.can_multi, added.multi_only);
         }
     }
     renderButtonsFromDefs();
@@ -1442,6 +1442,14 @@ class ImageCompareHelper {
         }
         this.swapButton = getRequiredElementById('image_compare_swap_button');
         this.swapButton.addEventListener('click', () => this.swapImages());
+        this.transparencyRow = getRequiredElementById('image_compare_transparency_row');
+        this.transparencySlider = getRequiredElementById('image_compare_transparency_slider');
+        this.transparencyValue = getRequiredElementById('image_compare_transparency_value');
+        this.transparencySlider.addEventListener('input', () => {
+            this.transparencyPercent = parseFloat(this.transparencySlider.value);
+            this.transparencyValue.innerText = `${Math.round(this.transparencyPercent)}%`;
+            this.getOverlay()?.style.setProperty('--image-compare-transparency', `${this.transparencyPercent / 100}`);
+        });
         this.updateModeControls();
     }
 
@@ -1771,6 +1779,7 @@ class ImageCompareHelper {
 
     resetViewportState() {
         this.overlaySplitPercent = 50;
+        this.transparencyPercent = 50;
         this.zoom = 1;
         this.panX = 0;
         this.panY = 0;
@@ -1830,6 +1839,10 @@ class ImageCompareHelper {
         for (let [mode, button] of Object.entries(this.modeButtonMap)) {
             button.setAttribute('aria-pressed', this.mode == mode ? 'true' : 'false');
         }
+        this.transparencyRow.style.display = ImageCompareHelper.modeDefinitions[this.mode].layout == 'transparency' ? '' : 'none';
+        this.transparencySlider.value = this.transparencyPercent;
+        updateRangeStyle(this.transparencySlider);
+        this.transparencyValue.innerText = `${Math.round(this.transparencyPercent)}%`;
     }
 
     setStageContent(layout, html) {
@@ -1877,7 +1890,7 @@ class ImageCompareHelper {
         }
         this.setStageContent('overlay', `
             <div class="image_compare_slot">
-                <div class="${overlayClasses.join(' ')}" style="--image-compare-split:${this.overlaySplitPercent}%;">
+                <div class="${overlayClasses.join(' ')}" style="--image-compare-split:${this.overlaySplitPercent}%;--image-compare-transparency:${this.transparencyPercent / 100};">
                     <div class="image_compare_overlay_layer image_compare_overlay_layer_left">${this.renderMedia(this.left)}</div>
                     <div class="image_compare_overlay_layer image_compare_overlay_layer_right">${this.renderMedia(this.right)}</div>
                     ${this.isSlideMode() ? '<div class="image_compare_overlay_divider"></div>' : ''}
@@ -2015,7 +2028,9 @@ class ImageCompareHelper {
             img.style.objectFit = 'unset';
             img.style.margin = '0';
         }
-        this.getOverlay()?.style.setProperty('--image-compare-split', `${this.overlaySplitPercent}%`);
+        let overlay = this.getOverlay();
+        overlay?.style.setProperty('--image-compare-split', `${this.overlaySplitPercent}%`);
+        overlay?.style.setProperty('--image-compare-transparency', `${this.transparencyPercent / 100}`);
         this.updateImageRendering();
     }
 

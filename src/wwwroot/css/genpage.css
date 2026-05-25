@@ -812,13 +812,42 @@ body {
 #image_compare_modal .modal-dialog {
     display: none;
 }
+#image_compare_modal .imageview_modal_inner_div {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
 #image_compare_modal .imageview_modal_imagewrap {
-    height: calc(100vh - 2rem);
+    flex: 1 1 auto;
+    min-height: 0;
 }
 #image_compare_modal .imageview_popup_modal_undertext {
-    height: 2rem;
+    flex: 0 0 auto;
+    min-height: 2rem;
+    height: auto;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+}
+#image_compare_transparency_row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--bs-body-font-family);
+}
+#image_compare_transparency_row .auto-slider-range-wrapper {
+    width: 14rem;
+    max-width: 60vw;
+    margin-top: 0;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+#image_compare_transparency_value {
+    min-width: 2.75rem;
+    text-align: left;
+    white-space: nowrap;
 }
 #image_compare_modal .image_fullview_extra_buttons {
     display: flex;
@@ -906,14 +935,14 @@ body {
     clip-path: none;
 }
 #image_compare_stage .image_compare_overlay_transparency .image_compare_overlay_layer_right {
-    opacity: 0.5;
+    opacity: var(--image-compare-transparency, 0.5);
 }
 #image_compare_stage .image_compare_overlay_divider {
     position: absolute;
     top: 0;
     bottom: 0;
     left: var(--image-compare-split);
-    width: 1.5rem;
+    width: 6rem;
     transform: translateX(-50%);
     background-color: transparent;
     pointer-events: auto;
@@ -925,7 +954,7 @@ body {
     left: 0;
     right: 0;
     width: 100%;
-    height: 1.5rem;
+    height: 6rem;
     transform: translateY(-50%);
     cursor: ns-resize;
 }

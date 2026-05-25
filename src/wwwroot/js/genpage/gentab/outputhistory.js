@@ -182,6 +182,29 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             can_multi: true
         });
     }
+    if (mediaType == 'image' || mediaType == 'video') {
+        buttons.push({
+            label: 'Compare',
+            title: 'Compare 2 images or 2 videos',
+            onclick: (e) => {
+                // TODO: Give browsers.js a real "run once with the full selection" bulk handler
+                let items = imageHistoryBrowser.getMultiSelectedFiles().map(f => ({ src: f.data.src, mediaType: getMediaType(f.data.src) }));
+                let valid = imageCompareHelper.evaluateSelection(items);
+                if (valid.state != 'ready') {
+                    showError(valid.reason || 'Cannot compare current selection.');
+                    return;
+                }
+                if (imageCompareHelper.isShowingPair(items[0], items[1])) {
+                    return;
+                }
+                imageCompareHelper.reset();
+                imageCompareHelper.showComparison(items[0], items[1]);
+            },
+            can_multi: true,
+            multi_only: true,
+            max_selected: 2
+        });
+    }
     for (let reg of registeredMediaButtons) {
         if ((isCurrentImage || reg.showInHistory) && (!reg.mediaTypes || reg.mediaTypes.includes(mediaType))) {
             buttons.push({
@@ -258,34 +281,6 @@ function selectOutputInHistory(image, div) {
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
     `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
 imageHistoryBrowser.allowMultiSelect = true;
-
-// todo find a better place for this, leave for now for testing
-registerMediaButton(
-    'Compare',
-    function compareAction(src) {
-        let files = imageHistoryBrowser.getMultiSelectedFiles();
-        let items = files.map(f => ({ src: f.data.src, mediaType: getMediaType(f.data.src) }));
-        let evaluation = imageCompareHelper.evaluateSelection(items);
-        if (evaluation.state != 'ready') {
-            showError(evaluation.reason || 'Cannot compare current selection.');
-            return;
-        }
-        if (imageCompareHelper.isShowingPair(items[0], items[1])) {
-            return;
-        }
-        imageCompareHelper.reset();
-        imageCompareHelper.showComparison(items[0], items[1]);
-    },
-    'Compare 2 images or 2 videos',
-    ['image', 'video'],
-    false,
-    true,
-    null,
-    false,
-    true,
-    true,
-    2
-);
 
 function storeImageToHistoryWithCurrentParams(img) {
     let data = getGenInput();
