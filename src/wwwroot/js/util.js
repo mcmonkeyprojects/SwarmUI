@@ -1224,3 +1224,48 @@ function trimEndSpaces(text) {
 function trimSpaces(text) {
     return trimStartSpaces(trimEndSpaces(text));
 }
+
+/** Converts basic ANSI foreground color codes in already HTML-escaped text to colored spans. */
+function ansiHtml(text) {
+    let colors = { '30': '#000000', '31': '#cd3131', '32': '#0dbc79', '33': '#e5e510', '34': '#2472c8', '35': '#bc3fbc', '36': '#11a8cd', '37': '#e5e5e5', '90': '#666666', '91': '#f14c4c', '92': '#23d18b', '93': '#f5f543', '94': '#3b8eea', '95': '#d670d6', '96': '#29b8db', '97': '#ffffff' };
+    let result = '';
+    let currentColor = null;
+    let i = 0;
+    while (i < text.length) {
+        if (text.charCodeAt(i) == 27 && text[i + 1] == '[') {
+            let j = i + 2;
+            while (j < text.length && text[j] != 'm') {
+                j++;
+            }
+            if (j < text.length) {
+                let codes = text.substring(i + 2, j).split(';');
+                let newColor = currentColor;
+                for (let code of codes) {
+                    if (code == '' || code == '0') {
+                        newColor = null;
+                    }
+                    else if (colors[code]) {
+                        newColor = colors[code];
+                    }
+                }
+                if (newColor != currentColor) {
+                    if (currentColor != null) {
+                        result += '</span>';
+                    }
+                    if (newColor != null) {
+                        result += `<span style="color:${newColor}">`;
+                    }
+                    currentColor = newColor;
+                }
+                i = j + 1;
+                continue;
+            }
+        }
+        result += text[i];
+        i++;
+    }
+    if (currentColor != null) {
+        result += '</span>';
+    }
+    return result;
+}
