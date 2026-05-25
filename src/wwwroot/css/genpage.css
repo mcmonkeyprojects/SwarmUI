@@ -809,6 +809,161 @@ body {
     overflow: hidden;
     margin: auto;
 }
+#image_compare_modal .modal-dialog {
+    display: none;
+}
+#image_compare_modal .imageview_modal_imagewrap {
+    height: calc(100vh - 2rem);
+}
+#image_compare_modal .imageview_popup_modal_undertext {
+    height: 2rem;
+    display: flex;
+    justify-content: center;
+}
+#image_compare_modal .image_fullview_extra_buttons {
+    display: flex;
+    align-items: center;
+}
+#image_compare_modal .image_fullview_extra_buttons [aria-pressed="true"] {
+    background-color: var(--button-background-hover);
+    border-color: var(--emphasis);
+}
+#image_compare_stage {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    background-color: transparent;
+}
+#image_compare_stage.image_compare_stage_side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    gap: 0;
+}
+#image_compare_stage.image_compare_stage_single {
+    display: block;
+}
+#image_compare_stage.image_compare_stage_side .image_compare_slot,
+#image_compare_stage.image_compare_stage_overlay .image_compare_slot,
+#image_compare_stage.image_compare_stage_single .image_compare_slot {
+    width: 100%;
+    height: 100%;
+}
+#image_compare_stage .image_compare_slot {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    text-align: left;
+    cursor: grab;
+}
+#image_compare_stage .image_compare_media {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    background-color: transparent;
+    display: block;
+    position: relative;
+    margin: auto;
+}
+#image_compare_stage.image_compare_stage_overlay {
+    display: flex;
+}
+#image_compare_stage .image_compare_overlay {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    --image-compare-split: 50%;
+    cursor: grab;
+}
+#image_compare_stage .image_compare_overlay_layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+#image_compare_stage .image_compare_overlay_layer_left {
+    clip-path: inset(0 calc(100% - var(--image-compare-split)) 0 0);
+}
+#image_compare_stage .image_compare_overlay_layer_right {
+    clip-path: inset(0 0 0 var(--image-compare-split));
+}
+#image_compare_stage .image_compare_overlay_slide_vertical .image_compare_overlay_layer_left {
+    clip-path: inset(0 0 calc(100% - var(--image-compare-split)) 0);
+}
+#image_compare_stage .image_compare_overlay_slide_vertical .image_compare_overlay_layer_right {
+    clip-path: inset(var(--image-compare-split) 0 0 0);
+}
+#image_compare_stage .image_compare_overlay_transparency .image_compare_overlay_layer_left,
+#image_compare_stage .image_compare_overlay_transparency .image_compare_overlay_layer_right {
+    clip-path: none;
+}
+#image_compare_stage .image_compare_overlay_transparency .image_compare_overlay_layer_right {
+    opacity: 0.5;
+}
+#image_compare_stage .image_compare_overlay_divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--image-compare-split);
+    width: 1.5rem;
+    transform: translateX(-50%);
+    background-color: transparent;
+    pointer-events: auto;
+    cursor: ew-resize;
+    z-index: 2;
+}
+#image_compare_stage .image_compare_overlay_slide_vertical .image_compare_overlay_divider {
+    top: var(--image-compare-split);
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 1.5rem;
+    transform: translateY(-50%);
+    cursor: ns-resize;
+}
+#image_compare_stage .image_compare_overlay_divider::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - 1px);
+    width: 2px;
+    background-color: var(--emphasis);
+    box-shadow: 0 0 0.75rem var(--emphasis);
+}
+#image_compare_stage .image_compare_overlay_slide_vertical .image_compare_overlay_divider::before {
+    top: calc(50% - 1px);
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 2px;
+}
+#image_compare_stage .image_compare_overlay_divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--emphasis);
+    pointer-events: none;
+}
+@media (max-width: 900px) {
+    #image_compare_stage.image_compare_stage_side {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+}
 .browser-folder-tree-container {
     width: 15rem;
     display: inline-block;
