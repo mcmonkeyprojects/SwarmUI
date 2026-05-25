@@ -228,6 +228,7 @@ public class T2IModelClassSorter
         bool isAnima(JObject h) => hasKey(h, "t_embedder.1.linear_2.weight") && hasKey(h, "llm_adapter.blocks.0.self_attn.v_proj.weight") && hasKey(h, "blocks.27.adaln_modulation_cross_attn.2.weight");
         bool isAnimaLora(JObject h) => (hasLoraKey(h, "llm_adapter.blocks.5.self_attn.v_proj") && hasLoraKey(h, "blocks.27.self_attn.v_proj") && hasLoraKey(h, "blocks.27.adaln_modulation_cross_attn.1"))
                                     || (hasLoraKey(h, "lora_unet_blocks_27_self_attn_v_proj") && hasLoraKey(h, "lora_unet_blocks_27_cross_attn_output_proj") && hasLoraKey(h, "lora_unet_blocks_27_mlp_layer2"));
+        bool isAnimaControlnet(JObject h) => h.ContainsKey("lllite_dit_blocks_0_self_attn_q_proj.depth_embed") && h.ContainsKey("lllite_dit_blocks_0_self_attn_q_proj.cond_to_film.weight") && h.ContainsKey("lllite_dit_blocks_27_self_attn_q_proj.up.weight");
         bool isLongcat(JObject h) => hasKey(h, "double_blocks.0.txt_attn.norm.query_norm.weight") && hasKey(h, "time_in.out_layer.weight") && hasKey(h, "final_layer.adaLN_modulation.1.weight");
         // Audio models
         bool isAceStep15(JObject h) => hasKey(h, "encoder.lyric_encoder.layers.0.post_attention_layernorm.weight");
@@ -742,6 +743,7 @@ public class T2IModelClassSorter
         {
             return isAuraFlow(h);
         }});
+        // ====================== Anima ======================
         Register(new() { ID = "anima", CompatClass = CompatAnima, Name = "Anima", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isAnima(h);
@@ -749,6 +751,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "anima/lora", CompatClass = CompatAnima, Name = "Anima LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isAnimaLora(h);
+        }});
+        Register(new() { ID = "anima/controlnet", CompatClass = CompatAnima, Name = "Anima ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isAnimaControlnet(h);
         }});
         // ====================== Hunyuan Image 2.1 ======================
         Register(new() { ID = "hunyuan-image-2_1", CompatClass = CompatHunyuanImage2_1, Name = "Hunyuan Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
@@ -855,6 +861,7 @@ public class T2IModelClassSorter
         Remaps["stable-diffusion-3-3-5-medium/lora"] = "stable-diffusion-v3.5-medium/lora";
         Remaps["anima-preview"] = "anima";
         Remaps["anima-preview/lora"] = "anima/lora";
+        Remaps["anima-preview/control-net-lllite"] = "anima/controlnet";
         // ====================== Comfy model_type remaps ======================
         Remaps["hunyuanvideo1.5_480p_t2v_distilled"] = "hunyuan-video-1_5";
         Remaps["hunyuanvideo1.5_480p_i2v_distilled"] = "hunyuan-video-1_5";
