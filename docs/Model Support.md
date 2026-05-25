@@ -554,7 +554,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - It is designed to be tiny, lightweight, fast, but built on a strong architecture.
     - It is the first model architecture publicly released that was sponsored by Comfy Org!
     - It is explicitly still in Preview status, they will be training it further before it's entirely ready.
-- Download the [preview version here](<https://huggingface.co/circlestone-labs/Anima/blob/main/split_files/diffusion_models/anima-preview.safetensors>)
+- Download [Anima v1 here](<https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/diffusion_models/anima-base-v1.0.safetensors>)
     - Save in `diffusion_models`
 - It uses a tiny Qwen 3 600M ("0.6B") text encoder. This will be autodownloaded.
 - It uses the Qwen Image VAE. This will be autodownloaded.
