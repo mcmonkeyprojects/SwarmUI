@@ -10,6 +10,13 @@ import {
 import { motion, useReducedMotion } from 'framer-motion';
 import { IconClock, IconLoader } from '@tabler/icons-react';
 import { livePreviewPulse, instantSpring } from '../../utils/animations';
+import {
+    formatGenerationPercentDisplay,
+    formatGenerationRemainingDisplay,
+    formatGenerationStageDisplay,
+    formatGenerationStepDisplay,
+    formatGenerationTaskDisplay,
+} from '../../utils/generationProgressDisplay';
 
 interface DetailedProgressBarProps {
     /** Overall progress percentage (0-100) */
@@ -20,6 +27,8 @@ interface DetailedProgressBarProps {
     currentStep?: number;
     /** Total steps configured (optional) */
     totalSteps?: number;
+    /** Whether currentStep is backend step data or inferred node progress */
+    stepSource?: 'backend' | 'node_percent' | 'unknown';
     /** Current major generation stage label */
     stageLabel?: string | null;
     /** Current stage index (1-based) */
@@ -53,6 +62,7 @@ export function DetailedProgressBar({
     hasProgressEvent = true,
     currentStep,
     totalSteps,
+    stepSource = 'unknown',
     stageLabel,
     stageIndex,
     stageCount,
@@ -68,6 +78,7 @@ export function DetailedProgressBar({
     const prefersReducedMotion = useReducedMotion();
     const disableMotion = prefersReducedMotion || isGenerating;
     const [now, setNow] = useState(() => Date.now());
+    const isPending = isGenerating && !hasProgressEvent;
 
     useEffect(() => {
         if (!isGenerating) {
@@ -98,46 +109,49 @@ export function DetailedProgressBar({
         return `${minutes}m ${secs}s`;
     }, [now, startTime, progress]);
 
-    // Format step display with bounds checking
     const stepDisplay = useMemo(() => {
-        if (currentStep !== undefined && totalSteps && currentStep > 0) {
-            // Clamp to never exceed total steps
-            const clampedStep = Math.min(currentStep, totalSteps);
-            return `Step ${clampedStep}/${totalSteps}`;
-        }
-        if (hasProgressEvent && currentStep === undefined && totalSteps && progress > 0) {
-            // Fallback only when backend did not provide step data.
-            const estimatedStep = Math.min(Math.round((progress / 100) * totalSteps), totalSteps);
-            return `Step ~${estimatedStep}/${totalSteps}`;
-        }
-        return null;
-    }, [currentStep, totalSteps, progress, hasProgressEvent]);
+        return formatGenerationStepDisplay({
+            progress,
+            hasProgressEvent,
+            currentStep,
+            totalSteps,
+            stepSource,
+        });
+    }, [currentStep, totalSteps, progress, hasProgressEvent, stepSource]);
 
     const taskDisplay = useMemo(() => {
-        if (stageTaskIndex !== undefined && stageTaskIndex !== null && stageTaskCount && stageTaskCount > 1) {
-            const clampedTask = Math.min(stageTaskIndex, stageTaskCount);
-            return `Task ${clampedTask}/${stageTaskCount}`;
-        }
-        return null;
-    }, [stageTaskIndex, stageTaskCount]);
+        return formatGenerationTaskDisplay({
+            progress,
+            stageTaskIndex,
+            stageTaskCount,
+        });
+    }, [progress, stageTaskIndex, stageTaskCount]);
 
     const stageDisplay = useMemo(() => {
-        if (stageIndex !== undefined && stageIndex !== null && stageCount && stageCount > 1) {
-            const clampedStage = Math.min(stageIndex, stageCount);
-            return `Stage ${clampedStage}/${stageCount}`;
-        }
-        return stageLabel && !taskDisplay && !stepDisplay ? stageLabel : null;
-    }, [stageIndex, stageCount, stageLabel, taskDisplay, stepDisplay]);
+        const stageProgressDisplay = formatGenerationStageDisplay({
+            progress,
+            stageIndex,
+            stageCount,
+        });
+        return stageProgressDisplay || (stageLabel && !taskDisplay && !stepDisplay ? stageLabel : null);
+    }, [progress, stageIndex, stageCount, stageLabel, taskDisplay, stepDisplay]);
 
     const remainingDisplay = useMemo(() => {
-        if (stageTasksRemaining && stageTasksRemaining > 0 && stageTaskCount && stageTaskCount > 1) {
-            return `${stageTasksRemaining} task${stageTasksRemaining === 1 ? '' : 's'} remaining`;
-        }
-        if (stagesRemaining && stagesRemaining > 0) {
-            return `${stagesRemaining} stage${stagesRemaining === 1 ? '' : 's'} remaining`;
-        }
-        return null;
-    }, [stageTasksRemaining, stageTaskCount, stagesRemaining]);
+        return formatGenerationRemainingDisplay({
+            progress,
+            stagesRemaining,
+            stageTaskIndex,
+            stageTaskCount,
+            stageTasksRemaining,
+        });
+    }, [progress, stageTaskIndex, stageTasksRemaining, stageTaskCount, stagesRemaining]);
+
+    const percentDisplay = useMemo(() => {
+        return formatGenerationPercentDisplay({
+            progress,
+            hasProgressEvent,
+        });
+    }, [hasProgressEvent, progress]);
 
     if (!isGenerating && progress === 0) {
         return null;
@@ -229,8 +243,9 @@ export function DetailedProgressBar({
                     >
                         {disableMotion ? (
                             <Box
+                                className={isPending ? 'generate-studio-canvas__progress-fill--pending' : undefined}
                                 style={{
-                                    width: `${progress}%`,
+                                    width: isPending ? '42%' : `${progress}%`,
                                     height: '100%',
                                     background: isGenerating
                                         ? 'var(--theme-progress-fill)'
@@ -244,8 +259,9 @@ export function DetailedProgressBar({
                         ) : (
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${progress}%` }}
+                                animate={{ width: isPending ? '42%' : `${progress}%` }}
                                 transition={instantSpring}
+                                className={isPending ? 'generate-studio-canvas__progress-fill--pending' : undefined}
                                 style={{
                                     height: '100%',
                                     background: isGenerating
@@ -282,7 +298,7 @@ export function DetailedProgressBar({
                             {/* Percentage with animated counter effect */}
                             {disableMotion ? (
                                 <Text size="xs" fw={600} style={{ color: 'var(--theme-progress-label)' }}>
-                                    {hasProgressEvent ? `${Math.round(progress)}%` : '...'}
+                                    {percentDisplay}
                                 </Text>
                             ) : (
                                 <motion.div
@@ -292,7 +308,7 @@ export function DetailedProgressBar({
                                     transition={{ duration: 0.1 }}
                                 >
                                     <Text size="xs" fw={600} style={{ color: 'var(--theme-progress-label)' }}>
-                                        {hasProgressEvent ? `${Math.round(progress)}%` : '...'}
+                                        {percentDisplay}
                                     </Text>
                                 </motion.div>
                             )}

@@ -54,12 +54,14 @@ const SegmentRuleCard = memo(function SegmentRuleCard({
 }: SegmentRuleCardProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const modelSelectData = useMemo(() => ([
+    { value: 'auto', label: 'Auto (Grounded SAM2)' },
+    { value: 'grounded-sam2', label: 'Grounded SAM2' },
     { value: 'clip-seg', label: 'CLIP-Seg (Text Match)' },
     ...yoloOptions,
   ]), [yoloOptions]);
 
-  const modelValue = rule.modelType === 'clip-seg'
-    ? 'clip-seg'
+  const modelValue = rule.modelType !== 'yolo'
+    ? rule.modelType
     : `yolo:${rule.yoloModel}`;
 
   return (
@@ -115,8 +117,8 @@ const SegmentRuleCard = memo(function SegmentRuleCard({
           data={modelSelectData}
           value={modelValue}
           onChange={(value) => {
-            if (!value || value === 'clip-seg') {
-              onUpdate({ modelType: 'clip-seg' });
+            if (!value || value === 'auto' || value === 'grounded-sam2' || value === 'clip-seg') {
+              onUpdate({ modelType: (value || 'auto') as BuilderSegmentRule['modelType'] });
               return;
             }
             onUpdate({
@@ -127,7 +129,7 @@ const SegmentRuleCard = memo(function SegmentRuleCard({
           comboboxProps={{ withinPortal: false }}
         />
 
-        {rule.modelType === 'clip-seg' ? (
+        {rule.modelType !== 'yolo' ? (
           <TextInput
             label="Text Match"
             size="xs"
@@ -225,7 +227,7 @@ const SegmentRuleCard = memo(function SegmentRuleCard({
           {advancedOpen ? 'Hide Advanced Options' : 'Show Advanced Options'}
         </SwarmButton>
 
-        <Collapse in={advancedOpen}>
+        <Collapse expanded={advancedOpen}>
           <Stack gap="xs">
             <Group grow>
               <SamplingSelect
@@ -351,7 +353,7 @@ export const SegmentRulesPanel = memo(function SegmentRulesPanel() {
                 tone="secondary"
                 leftSection={<IconSparkles size={12} />}
                 onClick={() => addSegment({
-                  modelType: 'clip-seg',
+                  modelType: 'auto',
                   textMatch: preset.textMatch,
                   prompt: preset.prompt,
                   creativity: 0.6,

@@ -4,7 +4,7 @@ import type { CanvasApplyPayload } from '../features/promptBuilder';
 
 export type CanvasWorkflowLaunchSource = 'generate' | 'history' | 'gallery';
 export type CanvasWorkflowStep = 'source' | 'mask' | 'regions' | 'segments' | 'generate';
-export type CanvasWorkflowResultSource = 'generate' | 'upscale';
+export type CanvasWorkflowResultSource = 'generate' | 'upscale' | 'invoke';
 
 export interface CanvasWorkflowResult {
   imageUrl: string;
@@ -26,6 +26,7 @@ export interface CanvasWorkflowGenerateRequest {
   id: string;
   sessionId: string;
   payload: CanvasApplyPayload;
+  params: GenerateParams;
 }
 
 interface CanvasWorkflowState {
@@ -57,7 +58,7 @@ interface CanvasWorkflowActions {
   recordApplyPayload: (payload: CanvasApplyPayload) => void;
   openUpscaler: () => void;
   closeUpscaler: () => void;
-  queueGenerateRequest: (payload: CanvasApplyPayload) => CanvasWorkflowGenerateRequest | null;
+  queueGenerateRequest: (payload: CanvasApplyPayload, params: GenerateParams) => CanvasWorkflowGenerateRequest | null;
   consumeGenerateRequest: (id: string) => void;
   markAwaitingResult: (awaiting: boolean, imageCount?: number) => void;
   setPendingResult: (result: CanvasWorkflowResult | null) => void;
@@ -137,7 +138,7 @@ export const useCanvasWorkflowStore = create<CanvasWorkflowStore>((set) => ({
 
   closeUpscaler: () => set({ upscalerOpen: false }),
 
-  queueGenerateRequest: (payload) => {
+  queueGenerateRequest: (payload, params) => {
     let request: CanvasWorkflowGenerateRequest | null = null;
     set((state) => {
       if (!state.sessionId) {
@@ -148,6 +149,7 @@ export const useCanvasWorkflowStore = create<CanvasWorkflowStore>((set) => ({
         id: createId('canvas-generate'),
         sessionId: state.sessionId,
         payload,
+        params,
       };
       return {
         lastApplyPayload: payload,

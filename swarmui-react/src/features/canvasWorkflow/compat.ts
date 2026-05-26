@@ -49,10 +49,15 @@ export function buildCanvasApplyPatch(payload: CanvasApplyPayload): CanvasSafeGe
 }
 
 export function buildCanvasPrompt(basePrompt: string, payload: CanvasApplyPayload): string {
-  if (payload.mode !== 'regional' && !payload.managedBlock.trim()) {
-    return basePrompt;
+  const editPrompt = payload.editPrompt?.trim() ?? '';
+  let nextPrompt = basePrompt;
+  if (editPrompt && !basePrompt.toLowerCase().includes(editPrompt.toLowerCase())) {
+    nextPrompt = basePrompt.trim() ? `${basePrompt.trim()}\n\n${editPrompt}` : editPrompt;
   }
-  return upsertManagedBlock(basePrompt, payload.managedBlock);
+  if (payload.mode !== 'regional' && !payload.managedBlock.trim()) {
+    return nextPrompt;
+  }
+  return upsertManagedBlock(nextPrompt, payload.managedBlock);
 }
 
 export function buildCanvasRefinePatch(options: {

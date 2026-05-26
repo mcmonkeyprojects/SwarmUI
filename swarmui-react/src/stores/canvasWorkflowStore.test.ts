@@ -32,22 +32,29 @@ describe('canvasWorkflowStore', () => {
       initialStep: 'mask',
     });
 
-    const request = useCanvasWorkflowStore.getState().queueGenerateRequest({
-      mode: 'regional',
-      sourceImageUrl: '/View/source.png',
-      sourceImageWidth: 512,
-      sourceImageHeight: 512,
-      maskDataUrl: 'data:image/png;base64,mask',
-      hasMask: true,
-      regions: [],
-      segments: [],
-      managedBlock: '',
-      managedBlockHash: 'hash',
-      syncState: 'synced',
-    });
+    const request = useCanvasWorkflowStore.getState().queueGenerateRequest(
+      {
+        mode: 'regional',
+        sourceImageUrl: '/View/source.png',
+        sourceImageWidth: 512,
+        sourceImageHeight: 512,
+        maskDataUrl: 'data:image/png;base64,mask',
+        hasMask: true,
+        regions: [],
+        segments: [],
+        managedBlock: '',
+        managedBlockHash: 'hash',
+        syncState: 'synced',
+      },
+      {
+        prompt: 'change shirt to red',
+        model: 'sdxl',
+      }
+    );
 
     expect(request).not.toBeNull();
     expect(useCanvasWorkflowStore.getState().pendingGenerateRequest?.id).toBe(request?.id);
+    expect(useCanvasWorkflowStore.getState().pendingGenerateRequest?.params.model).toBe('sdxl');
 
     if (request) {
       useCanvasWorkflowStore.getState().consumeGenerateRequest(request.id);

@@ -70,8 +70,6 @@ export interface CanvasState {
     imageLayers: CanvasImageLayer[];
     activeImageLayerId: string | null;
     selection: CanvasSelection | null;
-    historyIndex: number;
-    maxHistory: number;
     isEditing: boolean;
     editingImageUrl: string | null;
 }
@@ -158,8 +156,6 @@ const initialState: CanvasState = {
     imageLayers: [],
     activeImageLayerId: null,
     selection: null,
-    historyIndex: -1,
-    maxHistory: 50,
     isEditing: false,
     editingImageUrl: null,
 };

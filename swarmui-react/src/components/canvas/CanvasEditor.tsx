@@ -3,11 +3,12 @@ import {
     useEffect,
     useState,
     useCallback,
+    useMemo,
     useRef,
     type ChangeEvent,
     type MouseEvent,
 } from 'react';
-import { Box, Stack, Paper, Group, Text, Tooltip, Divider, ScrollArea, Badge, ColorInput } from '@mantine/core';
+import { Box, Stack, Paper, Group, Text, Tooltip, Divider, ScrollArea, Badge, ColorInput, Collapse, Textarea, Select, Progress } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
     IconArrowBackUp,
@@ -25,6 +26,8 @@ import {
     IconLayersIntersect,
     IconPaint,
     IconPhotoPlus,
+    IconSettings,
+    IconSparkles,
     IconSquare,
     IconSwitchHorizontal,
     IconTargetArrow,
@@ -34,7 +37,7 @@ import {
     IconZoomOut,
 } from '@tabler/icons-react';
 import { swarmClient } from '../../api/client';
-import type { GenerateParams } from '../../api/types';
+import type { GenerateParams, Model } from '../../api/types';
 import { useCanvasEditor } from '../../hooks/useCanvasEditor';
 import { useBackends } from '../../hooks/useModels';
 import { useCanvasEditorStore, type CanvasSelection, type CanvasTool } from '../../stores/canvasEditorStore';
@@ -58,6 +61,19 @@ interface CanvasEditorProps {
     onWorkflowStepChange?: (step: CanvasWorkflowStep) => void;
     onApplyToGenerate?: (payload: CanvasApplyPayload) => void;
     onGenerateFromCanvas?: (payload: CanvasApplyPayload) => void;
+    onGenerateWithInvoke?: (payload: CanvasApplyPayload) => void;
+    invokeGenerationBusy?: boolean;
+    invokeGenerationAvailable?: boolean;
+    models?: Model[];
+    loadingModels?: boolean;
+    selectedModel?: string;
+    detectedModel?: string | null;
+    loadingModel?: boolean;
+    modelLoadProgress?: number;
+    modelLoadingCount?: number;
+    modelLoadProgressEstimated?: boolean;
+    modelLoadError?: string | null;
+    onModelSelect?: (modelName: string | null) => void;
     onOpenUpscaler?: () => void;
     pendingResult?: CanvasWorkflowResult | null;
     onUsePendingResult?: () => void;
@@ -82,6 +98,8 @@ const TOOLS: { id: CanvasTool; icon: typeof IconBrush; label: string; shortcut: 
     { id: 'sam2bbox', icon: IconSquare, label: 'SAM2 BBox', shortcut: 'U' },
 ];
 
+const FOCUSED_WORKFLOW_TOOLS = new Set<CanvasTool>(['select', 'brush', 'eraser', 'pan']);
+const FOCUSED_WORKFLOW_ALLOWED_TOOLS = new Set<CanvasTool>(['select', 'brush', 'eraser', 'pan', 'sam2bbox', 'sam2points']);
 const BRUSH_SIZES = [5, 10, 25, 50, 100, 200];
 const REGION_INFO = 'var(--theme-info)';
 const REGION_WARNING = 'var(--theme-warning)';
@@ -226,6 +244,19 @@ export const CanvasEditor = memo(function CanvasEditor({
     onWorkflowStepChange,
     onApplyToGenerate,
     onGenerateFromCanvas,
+    onGenerateWithInvoke,
+    invokeGenerationBusy = false,
+    invokeGenerationAvailable = false,
+    models = [],
+    loadingModels = false,
+    selectedModel = '',
+    detectedModel = null,
+    loadingModel = false,
+    modelLoadProgress = 0,
+    modelLoadingCount = 0,
+    modelLoadProgressEstimated = false,
+    modelLoadError = null,
+    onModelSelect,
     onOpenUpscaler,
     pendingResult,
     onUsePendingResult,
@@ -242,8 +273,11 @@ export const CanvasEditor = memo(function CanvasEditor({
     const [sam2Points, setSam2Points] = useState<{ positive: SamPoint[]; negative: SamPoint[] }>({ positive: [], negative: [] });
     const [sam2BoxStart, setSam2BoxStart] = useState<SamPoint | null>(null);
     const [sam2BoxDraft, setSam2BoxDraft] = useState<CanvasSelection | null>(null);
+    const [editPrompt, setEditPrompt] = useState('');
+    const [advancedToolsOpen, setAdvancedToolsOpen] = useState(false);
 
     const previousLayoutRef = useRef<{ width: number; height: number; offsetX: number; offsetY: number } | null>(null);
+    const autoFilledSelectionRef = useRef<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const {
@@ -320,10 +354,12 @@ export const CanvasEditor = memo(function CanvasEditor({
     } = useCanvasEditor();
 
     const isWorkflowMode = mode === 'workflow';
+    const isFocusedWorkflowMode = isWorkflowMode;
     const supportsPromptBuilder = mode === 'regional' || isWorkflowMode;
     const imageLoaded = imageElement !== null && loadedImageUrl === imageUrl;
+    const activeSelectionRect = normalizeSelectionRect(selection);
     const selectionRect = normalizeSelectionRect(selectionDraft ?? selection);
-    const title = isWorkflowMode ? 'Canvas Workflow' : mode === 'outpaint' ? 'Outpaint Editor' : mode === 'regional' ? 'Regional Prompt Editor' : 'Inpaint Editor';
+    const title = isFocusedWorkflowMode ? 'Change Area' : isWorkflowMode ? 'Canvas Workflow' : mode === 'outpaint' ? 'Outpaint Editor' : mode === 'regional' ? 'Regional Prompt Editor' : 'Inpaint Editor';
     const hasOutpaintCanvas = canvasWidth !== originalWidth || canvasHeight !== originalHeight || imageOffsetX !== 0 || imageOffsetY !== 0;
     const showOutpaintControls = mode === 'outpaint' || (isWorkflowMode && workflowStep === 'source') || hasOutpaintCanvas;
     const layerRows = [{ id: null, name: 'Base Image', visible: true, opacity: 1, x: imageOffsetX, y: imageOffsetY, width: originalWidth, height: originalHeight }, ...imageLayers];
@@ -346,6 +382,36 @@ export const CanvasEditor = memo(function CanvasEditor({
             }
         })()
         : null;
+    const visibleTools = isFocusedWorkflowMode
+        ? TOOLS.filter((tool) => FOCUSED_WORKFLOW_TOOLS.has(tool.id))
+        : TOOLS;
+    const autoGenerateLabel = invokeGenerationAvailable ? 'Generate with InvokeAI' : 'Generate Edit';
+    const autoGenerateHelp = invokeGenerationAvailable
+        ? 'InvokeAI is connected, so this edit can run directly from Canvas.'
+        : 'Uses the normal Generate setup with the selected model.';
+    const modelOptions = useMemo(() => {
+        const options = models.map((model) => {
+            const label = model.title && model.title !== model.name
+                ? `${model.title} (${model.name})`
+                : model.name;
+            return {
+                value: model.name,
+                label: model.loaded ? label : `${label} - load`,
+            };
+        });
+        const selected = selectedModel.trim();
+        if (selected && !options.some((option) => option.value === selected)) {
+            options.unshift({
+                value: selected,
+                label: detectedModel === selected ? `${selected} - from metadata` : selected,
+            });
+        }
+        return options;
+    }, [detectedModel, models, selectedModel]);
+    const selectedModelValue = selectedModel.trim() || null;
+    const modelProgressValue = modelLoadProgressEstimated && modelLoadProgress <= 0
+        ? 100
+        : Math.max(0, Math.min(100, modelLoadProgress));
 
     const clearSam2State = useCallback(() => {
         setSam2Points({ positive: [], negative: [] });
@@ -357,6 +423,18 @@ export const CanvasEditor = memo(function CanvasEditor({
         clearMask();
         setSam2MaskReady(false);
     }, [clearMask]);
+
+    const handleClearArea = useCallback(() => {
+        clearMask();
+        clearSelection();
+        clearSam2State();
+        autoFilledSelectionRef.current = null;
+        setSam2MaskReady(false);
+    }, [clearMask, clearSam2State, clearSelection]);
+
+    const handleAutoSelectArea = useCallback(() => {
+        setTool(sam2Available ? 'sam2bbox' : 'select');
+    }, [sam2Available, setTool]);
 
     const handlePromoteSam2ToRegions = useCallback(() => {
         setTool('region');
@@ -430,6 +508,9 @@ export const CanvasEditor = memo(function CanvasEditor({
 
     useEffect(() => {
         previousLayoutRef.current = null;
+        autoFilledSelectionRef.current = null;
+        setEditPrompt('');
+        setAdvancedToolsOpen(false);
         clearSam2State();
         setSam2MaskReady(false);
         const img = new window.Image();
@@ -438,6 +519,9 @@ export const CanvasEditor = memo(function CanvasEditor({
             setImageElement(img);
             setLoadedImageUrl(imageUrl);
             openEditor(imageUrl, img.width, img.height);
+            if (isFocusedWorkflowMode) {
+                setTool('select');
+            }
         };
         img.onerror = () => {
             if (!retried) {
@@ -449,7 +533,7 @@ export const CanvasEditor = memo(function CanvasEditor({
             }
         };
         img.src = imageUrl;
-    }, [clearSam2State, imageUrl, openEditor]);
+    }, [clearSam2State, imageUrl, isFocusedWorkflowMode, openEditor, setTool]);
 
     useEffect(() => {
         let cancelled = false;
@@ -549,10 +633,26 @@ export const CanvasEditor = memo(function CanvasEditor({
                 case 'h':
                 case ' ': setTool('pan'); break;
                 case 's': setTool('select'); break;
-                case 'r': setTool('region'); break;
-                case 'c': setTool('crop'); break;
-                case 'y': setTool('sam2points'); break;
-                case 'u': setTool('sam2bbox'); break;
+                case 'r':
+                    if (!isFocusedWorkflowMode || advancedToolsOpen) {
+                        setTool('region');
+                    }
+                    break;
+                case 'c':
+                    if (!isFocusedWorkflowMode || advancedToolsOpen) {
+                        setTool('crop');
+                    }
+                    break;
+                case 'y':
+                    if (!isFocusedWorkflowMode || advancedToolsOpen) {
+                        setTool('sam2points');
+                    }
+                    break;
+                case 'u':
+                    if (!isFocusedWorkflowMode || advancedToolsOpen) {
+                        setTool('sam2bbox');
+                    }
+                    break;
                 case 'z':
                     if (e.ctrlKey || e.metaKey) {
                         e.preventDefault();
@@ -582,7 +682,7 @@ export const CanvasEditor = memo(function CanvasEditor({
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeImageLayerId, brushSettings.size, clearSam2State, clearSelection, handleClearMask, onClose, redo, removeImageLayer, selectionRect, setBrushSettings, setTool, undo]);
+    }, [activeImageLayerId, advancedToolsOpen, brushSettings.size, clearSam2State, clearSelection, handleClearMask, isFocusedWorkflowMode, onClose, redo, removeImageLayer, selectionRect, setBrushSettings, setTool, undo]);
 
     useEffect(() => {
         const handlePaste = async (event: ClipboardEvent) => {
@@ -610,8 +710,34 @@ export const CanvasEditor = memo(function CanvasEditor({
         }
         clearSam2State();
         clearSelection();
+        autoFilledSelectionRef.current = null;
+        setEditPrompt('');
         setSam2MaskReady(false);
     }, [clearMaskVersion, clearSam2State, clearSelection, maskCanvasRef]);
+
+    useEffect(() => {
+        if (isFocusedWorkflowMode && !advancedToolsOpen && !FOCUSED_WORKFLOW_ALLOWED_TOOLS.has(currentTool)) {
+            setTool('select');
+        }
+    }, [advancedToolsOpen, currentTool, isFocusedWorkflowMode, setTool]);
+
+    useEffect(() => {
+        if (!isFocusedWorkflowMode || currentTool !== 'select' || !activeSelectionRect) {
+            return;
+        }
+        const selectionKey = `${activeSelectionRect.x}:${activeSelectionRect.y}:${activeSelectionRect.width}:${activeSelectionRect.height}`;
+        if (autoFilledSelectionRef.current === selectionKey) {
+            return;
+        }
+        autoFilledSelectionRef.current = selectionKey;
+        fillMask();
+        setTool('brush');
+        notifications.show({
+            title: 'Area Marked',
+            message: 'The boxed area is ready to edit. Brush or erase if you want to refine it.',
+            color: 'green',
+        });
+    }, [activeSelectionRect, currentTool, fillMask, isFocusedWorkflowMode, setTool]);
 
     const buildApplyPayload = useCallback((): CanvasApplyPayload => {
         const maskDataUrl = getMaskDataUrl();
@@ -623,6 +749,7 @@ export const CanvasEditor = memo(function CanvasEditor({
             sourceImageUrl: imageUrl,
             sourceImageWidth: canvasWidth,
             sourceImageHeight: canvasHeight,
+            editPrompt: editPrompt.trim() || undefined,
             initImageDataUrl: getCompositeImageDataUrl() ?? undefined,
             maskDataUrl: maskDataUrl,
             hasMask: !!maskDataUrl,
@@ -633,7 +760,7 @@ export const CanvasEditor = memo(function CanvasEditor({
             managedBlockHash: compiled.blockHash,
             syncState: supportsPromptBuilder ? 'synced' : syncState,
         };
-    }, [canvasHeight, canvasWidth, getCompositeImageDataUrl, getMaskDataUrl, hasOutpaintCanvas, imageLayers.length, imageUrl, mode, regions, segments, supportsPromptBuilder, syncState]);
+    }, [canvasHeight, canvasWidth, editPrompt, getCompositeImageDataUrl, getMaskDataUrl, hasOutpaintCanvas, imageLayers.length, imageUrl, mode, regions, segments, supportsPromptBuilder, syncState]);
 
     const handleApply = useCallback(() => {
         const payload = buildApplyPayload();
@@ -645,14 +772,41 @@ export const CanvasEditor = memo(function CanvasEditor({
         return payload;
     }, [applyFromCanvas, buildApplyPayload, onApply, onMaskChange, supportsPromptBuilder]);
 
-    const handleWorkflowAction = useCallback((action: 'apply' | 'generate') => {
+    const handleWorkflowAction = useCallback((action: 'apply' | 'generate' | 'invoke') => {
         const payload = handleApply();
         if (action === 'apply') {
             onApplyToGenerate?.(payload);
-        } else {
+        } else if (action === 'generate') {
             onGenerateFromCanvas?.(payload);
+        } else {
+            onGenerateWithInvoke?.(payload);
         }
-    }, [handleApply, onApplyToGenerate, onGenerateFromCanvas]);
+    }, [handleApply, onApplyToGenerate, onGenerateFromCanvas, onGenerateWithInvoke]);
+
+    const handlePrimaryGenerate = useCallback(() => {
+        const payload = handleApply();
+        if (!payload.maskDataUrl) {
+            notifications.show({
+                title: 'Mark an Area First',
+                message: 'Drag a box or paint the area you want changed before generating.',
+                color: 'yellow',
+            });
+            return;
+        }
+        if (!payload.editPrompt?.trim()) {
+            notifications.show({
+                title: 'Describe the Change',
+                message: 'Write what should change in the marked area before generating.',
+                color: 'yellow',
+            });
+            return;
+        }
+        if (invokeGenerationAvailable) {
+            onGenerateWithInvoke?.(payload);
+            return;
+        }
+        onGenerateFromCanvas?.(payload);
+    }, [handleApply, invokeGenerationAvailable, onGenerateFromCanvas, onGenerateWithInvoke]);
 
     const buildSam2BaseParams = useCallback((targetSelection: CanvasSelection | null): GenerateParams | null => {
         const initimage = getCompositeImageDataUrl(targetSelection);
@@ -699,6 +853,7 @@ export const CanvasEditor = memo(function CanvasEditor({
                         try {
                             socket.close();
                         } catch {
+                            // The request already has the image, so a late socket close failure can be ignored.
                         }
                         resolve(data.image);
                     },
@@ -854,6 +1009,8 @@ export const CanvasEditor = memo(function CanvasEditor({
     }, [currentTool, handlePanEnd, queueSam2BboxRequest, sam2BoxDraft, stopDrawing]);
 
     const cursor = isPanning ? 'grabbing' : currentTool === 'pan' ? 'grab' : currentTool === 'crop' ? 'move' : 'crosshair';
+    const pendingResultLabel = pendingResult?.source === 'upscale' ? 'Upscale' : pendingResult?.source === 'invoke' ? 'InvokeAI' : 'Generate';
+    const pendingResultColor = pendingResult?.source === 'upscale' ? 'teal' : pendingResult?.source === 'invoke' ? 'violet' : 'green';
 
     return (
         <Box style={{ position: 'fixed', inset: 0, backgroundColor: 'color-mix(in srgb, var(--theme-gray-9) 92%, black)', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
@@ -874,7 +1031,7 @@ export const CanvasEditor = memo(function CanvasEditor({
             <Box style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
                 <Paper p="xs" radius={0} style={{ width: 48, borderRight: '1px solid var(--mantine-color-invokeGray-7)', backgroundColor: 'var(--mantine-color-invokeGray-9)' }}>
                     <Stack gap="xs" align="center">
-                        {TOOLS.map((tool) => (
+                        {visibleTools.map((tool) => (
                             <Tooltip key={tool.id} label={`${tool.label} (${tool.shortcut})`} position="right">
                                 <SwarmActionIcon size="lg" emphasis={currentTool === tool.id ? 'solid' : 'ghost'} tone={currentTool === tool.id ? 'primary' : 'secondary'} label={`${tool.label} tool`} onClick={() => setTool(tool.id)}>
                                     <tool.icon size={20} />
@@ -934,10 +1091,214 @@ export const CanvasEditor = memo(function CanvasEditor({
                     </Box>
                     {!imageLoaded && <Box style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}><Text c="invokeGray.3">Loading image...</Text></Box>}
                 </Box>
-                <Paper p="sm" radius={0} style={{ width: supportsPromptBuilder ? 420 : 320, borderLeft: '1px solid var(--mantine-color-invokeGray-7)', backgroundColor: 'var(--mantine-color-invokeGray-9)' }}>
+                <Paper p="sm" radius={0} style={{ width: isFocusedWorkflowMode ? 'min(420px, 42vw)' : supportsPromptBuilder ? 420 : 320, minWidth: isFocusedWorkflowMode ? 300 : undefined, borderLeft: '1px solid var(--mantine-color-invokeGray-7)', backgroundColor: 'var(--mantine-color-invokeGray-9)' }}>
                     <ScrollArea h="100%" offsetScrollbars>
                         <Stack gap="md">
-                            {isWorkflowMode && (
+                            {isFocusedWorkflowMode && (
+                                <>
+                                    <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                                        <Stack gap="sm">
+                                            <Group justify="space-between" align="flex-start">
+                                                <Box>
+                                                    <Text size="sm" fw={700} c="invokeGray.0">Change Area</Text>
+                                                    <Text size="xs" c="invokeGray.4">Mark the part to edit, describe the change, then generate.</Text>
+                                                </Box>
+                                                <Badge color={selectionRect ? 'green' : 'gray'} variant="light">
+                                                    {selectionRect ? 'Area marked' : 'No area yet'}
+                                                </Badge>
+                                            </Group>
+                                            <Group grow>
+                                                <SwarmButton size="xs" emphasis={currentTool === 'select' ? 'solid' : 'soft'} leftSection={<IconSquare size={14} />} onClick={() => setTool('select')}>
+                                                    Draw Box
+                                                </SwarmButton>
+                                                <SwarmButton size="xs" emphasis={currentTool === 'brush' ? 'solid' : 'soft'} tone="secondary" leftSection={<IconBrush size={14} />} onClick={() => setTool('brush')}>
+                                                    Brush
+                                                </SwarmButton>
+                                                <SwarmButton size="xs" emphasis={currentTool === 'eraser' ? 'solid' : 'soft'} tone="secondary" leftSection={<IconEraser size={14} />} onClick={() => setTool('eraser')}>
+                                                    Erase
+                                                </SwarmButton>
+                                            </Group>
+                                            <SwarmButton
+                                                size="xs"
+                                                emphasis="soft"
+                                                tone="secondary"
+                                                leftSection={<IconTargetArrow size={14} />}
+                                                disabled={sam2Busy}
+                                                onClick={handleAutoSelectArea}
+                                            >
+                                                {sam2Available ? 'Auto Select Object' : 'Draw Area Manually'}
+                                            </SwarmButton>
+                                            <Text size="xs" c="invokeGray.4">
+                                                Dragging a box marks that whole area for change. Brush adds area; Erase protects area.
+                                            </Text>
+                                        </Stack>
+                                    </Paper>
+
+                                    <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                                        <Stack gap="sm">
+                                            <Textarea
+                                                label="What should change here?"
+                                                description="Use plain language. The rest of the image will be treated as context."
+                                                placeholder="Change the shirt to red, remove the object, fix the hand..."
+                                                value={editPrompt}
+                                                onChange={(event) => setEditPrompt(event.currentTarget.value)}
+                                                autosize
+                                                minRows={3}
+                                                maxRows={6}
+                                            />
+                                            <Select
+                                                label="Model"
+                                                description={detectedModel ? `Detected from image metadata: ${detectedModel}` : 'Choose the model for this edit.'}
+                                                placeholder={loadingModels ? 'Loading models...' : 'Select a model'}
+                                                data={modelOptions}
+                                                value={selectedModelValue}
+                                                onChange={onModelSelect}
+                                                searchable
+                                                clearable
+                                                disabled={loadingModels || !onModelSelect}
+                                            />
+                                            {(loadingModel || modelLoadError) && (
+                                                <Stack gap={4}>
+                                                    {loadingModel && (
+                                                        <Progress
+                                                            value={modelProgressValue}
+                                                            size="xs"
+                                                            color="invokeBrand"
+                                                            className={modelLoadProgressEstimated ? 'swarm-progress-indeterminate' : undefined}
+                                                            animated
+                                                        />
+                                                    )}
+                                                    <Text size="xs" c={modelLoadError ? 'red.4' : 'invokeGray.4'}>
+                                                        {modelLoadError
+                                                            ? modelLoadError
+                                                            : modelLoadingCount > 0
+                                                                ? `Loading ${modelLoadingCount} model${modelLoadingCount === 1 ? '' : 's'}...`
+                                                                : 'Loading selected model...'}
+                                                    </Text>
+                                                </Stack>
+                                            )}
+                                            <SwarmButton
+                                                emphasis="solid"
+                                                size="sm"
+                                                fullWidth
+                                                leftSection={<IconSparkles size={16} />}
+                                                loading={invokeGenerationBusy}
+                                                onClick={handlePrimaryGenerate}
+                                            >
+                                                {autoGenerateLabel}
+                                            </SwarmButton>
+                                            <Text size="xs" c="invokeGray.4">{autoGenerateHelp}</Text>
+                                            <Group grow>
+                                                <SwarmButton emphasis="soft" tone="secondary" size="xs" onClick={handleClearArea}>
+                                                    Clear Area
+                                                </SwarmButton>
+                                                <SwarmButton emphasis="ghost" tone="secondary" size="xs" onClick={() => handleWorkflowAction('apply')}>
+                                                    Send to Generate
+                                                </SwarmButton>
+                                            </Group>
+                                        </Stack>
+                                    </Paper>
+
+                                    {pendingResult && (
+                                        <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                                            <Stack gap="xs">
+                                                <Group justify="space-between">
+                                                    <Text size="sm" fw={600} c="invokeGray.0">New Result Ready</Text>
+                                                    <Badge color={pendingResultColor} variant="light">{pendingResultLabel}</Badge>
+                                                </Group>
+                                                <img src={pendingResult.imageUrl} alt="Pending workflow result" style={{ width: '100%', borderRadius: 8, border: '1px solid var(--mantine-color-invokeGray-7)' }} />
+                                                <Group grow>
+                                                    <SwarmButton size="xs" emphasis="soft" onClick={onUsePendingResult}>Use Result</SwarmButton>
+                                                    <SwarmButton size="xs" emphasis="solid" onClick={onContinueRefining}>Continue Refining</SwarmButton>
+                                                </Group>
+                                            </Stack>
+                                        </Paper>
+                                    )}
+
+                                    <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                                        <Stack gap="sm">
+                                            <SwarmButton
+                                                size="xs"
+                                                emphasis="soft"
+                                                tone="secondary"
+                                                leftSection={<IconSettings size={14} />}
+                                                onClick={() => setAdvancedToolsOpen((open) => !open)}
+                                            >
+                                                {advancedToolsOpen ? 'Hide Advanced Tools' : 'Show Advanced Tools'}
+                                            </SwarmButton>
+                                            <Collapse expanded={advancedToolsOpen}>
+                                                <Stack gap="md">
+                                                    <Paper p="sm" radius="md" bg="invokeGray.9">
+                                                        <Stack gap="sm">
+                                                            <Text size="sm" fw={600} c="invokeGray.0">Advanced Workflow</Text>
+                                                            <Group gap="xs" wrap="wrap">
+                                                                {WORKFLOW_STEPS.map((step) => (
+                                                                    <SwarmButton
+                                                                        key={step.id}
+                                                                        size="compact-xs"
+                                                                        emphasis={workflowStep === step.id ? 'solid' : 'soft'}
+                                                                        tone={workflowStep === step.id ? 'primary' : 'secondary'}
+                                                                        onClick={() => onWorkflowStepChange?.(step.id)}
+                                                                    >
+                                                                        {step.label}
+                                                                    </SwarmButton>
+                                                                ))}
+                                                            </Group>
+                                                            <Text size="xs" c="invokeGray.4">{activeWorkflowStep.helper}</Text>
+                                                        </Stack>
+                                                    </Paper>
+
+                                                    <Paper p="sm" radius="md" bg="invokeGray.9">
+                                                        <Stack gap="xs">
+                                                            <Group justify="space-between">
+                                                                <Text size="sm" fw={600} c="invokeGray.0">Image Layers</Text>
+                                                                {imageLayers.length > 0 && <SwarmButton size="compact-xs" emphasis="ghost" tone="secondary" onClick={clearImageLayers}>Clear Overlays</SwarmButton>}
+                                                            </Group>
+                                                            <Group grow>
+                                                                <SwarmButton size="xs" emphasis="soft" leftSection={<IconClipboard size={14} />} onClick={() => void handlePasteClipboardImage()}>Paste Clipboard</SwarmButton>
+                                                                <SwarmButton size="xs" emphasis="soft" tone="secondary" leftSection={<IconPhotoPlus size={14} />} onClick={() => fileInputRef.current?.click()}>Import File</SwarmButton>
+                                                            </Group>
+                                                            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileInputChange} />
+                                                            <Stack gap="xs">
+                                                                {layerRows.map((layer, index) => <Paper key={layer.id ?? 'base-layer-item-focused'} p="xs" radius="sm" withBorder style={{ backgroundColor: (layer.id === null ? activeImageLayerId === null : activeImageLayerId === layer.id) ? 'color-mix(in srgb, var(--theme-brand) 18%, var(--mantine-color-invokeGray-8))' : 'var(--mantine-color-invokeGray-8)', cursor: 'pointer' }} onClick={() => setActiveImageLayer(layer.id)}><Group justify="space-between" wrap="nowrap"><Box style={{ minWidth: 0 }}><Text size="sm" fw={600} c="invokeGray.1" truncate>{layer.name}</Text><Text size="xs" c="invokeGray.4">{Math.round(layer.width)} x {Math.round(layer.height)} @ {Math.round(layer.x)}, {Math.round(layer.y)}</Text></Box>{layer.id !== null && <Group gap={4} wrap="nowrap"><SwarmActionIcon size="sm" emphasis="ghost" tone="secondary" label={layer.visible ? 'Hide layer' : 'Show layer'} onClick={(event) => { event.stopPropagation(); updateImageLayer(layer.id, { visible: !layer.visible }); }}>{layer.visible ? <IconEye size={14} /> : <IconEyeOff size={14} />}</SwarmActionIcon><SwarmActionIcon size="sm" emphasis="ghost" tone="secondary" label="Move layer up" disabled={index === layerRows.length - 1} onClick={(event) => { event.stopPropagation(); reorderImageLayer(layer.id, 'up'); }}><IconChevronUp size={14} /></SwarmActionIcon><SwarmActionIcon size="sm" emphasis="ghost" tone="secondary" label="Move layer down" disabled={index === 1} onClick={(event) => { event.stopPropagation(); reorderImageLayer(layer.id, 'down'); }}><IconChevronDown size={14} /></SwarmActionIcon><SwarmActionIcon size="sm" emphasis="ghost" tone="danger" label="Delete layer" onClick={(event) => { event.stopPropagation(); removeImageLayer(layer.id); }}><IconTrash size={14} /></SwarmActionIcon></Group>}</Group></Paper>)}
+                                                            </Stack>
+                                                        </Stack>
+                                                    </Paper>
+
+                                                    <OutpaintControls />
+
+                                                    <Paper p="sm" radius="md" bg="invokeGray.9">
+                                                        <Stack gap="xs">
+                                                            <Group justify="space-between"><Text size="sm" fw={600} c="invokeGray.0">Selection + SAM2</Text><Badge color={sam2Available === false ? 'yellow' : sam2Available ? 'green' : 'gray'} variant="light">{sam2Available === false ? 'SAM2 unavailable' : sam2Available ? 'SAM2 ready' : 'SAM2 unknown'}</Badge></Group>
+                                                            <Group grow>
+                                                                <SwarmButton size="xs" emphasis="soft" tone={currentTool === 'sam2points' ? 'primary' : 'secondary'} disabled={sam2Busy} onClick={() => setTool('sam2points')}>SAM2 Points</SwarmButton>
+                                                                <SwarmButton size="xs" emphasis="soft" tone={currentTool === 'sam2bbox' ? 'primary' : 'secondary'} disabled={sam2Busy} onClick={() => setTool('sam2bbox')}>SAM2 BBox</SwarmButton>
+                                                            </Group>
+                                                            <Group grow>
+                                                                <SwarmButton size="xs" emphasis="ghost" tone="secondary" disabled={!selectionRect} onClick={clearSelection}>Clear Selection</SwarmButton>
+                                                                <SwarmButton size="xs" emphasis="ghost" tone="secondary" disabled={sam2Points.positive.length === 0 && sam2Points.negative.length === 0 && !sam2BoxDraft} onClick={clearSam2State}>Clear SAM2 Marks</SwarmButton>
+                                                            </Group>
+                                                            {sam2Busy && <Text size="xs" c="invokeGray.4">Requesting a SAM2 mask from the backend...</Text>}
+                                                        </Stack>
+                                                    </Paper>
+
+                                                    {supportsPromptBuilder && <><RegionalPromptEditor /><SegmentRulesPanel /></>}
+
+                                                    <Paper p="sm" radius="md" bg="invokeGray.9">
+                                                        <Stack gap="xs">
+                                                            <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Opacity: {Math.round(maskOpacity * 100)}%</Text><SwarmSlider value={maskOpacity} onChange={setMaskOpacity} min={0.1} max={1} step={0.1} /></Box>
+                                                            <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Color</Text><ColorInput value={maskColor} onChange={setMaskColor} format="hex" withPicker swatches={['#ff0000', '#ff9900', '#ffff00', '#00ff66', '#00ffff', '#3388ff', '#ff00ff']} /></Box>
+                                                            <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Raw Mask Actions</Text><Stack gap="xs"><SwarmButton emphasis="soft" size="xs" fullWidth leftSection={<IconPaint size={14} />} onClick={fillMask}>Fill Mask</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth leftSection={<IconTrash size={14} />} onClick={handleClearMask}>{selectionRect ? 'Clear Selection Mask' : 'Clear Mask'}</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth leftSection={<IconSwitchHorizontal size={14} />} onClick={invertMask}>{selectionRect ? 'Invert Selection Mask' : 'Invert Mask'}</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth onClick={toggleMaskVisibility}>{showMask ? 'Hide Mask' : 'Show Mask'}</SwarmButton></Stack></Box>
+                                                            <SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth onClick={onOpenUpscaler}>Open Upscaler</SwarmButton>
+                                                        </Stack>
+                                                    </Paper>
+                                                </Stack>
+                                            </Collapse>
+                                        </Stack>
+                                    </Paper>
+                                </>
+                            )}
+                            {!isFocusedWorkflowMode && isWorkflowMode && (
                                 <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
                                     <Stack gap="sm">
                                         <Text size="sm" fw={600} c="invokeGray.0">Workflow</Text>
@@ -971,7 +1332,7 @@ export const CanvasEditor = memo(function CanvasEditor({
                                     </Stack>
                                 </Paper>
                             )}
-                            <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                            {!isFocusedWorkflowMode && <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
                                 <Stack gap="xs">
                                     <Text size="sm" fw={600} c="invokeGray.0">Mask vs Region vs Selection</Text>
                                     <Text size="xs" c="invokeGray.4"><strong>Mask:</strong> where the model is allowed to change pixels.</Text>
@@ -979,8 +1340,8 @@ export const CanvasEditor = memo(function CanvasEditor({
                                     <Text size="xs" c="invokeGray.4"><strong>Selection:</strong> a temporary editing boundary for Brush, Fill, Invert, and SAM2.</Text>
                                     <Text size="xs" c="invokeGray.3">Common pattern: use Selection to limit the area, use SAM2 or Brush to build the Mask, then use Region boxes to describe what belongs there.</Text>
                                 </Stack>
-                            </Paper>
-                            <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                            </Paper>}
+                            {!isFocusedWorkflowMode && <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
                                 <Stack gap="xs">
                                     <Group justify="space-between">
                                         <Text size="sm" fw={600} c="invokeGray.0">Current Tool</Text>
@@ -1006,8 +1367,8 @@ export const CanvasEditor = memo(function CanvasEditor({
                                         </Text>
                                     )}
                                 </Stack>
-                            </Paper>
-                            <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                            </Paper>}
+                            {!isFocusedWorkflowMode && <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
                                 <Stack gap="xs">
                                     <Group justify="space-between">
                                         <Text size="sm" fw={600} c="invokeGray.0">Image Layers</Text>
@@ -1022,9 +1383,9 @@ export const CanvasEditor = memo(function CanvasEditor({
                                         {layerRows.map((layer, index) => <Paper key={layer.id ?? 'base-layer-item'} p="xs" radius="sm" withBorder style={{ backgroundColor: (layer.id === null ? activeImageLayerId === null : activeImageLayerId === layer.id) ? 'color-mix(in srgb, var(--theme-brand) 18%, var(--mantine-color-invokeGray-8))' : 'var(--mantine-color-invokeGray-8)', cursor: 'pointer' }} onClick={() => setActiveImageLayer(layer.id)}><Group justify="space-between" wrap="nowrap"><Box style={{ minWidth: 0 }}><Text size="sm" fw={600} c="invokeGray.1" truncate>{layer.name}</Text><Text size="xs" c="invokeGray.4">{Math.round(layer.width)} x {Math.round(layer.height)} @ {Math.round(layer.x)}, {Math.round(layer.y)}</Text></Box>{layer.id !== null && <Group gap={4} wrap="nowrap"><SwarmActionIcon size="sm" emphasis="ghost" tone="secondary" label={layer.visible ? 'Hide layer' : 'Show layer'} onClick={(event) => { event.stopPropagation(); updateImageLayer(layer.id, { visible: !layer.visible }); }}>{layer.visible ? <IconEye size={14} /> : <IconEyeOff size={14} />}</SwarmActionIcon><SwarmActionIcon size="sm" emphasis="ghost" tone="secondary" label="Move layer up" disabled={index === layerRows.length - 1} onClick={(event) => { event.stopPropagation(); reorderImageLayer(layer.id, 'up'); }}><IconChevronUp size={14} /></SwarmActionIcon><SwarmActionIcon size="sm" emphasis="ghost" tone="secondary" label="Move layer down" disabled={index === 1} onClick={(event) => { event.stopPropagation(); reorderImageLayer(layer.id, 'down'); }}><IconChevronDown size={14} /></SwarmActionIcon><SwarmActionIcon size="sm" emphasis="ghost" tone="danger" label="Delete layer" onClick={(event) => { event.stopPropagation(); removeImageLayer(layer.id); }}><IconTrash size={14} /></SwarmActionIcon></Group>}</Group></Paper>)}
                                     </Stack>
                                 </Stack>
-                            </Paper>
-                            {showOutpaintControls && <><OutpaintControls /><Divider color="invokeGray.7" /></>}
-                            <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                            </Paper>}
+                            {!isFocusedWorkflowMode && showOutpaintControls && <><OutpaintControls /><Divider color="invokeGray.7" /></>}
+                            {!isFocusedWorkflowMode && <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
                                 <Stack gap="xs">
                                     <Group justify="space-between"><Text size="sm" fw={600} c="invokeGray.0">Selection + SAM2</Text><Badge color={sam2Available === false ? 'yellow' : sam2Available ? 'green' : 'gray'} variant="light">{sam2Available === false ? 'SAM2 unavailable' : sam2Available ? 'SAM2 ready' : 'SAM2 unknown'}</Badge></Group>
                                     <Text size="xs" c="invokeGray.4">Use Select to limit the working area first. Then use SAM2 Points for click-based masking or SAM2 BBox for drag-a-box masking. SAM2 updates the mask only, not the prompt text.</Text>
@@ -1055,19 +1416,51 @@ export const CanvasEditor = memo(function CanvasEditor({
                                         </>
                                     )}
                                 </Stack>
-                            </Paper>
-                            {supportsPromptBuilder && <><Group justify="space-between"><Text size="sm" fw={500} c="invokeGray.1">Prompt Builder</Text><Badge color={syncState === 'synced' ? 'green' : syncState === 'manual_override' ? 'yellow' : 'gray'} variant="light">{syncState.replace('_', ' ')}</Badge></Group><Text size="xs" c="invokeGray.4">When you draw a region box, its card appears below. Name what the area is, then describe what you want changed or added inside it.</Text>{(workflowStep === 'regions' || workflowStep === 'source' || workflowStep === 'mask') && <RegionalPromptEditor />}{(workflowStep === 'segments' || workflowStep === 'generate') && <SegmentRulesPanel />}{!regions.length && !segments.length && workflowStep === 'regions' && <Text size="xs" c="invokeGray.4">Tip: label regions with simple names like Character A or Background.</Text>}<Divider color="invokeGray.7" /></>}
+                            </Paper>}
+                            {!isFocusedWorkflowMode && supportsPromptBuilder && <><Group justify="space-between"><Text size="sm" fw={500} c="invokeGray.1">Prompt Builder</Text><Badge color={syncState === 'synced' ? 'green' : syncState === 'manual_override' ? 'yellow' : 'gray'} variant="light">{syncState.replace('_', ' ')}</Badge></Group><Text size="xs" c="invokeGray.4">When you draw a region box, its card appears below. Name what the area is, then describe what you want changed or added inside it.</Text>{(workflowStep === 'regions' || workflowStep === 'source' || workflowStep === 'mask') && <RegionalPromptEditor />}{(workflowStep === 'segments' || workflowStep === 'generate') && <SegmentRulesPanel />}{!regions.length && !segments.length && workflowStep === 'regions' && <Text size="xs" c="invokeGray.4">Tip: label regions with simple names like Character A or Background.</Text>}<Divider color="invokeGray.7" /></>}
                             <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Brush Size: {brushSettings.size}px</Text><SwarmSlider value={brushSettings.size} onChange={(value) => setBrushSettings({ size: value })} min={1} max={200} /><Group gap="xs" mt="xs">{BRUSH_SIZES.map((size) => <SwarmActionIcon key={size} size="sm" emphasis={brushSettings.size === size ? 'solid' : 'soft'} tone={brushSettings.size === size ? 'primary' : 'secondary'} label={`Set brush size to ${size}`} onClick={() => setBrushSettings({ size })}><Text size="xs">{size}</Text></SwarmActionIcon>)}</Group></Box>
-                            <Divider color="invokeGray.7" />
-                            <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Opacity: {Math.round(maskOpacity * 100)}%</Text><SwarmSlider value={maskOpacity} onChange={setMaskOpacity} min={0.1} max={1} step={0.1} /></Box>
-                            <Divider color="invokeGray.7" />
-                            <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Color</Text><ColorInput value={maskColor} onChange={setMaskColor} format="hex" withPicker swatches={['#ff0000', '#ff9900', '#ffff00', '#00ff66', '#00ffff', '#3388ff', '#ff00ff']} /></Box>
-                            <Divider color="invokeGray.7" />
-                            <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Actions</Text><Stack gap="xs"><SwarmButton emphasis="soft" size="xs" fullWidth leftSection={<IconPaint size={14} />} onClick={fillMask}>Fill Mask</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth leftSection={<IconTrash size={14} />} onClick={handleClearMask}>{selectionRect ? 'Clear Selection Mask' : 'Clear Mask'}</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth leftSection={<IconSwitchHorizontal size={14} />} onClick={invertMask}>{selectionRect ? 'Invert Selection Mask' : 'Invert Mask'}</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth onClick={toggleMaskVisibility}>{showMask ? 'Hide Mask' : 'Show Mask'}</SwarmButton></Stack></Box>
-                            {activeLayer && <><Divider color="invokeGray.7" /><Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Active Layer Opacity</Text><SwarmSlider value={activeLayer.opacity} onChange={(value) => updateImageLayer(activeLayer.id, { opacity: value })} min={0.1} max={1} step={0.05} /></Box></>}
-                            {isWorkflowMode && <><Divider color="invokeGray.7" /><Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Generate Actions</Text><Stack gap="xs"><SwarmButton emphasis="soft" size="xs" fullWidth onClick={() => handleWorkflowAction('apply')}>Apply to Generate</SwarmButton><SwarmButton emphasis="solid" size="xs" fullWidth disabled={!getMaskDataUrl()} onClick={() => handleWorkflowAction('generate')}>Generate Inpaint</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth onClick={onOpenUpscaler}>Open Upscaler</SwarmButton></Stack></Box>{pendingResult && <Paper p="sm" radius="md" bg="invokeGray.8" withBorder><Stack gap="xs"><Group justify="space-between"><Text size="sm" fw={600} c="invokeGray.0">New Result Ready</Text><Badge color={pendingResult.source === 'upscale' ? 'teal' : 'green'} variant="light">{pendingResult.source === 'upscale' ? 'Upscale' : 'Generate'}</Badge></Group><img src={pendingResult.imageUrl} alt="Pending workflow result" style={{ width: '100%', borderRadius: 8, border: '1px solid var(--mantine-color-invokeGray-7)' }} /><Group grow><SwarmButton size="xs" emphasis="soft" onClick={onUsePendingResult}>Use Result</SwarmButton><SwarmButton size="xs" emphasis="solid" onClick={onContinueRefining}>Continue Refining</SwarmButton></Group></Stack></Paper>}</>}
-                            <Divider color="invokeGray.7" />
-                            <Text size="xs" c="invokeGray.4"><strong>Shortcuts:</strong><br />B Brush<br />E Eraser<br />H/Space Pan<br />S Select Box<br />R Region<br />C Move Selected Layer<br />Y SAM2 Points<br />U SAM2 BBox<br />Ctrl+V Paste image layer<br />[ / ] Brush size<br />Ctrl+Z Undo</Text>
+                            {!isFocusedWorkflowMode && <Divider color="invokeGray.7" />}
+                            {!isFocusedWorkflowMode && <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Opacity: {Math.round(maskOpacity * 100)}%</Text><SwarmSlider value={maskOpacity} onChange={setMaskOpacity} min={0.1} max={1} step={0.1} /></Box>}
+                            {!isFocusedWorkflowMode && <Divider color="invokeGray.7" />}
+                            {!isFocusedWorkflowMode && <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Color</Text><ColorInput value={maskColor} onChange={setMaskColor} format="hex" withPicker swatches={['#ff0000', '#ff9900', '#ffff00', '#00ff66', '#00ffff', '#3388ff', '#ff00ff']} /></Box>}
+                            {!isFocusedWorkflowMode && <Divider color="invokeGray.7" />}
+                            {!isFocusedWorkflowMode && <Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Mask Actions</Text><Stack gap="xs"><SwarmButton emphasis="soft" size="xs" fullWidth leftSection={<IconPaint size={14} />} onClick={fillMask}>Fill Mask</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth leftSection={<IconTrash size={14} />} onClick={handleClearMask}>{selectionRect ? 'Clear Selection Mask' : 'Clear Mask'}</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth leftSection={<IconSwitchHorizontal size={14} />} onClick={invertMask}>{selectionRect ? 'Invert Selection Mask' : 'Invert Mask'}</SwarmButton><SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth onClick={toggleMaskVisibility}>{showMask ? 'Hide Mask' : 'Show Mask'}</SwarmButton></Stack></Box>}
+                            {!isFocusedWorkflowMode && activeLayer && <><Divider color="invokeGray.7" /><Box><Text size="sm" fw={500} c="invokeGray.1" mb="xs">Active Layer Opacity</Text><SwarmSlider value={activeLayer.opacity} onChange={(value) => updateImageLayer(activeLayer.id, { opacity: value })} min={0.1} max={1} step={0.05} /></Box></>}
+                            {!isFocusedWorkflowMode && isWorkflowMode && (
+                                <>
+                                    <Divider color="invokeGray.7" />
+                                    <Box>
+                                        <Text size="sm" fw={500} c="invokeGray.1" mb="xs">Generate Actions</Text>
+                                        <Stack gap="xs">
+                                            <SwarmButton emphasis="soft" size="xs" fullWidth onClick={() => handleWorkflowAction('apply')}>Apply to Generate</SwarmButton>
+                                            <SwarmButton emphasis="solid" size="xs" fullWidth disabled={!getMaskDataUrl()} onClick={() => handleWorkflowAction('generate')}>Generate Inpaint</SwarmButton>
+                                            <SwarmButton emphasis="solid" tone="brand" size="xs" fullWidth loading={invokeGenerationBusy} disabled={!invokeGenerationAvailable} onClick={() => handleWorkflowAction('invoke')}>Generate with InvokeAI</SwarmButton>
+                                            <SwarmButton emphasis="soft" tone="secondary" size="xs" fullWidth onClick={onOpenUpscaler}>Open Upscaler</SwarmButton>
+                                        </Stack>
+                                    </Box>
+                                    {pendingResult && (
+                                        <Paper p="sm" radius="md" bg="invokeGray.8" withBorder>
+                                            <Stack gap="xs">
+                                                <Group justify="space-between">
+                                                    <Text size="sm" fw={600} c="invokeGray.0">New Result Ready</Text>
+                                                    <Badge color={pendingResultColor} variant="light">{pendingResultLabel}</Badge>
+                                                </Group>
+                                                <img src={pendingResult.imageUrl} alt="Pending workflow result" style={{ width: '100%', borderRadius: 8, border: '1px solid var(--mantine-color-invokeGray-7)' }} />
+                                                <Group grow>
+                                                    <SwarmButton size="xs" emphasis="soft" onClick={onUsePendingResult}>Use Result</SwarmButton>
+                                                    <SwarmButton size="xs" emphasis="solid" onClick={onContinueRefining}>Continue Refining</SwarmButton>
+                                                </Group>
+                                            </Stack>
+                                        </Paper>
+                                    )}
+                                </>
+                            )}
+                            {!isFocusedWorkflowMode && <Divider color="invokeGray.7" />}
+                            {!isFocusedWorkflowMode ? (
+                                <Text size="xs" c="invokeGray.4"><strong>Shortcuts:</strong><br />B Brush<br />E Eraser<br />H/Space Pan<br />S Select Box<br />R Region<br />C Move Selected Layer<br />Y SAM2 Points<br />U SAM2 BBox<br />Ctrl+V Paste image layer<br />[ / ] Brush size<br />Ctrl+Z Undo</Text>
+                            ) : (
+                                <Text size="xs" c="invokeGray.4"><strong>Shortcuts:</strong><br />S Draw Box<br />B Brush<br />E Erase<br />H/Space Pan<br />[ / ] Brush size<br />Ctrl+Z Undo</Text>
+                            )}
                         </Stack>
                     </ScrollArea>
                 </Paper>

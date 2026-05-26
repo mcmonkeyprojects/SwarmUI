@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Box,
   Stack,
@@ -6,8 +6,6 @@ import {
   Group,
   Text,
   Badge,
-  Image,
-  ScrollArea,
   Tooltip,
   Menu,
 } from '@mantine/core';
@@ -24,16 +22,29 @@ import {
   IconDotsVertical,
   IconPhoto,
   IconArrowsDiagonal,
+  IconClock,
+  IconWifi,
+  IconHourglass,
+  IconLoader,
+  IconCheck,
+  IconAlertTriangle,
 } from '@tabler/icons-react';
 import { DetailedProgressBar } from './DetailedProgressBar';
-import { previewFadeVariants, livePreviewPulse } from '../../utils/animations';
+import { previewFadeVariants } from '../../utils/animations';
 import type { GenerateParams } from '../../api/types';
 import { SwarmActionIcon, SwarmBadge, SwarmButton as Button } from '../ui';
 import { useCanvasWorkflowStore, type CanvasWorkflowStep } from '../../stores/canvasWorkflowStore';
 import type { GenerateWorkspaceMode } from '../../stores/navigationStore';
+import {
+  formatGenerationPercentDisplay,
+  formatGenerationPhaseDisplay,
+  formatGenerationStageDisplay,
+  formatGenerationStepDisplay,
+  formatGenerationTaskDisplay,
+  hasValidPipelineBadge,
+} from '../../utils/generationProgressDisplay';
 
-const CANVAS_FRAME_MIN_HEIGHT = 'calc(var(--app-content-height) - 220px)';
-const CANVAS_IMAGE_MAX_HEIGHT = 'calc(var(--app-content-height) - 280px)';
+const CANVAS_IMAGE_MAX_HEIGHT = '100%';
 
 interface CanvasPreviewImageProps {
   src: string;
@@ -46,17 +57,61 @@ const CanvasPreviewImage = memo(function CanvasPreviewImage({
   alt,
   live = false,
 }: CanvasPreviewImageProps) {
+  const [paintedSrc, setPaintedSrc] = useState(src);
+  const latestRequestedSrcRef = useRef(src);
+
+  useEffect(() => {
+    if (!live) {
+      setPaintedSrc(src);
+      return;
+    }
+
+    if (src === paintedSrc) {
+      latestRequestedSrcRef.current = src;
+      return;
+    }
+
+    let cancelled = false;
+    const nextImage = new window.Image();
+    latestRequestedSrcRef.current = src;
+
+    nextImage.decoding = 'async';
+    nextImage.onload = () => {
+      if (!cancelled && latestRequestedSrcRef.current === src) {
+        setPaintedSrc(src);
+      }
+    };
+    nextImage.onerror = () => {
+      if (!cancelled && !paintedSrc && latestRequestedSrcRef.current === src) {
+        setPaintedSrc(src);
+      }
+    };
+    nextImage.src = src;
+
+    if (nextImage.complete && nextImage.naturalWidth > 0 && latestRequestedSrcRef.current === src) {
+      setPaintedSrc(src);
+    }
+
+    return () => {
+      cancelled = true;
+      nextImage.onload = null;
+      nextImage.onerror = null;
+    };
+  }, [live, paintedSrc, src]);
+
   if (live) {
     return (
       <img
-        src={src}
+        src={paintedSrc || src}
         alt={alt}
         loading="eager"
         decoding="async"
         fetchPriority="high"
+        data-preview-loading={paintedSrc !== src ? 'true' : undefined}
         style={{
           width: '100%',
           height: '100%',
+          maxWidth: '100%',
           maxHeight: CANVAS_IMAGE_MAX_HEIGHT,
           objectFit: 'contain',
           display: 'block',
@@ -66,15 +121,18 @@ const CanvasPreviewImage = memo(function CanvasPreviewImage({
   }
 
   return (
-    <Image
+    <img
       src={src}
       alt={alt}
-      radius="sm"
-      fit="contain"
+      loading="eager"
+      decoding="async"
       style={{
-        maxHeight: CANVAS_IMAGE_MAX_HEIGHT,
+        width: '100%',
+        height: '100%',
         maxWidth: '100%',
+        maxHeight: CANVAS_IMAGE_MAX_HEIGHT,
         objectFit: 'contain',
+        display: 'block',
       }}
     />
   );
@@ -82,15 +140,19 @@ const CanvasPreviewImage = memo(function CanvasPreviewImage({
 
 interface CanvasViewportProps {
   disableCanvasMotion: boolean;
+  generating: boolean;
   displayImage: string | null;
   previewImage: string | null;
   isLivePreview: boolean;
+  progress: number;
+  hasProgressEvent?: boolean;
+  statusText: string;
+  phaseLabel: string | null;
   totalImages: number;
   workspaceMode?: GenerateWorkspaceMode;
   selectedModel?: string;
   selectedBackend?: string;
   generationParams?: Partial<GenerateParams>;
-  uxRefresh?: boolean;
   onChooseModel?: () => void;
   onFocusPrompt?: () => void;
   onOpenGenerationSettings?: () => void;
@@ -98,15 +160,19 @@ interface CanvasViewportProps {
 
 const CanvasViewport = memo(function CanvasViewport({
   disableCanvasMotion,
+  generating,
   displayImage,
   previewImage,
   isLivePreview,
+  progress,
+  hasProgressEvent,
+  statusText,
+  phaseLabel,
   totalImages,
   workspaceMode = 'advanced',
   selectedModel,
   selectedBackend,
   generationParams,
-  uxRefresh = false,
   onChooseModel,
   onFocusPrompt,
   onOpenGenerationSettings,
@@ -124,8 +190,11 @@ const CanvasViewport = memo(function CanvasViewport({
         p="md"
         className="generate-studio-canvas__frame"
         style={{
-          minHeight: CANVAS_FRAME_MIN_HEIGHT,
-          height: CANVAS_FRAME_MIN_HEIGHT,
+          minHeight: 0,
+          height: '100%',
+          width: '100%',
+          maxHeight: '100%',
+          boxSizing: 'border-box',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -140,6 +209,8 @@ const CanvasViewport = memo(function CanvasViewport({
             width: '100%',
             height: '100%',
             minHeight: 0,
+            maxHeight: '100%',
+            overflow: 'hidden',
           }}
         >
           <CanvasPreviewImage src={previewImage!} alt="Live Preview" live />
@@ -158,20 +229,9 @@ const CanvasViewport = memo(function CanvasViewport({
         initial="initial"
         animate="animate"
         exit="exit"
+        style={{ height: '100%' }}
       >
-        <motion.div
-          variants={livePreviewPulse}
-          animate="animate"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          {frame}
-        </motion.div>
+        {frame}
       </motion.div>
     );
   };
@@ -182,8 +242,11 @@ const CanvasViewport = memo(function CanvasViewport({
         p="md"
         className="generate-studio-canvas__frame"
         style={{
-          minHeight: CANVAS_FRAME_MIN_HEIGHT,
-          height: CANVAS_FRAME_MIN_HEIGHT,
+          minHeight: 0,
+          height: '100%',
+          width: '100%',
+          maxHeight: '100%',
+          boxSizing: 'border-box',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -205,30 +268,86 @@ const CanvasViewport = memo(function CanvasViewport({
         initial="initial"
         animate="animate"
         exit="exit"
+        style={{ height: '100%' }}
       >
         {frame}
       </motion.div>
     );
   };
 
+  const renderGeneratingState = (animated: boolean) => {
+    const progressText = formatGenerationPercentDisplay({
+      progress,
+      hasProgressEvent,
+    });
+    const activeState = (
+      <Box
+        className="generate-studio-canvas__active-state"
+        role="status"
+        aria-live="polite"
+        style={{
+          minHeight: 0,
+          height: '100%',
+        }}
+      >
+        <Stack align="center" gap="md" className="generate-studio-canvas__active-state-inner">
+          <Box className="generate-studio-canvas__active-orbit" aria-hidden="true">
+            <IconLoader size={42} className="icon-spin status-generating" />
+          </Box>
+          <Stack align="center" gap={4}>
+            <Text size="xl" c="var(--theme-gray-1)" fw={700}>
+              {phaseLabel || 'Processing'}
+            </Text>
+            <Text size="sm" c="var(--theme-gray-3)" ta="center" maw={520}>
+              {statusText || 'Starting generation... waiting for backend progress'}
+            </Text>
+          </Stack>
+          <Box className="generate-studio-canvas__active-progress" data-pending={!hasProgressEvent ? 'true' : undefined}>
+            <Box
+              className={!hasProgressEvent ? 'generate-studio-canvas__progress-fill--pending' : undefined}
+              style={{
+                width: !hasProgressEvent ? '42%' : `${Math.min(100, Math.max(0, progress))}%`,
+              }}
+            />
+          </Box>
+          <Text size="xs" fw={700} c="var(--theme-progress-label)">
+            {progressText}
+          </Text>
+        </Stack>
+      </Box>
+    );
+
+    if (!animated) {
+      return activeState;
+    }
+
+    return (
+      <motion.div
+        key="active-generation"
+        variants={previewFadeVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        style={{ height: '100%' }}
+      >
+        {activeState}
+      </motion.div>
+    );
+  };
+
   const renderEmptyState = (animated: boolean) => {
-    const emptyTitle = totalImages > 0
-      ? 'Canvas Stage'
-      : uxRefresh
-        ? 'Ready for first image'
-        : `${modeLabel} workspace ready`;
+    const emptyTitle = totalImages > 0 ? 'Canvas Stage' : 'Ready for first image';
     const emptyDescription = totalImages > 0
       ? 'Select a session image to inspect it here'
-      : uxRefresh
-        ? 'Choose a model and add a prompt to start the next run.'
-        : 'Your next generation will appear here with live progress, preview updates, and review tools.';
+      : 'Choose a model and add a prompt to start the next run.';
 
     const emptyState = (
       <Box
         className="generate-studio-canvas__empty"
         style={{
           textAlign: 'center',
-          minHeight: 'calc(var(--app-content-height) - 200px)',
+          minHeight: 0,
+          height: '100%',
           width: '100%',
           display: 'flex',
           alignItems: 'center',
@@ -247,12 +366,8 @@ const CanvasViewport = memo(function CanvasViewport({
             <Badge color="gray" variant="light" className="generate-studio-canvas__empty-model">
               {selectedModel}
             </Badge>
-          ) : uxRefresh ? null : (
-            <Text size="sm" c="invokeGray.4">
-              Select a base model in the left rail, then tune the run before generating.
-            </Text>
-          )}
-          {uxRefresh && totalImages === 0 && (
+          ) : null}
+          {totalImages === 0 && (
             <Group gap="xs" justify="center" wrap="wrap" className="generate-studio-canvas__empty-actions">
               <Button
                 size="sm"
@@ -309,7 +424,7 @@ const CanvasViewport = memo(function CanvasViewport({
               <Text size="sm" fw={700}>{promptReady ? 'Ready' : 'Empty'}</Text>
             </Box>
           </Box>
-          {uxRefresh && totalImages === 0 && !selectedModel && (
+          {totalImages === 0 && !selectedModel && (
             <Text size="xs" c="var(--theme-text-secondary)" maw={420}>
               Model selection is the only required setup before the prompt and Generate controls can do useful work.
             </Text>
@@ -329,6 +444,7 @@ const CanvasViewport = memo(function CanvasViewport({
         initial="initial"
         animate="animate"
         exit="exit"
+        style={{ height: '100%' }}
       >
         {emptyState}
       </motion.div>
@@ -336,21 +452,23 @@ const CanvasViewport = memo(function CanvasViewport({
   };
 
   return (
-    <ScrollArea flex={1} p="lg">
+    <Box className="generate-studio-canvas__viewport" p="lg">
       {disableCanvasMotion ? (
         <>
           {isLivePreview && previewImage && renderLivePreviewFrame(false)}
           {!isLivePreview && displayImage && renderSelectedImageFrame(false)}
-          {!isLivePreview && !displayImage && renderEmptyState(false)}
+          {!isLivePreview && !displayImage && generating && renderGeneratingState(false)}
+          {!isLivePreview && !displayImage && !generating && renderEmptyState(false)}
         </>
       ) : (
         <AnimatePresence mode="wait">
           {isLivePreview && previewImage && renderLivePreviewFrame(true)}
           {!isLivePreview && displayImage && renderSelectedImageFrame(true)}
-          {!isLivePreview && !displayImage && renderEmptyState(true)}
+          {!isLivePreview && !displayImage && generating && renderGeneratingState(true)}
+          {!isLivePreview && !displayImage && !generating && renderEmptyState(true)}
         </AnimatePresence>
       )}
-    </ScrollArea>
+    </Box>
   );
 });
 
@@ -380,6 +498,8 @@ interface CanvasPanelProps {
   totalSteps?: number | null;
   /** Current step during generation */
   currentStep?: number | null;
+  /** Whether currentStep is backend step data or inferred node progress */
+  stepSource?: 'backend' | 'node_percent' | 'unknown';
   /** Current stage label during generation */
   stageLabel?: string | null;
   /** Current stage detail text during generation */
@@ -436,14 +556,20 @@ interface CanvasPanelProps {
   selectedBackend?: string;
   /** Current generation params for empty-state context */
   generationParams?: Partial<GenerateParams>;
-  /** Enables the refreshed Generate empty state presentation. */
-  uxRefresh?: boolean;
   /** Opens model selection from the empty state. */
   onChooseModel?: () => void;
   /** Moves focus to the prompt field from the empty state. */
   onFocusPrompt?: () => void;
   /** Opens the primary generation settings from the empty state. */
   onOpenGenerationSettings?: () => void;
+  /** Current generation phase */
+  phase?: 'idle' | 'starting' | 'connected' | 'waiting' | 'progress' | 'image' | 'complete' | 'error';
+  /** Pipeline stage index (0-based) when running pipeline */
+  pipelineStageIndex?: number | null;
+  /** Total enabled pipeline stages */
+  pipelineStageCount?: number;
+  /** Current pipeline stage label */
+  pipelineStageLabel?: string | null;
 }
 
 /**
@@ -458,6 +584,7 @@ export const CanvasPanel = memo(function CanvasPanel({
   statusText,
   totalSteps,
   currentStep,
+  stepSource,
   stageLabel,
   stageIndex,
   stageCount,
@@ -484,10 +611,13 @@ export const CanvasPanel = memo(function CanvasPanel({
   selectedModel,
   selectedBackend,
   generationParams,
-  uxRefresh = false,
   onChooseModel,
   onFocusPrompt,
   onOpenGenerationSettings,
+  phase,
+  pipelineStageIndex,
+  pipelineStageCount,
+  pipelineStageLabel,
 }: CanvasPanelProps) {
   const openSession = useCanvasWorkflowStore((state) => state.openSession);
   const prefersReducedMotion = useReducedMotion();
@@ -515,9 +645,68 @@ export const CanvasPanel = memo(function CanvasPanel({
   );
 
   // Determine what to display: live preview during generation, or the selected image.
-  const displayImage = previewImage || selectedImage;
+  // Prefer selectedImage (fully-resolved gallery URL) when not actively generating,
+  // so a stale previewImage from the last generation:image event is not shown.
   const isLivePreview = generating && !!previewImage;
+  const displayImage = isLivePreview ? (previewImage || selectedImage) : (selectedImage || previewImage);
   const disableCanvasMotion = generating || Boolean(prefersReducedMotion);
+
+  const phaseConfig = (() => {
+    if (!generating) return null;
+    const stepDisplay = formatGenerationStepDisplay({
+      progress,
+      hasProgressEvent,
+      currentStep,
+      totalSteps,
+      stepSource,
+    });
+    const phaseLabel = formatGenerationPhaseDisplay({
+      progress,
+      hasProgressEvent,
+      currentStep,
+      totalSteps,
+      stepSource,
+      phase,
+    });
+    switch (phase) {
+      case 'starting':
+        return { label: phaseLabel, tone: 'gray' as const, icon: <IconClock size={14} />, className: undefined };
+      case 'connected':
+        return { label: phaseLabel, tone: 'gray' as const, icon: <IconWifi size={14} />, className: undefined };
+      case 'waiting':
+        return { label: phaseLabel, tone: 'yellow' as const, icon: <IconHourglass size={14} />, className: undefined };
+      case 'progress':
+        return { label: phaseLabel, tone: 'blue' as const, icon: <IconLoader size={14} />, className: 'icon-pulse' };
+      case 'image':
+        return { label: phaseLabel, tone: 'green' as const, icon: <IconPhoto size={14} />, className: undefined };
+      case 'complete':
+        return { label: phaseLabel, tone: 'green' as const, icon: <IconCheck size={14} />, className: undefined };
+      case 'error':
+        return { label: phaseLabel, tone: 'red' as const, icon: <IconAlertTriangle size={14} />, className: undefined };
+      default:
+        return { label: stepDisplay || phaseLabel, tone: 'blue' as const, icon: <IconLoader size={14} />, className: 'icon-pulse' };
+    }
+  })();
+  const activeStageLabel = stageLabel?.trim() || null;
+  const stepBadge = formatGenerationStepDisplay({
+    progress,
+    hasProgressEvent,
+    currentStep,
+    totalSteps,
+    stepSource,
+  });
+  const taskBadge = formatGenerationTaskDisplay({
+    progress,
+    stageTaskIndex,
+    stageTaskCount,
+  });
+  const stageBadge = formatGenerationStageDisplay({
+    progress,
+    stageIndex,
+    stageCount,
+  });
+  const pipelineStageNumber = pipelineStageIndex != null ? pipelineStageIndex + 1 : null;
+  const showPipelineBadge = hasValidPipelineBadge(pipelineStageNumber, pipelineStageCount ?? null);
 
   return (
     <Box
@@ -529,22 +718,53 @@ export const CanvasPanel = memo(function CanvasPanel({
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        minHeight: 0,
       }}
     >
-      {/* Toolbar - only show when there are images */}
-      {(displayImage || totalImages > 0) && (
+      {/* Toolbar - show when there are images or during generation */}
+      {(displayImage || totalImages > 0 || generating) && (
         <Box
           px="md"
           py="xs"
           className="generate-studio-canvas__toolbar"
           style={{ borderBottom: '1px solid var(--mantine-color-invokeGray-6)' }}
         >
-          <Group justify="space-between">
-            <Group gap="sm">
-              {isLivePreview ? (
-                <SwarmBadge tone="info" emphasis="solid" className="icon-pulse">
-                  Generating...
-                </SwarmBadge>
+          <Group justify="space-between" align="flex-start" wrap="nowrap">
+            <Group gap="sm" wrap="wrap" style={{ minWidth: 0, flex: '1 1 auto' }}>
+              {generating && phaseConfig ? (
+                <>
+                  <SwarmBadge tone={phaseConfig.tone} emphasis="solid" className={phaseConfig.className}>
+                    <Group gap="xs" wrap="nowrap">
+                      {phaseConfig.icon}
+                      <span>{phaseConfig.label}</span>
+                    </Group>
+                  </SwarmBadge>
+                  {activeStageLabel && (
+                    <SwarmBadge tone="secondary" emphasis="soft">
+                      {activeStageLabel}
+                    </SwarmBadge>
+                  )}
+                  {stepBadge && (
+                    <SwarmBadge tone="secondary" emphasis="soft">
+                      {stepBadge}
+                    </SwarmBadge>
+                  )}
+                  {taskBadge && (
+                    <SwarmBadge tone="secondary" emphasis="soft">
+                      {taskBadge}
+                    </SwarmBadge>
+                  )}
+                  {stageBadge && (
+                    <SwarmBadge tone="secondary" emphasis="soft">
+                      {stageBadge}
+                    </SwarmBadge>
+                  )}
+                  {showPipelineBadge && (
+                    <SwarmBadge tone="primary" emphasis="soft">
+                      Pipeline: {pipelineStageLabel || `Stage ${pipelineStageNumber}/${pipelineStageCount}`}
+                    </SwarmBadge>
+                  )}
+                </>
               ) : selectedImage ? (
                 <SwarmBadge tone="success" emphasis="soft" className="status-complete">
                   {currentImageIndex + 1} / {totalImages}
@@ -555,7 +775,7 @@ export const CanvasPanel = memo(function CanvasPanel({
                 </Text>
               )}
             </Group>
-            <Group gap="xs">
+            <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
               {/* Navigation */}
               <SwarmActionIcon
                 size="sm"
@@ -699,15 +919,19 @@ export const CanvasPanel = memo(function CanvasPanel({
 
       <CanvasViewport
         disableCanvasMotion={disableCanvasMotion}
+        generating={generating}
         displayImage={displayImage}
         previewImage={previewImage}
         isLivePreview={isLivePreview}
+        progress={progress}
+        hasProgressEvent={hasProgressEvent}
+        statusText={statusText}
+        phaseLabel={phaseConfig?.label ?? null}
         totalImages={totalImages}
         workspaceMode={workspaceMode}
         selectedModel={selectedModel}
         selectedBackend={selectedBackend}
         generationParams={generationParams}
-        uxRefresh={uxRefresh}
         onChooseModel={onChooseModel}
         onFocusPrompt={onFocusPrompt}
         onOpenGenerationSettings={onOpenGenerationSettings}
@@ -717,6 +941,7 @@ export const CanvasPanel = memo(function CanvasPanel({
       {generating && (
         <Box
           p="sm"
+          className="generate-studio-canvas__progress-footer"
           style={{
             borderTop: '1px solid color-mix(in srgb, var(--theme-brand) 45%, var(--theme-gray-5))',
           }}
@@ -726,6 +951,7 @@ export const CanvasPanel = memo(function CanvasPanel({
             hasProgressEvent={hasProgressEvent}
             currentStep={currentStep ?? undefined}
             totalSteps={totalSteps ?? undefined}
+            stepSource={stepSource}
             stageLabel={stageLabel}
             stageIndex={stageIndex}
             stageCount={stageCount}
