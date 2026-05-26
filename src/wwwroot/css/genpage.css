@@ -820,6 +820,8 @@ body {
 .image_compare_modal .imageview_modal_imagewrap {
     flex: 1 1 auto;
     min-height: 0;
+    display: flex;
+    align-items: stretch;
 }
 .image_compare_modal .imageview_popup_modal_undertext {
     flex: 0 0 auto;
@@ -856,13 +858,67 @@ body {
     background-color: var(--button-background-hover);
     border-color: var(--emphasis);
 }
+.image_compare_metadata {
+    width: min(42rem, 40vw);
+    max-width: min(42rem, 40vw);
+    height: 100%;
+    overflow: auto;
+    text-align: left;
+    flex: 0 0 auto;
+    padding: 0.25rem;
+    background-color: var(--background);
+    border-left: 1px solid var(--light-border);
+    box-sizing: border-box;
+}
+.image_compare_metadata_table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.15rem;
+}
+.image_compare_metadata_table th, .image_compare_metadata_table td {
+    padding: 0.15rem 0.35rem;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+.image_compare_metadata_table th {
+    color: var(--text);
+    background-color: var(--background-soft);
+}
+.image_compare_metadata_table .param_view_block {
+    display: table-row;
+    width: auto;
+}
+.image_compare_metadata_table td {
+    border-top: 1px solid var(--light-border);
+    border-bottom: 1px solid var(--light-border);
+    color: inherit;
+}
+.image_compare_metadata_table td:first-child {
+    border-left: 1px solid var(--light-border);
+    border-top-left-radius: 0.3rem;
+    border-bottom-left-radius: 0.3rem;
+    min-width: 8rem;
+}
+.image_compare_metadata_table td:last-child {
+    border-right: 1px solid var(--light-border);
+    border-top-right-radius: 0.3rem;
+    border-bottom-right-radius: 0.3rem;
+}
+.image_compare_metadata_table .param_view_block_model td {
+    background-color: color-mix(in srgb, transparent 99%, var(--tag-color));
+}
+.image_compare_metadata_same {
+    opacity: 0.45;
+}
 .image_compare_stage {
     width: 100%;
     height: 100%;
+    min-width: 0;
     min-height: 0;
     overflow: hidden;
     padding: 0;
     background-color: transparent;
+    flex: 1 1 auto;
 }
 .image_compare_stage.image_compare_stage_side {
     display: grid;
@@ -987,9 +1043,18 @@ body {
     pointer-events: none;
 }
 @media (max-width: 900px) {
+    .image_compare_modal .imageview_modal_imagewrap {
+        flex-direction: column;
+    }
     .image_compare_stage.image_compare_stage_side {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr 1fr;
+    }
+    .image_compare_metadata {
+        width: 100%;
+        max-width: 100%;
+        height: 35vh;
+        padding-left: 0;
     }
 }
 .browser-folder-tree-container {

@@ -1408,7 +1408,7 @@ class ImageCompareHelper {
             if (e.target.tagName == 'BODY') {
                 return;
             }
-            if (!this.noClose && this.isOpen() && !findParentOfClass(e.target, 'imageview_popup_modal_undertext')) {
+            if (!this.noClose && this.isOpen() && !findParentOfClass(e.target, 'imageview_popup_modal_undertext') && !findParentOfClass(e.target, 'image_compare_metadata')) {
                 this.close();
                 e.preventDefault();
                 e.stopPropagation();
@@ -1432,6 +1432,7 @@ class ImageCompareHelper {
         this.mode = 'side';
         this.left = null;
         this.right = null;
+        this.showMetadata = false;
         this.resetViewportState();
         this.modeButtonMap = {};
         for (let button of this.modal.querySelectorAll('[data-compare-mode]')) {
@@ -1441,6 +1442,8 @@ class ImageCompareHelper {
         }
         this.swapButton = getRequiredElementById('image_compare_swap_button');
         this.swapButton.addEventListener('click', () => this.swapImages());
+        this.metadataToggleButton = getRequiredElementById('image_compare_metadata_toggle_button');
+        this.metadataToggleButton.addEventListener('click', () => this.toggleMetadataVisibility(!this.showMetadata));
         this.transparencyRow = getRequiredElementById('image_compare_transparency_row');
         this.transparencySlider = getRequiredElementById('image_compare_transparency_slider');
         this.transparencyValue = getRequiredElementById('image_compare_transparency_value');
@@ -1449,6 +1452,9 @@ class ImageCompareHelper {
             this.transparencyValue.innerText = `${Math.round(this.transparencyPercent)}%`;
             this.getOverlay()?.style.setProperty('--image-compare-transparency', `${this.transparencyPercent / 100}`);
         });
+        this.metadataDiv = createDiv(null, 'image_compare_metadata current-image-data extras-wrapper-sideblock');
+        this.modal.querySelector('.imageview_modal_imagewrap').appendChild(this.metadataDiv);
+        this.updateMetadataVisibility();
         this.updateModeControls();
         this.supportedTypes = ['image', 'video'];
     }
@@ -1657,6 +1663,58 @@ class ImageCompareHelper {
         return `<img class="${mediaClass}" src="${encodedSrc}" ${imageAttrs}>`;
     }
 
+    getMetadataEntryMap(metadata) {
+        let formatted = getFormattedMetadataEntries(metadata);
+        let result = {};
+        for (let entry of formatted.entries) {
+            result[entry.id] = entry;
+        }
+        return result;
+    }
+
+    renderMetadataCell(entry) {
+        if (!entry) {
+            return '';
+        }
+        return entry.valueHtml + entry.extras;
+    }
+
+    renderMetadataTable() {
+        let leftEntries = this.getMetadataEntryMap(this.left?.metadata);
+        let rightEntries = this.getMetadataEntryMap(this.right?.metadata);
+        let ids = Object.keys(leftEntries);
+        for (let id of Object.keys(rightEntries)) {
+            if (!ids.includes(id)) {
+                ids.push(id);
+            }
+        }
+        if (ids.length == 0) {
+            return '';
+        }
+        let result = '<table class="image_compare_metadata_table"><thead><tr><th class="translate">Parameter</th><th class="translate">Image 1</th><th class="translate">Image 2</th></tr></thead><tbody>';
+        for (let id of ids) {
+            let entry = leftEntries[id] || rightEntries[id];
+            let leftEntry = leftEntries[id];
+            let rightEntry = rightEntries[id];
+            let sameClass = leftEntry && rightEntry && leftEntry.compareValue == rightEntry.compareValue ? ' image_compare_metadata_same' : '';
+            result += `<tr class="param_view_block tag-text tag-type-${entry.hash}${entry.added}${sameClass}"><td><span class="param_view_name" title="${escapeHtmlNoBr(entry.keyTitle)}">${escapeHtml(entry.key)}</span></td><td>${this.renderMetadataCell(leftEntry)}</td><td>${this.renderMetadataCell(rightEntry)}</td></tr>`;
+        }
+        return `${result}</tbody></table>`;
+    }
+
+    updateMetadataVisibility() {
+        this.metadataDiv.style.display = this.showMetadata && this.metadataDiv.innerHTML ? '' : 'none';
+        this.metadataToggleButton.setAttribute('aria-pressed', this.showMetadata ? 'true' : 'false');
+    }
+
+    toggleMetadataVisibility(showMetadata) {
+        this.showMetadata = showMetadata;
+        this.updateMetadataVisibility();
+        if (this.hasSelection()) {
+            this.applyView();
+        }
+    }
+
     showComparison(left, right) {
         this.left = left;
         this.right = right;
@@ -1796,8 +1854,11 @@ class ImageCompareHelper {
         this.left = null;
         this.right = null;
         this.mode = 'side';
+        this.showMetadata = false;
         this.resetViewportState();
         this.setStageContent('side', '');
+        this.metadataDiv.innerHTML = '';
+        this.updateMetadataVisibility();
         this.updateModeControls();
     }
 
@@ -1860,6 +1921,8 @@ class ImageCompareHelper {
         this.updateModeControls();
         if (!this.hasSelection()) {
             this.setStageContent('side', '');
+            this.metadataDiv.innerHTML = '';
+            this.updateMetadataVisibility();
             this.updateModeControls();
             return;
         }
@@ -1875,6 +1938,9 @@ class ImageCompareHelper {
                 <div class="image_compare_slot">${this.renderMedia(this.right)}</div>`
             );
         }
+        let metadataHtml = this.renderMetadataTable();
+        this.metadataDiv.innerHTML = metadataHtml;
+        this.updateMetadataVisibility();
         this.applyView();
     }
 

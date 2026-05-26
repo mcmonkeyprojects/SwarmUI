@@ -188,7 +188,7 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             title: 'Compare 2 images or 2 videos',
             onclick: (e) => {
                 // TODO: Give browsers.js a real "run once with the full selection" bulk handler
-                let items = imageHistoryBrowser.getMultiSelectedFiles().map(f => ({ src: f.data.src, mediaType: getMediaType(f.data.src) }));
+                let items = imageHistoryBrowser.getMultiSelectedFiles().map(f => ({ src: f.data.src, mediaType: getMediaType(f.data.src), metadata: f.data.metadata }));
                 let valid = imageCompareHelper.evaluateSelection(items);
                 if (valid.state != 'ready') {
                     showError(valid.reason || 'Cannot compare current selection.');
