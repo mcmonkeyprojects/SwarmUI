@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Box, Select, Stack, Text, Tooltip, type SelectProps } from '@mantine/core';
+import { Box, Select, Stack, Text, type SelectProps } from '@mantine/core';
 import type { SamplerOption, SchedulerOption } from '../../data/samplerData';
 
 type SamplingKind = 'sampler' | 'scheduler';
@@ -48,6 +48,7 @@ export const SamplingSelect = memo(function SamplingSelect({
     withSelectedDescription = true,
     tooltipWidth = 360,
     nothingFoundMessage,
+    comboboxProps,
     ...props
 }: SamplingSelectProps) {
     const optionMap = useMemo(
@@ -67,28 +68,20 @@ export const SamplingSelect = memo(function SamplingSelect({
             }))}
             description={description ?? (withSelectedDescription ? selectedOption?.description : undefined)}
             nothingFoundMessage={nothingFoundMessage ?? `No ${kind} options found`}
+            comboboxProps={{
+                withinPortal: false,
+                ...comboboxProps,
+            }}
             renderOption={({ option }) => {
                 const detailedOption = optionMap.get(option.value);
                 return (
-                    <Tooltip
-                        label={detailedOption ? <SamplingTooltipContent option={detailedOption} /> : option.label}
-                        position="right-start"
-                        withArrow
-                        multiline
-                        w={tooltipWidth}
-                        openDelay={120}
-                    >
-                        <Box style={{ width: '100%' }}>
-                            <Stack gap={2}>
-                                <Text size="sm" fw={600}>{option.label}</Text>
-                                {detailedOption?.description ? (
-                                    <Text size="xs" c="dimmed" lineClamp={2}>
-                                        {detailedOption.description}
-                                    </Text>
-                                ) : null}
-                            </Stack>
-                        </Box>
-                    </Tooltip>
+                    <Box style={{ width: '100%', maxWidth: tooltipWidth }}>
+                        {detailedOption ? (
+                            <SamplingTooltipContent option={detailedOption} />
+                        ) : (
+                            <Text size="sm" fw={600}>{option.label}</Text>
+                        )}
+                    </Box>
                 );
             }}
         />

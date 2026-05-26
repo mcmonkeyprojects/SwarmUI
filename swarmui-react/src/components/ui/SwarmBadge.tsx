@@ -8,15 +8,13 @@ import {
     type SwarmTone,
 } from './swarmTones';
 
-export interface SwarmBadgeProps {
+export interface SwarmBadgeProps extends Omit<BadgeProps, 'color' | 'variant'> {
     tone?: SwarmTone;
     emphasis?: SwarmEmphasis;
     contrast?: 'default' | 'strong';
     // Compatibility shim for one migration cycle.
     color?: string;
     variant?: BadgeProps['variant'];
-    className?: string;
-    [key: string]: any;
 }
 
 export const SwarmBadge = forwardRef<HTMLDivElement, SwarmBadgeProps>(function SwarmBadge(

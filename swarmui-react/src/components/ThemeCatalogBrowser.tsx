@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
-import { Accordion, Box, Group, ScrollArea, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { useMemo, useState, type KeyboardEvent } from 'react';
+import { Accordion, Box, Group, ScrollArea, Stack, Text, Tooltip } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconCheck, IconPlus, IconUpload } from '@tabler/icons-react';
-import { getThemePersonalityLabel, resolveThemeStyle, type ResolvedColorScheme, type ThemeCategory, type ThemeControlMode, type ThemePalette, type ThemeStyleFamily, type ThemeStyleMotif, type ThemeSurfaceMode, useThemeStore } from '../store/themeStore';
+import { getThemePersonalityLabel, resolveThemeStyle, type ResolvedColorScheme, type ThemeCategory, type ThemeControlMode, type ThemeDecalStyle, type ThemePalette, type ThemeStyleFamily, type ThemeStyleMotif, type ThemeSurfaceMode, useThemeStore } from '../store/themeStore';
 import { logger } from '../utils/logger';
 import { ThemePreview } from './ThemePreview';
 import { SwarmActionIcon, SwarmBadge, SwarmButton } from './ui';
@@ -17,7 +17,8 @@ const CATEGORY_META_LABELS: Record<ThemeCategory, string> = {
 };
 const CATEGORY_ORDER: ThemeCategory[] = ['default', 'color-scheme', 'app', 'editor', 'aesthetic', 'art', 'film', 'music', 'nature', 'game', 'minimal', 'custom'];
 const FAMILY_LABELS: Record<ThemeStyleFamily, string> = { classic: 'Classic', material: 'Material', glyph: 'Glyph' };
-const MOTIF_LABELS: Record<Exclude<ThemeStyleMotif, 'none'>, string> = { 'dot-grid': 'Dot Grid', 'glyph-field': 'Glyph Field' };
+const MOTIF_LABELS: Record<Exclude<ThemeStyleMotif, 'none'>, string> = { 'dot-grid': 'Dot Grid', 'glyph-field': 'Glyph Field', circuit: 'Circuit', 'hud-corners': 'HUD Corners', 'dot-matrix': 'Dot Matrix' };
+const DECAL_LABELS: Record<Exclude<ThemeDecalStyle, 'none'>, string> = { 'corner-cuts': 'Corner Cuts', 'scan-strips': 'Scan Strips', circuit: 'Circuit', hud: 'HUD' };
 const SURFACE_LABELS: Record<ThemeSurfaceMode, string> = { gradient: 'Gradient', tonal: 'Tonal', ornamented: 'Ornamented' };
 const CONTROL_LABELS: Record<ThemeControlMode, string> = { default: 'Default', filled: 'Filled', outlined: 'Outlined' };
 
@@ -39,6 +40,8 @@ export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImpor
     const previewTheme = allThemes.find((theme) => theme.id === (previewThemeId || selectedThemeId)) || selectedThemeData;
     const previewStyle = resolveThemeStyle(previewTheme);
     const previewThemePersonality = getThemePersonalityLabel(previewTheme);
+    const previewMotifLabel = previewStyle.motif === 'none' ? null : MOTIF_LABELS[previewStyle.motif];
+    const previewDecalLabel = previewStyle.decal === 'none' ? null : DECAL_LABELS[previewStyle.decal];
     const previewRecommendations = useMemo(
         () => getThemeRecommendations(previewTheme.id).slice(0, 3),
         [getThemeRecommendations, previewTheme.id]
@@ -146,6 +149,8 @@ export function ThemeCatalogBrowser({ targetScheme, selectedThemeId, onOpenImpor
                                     <SwarmBadge size="xs" tone={previewStyle.family === 'glyph' ? 'warning' : previewStyle.family === 'material' ? 'info' : 'secondary'} emphasis={previewStyle.family === 'glyph' ? 'outline' : 'soft'}>{FAMILY_LABELS[previewStyle.family]}</SwarmBadge>
                                     <SwarmBadge size="xs" tone="secondary" emphasis="outline">{SURFACE_LABELS[previewStyle.surfaceMode]}</SwarmBadge>
                                     <SwarmBadge size="xs" tone="secondary" emphasis="outline">{CONTROL_LABELS[previewStyle.controlMode]}</SwarmBadge>
+                                    {previewMotifLabel && <SwarmBadge size="xs" tone="secondary" emphasis="outline">Motif: {previewMotifLabel}</SwarmBadge>}
+                                    {previewDecalLabel && <SwarmBadge size="xs" tone="secondary" emphasis="outline">Decal: {previewDecalLabel}</SwarmBadge>}
                                     {themeMeta(previewTheme).themeSet && <SwarmBadge size="xs" tone="primary" emphasis="soft">Set: {themeMeta(previewTheme).themeSet}</SwarmBadge>}
                                 </Group>
                                 <Text size="xs" fw={600} className="swarm-theme-catalog__preview-title">{previewTheme.name}</Text>
@@ -194,9 +199,16 @@ function ThemeItem({ theme, isActive, onClick, onApplyPair, onMouseEnter, onMous
     const previewBodyFont = theme.colors.fontFamily;
     const familyTone = style.family === 'material' ? 'info' : style.family === 'glyph' ? 'warning' : 'secondary';
     const motifLabel = style.motif === 'none' ? null : MOTIF_LABELS[style.motif];
+    const decalLabel = style.decal === 'none' ? null : DECAL_LABELS[style.decal];
+    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick();
+        }
+    };
 
     return (
-        <UnstyledButton onClick={onClick} className={`swarm-theme-item ${isActive ? 'swarm-theme-item--active' : ''}`.trim()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} aria-pressed={isActive}>
+        <Box role="button" tabIndex={0} onClick={onClick} onKeyDown={handleKeyDown} className={`swarm-theme-item ${isActive ? 'swarm-theme-item--active' : ''}`.trim()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} aria-pressed={isActive}>
             <Group gap={2} className="swarm-theme-item__swatches">
                 <Box style={{ width: 16, height: 16, borderRadius: 3, background: `linear-gradient(140deg, ${theme.colors.brand}, ${accent2})`, border: '1px solid var(--theme-gray-5)' }} />
                 <Box style={{ width: 10, height: 16, borderRadius: 2, background: theme.colors.gray8 }} />
@@ -212,6 +224,7 @@ function ThemeItem({ theme, isActive, onClick, onApplyPair, onMouseEnter, onMous
                         <SwarmBadge size="xs" tone={familyTone} emphasis={style.family === 'glyph' ? 'outline' : 'soft'} className="swarm-theme-item__style-badge">{FAMILY_LABELS[style.family]}</SwarmBadge>
                         <SwarmBadge size="xs" tone="secondary" emphasis="outline" className="swarm-theme-item__style-badge">{SURFACE_LABELS[style.surfaceMode]}</SwarmBadge>
                         {motifLabel && <SwarmBadge size="xs" tone="secondary" emphasis="outline" className="swarm-theme-item__style-badge">{motifLabel}</SwarmBadge>}
+                        {decalLabel && <SwarmBadge size="xs" tone="secondary" emphasis="outline" className="swarm-theme-item__style-badge">{decalLabel}</SwarmBadge>}
                         {meta.themeSet && <SwarmBadge size="xs" tone="primary" emphasis="soft" className="swarm-theme-item__style-badge">{meta.themeSet}</SwarmBadge>}
                         {meta.recommendationIds?.slice(0, 2).map((id) => <SwarmBadge key={id} size="xs" tone="secondary" emphasis="soft" className="swarm-theme-item__style-badge">Try {id}</SwarmBadge>)}
                     </Box>
@@ -220,6 +233,6 @@ function ThemeItem({ theme, isActive, onClick, onApplyPair, onMouseEnter, onMous
                 </Box>
             </Box>
             {isActive && <IconCheck size={14} color="var(--theme-brand)" />}
-        </UnstyledButton>
+        </Box>
     );
 }

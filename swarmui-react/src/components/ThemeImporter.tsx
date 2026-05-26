@@ -29,6 +29,12 @@ type ImportedTheme = ThemePalette & {
         meshAnimated?: boolean;
         overlayBlend?: string;
     };
+    atmosphere?: {
+        background?: string;
+        texture?: string;
+        motion?: string;
+        intensity?: number;
+    };
     adaptive?: {
         imageReactiveStrength?: number;
         timeOfDayStrength?: number;
@@ -45,6 +51,7 @@ type ImportedTheme = ThemePalette & {
 function listOptionalBlocks(theme: ImportedTheme): string[] {
     const blocks: string[] = [];
     if (theme.effects) blocks.push('effects');
+    if (theme.atmosphere) blocks.push('atmosphere');
     if (theme.adaptive) blocks.push('adaptive');
     if (theme.meta) blocks.push('meta');
     return blocks;
@@ -157,8 +164,8 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
         <Modal opened={opened} onClose={onClose} title="Import Custom Theme" size="lg">
             <Stack gap="md">
                 <Text size="sm" c="dimmed">
-                    Import a theme by pasting JSON or uploading a `.json` file. Optional `effects`, `adaptive`, and
-                    `meta` blocks are preserved as long as the required theme fields are present.
+                    Import a theme by pasting JSON or uploading a `.json` file. Optional `effects`, `atmosphere`,
+                    `adaptive`, and `meta` blocks are preserved as long as the required theme fields are present.
                 </Text>
 
                 <Group>
@@ -189,7 +196,7 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
 
                 <Textarea
                     label="Theme JSON"
-                    placeholder={`{\n  "id": "my-theme",\n  "name": "My Theme",\n  "category": "custom",\n  "colors": {\n    "brand": "#7c3aed",\n    ...\n  },\n  "effects": {\n    "noiseIntensity": 0.15\n  }\n}`}
+                    placeholder={`{\n  "id": "my-theme",\n  "name": "My Theme",\n  "category": "custom",\n  "colors": {\n    "brand": "#7c3aed",\n    ...\n  },\n  "effects": {\n    "noiseIntensity": 0.15\n  },\n  "atmosphere": {\n    "background": "aurora",\n    "texture": "grain",\n    "motion": "drift",\n    "intensity": 0.45\n  }\n}`}
                     value={jsonInput}
                     onChange={(event) => {
                         setJsonInput(event.currentTarget.value);
@@ -229,7 +236,7 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                     <Text size="xs">
                         Theme JSON must include <Code>id</Code>, <Code>name</Code>, <Code>category</Code>, and a
                         <Code>colors</Code> object. Optional <Code>style</Code>, <Code>effects</Code>,
-                        <Code>adaptive</Code>, and <Code>meta</Code> blocks are supported.
+                        <Code>atmosphere</Code>, <Code>adaptive</Code>, and <Code>meta</Code> blocks are supported.
                     </Text>
                 </Alert>
 

@@ -6,10 +6,10 @@
  * Styled to match Mantine Select appearance.
  */
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCombobox } from 'downshift';
-import { TextInput, Paper, Stack, Text, ScrollArea, Box } from '@mantine/core';
-import { IconChevronDown, IconCheck } from '@tabler/icons-react';
+import { TextInput, Paper, Stack, Text, ScrollArea, Box, Badge } from '@mantine/core';
+import { IconChevronDown, IconCheck, IconFolder } from '@tabler/icons-react';
 import './headless-combobox.css';
 
 export interface ComboboxOption {
@@ -45,6 +45,21 @@ export interface HeadlessComboboxProps {
     style?: React.CSSProperties;
 }
 
+const countLabelPattern = /^(\s*)(?:-\s+)?(.+?)\s+\((\d+)\)$/;
+
+function parseCountLabel(label: string) {
+    const match = label.match(countLabelPattern);
+    if (!match) {
+        return null;
+    }
+    const indent = match[1] || '';
+    return {
+        depth: Math.floor(indent.length / 2),
+        name: match[2],
+        count: match[3],
+    };
+}
+
 export function HeadlessCombobox({
     options,
     value,
@@ -60,8 +75,6 @@ export function HeadlessCombobox({
     style,
 }: HeadlessComboboxProps) {
     const [searchValue, setSearchValue] = useState('');
-    const inputRef = useRef<HTMLInputElement>(null);
-
     // Find selected option
     const selectedOption = useMemo(
         () => options.find((opt) => opt.value === value) || null,
@@ -159,13 +172,13 @@ export function HeadlessCombobox({
             });
             return result;
         }, [groupedOptions]);
+    const menuProps = getMenuProps({}, { suppressRefError: true });
 
     return (
         <div className="headless-combobox" style={{ position: 'relative', ...style }}>
             <div {...getToggleButtonProps()}>
                 <TextInput
                     {...getInputProps({
-                        ref: inputRef,
                         onFocus: () => {
                             if (searchable) {
                                 setSearchValue('');
@@ -197,7 +210,7 @@ export function HeadlessCombobox({
                                     aria-label="Clear selection"
                                     style={{ pointerEvents: 'auto' }}
                                 >
-                                    ×
+                                    x
                                 </button>
                             )}
                             <IconChevronDown
@@ -211,10 +224,9 @@ export function HeadlessCombobox({
                 />
             </div>
 
-            {/* Dropdown */}
             {isOpen && (
                 <Paper
-                    {...getMenuProps()}
+                    {...menuProps}
                     shadow="md"
                     withBorder
                     className="headless-combobox-dropdown open"
@@ -243,6 +255,7 @@ export function HeadlessCombobox({
                                 const option = item.data as ComboboxOption;
                                 const isSelected = option.value === value;
                                 const isHighlighted = item.index === highlightedIndex;
+                                const countLabel = parseCountLabel(option.label);
 
                                 return (
                                     <Box
@@ -250,8 +263,28 @@ export function HeadlessCombobox({
                                         {...getItemProps({ item: option, index: item.index! })}
                                         className={`headless-combobox-item ${isHighlighted ? 'highlighted' : ''} ${isSelected ? 'selected' : ''}`}
                                     >
-                                        <Text size="sm">{option.label}</Text>
-                                        {isSelected && <IconCheck size={14} />}
+                                        {countLabel ? (
+                                            <Box
+                                                className="headless-combobox-folder-row"
+                                                style={{ '--folder-depth': countLabel.depth } as React.CSSProperties}
+                                            >
+                                                <Box className="headless-combobox-folder-label">
+                                                    <IconFolder size={14} />
+                                                    <Text size="sm" truncate>{countLabel.name}</Text>
+                                                </Box>
+                                                <Box className="headless-combobox-folder-meta">
+                                                    <Badge size="xs" variant="light" color={isSelected ? 'blue' : 'gray'}>
+                                                        {countLabel.count}
+                                                    </Badge>
+                                                    {isSelected && <IconCheck size={14} />}
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <>
+                                                <Text size="sm">{option.label}</Text>
+                                                {isSelected && <IconCheck size={14} />}
+                                            </>
+                                        )}
                                     </Box>
                                 );
                             })}

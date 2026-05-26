@@ -8,7 +8,7 @@ import {
     type SwarmToneInput,
 } from './swarmTones';
 
-export type SwarmActionIconShape = 'rounded' | 'circle' | 'square';
+export type SwarmActionIconShape = 'rounded' | 'circle' | 'square' | 'diamond' | 'bracket' | 'dot-square';
 
 export interface SwarmActionIconProps
     extends Omit<ActionIconProps, 'color' | 'variant'>,

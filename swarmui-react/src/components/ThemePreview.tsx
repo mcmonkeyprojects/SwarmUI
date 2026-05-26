@@ -2,14 +2,16 @@
 import { Box, Group, Stack, Text } from '@mantine/core';
 import {
     getThemePersonalityLabel,
+    resolveThemeAtmosphere,
     resolveThemeStyle,
-    type ThemeControlShape,
+    type ThemeAtmosphereBackground,
+    type ThemeAtmosphereMotion,
+    type ThemeAtmosphereTexture,
     type ThemePalette,
     type ThemeStyleFamily,
     type ThemeStyleMotif,
     type ThemeControlMode,
-    type ThemeIconShape,
-    type ThemeIconMode,
+    type ThemeDecalStyle,
     type ThemeShapeOverrides,
     type ThemeSurfaceMode,
 } from '../store/themeStore';
@@ -42,6 +44,16 @@ const FAMILY_LABELS: Record<ThemeStyleFamily, string> = {
 const MOTIF_LABELS: Record<Exclude<ThemeStyleMotif, 'none'>, string> = {
     'dot-grid': 'Dot Grid',
     'glyph-field': 'Glyph Field',
+    circuit: 'Circuit',
+    'hud-corners': 'HUD Corners',
+    'dot-matrix': 'Dot Matrix',
+};
+
+const DECAL_LABELS: Record<Exclude<ThemeDecalStyle, 'none'>, string> = {
+    'corner-cuts': 'Corner Cuts',
+    'scan-strips': 'Scan Strips',
+    circuit: 'Circuit',
+    hud: 'HUD',
 };
 
 const SURFACE_LABELS: Record<ThemeSurfaceMode, string> = {
@@ -56,27 +68,35 @@ const CONTROL_LABELS: Record<ThemeControlMode, string> = {
     outlined: 'Outlined Controls',
 };
 
-const ICON_LABELS: Record<ThemeIconMode, string> = {
-    plain: 'Plain Icons',
-    badge: 'Badge Icons',
-    'glyph-outline': 'Glyph Icons',
+const ATMOSPHERE_BACKGROUND_LABELS: Record<ThemeAtmosphereBackground, string> = {
+    mesh: 'Mesh',
+    aurora: 'Aurora',
+    spotlight: 'Spotlight',
+    strata: 'Strata',
+    grid: 'Grid',
+    mist: 'Mist',
+    none: 'None',
 };
 
-const BUTTON_SHAPE_LABELS: Record<ThemeControlShape, string> = {
-    rounded: 'Rounded',
-    pill: 'Pill',
-    square: 'Square',
+const ATMOSPHERE_TEXTURE_LABELS: Record<ThemeAtmosphereTexture, string> = {
+    none: 'Clean',
+    grain: 'Grain',
+    paper: 'Paper',
+    film: 'Film',
+    terminal: 'Terminal',
 };
 
-const ICON_SHAPE_LABELS: Record<ThemeIconShape, string> = {
-    rounded: 'Rounded',
-    circle: 'Circle',
-    square: 'Square',
+const ATMOSPHERE_MOTION_LABELS: Record<ThemeAtmosphereMotion, string> = {
+    still: 'Still',
+    drift: 'Drift',
+    pulse: 'Pulse',
+    scan: 'Scan',
 };
 
 export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
     const { colors } = theme;
     const style = resolveThemeStyle(theme, styleOverride);
+    const atmosphere = resolveThemeAtmosphere(theme);
     const personalityLabel = getThemePersonalityLabel(theme);
     const accent2 = colors.secondaryAccent || `color-mix(in srgb, ${colors.accent} 66%, ${colors.brand})`;
     const accent3 = colors.tertiaryAccent || `color-mix(in srgb, ${colors.success} 58%, ${colors.accent})`;
@@ -88,8 +108,22 @@ export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
     const primaryButton = `linear-gradient(135deg, ${colors.brand}, color-mix(in srgb, ${colors.brand} 72%, ${colors.accent}))`;
     const secondaryButton = `linear-gradient(135deg, ${accent2}, ${accent3})`;
     const panelRadius = style.family === 'material' ? 9 : style.family === 'glyph' ? 4 : 6;
-    const controlRadius = style.controlShape === 'pill' ? 999 : style.controlShape === 'square' ? 4 : 8;
-    const iconRadius = style.iconShape === 'circle' ? 999 : style.iconShape === 'square' ? 3 : 6;
+    const controlRadius = style.controlShape === 'pill' ? 999 : style.controlShape === 'square' ? 4 : ['chamfer', 'bracket', 'slant'].includes(style.controlShape) ? 2 : 8;
+    const controlClipPath = style.controlShape === 'chamfer'
+        ? 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)'
+        : style.controlShape === 'slant'
+            ? 'polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%)'
+            : style.controlShape === 'bracket'
+                ? 'polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px)'
+                : undefined;
+    const iconRadius = style.iconShape === 'circle' ? 999 : style.iconShape === 'square' ? 3 : ['diamond', 'bracket', 'dot-square'].includes(style.iconShape) ? 2 : 6;
+    const iconClipPath = style.iconShape === 'diamond'
+        ? 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)'
+        : style.iconShape === 'bracket'
+            ? 'polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px)'
+            : style.iconShape === 'dot-square'
+                ? 'polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px)'
+                : undefined;
     const styleBadgeBg = style.family === 'glyph'
         ? `color-mix(in srgb, ${colors.accent} 16%, transparent)`
         : `color-mix(in srgb, ${colors.gray8} 78%, transparent)`;
@@ -97,7 +131,17 @@ export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
         ? `1px solid color-mix(in srgb, ${accent2} 28%, transparent)`
         : `1px solid ${colors.gray5}`;
     const motifLabel = style.motif === 'none' ? null : MOTIF_LABELS[style.motif];
-    const previewBadges = [personalityLabel, FAMILY_LABELS[style.family], SURFACE_LABELS[style.surfaceMode], motifLabel].filter(
+    const decalLabel = style.decal === 'none' ? null : DECAL_LABELS[style.decal];
+    const scanStripOverlay = `repeating-linear-gradient(110deg, color-mix(in srgb, ${colors.gray0} 18%, transparent) 0 6px, transparent 6px 11px)`;
+    const railOverlay = `linear-gradient(90deg, transparent, color-mix(in srgb, ${colors.accent} 72%, transparent), color-mix(in srgb, ${colors.brand} 56%, transparent), transparent)`;
+    const componentFrameOverlay = style.decal === 'hud' || style.decal === 'corner-cuts'
+        ? `linear-gradient(90deg, ${accent2} 0 12px, transparent 12px calc(100% - 12px), ${colors.brand} calc(100% - 12px)) top / 100% 1px no-repeat, linear-gradient(180deg, ${accent2} 0 12px, transparent 12px calc(100% - 12px), ${colors.brand} calc(100% - 12px)) left / 1px 100% no-repeat`
+        : style.decal === 'scan-strips'
+            ? `${scanStripOverlay} 100% 0 / 52px 3px no-repeat`
+            : style.decal === 'circuit'
+                ? `linear-gradient(90deg, transparent 0 12px, ${accent2} 12px 13px, transparent 13px 100%) 0 4px / 34px 18px`
+                : 'none';
+    const previewBadges = [personalityLabel, FAMILY_LABELS[style.family], SURFACE_LABELS[style.surfaceMode], ATMOSPHERE_BACKGROUND_LABELS[atmosphere.background], motifLabel, decalLabel].filter(
         (label): label is string => Boolean(label)
     );
 
@@ -205,6 +249,7 @@ export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
                                     style={{
                                         height: 9,
                                         borderRadius: controlRadius,
+                                        clipPath: controlClipPath,
                                         background: `color-mix(in srgb, ${colors.brand} 30%, ${colors.gray7})`,
                                         border: `1px solid color-mix(in srgb, ${colors.brand} 42%, transparent)`,
                                     }}
@@ -262,6 +307,7 @@ export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
                                     style={{
                                         flex: 1,
                                         borderRadius: controlRadius,
+                                        clipPath: controlClipPath,
                                         padding: '2px 6px',
                                         background: primaryButton,
                                         border: style.controlMode === 'outlined'
@@ -277,6 +323,7 @@ export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
                                     style={{
                                         flex: 1,
                                         borderRadius: controlRadius,
+                                        clipPath: controlClipPath,
                                         padding: '2px 6px',
                                         background: secondaryButton,
                                         border: `1px solid color-mix(in srgb, ${colors.gray0} 18%, transparent)`,
@@ -296,6 +343,7 @@ export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
                                                 width: 12,
                                                 height: 12,
                                                 borderRadius: iconRadius,
+                                                clipPath: iconClipPath,
                                                 background: color,
                                                 border: `1px solid color-mix(in srgb, ${colors.gray0} 10%, transparent)`,
                                             }}
@@ -340,12 +388,85 @@ export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
                     </Stack>
                 </Box>
 
+                <Box
+                    style={{
+                        borderRadius: panelRadius,
+                        border: `1px solid color-mix(in srgb, ${colors.gray0} 12%, transparent)`,
+                        background: `color-mix(in srgb, ${colors.gray8} 80%, transparent)`,
+                        padding: 5,
+                    }}
+                >
+                    <Group gap={4} wrap="nowrap" align="center">
+                        <Box
+                            style={{
+                                width: 42,
+                                height: 14,
+                                borderRadius: controlRadius,
+                                clipPath: controlClipPath,
+                                background: primaryButton,
+                                boxShadow: `0 0 10px color-mix(in srgb, ${colors.brand} 24%, transparent)`,
+                            }}
+                        />
+                        <Box
+                            style={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: iconRadius,
+                                clipPath: iconClipPath,
+                                background: style.iconShape === 'dot-square'
+                                    ? `radial-gradient(circle at 2px 2px, ${accent2} 0.72px, transparent 1px) 0 0 / 5px 5px, color-mix(in srgb, ${colors.gray7} 82%, transparent)`
+                                    : secondaryButton,
+                                border: `1px solid color-mix(in srgb, ${accent2} 42%, transparent)`,
+                            }}
+                        />
+                        <Box
+                            style={{
+                                width: 34,
+                                height: 12,
+                                borderRadius: style.controlShape === 'pill' ? 999 : 3,
+                                clipPath: style.controlShape === 'slant' ? controlClipPath : undefined,
+                                background: `${scanStripOverlay}, color-mix(in srgb, ${colors.warning} 28%, ${colors.gray8})`,
+                                border: `1px solid color-mix(in srgb, ${colors.warning} 46%, transparent)`,
+                            }}
+                        />
+                        <Box
+                            style={{
+                                flex: 1,
+                                height: 12,
+                                minWidth: 44,
+                                borderRadius: style.family === 'glyph' ? 3 : 999,
+                                background: `color-mix(in srgb, ${colors.gray9} 72%, transparent)`,
+                                border: `1px solid color-mix(in srgb, ${colors.accent} 30%, transparent)`,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            <Box
+                                style={{
+                                    width: '68%',
+                                    height: '100%',
+                                    background: `${scanStripOverlay}, linear-gradient(90deg, ${colors.brand}, ${accent2})`,
+                                }}
+                            />
+                        </Box>
+                        <Box
+                            style={{
+                                width: 34,
+                                height: 20,
+                                borderRadius: panelRadius - 2,
+                                border: `1px solid color-mix(in srgb, ${accent2} 38%, transparent)`,
+                                background: `${componentFrameOverlay}, ${railOverlay}, color-mix(in srgb, ${colors.gray8} 82%, transparent)`,
+                                backgroundBlendMode: 'screen, screen, normal',
+                            }}
+                        />
+                    </Group>
+                </Box>
+
                 <Group grow gap={4}>
                     {[
                         { label: 'Controls', value: CONTROL_LABELS[style.controlMode] },
-                        { label: 'Icons', value: ICON_LABELS[style.iconMode] },
-                        { label: 'Buttons', value: BUTTON_SHAPE_LABELS[style.controlShape] },
-                        { label: 'Icon Shape', value: ICON_SHAPE_LABELS[style.iconShape] },
+                        { label: 'Atmosphere', value: ATMOSPHERE_BACKGROUND_LABELS[atmosphere.background] },
+                        { label: 'Texture', value: ATMOSPHERE_TEXTURE_LABELS[atmosphere.texture] },
+                        { label: 'Motion', value: ATMOSPHERE_MOTION_LABELS[atmosphere.motion] },
                     ].map((item) => (
                         <Box
                             key={item.label}

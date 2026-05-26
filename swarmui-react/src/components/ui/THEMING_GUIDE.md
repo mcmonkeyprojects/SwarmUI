@@ -3,8 +3,8 @@
 ## Semantic Tone System
 - `SwarmTone`: `primary | secondary | success | warning | danger | info`
 - `SwarmEmphasis`: `solid | soft | outline | ghost`
-- `SwarmButtonShape`: `rounded | pill | square`
-- `SwarmActionIconShape`: `rounded | circle | square`
+- `SwarmButtonShape`: `rounded | pill | square | chamfer | bracket | slant`
+- `SwarmActionIconShape`: `rounded | circle | square | diamond | bracket | dot-square`
 
 ## Use These Primitives
 - `SwarmButton`
@@ -22,8 +22,15 @@
   - `classic => rounded / rounded`
   - `material => pill / circle`
   - `glyph => square / square`
+- Stylized themes can opt into `chamfer`, `bracket`, `slant`, `diamond`, or `dot-square` shapes plus `theme.style.motif` and `theme.style.decal`.
 - `pill` is for text buttons, `circle` is for icon buttons, and `square` stays slightly eased for focus visibility.
 - Use per-control `shape` props only as escape hatches. New code should rely on theme defaults or runtime overrides.
+
+## Hero Theme Effects
+- Hero themes should express personality through `theme.style`, `theme.effects`, and `theme.atmosphere`, not through one-off component code.
+- Reusable effect primitives include HUD corner frames, accent rails, scan-strip bands, dot-matrix badges, circuit dividers, segmented progress rails, glowing focus rings, slanted control pieces, portal-pair accents, and metallic sheen.
+- Keep heavy effects opt-in through built-in theme metadata. Ordinary themes should stay quiet unless the user selects stronger motif, decal, shape, or intensity settings.
+- Dot/glyph typography belongs on labels, badges, counters, preview accents, and HUD details. Do not force dotted fonts onto body text.
 
 ## Mapping Rules
 - Primary CTA: `tone="primary"`, usually `emphasis="solid"`

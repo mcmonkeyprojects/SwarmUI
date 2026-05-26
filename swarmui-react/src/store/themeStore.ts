@@ -21,18 +21,51 @@ export type ThemeRadiusScale = 'compact' | 'comfortable' | 'rounded';
 export type ThemeStrokeStyle = 'subtle' | 'standard' | 'bold';
 export type ThemeShadowDepth = 'soft' | 'normal' | 'dramatic';
 export type ThemeStyleFamily = 'classic' | 'material' | 'glyph';
-export type ThemeStyleMotif = 'none' | 'dot-grid' | 'glyph-field';
+export type ThemeStyleMotif = 'none' | 'dot-grid' | 'glyph-field' | 'circuit' | 'hud-corners' | 'dot-matrix';
 export type ThemeSurfaceMode = 'gradient' | 'tonal' | 'ornamented';
 export type ThemeControlMode = 'default' | 'filled' | 'outlined';
 export type ThemeIconMode = 'plain' | 'badge' | 'glyph-outline';
-export type ThemeControlShape = 'rounded' | 'pill' | 'square';
-export type ThemeIconShape = 'rounded' | 'circle' | 'square';
+export type ThemeControlShape = 'rounded' | 'pill' | 'square' | 'chamfer' | 'bracket' | 'slant';
+export type ThemeIconShape = 'rounded' | 'circle' | 'square' | 'diamond' | 'bracket' | 'dot-square';
+export type ThemeDecalStyle = 'none' | 'corner-cuts' | 'scan-strips' | 'circuit' | 'hud';
 export type ThemeOverlayBlend = 'normal' | 'screen' | 'overlay' | 'soft-light' | 'multiply';
+export type ThemeAtmosphereBackground =
+  | 'mesh'
+  | 'aurora'
+  | 'spotlight'
+  | 'strata'
+  | 'grid'
+  | 'mist'
+  | 'none';
+export type ThemeAtmosphereTexture = 'none' | 'grain' | 'paper' | 'film' | 'terminal';
+export type ThemeAtmosphereMotion = 'still' | 'drift' | 'pulse' | 'scan';
+
+function parseThemeBooleanEnv(value: string | undefined, defaultValue: boolean): boolean {
+  if (value === undefined) {
+    return defaultValue;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on') {
+    return true;
+  }
+  if (normalized === '0' || normalized === 'false' || normalized === 'no' || normalized === 'off') {
+    return false;
+  }
+  return defaultValue;
+}
+
+const THEME_ATMOSPHERE_REFRESH_ENABLED = parseThemeBooleanEnv(
+  (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
+    ?.VITE_THEME_ATMOSPHERE_REFRESH,
+  true
+);
 
 export interface ThemeStyle {
   family: ThemeStyleFamily;
   motif?: ThemeStyleMotif;
   motifIntensity?: number;
+  decal?: ThemeDecalStyle;
+  decalIntensity?: number;
   surfaceMode?: ThemeSurfaceMode;
   controlMode?: ThemeControlMode;
   iconMode?: ThemeIconMode;
@@ -51,6 +84,13 @@ export interface ThemeEffects {
   meshIntensity?: number;
   meshAnimated?: boolean;
   overlayBlend?: ThemeOverlayBlend;
+}
+
+export interface ThemeAtmosphere {
+  background?: ThemeAtmosphereBackground;
+  texture?: ThemeAtmosphereTexture;
+  motion?: ThemeAtmosphereMotion;
+  intensity?: number;
 }
 
 export interface ThemeAdaptiveSettings {
@@ -72,6 +112,7 @@ export interface ThemePalette {
   category: ThemeCategory;
   style?: ThemeStyle;
   effects?: ThemeEffects;
+  atmosphere?: ThemeAtmosphere;
   adaptive?: ThemeAdaptiveSettings;
   meta?: ThemeMetadata;
   colors: {
@@ -187,11 +228,20 @@ export const DEFAULT_THEME_STYLE: Required<ThemeStyle> = {
   family: 'classic',
   motif: 'none',
   motifIntensity: 0,
+  decal: 'none',
+  decalIntensity: 0,
   surfaceMode: 'gradient',
   controlMode: 'default',
   iconMode: 'plain',
   controlShape: 'rounded',
   iconShape: 'rounded',
+};
+
+export const DEFAULT_THEME_ATMOSPHERE: Required<ThemeAtmosphere> = {
+  background: 'mesh',
+  texture: 'grain',
+  motion: 'drift',
+  intensity: 0.42,
 };
 
 export function resolveThemeStyle(
@@ -201,11 +251,15 @@ export function resolveThemeStyle(
   const family = theme.style?.family ?? DEFAULT_THEME_STYLE.family;
   const motif = theme.style?.motif ?? (family === 'glyph' ? 'dot-grid' : DEFAULT_THEME_STYLE.motif);
   const motifIntensity = clamp(theme.style?.motifIntensity ?? (motif === 'none' ? 0 : 0.58), 0, 1);
+  const decal = theme.style?.decal ?? (family === 'glyph' ? 'corner-cuts' : DEFAULT_THEME_STYLE.decal);
+  const decalIntensity = clamp(theme.style?.decalIntensity ?? (decal === 'none' ? 0 : 0.42), 0, 1);
 
   return {
     family,
     motif,
     motifIntensity,
+    decal,
+    decalIntensity,
     surfaceMode:
       theme.style?.surfaceMode ??
       (family === 'material'
@@ -243,6 +297,17 @@ export function resolveThemeStyle(
         : family === 'glyph'
           ? 'square'
           : DEFAULT_THEME_STYLE.iconShape),
+  };
+}
+
+export function resolveThemeAtmosphere(theme: ThemePalette): Required<ThemeAtmosphere> {
+  const style = resolveThemeStyle(theme);
+  const categoryDefault = getThemeAtmosphereDefaults(theme, style);
+  return {
+    background: theme.atmosphere?.background ?? categoryDefault.background,
+    texture: theme.atmosphere?.texture ?? categoryDefault.texture,
+    motion: theme.atmosphere?.motion ?? categoryDefault.motion,
+    intensity: clamp(theme.atmosphere?.intensity ?? categoryDefault.intensity, 0, 1),
   };
 }
 
@@ -504,28 +569,53 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
     id: 'cyberpunk',
     name: 'Cyberpunk',
     category: 'aesthetic',
+    style: {
+      family: 'glyph',
+      motif: 'circuit',
+      motifIntensity: 0.94,
+      decal: 'hud',
+      decalIntensity: 0.9,
+      surfaceMode: 'ornamented',
+      controlMode: 'outlined',
+      iconMode: 'glyph-outline',
+      controlShape: 'chamfer',
+      iconShape: 'bracket',
+    },
+    effects: {
+      noiseIntensity: 0.28,
+      scanlineIntensity: 0.42,
+      meshIntensity: 1,
+      meshAnimated: true,
+      overlayBlend: 'screen',
+    },
+    atmosphere: {
+      background: 'grid',
+      texture: 'terminal',
+      motion: 'scan',
+      intensity: 0.82,
+    },
     colors: {
-      brand: '#f0f',
+      brand: '#ff3b3b',
       gray0: '#fff',
-      gray1: '#e0e0e0',
-      gray2: '#c0c0c0',
-      gray3: '#a0a0a0',
-      gray4: '#808080',
-      gray5: '#404040',
-      gray6: '#202020',
-      gray7: '#151515',
-      gray8: '#0a0a0a',
-      gray9: '#050505',
-      accent: '#0ff',
-      success: '#0f0',
-      warning: '#ff0',
-      error: '#f00',
-      secondaryAccent: '#ff4dff',
-      tertiaryAccent: '#22d3ee',
+      gray1: '#f5d0d0',
+      gray2: '#d49191',
+      gray3: '#a95858',
+      gray4: '#743232',
+      gray5: '#5b2424',
+      gray6: '#351818',
+      gray7: '#241111',
+      gray8: '#151010',
+      gray9: '#090808',
+      accent: '#ff6b6b',
+      success: '#6ee7b7',
+      warning: '#ffcc3d',
+      error: '#ff2d2d',
+      secondaryAccent: '#ff4545',
+      tertiaryAccent: '#9ca3af',
       highlightAccent: '#facc15',
-      surfaceTint: 'rgba(255, 0, 255, 0.2)',
-      surfaceTintStrength: 0.24,
-      panelGradient: 'linear-gradient(180deg, color-mix(in srgb, #0a0a0a 84%, #ff00ff), #050505)',
+      surfaceTint: 'rgba(255, 59, 59, 0.24)',
+      surfaceTintStrength: 0.32,
+      panelGradient: 'linear-gradient(180deg, color-mix(in srgb, #151010 82%, #ff3b3b), #090808)',
       borderStyle: 'double',
       borderWidth: 1,
       motionProfile: 'energetic',
@@ -534,23 +624,26 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       shadowDepth: 'dramatic',
       glowStrength: 1.3,
       blurStrength: 6,
-      selectionBg: 'rgba(255, 0, 255, 0.25)',
-      lineHighlight: '#1a0a1a',
-      scrollbarThumb: '#f0f',
-      scrollbarTrack: '#0a0a0a',
-      syntaxKeyword: '#f0f',
-      syntaxString: '#0ff',
-      syntaxNumber: '#ff0',
-      syntaxComment: '#808080',
-      brandGradient: 'linear-gradient(135deg, #f0f, #0ff)',
+      selectionBg: 'rgba(255, 59, 59, 0.26)',
+      selectionBorder: '#ff3b3b',
+      selectedSurface: '#351111',
+      selectedSurfaceHover: '#4a1717',
+      lineHighlight: '#240f0f',
+      scrollbarThumb: '#ff3b3b',
+      scrollbarTrack: '#151010',
+      syntaxKeyword: '#ff3b3b',
+      syntaxString: '#ffcc3d',
+      syntaxNumber: '#ff6b6b',
+      syntaxComment: '#a95858',
+      brandGradient: 'linear-gradient(135deg, #ff3b3b, #ff6b6b 42%, #facc15)',
       // Semantic
-      infoColor: '#0ff',
-      mutedText: '#808080',
+      infoColor: '#ff6b6b',
+      mutedText: '#d49191',
       disabledOpacity: 0.5,
       // Shadow with glow
       shadowColor: 'rgba(0, 0, 0, 0.6)',
-      shadowIntensity: 1.3,
-      glowColor: 'rgba(255, 0, 255, 0.4)',
+      shadowIntensity: 1.45,
+      glowColor: 'rgba(255, 59, 59, 0.48)',
       // Animation - fast and springy
       animationCurve: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       animationSpeed: 'fast',
@@ -2896,11 +2989,28 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
     category: 'aesthetic',
     style: {
       family: 'glyph',
-      motif: 'dot-grid',
-      motifIntensity: 0.72,
+      motif: 'dot-matrix',
+      motifIntensity: 0.74,
+      decal: 'scan-strips',
+      decalIntensity: 0.58,
       surfaceMode: 'ornamented',
       controlMode: 'outlined',
       iconMode: 'glyph-outline',
+      controlShape: 'bracket',
+      iconShape: 'dot-square',
+    },
+    effects: {
+      noiseIntensity: 0.2,
+      scanlineIntensity: 0.18,
+      meshIntensity: 0.74,
+      meshAnimated: true,
+      overlayBlend: 'screen',
+    },
+    atmosphere: {
+      background: 'grid',
+      texture: 'terminal',
+      motion: 'scan',
+      intensity: 0.62,
     },
     colors: {
       brand: '#ffb347',
@@ -2958,10 +3068,27 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
     style: {
       family: 'glyph',
       motif: 'glyph-field',
-      motifIntensity: 0.68,
+      motifIntensity: 0.7,
+      decal: 'circuit',
+      decalIntensity: 0.52,
       surfaceMode: 'ornamented',
       controlMode: 'outlined',
       iconMode: 'glyph-outline',
+      controlShape: 'bracket',
+      iconShape: 'dot-square',
+    },
+    effects: {
+      noiseIntensity: 0.18,
+      scanlineIntensity: 0.16,
+      meshIntensity: 0.78,
+      meshAnimated: true,
+      overlayBlend: 'screen',
+    },
+    atmosphere: {
+      background: 'grid',
+      texture: 'terminal',
+      motion: 'scan',
+      intensity: 0.64,
     },
     colors: {
       brand: '#53d7ff',
@@ -3018,11 +3145,28 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
     category: 'minimal',
     style: {
       family: 'glyph',
-      motif: 'dot-grid',
-      motifIntensity: 0.78,
+      motif: 'dot-matrix',
+      motifIntensity: 0.82,
+      decal: 'corner-cuts',
+      decalIntensity: 0.38,
       surfaceMode: 'ornamented',
       controlMode: 'outlined',
       iconMode: 'glyph-outline',
+      controlShape: 'square',
+      iconShape: 'dot-square',
+    },
+    effects: {
+      noiseIntensity: 0.14,
+      scanlineIntensity: 0.08,
+      meshIntensity: 0.36,
+      meshAnimated: false,
+      overlayBlend: 'normal',
+    },
+    atmosphere: {
+      background: 'none',
+      texture: 'terminal',
+      motion: 'still',
+      intensity: 0.46,
     },
     colors: {
       brand: '#f5f5f1',
@@ -3308,6 +3452,31 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
     id: 'cyberpunk-2077',
     name: 'Cyberpunk 2077',
     category: 'game',
+    style: {
+      family: 'glyph',
+      motif: 'circuit',
+      motifIntensity: 0.86,
+      decal: 'scan-strips',
+      decalIntensity: 0.84,
+      surfaceMode: 'ornamented',
+      controlMode: 'outlined',
+      iconMode: 'glyph-outline',
+      controlShape: 'slant',
+      iconShape: 'bracket',
+    },
+    effects: {
+      noiseIntensity: 0.24,
+      scanlineIntensity: 0.36,
+      meshIntensity: 0.96,
+      meshAnimated: true,
+      overlayBlend: 'screen',
+    },
+    atmosphere: {
+      background: 'grid',
+      texture: 'terminal',
+      motion: 'scan',
+      intensity: 0.82,
+    },
     colors: {
       brand: '#FCE300',
       gray0: '#E8E8F8',
@@ -3326,9 +3495,15 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       error: '#FF2D55',
       motionProfile: 'energetic',
       glowStrength: 0.9,
-    },
-    style: {
-      family: 'glyph',
+      borderStyle: 'double',
+      borderWidth: 1,
+      radiusScale: 'compact',
+      strokeStyle: 'bold',
+      shadowDepth: 'dramatic',
+      glowColor: 'rgba(252, 227, 0, 0.36)',
+      selectionBg: 'rgba(252, 227, 0, 0.18)',
+      panelGradient: 'linear-gradient(154deg, color-mix(in srgb, #060610 82%, #FCE300), #020204 70%, color-mix(in srgb, #020204 78%, #00D4FF))',
+      brandGradient: 'linear-gradient(112deg, #FCE300, #FF2D55 52%, #00D4FF)',
     },
   },
   {
@@ -3409,6 +3584,31 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
     id: 'masseffect',
     name: 'Mass Effect',
     category: 'game',
+    style: {
+      family: 'glyph',
+      motif: 'hud-corners',
+      motifIntensity: 0.72,
+      decal: 'circuit',
+      decalIntensity: 0.58,
+      surfaceMode: 'ornamented',
+      controlMode: 'outlined',
+      iconMode: 'glyph-outline',
+      controlShape: 'chamfer',
+      iconShape: 'bracket',
+    },
+    effects: {
+      noiseIntensity: 0.1,
+      scanlineIntensity: 0.14,
+      meshIntensity: 0.72,
+      meshAnimated: true,
+      overlayBlend: 'screen',
+    },
+    atmosphere: {
+      background: 'strata',
+      texture: 'terminal',
+      motion: 'pulse',
+      intensity: 0.66,
+    },
     colors: {
       brand: '#CC0000',
       gray0: '#D0D8E8',
@@ -3426,6 +3626,16 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       warning: '#FAB005',
       error: '#FA5252',
       secondaryAccent: '#FF6B35',
+      tertiaryAccent: '#7DD3FC',
+      highlightAccent: '#F2F7FF',
+      motionProfile: 'energetic',
+      radiusScale: 'compact',
+      strokeStyle: 'bold',
+      shadowDepth: 'dramatic',
+      glowStrength: 0.82,
+      glowColor: 'rgba(0, 180, 216, 0.28)',
+      selectionBg: 'rgba(0, 180, 216, 0.18)',
+      panelGradient: 'linear-gradient(150deg, color-mix(in srgb, #090E1C 86%, #CC0000), #050810 62%, color-mix(in srgb, #050810 76%, #00B4D8))',
     },
   },
   {
@@ -3455,6 +3665,31 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
     id: 'portal',
     name: 'Portal',
     category: 'game',
+    style: {
+      family: 'material',
+      motif: 'hud-corners',
+      motifIntensity: 0.48,
+      decal: 'corner-cuts',
+      decalIntensity: 0.36,
+      surfaceMode: 'tonal',
+      controlMode: 'filled',
+      iconMode: 'badge',
+      controlShape: 'pill',
+      iconShape: 'circle',
+    },
+    effects: {
+      noiseIntensity: 0.04,
+      scanlineIntensity: 0.02,
+      meshIntensity: 0.44,
+      meshAnimated: false,
+      overlayBlend: 'soft-light',
+    },
+    atmosphere: {
+      background: 'spotlight',
+      texture: 'none',
+      motion: 'still',
+      intensity: 0.48,
+    },
     colors: {
       brand: '#FF6B00',
       gray0: '#D8DCE0',
@@ -3471,6 +3706,15 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       success: '#40C057',
       warning: '#FAB005',
       error: '#FA5252',
+      secondaryAccent: '#0090FF',
+      tertiaryAccent: '#E8F1F8',
+      highlightAccent: '#FFFFFF',
+      motionProfile: 'calm',
+      radiusScale: 'comfortable',
+      strokeStyle: 'standard',
+      glowStrength: 0.38,
+      selectionBg: 'rgba(0, 144, 255, 0.18)',
+      panelGradient: 'linear-gradient(180deg, color-mix(in srgb, #262A2C 88%, #0090FF), #0A0C0E)',
     },
   },
   // ── Color-Scheme Themes ──────────────────────────────────────────────────────
@@ -3901,6 +4145,31 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       recommendationIds: ['blade-runner-2049', 'cyberpunk', 'deep-ocean'],
       tags: ['grid', 'electric', 'neon', 'dark'],
     },
+    style: {
+      family: 'glyph',
+      motif: 'hud-corners',
+      motifIntensity: 0.84,
+      decal: 'hud',
+      decalIntensity: 0.7,
+      surfaceMode: 'ornamented',
+      controlMode: 'outlined',
+      iconMode: 'glyph-outline',
+      controlShape: 'bracket',
+      iconShape: 'diamond',
+    },
+    effects: {
+      noiseIntensity: 0.08,
+      scanlineIntensity: 0.2,
+      meshIntensity: 0.86,
+      meshAnimated: true,
+      overlayBlend: 'screen',
+    },
+    atmosphere: {
+      background: 'grid',
+      texture: 'terminal',
+      motion: 'pulse',
+      intensity: 0.78,
+    },
     colors: {
       brand: '#00d9ff',
       gray0: '#d7f8ff',
@@ -3917,6 +4186,18 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       success: '#5fffb0',
       warning: '#ffd166',
       error: '#ff5d8f',
+      secondaryAccent: '#7DF9FF',
+      tertiaryAccent: '#1B5FFF',
+      highlightAccent: '#D7F8FF',
+      motionProfile: 'energetic',
+      radiusScale: 'compact',
+      strokeStyle: 'bold',
+      shadowDepth: 'dramatic',
+      glowStrength: 1.1,
+      glowColor: 'rgba(0, 217, 255, 0.34)',
+      selectionBg: 'rgba(0, 217, 255, 0.2)',
+      panelGradient: 'linear-gradient(180deg, color-mix(in srgb, #08131a 84%, #00d9ff), #04090d)',
+      brandGradient: 'linear-gradient(135deg, #00d9ff, #7DF9FF 48%, #1B5FFF)',
     },
   },
   {
@@ -3979,6 +4260,31 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       recommendationIds: ['art-deco', 'tron-legacy', 'vaporwave'],
       tags: ['metallic', 'gold', 'club', 'dark'],
     },
+    style: {
+      family: 'material',
+      motif: 'hud-corners',
+      motifIntensity: 0.54,
+      decal: 'scan-strips',
+      decalIntensity: 0.62,
+      surfaceMode: 'ornamented',
+      controlMode: 'filled',
+      iconMode: 'badge',
+      controlShape: 'chamfer',
+      iconShape: 'diamond',
+    },
+    effects: {
+      noiseIntensity: 0.1,
+      scanlineIntensity: 0.12,
+      meshIntensity: 0.7,
+      meshAnimated: true,
+      overlayBlend: 'soft-light',
+    },
+    atmosphere: {
+      background: 'spotlight',
+      texture: 'film',
+      motion: 'pulse',
+      intensity: 0.62,
+    },
     colors: {
       brand: '#f7c948',
       gray0: '#f7f1dc',
@@ -3995,6 +4301,18 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       success: '#7bd389',
       warning: '#ffd166',
       error: '#ef476f',
+      secondaryAccent: '#c0d6df',
+      tertiaryAccent: '#fff3b0',
+      highlightAccent: '#ffffff',
+      motionProfile: 'energetic',
+      radiusScale: 'compact',
+      strokeStyle: 'bold',
+      shadowDepth: 'dramatic',
+      glowStrength: 0.82,
+      glowColor: 'rgba(247, 201, 72, 0.28)',
+      selectionBg: 'rgba(247, 201, 72, 0.18)',
+      panelGradient: 'linear-gradient(152deg, color-mix(in srgb, #141311 86%, #f7c948), #090909 68%, color-mix(in srgb, #090909 72%, #c0d6df))',
+      brandGradient: 'linear-gradient(132deg, #f7c948, #fff3b0 52%, #c0d6df)',
     },
   },
   {
@@ -4230,6 +4548,68 @@ const THEME_PERSONALITY_OVERRIDES: Partial<
   },
 };
 
+const HERO_THEME_IDS = new Set([
+  'cyberpunk',
+  'cyberpunk-2077',
+  'tron-legacy',
+  'nothing-signal',
+  'glyph-amber',
+  'glyph-cyan',
+  'masseffect',
+  'portal',
+  'daft-punk',
+]);
+
+const THEME_ATMOSPHERE_OVERRIDES: Partial<Record<string, ThemeAtmosphere>> = {
+  'nothing-signal': { background: 'grid', texture: 'terminal', motion: 'scan', intensity: 0.52 },
+  cyberpunk: { background: 'aurora', texture: 'terminal', motion: 'scan', intensity: 0.58 },
+  synthwave: { background: 'aurora', texture: 'grain', motion: 'pulse', intensity: 0.56 },
+  'blade-runner-2049': { background: 'spotlight', texture: 'film', motion: 'drift', intensity: 0.5 },
+  arrival: { background: 'mist', texture: 'film', motion: 'drift', intensity: 0.38 },
+  'deep-ocean': { background: 'mist', texture: 'grain', motion: 'drift', intensity: 0.48 },
+  arctic: { background: 'mist', texture: 'paper', motion: 'still', intensity: 0.32 },
+  bauhaus: { background: 'strata', texture: 'paper', motion: 'still', intensity: 0.4 },
+  'art-deco': { background: 'spotlight', texture: 'paper', motion: 'pulse', intensity: 0.44 },
+  vercel: { background: 'spotlight', texture: 'none', motion: 'still', intensity: 0.34 },
+  linear: { background: 'mesh', texture: 'grain', motion: 'drift', intensity: 0.46 },
+  dracula: { background: 'aurora', texture: 'grain', motion: 'drift', intensity: 0.5 },
+  catppuccin: { background: 'mist', texture: 'grain', motion: 'drift', intensity: 0.42 },
+  highcontrast: { background: 'none', texture: 'none', motion: 'still', intensity: 0.08 },
+};
+
+function getThemeAtmosphereDefaults(
+  theme: ThemePalette,
+  style: Required<ThemeStyle>
+): Required<ThemeAtmosphere> {
+  const override = THEME_ATMOSPHERE_OVERRIDES[theme.id];
+  let defaults: Required<ThemeAtmosphere>;
+
+  if (style.family === 'glyph') {
+    defaults = { background: 'grid', texture: 'terminal', motion: 'scan', intensity: 0.34 };
+  } else if (theme.category === 'film') {
+    defaults = { background: 'spotlight', texture: 'film', motion: 'drift', intensity: 0.42 };
+  } else if (theme.category === 'music' || theme.category === 'aesthetic') {
+    defaults = { background: 'aurora', texture: 'grain', motion: 'pulse', intensity: 0.44 };
+  } else if (theme.category === 'nature') {
+    defaults = { background: 'mist', texture: 'grain', motion: 'drift', intensity: 0.38 };
+  } else if (theme.category === 'art') {
+    defaults = { background: 'strata', texture: 'paper', motion: 'still', intensity: 0.36 };
+  } else if (theme.category === 'minimal') {
+    defaults = { background: 'spotlight', texture: 'none', motion: 'still', intensity: 0.18 };
+  } else if (theme.category === 'game') {
+    defaults = { background: 'mesh', texture: 'grain', motion: 'drift', intensity: 0.4 };
+  } else {
+    defaults = DEFAULT_THEME_ATMOSPHERE;
+  }
+
+  return {
+    background: override?.background ?? defaults.background,
+    texture: override?.texture ?? defaults.texture,
+    motion: override?.motion ?? defaults.motion,
+    intensity: clamp(override?.intensity ?? defaults.intensity, 0, 1),
+  };
+}
+
 function getThemePersonality(theme: ThemePalette): ThemePersonality {
   for (const [personality, ids] of Object.entries(THEME_PERSONALITY_GROUPS) as Array<
     [ThemePersonality, Set<string>]
@@ -4447,6 +4827,11 @@ function applyBuiltInThemePersonality(theme: ThemePalette): ThemePalette {
     overlayBlend:
       theme.effects?.overlayBlend ?? (mergedStyle.family === 'glyph' ? 'screen' : 'soft-light'),
   };
+  const mergedAtmosphere = resolveThemeAtmosphere({
+    ...theme,
+    style: mergedStyle,
+    colors: mergedColors,
+  });
   const mergedAdaptive: ThemeAdaptiveSettings = {
     imageReactiveStrength: theme.adaptive?.imageReactiveStrength ?? 0.24,
     timeOfDayStrength: theme.adaptive?.timeOfDayStrength ?? 0.12,
@@ -4460,20 +4845,21 @@ function applyBuiltInThemePersonality(theme: ThemePalette): ThemePalette {
   };
 
   if (mergedStyle.family === 'glyph') {
+    const isHeroTheme = HERO_THEME_IDS.has(theme.id);
     mergedStyle.motifIntensity = clamp(
       mergedStyle.motifIntensity ?? 0.22,
       0,
-      theme.category === 'minimal' ? 0.14 : 0.24
+      isHeroTheme ? 1 : theme.category === 'minimal' ? 0.14 : 0.24
     );
     mergedColors.glowStrength = Math.min(
       mergedColors.glowStrength ?? 0.26,
-      theme.category === 'minimal' ? 0.12 : 0.28
+      isHeroTheme ? 1.35 : theme.category === 'minimal' ? 0.12 : 0.28
     );
     mergedColors.blurStrength = Math.min(
       mergedColors.blurStrength ?? 0.9,
-      theme.category === 'minimal' ? 0.35 : 0.8
+      isHeroTheme ? 5 : theme.category === 'minimal' ? 0.35 : 0.8
     );
-    mergedColors.shadowIntensity = Math.min(mergedColors.shadowIntensity ?? 0.88, 0.92);
+    mergedColors.shadowIntensity = Math.min(mergedColors.shadowIntensity ?? 0.88, isHeroTheme ? 1.18 : 0.92);
     mergedColors.textPrimary = mergedColors.textPrimary || theme.colors.gray0;
     mergedColors.textSecondary =
       mergedColors.textSecondary ||
@@ -4488,6 +4874,7 @@ function applyBuiltInThemePersonality(theme: ThemePalette): ThemePalette {
     ...theme,
     style: mergedStyle,
     effects: mergedEffects,
+    atmosphere: mergedAtmosphere,
     adaptive: mergedAdaptive,
     meta: mergedMeta,
     colors: mergedColors,
@@ -5752,7 +6139,198 @@ function buildThemeMotifOverlay(
     ].join(', ');
   }
 
+  if (motif === 'circuit') {
+    const cell = 34 + (themeSeed % 10);
+    const node = 0.85 + scaledIntensity * 0.7;
+    return [
+      `linear-gradient(90deg, color-mix(in srgb, ${accent} ${secondaryWeight}%, transparent) 1px, transparent 1px) 0 0 / ${cell}px ${cell}px`,
+      `linear-gradient(0deg, color-mix(in srgb, ${brand} ${secondaryWeight}%, transparent) 1px, transparent 1px) ${cell / 2}px ${cell / 2}px / ${cell}px ${cell}px`,
+      `radial-gradient(circle at ${offset + 3}px ${offset + 3}px, color-mix(in srgb, ${highlight} ${primaryWeight}%, transparent) ${node}px, transparent ${node + 0.42}px) 0 0 / ${cell}px ${cell}px`,
+    ].join(', ');
+  }
+
+  if (motif === 'hud-corners') {
+    const cornerWeight = 2 + Math.round(scaledIntensity * 10);
+    return [
+      `linear-gradient(90deg, color-mix(in srgb, ${accent} ${cornerWeight}%, transparent) 14px, transparent 14px) 0 0 / 72px 1px`,
+      `linear-gradient(180deg, color-mix(in srgb, ${brand} ${cornerWeight}%, transparent) 14px, transparent 14px) 0 0 / 1px 72px`,
+      `linear-gradient(135deg, transparent 0 48%, color-mix(in srgb, ${highlight} ${secondaryWeight}%, transparent) 48% 52%, transparent 52% 100%) 0 0 / 42px 42px`,
+    ].join(', ');
+  }
+
+  if (motif === 'dot-matrix') {
+    const dotWeight = 4 + Math.round(scaledIntensity * 20);
+    const dot = 0.58 + scaledIntensity * 0.45;
+    return [
+      `radial-gradient(circle at 2px 2px, color-mix(in srgb, ${accent} ${dotWeight}%, transparent) ${dot}px, transparent ${dot + 0.36}px) 0 0 / 10px 10px`,
+      `radial-gradient(circle at 7px 7px, color-mix(in srgb, ${brand} ${Math.max(2, dotWeight - 6)}%, transparent) ${dot * 0.62}px, transparent ${dot * 0.62 + 0.28}px) 0 0 / 10px 10px`,
+    ].join(', ');
+  }
+
   return 'none';
+}
+
+function buildThemeDecalOverlay(
+  decal: ThemeDecalStyle,
+  decalIntensity: number,
+  brand: string,
+  accent: string,
+  highlight: string,
+  themeSeed: number,
+  intensityScale: number = 1
+): string {
+  const scaledIntensity = clamp(decalIntensity * intensityScale, 0, 1);
+
+  if (decal === 'none' || scaledIntensity <= 0.025) {
+    return 'none';
+  }
+
+  const primaryWeight = 4 + Math.round(scaledIntensity * 18);
+  const secondaryWeight = 2 + Math.round(scaledIntensity * 10);
+  const corner = 18 + (themeSeed % 8);
+
+  if (decal === 'corner-cuts') {
+    return [
+      `linear-gradient(135deg, color-mix(in srgb, ${accent} ${primaryWeight}%, transparent) 0 1px, transparent 1px 100%) 0 0 / ${corner}px ${corner}px no-repeat`,
+      `linear-gradient(225deg, color-mix(in srgb, ${brand} ${primaryWeight}%, transparent) 0 1px, transparent 1px 100%) 100% 0 / ${corner}px ${corner}px no-repeat`,
+      `linear-gradient(315deg, color-mix(in srgb, ${highlight} ${secondaryWeight}%, transparent) 0 1px, transparent 1px 100%) 0 100% / ${corner}px ${corner}px no-repeat`,
+      `linear-gradient(45deg, color-mix(in srgb, ${accent} ${secondaryWeight}%, transparent) 0 1px, transparent 1px 100%) 100% 100% / ${corner}px ${corner}px no-repeat`,
+    ].join(', ');
+  }
+
+  if (decal === 'scan-strips') {
+    return [
+      `repeating-linear-gradient(90deg, color-mix(in srgb, ${accent} ${primaryWeight}%, transparent) 0 12px, transparent 12px 20px) 100% 0 / 92px 3px no-repeat`,
+      `repeating-linear-gradient(90deg, color-mix(in srgb, ${brand} ${secondaryWeight}%, transparent) 0 8px, transparent 8px 16px) 0 100% / 128px 2px no-repeat`,
+    ].join(', ');
+  }
+
+  if (decal === 'circuit') {
+    return [
+      `linear-gradient(90deg, transparent 0 18px, color-mix(in srgb, ${accent} ${primaryWeight}%, transparent) 18px 19px, transparent 19px 100%) 0 10px / 84px 38px`,
+      `linear-gradient(0deg, transparent 0 14px, color-mix(in srgb, ${brand} ${secondaryWeight}%, transparent) 14px 15px, transparent 15px 100%) 12px 0 / 58px 64px`,
+      `radial-gradient(circle at 18px 18px, color-mix(in srgb, ${highlight} ${primaryWeight}%, transparent) 1px, transparent 1.4px) 0 0 / 84px 64px`,
+    ].join(', ');
+  }
+
+  return [
+    `linear-gradient(90deg, color-mix(in srgb, ${accent} ${primaryWeight}%, transparent) 0 22px, transparent 22px 100%) 0 0 / 126px 2px no-repeat`,
+    `linear-gradient(90deg, transparent 0 18px, color-mix(in srgb, ${brand} ${primaryWeight}%, transparent) 18px 42px, transparent 42px 100%) 100% 100% / 140px 2px no-repeat`,
+    `linear-gradient(180deg, color-mix(in srgb, ${highlight} ${secondaryWeight}%, transparent) 0 18px, transparent 18px 100%) 0 0 / 2px 92px no-repeat`,
+    `linear-gradient(180deg, transparent 0 16px, color-mix(in srgb, ${accent} ${secondaryWeight}%, transparent) 16px 52px, transparent 52px 100%) 100% 0 / 2px 116px no-repeat`,
+  ].join(', ');
+}
+
+function buildThemeAtmosphereBackground(
+  background: ThemeAtmosphereBackground,
+  brand: string,
+  accent: string,
+  tertiaryAccent: string,
+  highlightAccent: string,
+  gray8: string,
+  gray9: string,
+  themeSeed: number,
+  isLightMode: boolean
+): string {
+  if (background === 'none') {
+    return 'none';
+  }
+
+  const brandWeight = isLightMode ? 13 : 22;
+  const accentWeight = isLightMode ? 10 : 18;
+  const highlightWeight = isLightMode ? 8 : 14;
+  const firstX = 12 + (themeSeed % 24);
+  const secondX = 66 + (themeSeed % 18);
+  const lowerX = 28 + (themeSeed % 40);
+
+  if (background === 'aurora') {
+    return [
+      `linear-gradient(${112 + (themeSeed % 28)}deg, color-mix(in srgb, ${brand} ${brandWeight}%, transparent), transparent 46%)`,
+      `radial-gradient(ellipse at ${firstX}% 12%, color-mix(in srgb, ${accent} ${accentWeight + 6}%, transparent), transparent 58%)`,
+      `radial-gradient(ellipse at ${secondX}% 18%, color-mix(in srgb, ${tertiaryAccent} ${accentWeight}%, transparent), transparent 56%)`,
+      `radial-gradient(ellipse at ${lowerX}% 92%, color-mix(in srgb, ${highlightAccent} ${highlightWeight}%, transparent), transparent 64%)`,
+    ].join(', ');
+  }
+
+  if (background === 'spotlight') {
+    return [
+      `radial-gradient(circle at ${48 + (themeSeed % 12)}% 2%, color-mix(in srgb, ${brand} ${brandWeight + 8}%, transparent), transparent 36%)`,
+      `radial-gradient(ellipse at 50% 112%, color-mix(in srgb, ${accent} ${accentWeight}%, transparent), transparent 58%)`,
+      `linear-gradient(180deg, color-mix(in srgb, ${gray8} 30%, transparent), color-mix(in srgb, ${gray9} 76%, transparent))`,
+    ].join(', ');
+  }
+
+  if (background === 'strata') {
+    return [
+      `linear-gradient(${154 + (themeSeed % 16)}deg, color-mix(in srgb, ${brand} ${brandWeight}%, transparent) 0 10%, transparent 10% 30%, color-mix(in srgb, ${accent} ${accentWeight}%, transparent) 30% 42%, transparent 42% 100%)`,
+      `repeating-linear-gradient(${18 + (themeSeed % 8)}deg, color-mix(in srgb, ${highlightAccent} ${highlightWeight}%, transparent) 0 1px, transparent 1px 34px)`,
+      `radial-gradient(circle at 92% 10%, color-mix(in srgb, ${tertiaryAccent} ${accentWeight}%, transparent), transparent 48%)`,
+    ].join(', ');
+  }
+
+  if (background === 'grid') {
+    return [
+      `linear-gradient(90deg, color-mix(in srgb, ${accent} ${accentWeight}%, transparent) 1px, transparent 1px) 0 0 / ${28 + (themeSeed % 10)}px ${28 + (themeSeed % 10)}px`,
+      `linear-gradient(0deg, color-mix(in srgb, ${brand} ${Math.max(5, brandWeight - 8)}%, transparent) 1px, transparent 1px) 0 0 / ${28 + (themeSeed % 10)}px ${28 + (themeSeed % 10)}px`,
+      `radial-gradient(circle at ${secondX}% 18%, color-mix(in srgb, ${highlightAccent} ${highlightWeight}%, transparent), transparent 54%)`,
+    ].join(', ');
+  }
+
+  if (background === 'mist') {
+    return [
+      `radial-gradient(ellipse at ${firstX}% 10%, color-mix(in srgb, ${brand} ${brandWeight}%, transparent), transparent 64%)`,
+      `radial-gradient(ellipse at ${secondX}% 28%, color-mix(in srgb, ${accent} ${accentWeight}%, transparent), transparent 62%)`,
+      `radial-gradient(ellipse at ${lowerX}% 88%, color-mix(in srgb, ${tertiaryAccent} ${Math.max(6, accentWeight - 4)}%, transparent), transparent 70%)`,
+      `linear-gradient(180deg, color-mix(in srgb, ${gray8} 20%, transparent), transparent 58%)`,
+    ].join(', ');
+  }
+
+  return [
+    `radial-gradient(circle at ${firstX}% 14%, color-mix(in srgb, ${brand} ${brandWeight}%, transparent), transparent 56%)`,
+    `radial-gradient(circle at ${secondX}% 10%, color-mix(in srgb, ${accent} ${accentWeight}%, transparent), transparent 52%)`,
+    `radial-gradient(circle at ${lowerX}% 80%, color-mix(in srgb, ${highlightAccent} ${highlightWeight}%, transparent), transparent 60%)`,
+  ].join(', ');
+}
+
+function buildThemeAtmosphereTexture(
+  texture: ThemeAtmosphereTexture,
+  textColor: string,
+  accent: string,
+  themeSeed: number
+): { overlay: string; lineOverlay: string } {
+  if (texture === 'none') {
+    return { overlay: 'none', lineOverlay: 'none' };
+  }
+
+  const grainSize = 7 + (themeSeed % 4);
+  if (texture === 'paper') {
+    return {
+      overlay: [
+        `radial-gradient(circle at 1px 1px, color-mix(in srgb, ${textColor} 5%, transparent) 0.65px, transparent 1px) 0 0 / ${grainSize}px ${grainSize}px`,
+        `repeating-linear-gradient(90deg, color-mix(in srgb, ${accent} 3%, transparent) 0 1px, transparent 1px 36px)`,
+      ].join(', '),
+      lineOverlay: 'none',
+    };
+  }
+
+  if (texture === 'film') {
+    return {
+      overlay: `radial-gradient(circle at 1px 1px, color-mix(in srgb, ${textColor} 6%, transparent) 0.7px, transparent 1px) 0 0 / ${grainSize}px ${grainSize}px`,
+      lineOverlay: `repeating-linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0 1px, transparent 1px 4px)`,
+    };
+  }
+
+  if (texture === 'terminal') {
+    return {
+      overlay: `radial-gradient(circle at 1px 1px, color-mix(in srgb, ${accent} 7%, transparent) 0.62px, transparent 0.95px) 0 0 / ${grainSize}px ${grainSize}px`,
+      lineOverlay: `repeating-linear-gradient(180deg, color-mix(in srgb, ${accent} 7%, transparent) 0 1px, transparent 1px 3px)`,
+    };
+  }
+
+  return {
+    overlay: `radial-gradient(circle at 1px 1px, color-mix(in srgb, ${textColor} 6%, transparent) 0.7px, transparent 0.95px) 0 0 / ${grainSize}px ${grainSize}px`,
+    lineOverlay: 'none',
+  };
 }
 
 // Apply theme colors as CSS variables
@@ -5766,6 +6344,7 @@ export function applyThemeToCSS(
   const root = target;
   const profile = getVisualProfile(theme);
   const style = resolveThemeStyle(theme, shapeOverrides);
+  const atmosphere = resolveThemeAtmosphere(theme);
   const themeSeed = hashThemeId(theme.id);
   const themeState = typeof useThemeStore.getState === 'function' ? useThemeStore.getState() : null;
   const now = new Date();
@@ -5783,11 +6362,19 @@ export function applyThemeToCSS(
   root.setAttribute('data-theme-category', theme.category);
   root.setAttribute('data-theme-family', style.family);
   root.setAttribute('data-theme-motif', style.motif);
+  root.setAttribute('data-theme-decal', style.decal);
   root.setAttribute('data-theme-surface', style.surfaceMode);
   root.setAttribute('data-theme-control', style.controlMode);
   root.setAttribute('data-theme-icon', style.iconMode);
   root.setAttribute('data-theme-control-shape', style.controlShape);
   root.setAttribute('data-theme-icon-shape', style.iconShape);
+  root.setAttribute(
+    'data-theme-atmosphere-refresh',
+    THEME_ATMOSPHERE_REFRESH_ENABLED ? 'true' : 'false'
+  );
+  root.setAttribute('data-theme-atmosphere-background', atmosphere.background);
+  root.setAttribute('data-theme-atmosphere-texture', atmosphere.texture);
+  root.setAttribute('data-theme-atmosphere-motion', atmosphere.motion);
   root.setAttribute('data-mantine-color-scheme', isLightMode ? 'light' : 'dark');
 
   // Determine the effective brand color
@@ -5828,7 +6415,25 @@ export function applyThemeToCSS(
       ? '999px'
       : style.iconShape === 'square'
         ? 'calc(8px * var(--theme-radius-multiplier))'
+        : style.iconShape === 'diamond' || style.iconShape === 'bracket' || style.iconShape === 'dot-square'
+          ? 'calc(5px * var(--theme-radius-multiplier))'
         : 'calc(12px * var(--theme-radius-multiplier))';
+  const controlShapeClip =
+    style.controlShape === 'chamfer'
+      ? 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)'
+      : style.controlShape === 'slant'
+        ? 'polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%)'
+        : style.controlShape === 'bracket'
+          ? 'polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)'
+          : 'none';
+  const iconShapeClip =
+    style.iconShape === 'diamond'
+      ? 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)'
+      : style.iconShape === 'bracket'
+        ? 'polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)'
+        : style.iconShape === 'dot-square'
+          ? 'polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px)'
+          : 'none';
   const gray0 = isLightMode ? theme.colors.lightGray0 || '#000000' : theme.colors.gray0;
   const gray1 = isLightMode ? theme.colors.lightGray1 || '#1a1a1a' : theme.colors.gray1;
   const gray2 = isLightMode ? theme.colors.lightGray2 || '#333333' : theme.colors.gray2;
@@ -6028,6 +6633,36 @@ export function applyThemeToCSS(
     themeSeed,
     style.family === 'glyph' ? 0.14 : 0.22
   );
+  const decalOverlay = buildThemeDecalOverlay(
+    style.decal,
+    style.decalIntensity,
+    effectiveBrand,
+    secondaryAccent,
+    highlightAccent,
+    themeSeed
+  );
+  const decalOverlayPanel = buildThemeDecalOverlay(
+    style.decal,
+    style.decalIntensity,
+    effectiveBrand,
+    secondaryAccent,
+    highlightAccent,
+    themeSeed,
+    0.64
+  );
+  const decalOverlayControl = buildThemeDecalOverlay(
+    style.decal,
+    style.decalIntensity,
+    effectiveBrand,
+    secondaryAccent,
+    highlightAccent,
+    themeSeed,
+    0.36
+  );
+  const accentRail = `linear-gradient(90deg, transparent, color-mix(in srgb, ${secondaryAccent} 74%, transparent), color-mix(in srgb, ${effectiveBrand} 64%, transparent), transparent)`;
+  const scanStripOverlay = `repeating-linear-gradient(110deg, color-mix(in srgb, ${highlightAccent} 28%, transparent) 0 8px, transparent 8px 14px)`;
+  const metallicSheen = `linear-gradient(132deg, color-mix(in srgb, ${textPrimaryResolved} 12%, transparent) 0%, transparent 24%, color-mix(in srgb, ${highlightAccent} 18%, transparent) 48%, transparent 72%)`;
+  const portalPairAccent = `linear-gradient(90deg, ${effectiveBrand} 0 46%, transparent 46% 54%, ${effectiveAccent} 54% 100%)`;
   const interactiveGradient = `linear-gradient(${92 + (themeSeed % 60)}deg, color-mix(in srgb, ${secondaryAccent} 36%, transparent), color-mix(in srgb, ${tertiaryAccent} 32%, transparent))`;
   const meshOpacity = clamp(
     theme.effects?.meshIntensity ?? (motionProfile === 'energetic' ? 0.9 : motionProfile === 'calm' ? 0.55 : 0.72),
@@ -6044,6 +6679,27 @@ export function applyThemeToCSS(
   const overlayBlend = theme.effects?.overlayBlend ?? (style.family === 'glyph' ? 'screen' : 'soft-light');
   const noiseOverlay = `radial-gradient(circle at 1px 1px, color-mix(in srgb, ${textPrimaryResolved} ${2 + Math.round(noiseOpacity * 10)}%, transparent) 0.7px, transparent 0.95px) 0 0 / 8px 8px`;
   const scanlineOverlay = `repeating-linear-gradient(180deg, color-mix(in srgb, ${effectiveAccent} ${1 + Math.round(scanlineOpacity * 8)}%, transparent) 0 1px, transparent 1px 3px)`;
+  const atmosphereIntensity = THEME_ATMOSPHERE_REFRESH_ENABLED
+    ? clamp(atmosphere.intensity, 0, 1)
+    : 0;
+  const atmosphereBackground = buildThemeAtmosphereBackground(
+    atmosphere.background,
+    effectiveBrand,
+    effectiveAccent,
+    tertiaryAccent,
+    highlightAccent,
+    gray8,
+    gray9,
+    themeSeed,
+    isLightMode
+  );
+  const atmosphereTexture = buildThemeAtmosphereTexture(
+    atmosphere.texture,
+    textPrimaryResolved,
+    effectiveAccent,
+    themeSeed
+  );
+  const atmosphereMotionDuration = 28 + (themeSeed % 22);
   const brandOklch = colorToOklchString(effectiveBrand, theme.colors.brand);
   const accentOklch = colorToOklchString(effectiveAccent, theme.colors.accent);
   const borderStrong = `color-mix(in oklch, ${brandOklch} 32%, ${colorToOklchString(gray5, gray5)})`;
@@ -6054,6 +6710,8 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-style-family', style.family);
   root.style.setProperty('--theme-style-motif', style.motif);
   root.style.setProperty('--theme-style-motif-intensity', String(style.motifIntensity));
+  root.style.setProperty('--theme-style-decal', style.decal);
+  root.style.setProperty('--theme-style-decal-intensity', String(style.decalIntensity));
   root.style.setProperty('--theme-style-surface-mode', style.surfaceMode);
   root.style.setProperty('--theme-style-control-mode', style.controlMode);
   root.style.setProperty('--theme-style-icon-mode', style.iconMode);
@@ -6093,10 +6751,25 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-noise-opacity', String(noiseOpacity));
   root.style.setProperty('--theme-scanline-overlay', scanlineOverlay);
   root.style.setProperty('--theme-scanline-opacity', String(scanlineOpacity));
+  root.style.setProperty('--theme-atmosphere-background', atmosphereBackground);
+  root.style.setProperty('--theme-atmosphere-texture', atmosphereTexture.overlay);
+  root.style.setProperty('--theme-atmosphere-line-overlay', atmosphereTexture.lineOverlay);
+  root.style.setProperty('--theme-atmosphere-opacity', String(atmosphereIntensity));
+  root.style.setProperty('--theme-atmosphere-texture-opacity', String(atmosphereIntensity * 0.36));
+  root.style.setProperty('--theme-atmosphere-line-opacity', String(atmosphereIntensity * 0.18));
+  root.style.setProperty('--theme-atmosphere-motion-duration', `${atmosphereMotionDuration}s`);
   root.style.setProperty('--theme-overlay-blend-mode', overlayBlend);
   root.style.setProperty('--theme-motif-overlay', motifOverlay);
   root.style.setProperty('--theme-motif-overlay-panel', motifOverlayPanel);
   root.style.setProperty('--theme-motif-overlay-input', motifOverlayInput);
+  root.style.setProperty('--theme-decal-overlay', decalOverlay);
+  root.style.setProperty('--theme-decal-overlay-panel', decalOverlayPanel);
+  root.style.setProperty('--theme-decal-overlay-control', decalOverlayControl);
+  root.style.setProperty('--theme-decal-opacity', String(clamp(style.decalIntensity, 0, 1)));
+  root.style.setProperty('--theme-accent-rail', accentRail);
+  root.style.setProperty('--theme-scan-strip-overlay', scanStripOverlay);
+  root.style.setProperty('--theme-metallic-sheen', metallicSheen);
+  root.style.setProperty('--theme-portal-pair-accent', portalPairAccent);
   root.style.setProperty('--theme-interactive-gradient', interactiveGradient);
   root.style.setProperty('--theme-success', theme.colors.success);
   root.style.setProperty('--theme-warning', theme.colors.warning);
@@ -6183,6 +6856,12 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-control-overlay-opacity', String(controlOverlayOpacity));
   root.style.setProperty('--theme-control-radius', controlRadius);
   root.style.setProperty('--theme-icon-radius', iconRadius);
+  root.style.setProperty('--theme-control-shape-clip', controlShapeClip);
+  root.style.setProperty('--theme-icon-shape-clip', iconShapeClip);
+  root.style.setProperty('--theme-control-corner-cut', style.controlShape === 'slant' ? '14px' : style.controlShape === 'bracket' ? '8px' : '10px');
+  root.style.setProperty('--theme-control-bracket-size', style.controlShape === 'bracket' || style.iconShape === 'bracket' ? '9px' : '0px');
+  root.style.setProperty('--theme-dot-matrix-size', style.motif === 'dot-matrix' ? '10px' : '18px');
+  root.style.setProperty('--theme-dot-matrix-dot', style.motif === 'dot-matrix' ? '0.82px' : '0.58px');
   root.style.setProperty(
     '--theme-control-neutral-bg',
     `linear-gradient(180deg, color-mix(in srgb, ${raisedSurface} 94%, ${gray0}), color-mix(in srgb, ${cardSurface} 86%, ${gray7}))`

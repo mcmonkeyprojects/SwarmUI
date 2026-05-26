@@ -2,16 +2,17 @@ import { useCallback, useMemo, useState } from 'react';
 import { Accordion, Box, ColorInput, Divider, Group, Modal, NumberInput, ScrollArea, Select, Stack, Text, Textarea, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconCopy, IconDeviceFloppy, IconDownload, IconX } from '@tabler/icons-react';
-import { THEME_PALETTES, resolveThemeStyle, type ThemeCategory, type ThemeControlMode, type ThemeControlShape, type ThemeIconMode, type ThemeIconShape, type ThemeOverlayBlend, type ThemePalette, useThemeStore } from '../store/themeStore';
+import { THEME_PALETTES, resolveThemeAtmosphere, resolveThemeStyle, type ThemeAtmosphereBackground, type ThemeAtmosphereMotion, type ThemeAtmosphereTexture, type ThemeCategory, type ThemeControlMode, type ThemeControlShape, type ThemeDecalStyle, type ThemeIconMode, type ThemeIconShape, type ThemeOverlayBlend, type ThemePalette, type ThemeStyleMotif, useThemeStore } from '../store/themeStore';
 import { sanitizeThemeId } from '../utils/themeValidation';
 import { ThemePreview } from './ThemePreview';
 import { SwarmButton, SwarmSwitch } from './ui';
 
 interface ThemeBuilderProps { opened: boolean; onClose: () => void; editThemeId?: string; }
 type ThemeEffectsBlock = { noiseIntensity?: number; scanlineIntensity?: number; meshIntensity?: number; meshAnimated?: boolean; overlayBlend?: ThemeOverlayBlend; };
+type ThemeAtmosphereBlock = { background?: ThemeAtmosphereBackground; texture?: ThemeAtmosphereTexture; motion?: ThemeAtmosphereMotion; intensity?: number; };
 type ThemeAdaptiveBlock = { imageReactiveStrength?: number; timeOfDayStrength?: number; contrastGuard?: boolean; };
 type ThemeMetaBlock = { themeSet?: string; pairedModeThemeId?: string; recommendationIds?: string[]; tags?: string[]; };
-type ExtendedThemePalette = ThemePalette & { effects?: ThemeEffectsBlock; adaptive?: ThemeAdaptiveBlock; meta?: ThemeMetaBlock; };
+type ExtendedThemePalette = ThemePalette & { effects?: ThemeEffectsBlock; atmosphere?: ThemeAtmosphereBlock; adaptive?: ThemeAdaptiveBlock; meta?: ThemeMetaBlock; };
 
 const CATEGORY_OPTIONS = [
     { value: 'custom', label: 'Custom' },
@@ -29,9 +30,14 @@ const CATEGORY_OPTIONS = [
 
 const CONTROL_MODE_OPTIONS = [{ value: 'default', label: 'Default' }, { value: 'filled', label: 'Filled' }, { value: 'outlined', label: 'Outlined' }];
 const ICON_MODE_OPTIONS = [{ value: 'plain', label: 'Plain' }, { value: 'badge', label: 'Badge' }, { value: 'glyph-outline', label: 'Glyph Outline' }];
-const CONTROL_SHAPE_OPTIONS = [{ value: 'rounded', label: 'Rounded' }, { value: 'pill', label: 'Pill' }, { value: 'square', label: 'Square' }];
-const ICON_SHAPE_OPTIONS = [{ value: 'rounded', label: 'Rounded' }, { value: 'circle', label: 'Circle' }, { value: 'square', label: 'Square' }];
+const CONTROL_SHAPE_OPTIONS = [{ value: 'rounded', label: 'Rounded' }, { value: 'pill', label: 'Pill' }, { value: 'square', label: 'Square' }, { value: 'chamfer', label: 'Chamfer' }, { value: 'slant', label: 'Slant' }, { value: 'bracket', label: 'Bracket' }];
+const ICON_SHAPE_OPTIONS = [{ value: 'rounded', label: 'Rounded' }, { value: 'circle', label: 'Circle' }, { value: 'square', label: 'Square' }, { value: 'diamond', label: 'Diamond' }, { value: 'bracket', label: 'Bracket' }, { value: 'dot-square', label: 'Dot Square' }];
+const MOTIF_OPTIONS = [{ value: 'none', label: 'None' }, { value: 'dot-grid', label: 'Dot Grid' }, { value: 'glyph-field', label: 'Glyph Field' }, { value: 'circuit', label: 'Circuit' }, { value: 'hud-corners', label: 'HUD Corners' }, { value: 'dot-matrix', label: 'Dot Matrix' }];
+const DECAL_OPTIONS = [{ value: 'none', label: 'None' }, { value: 'corner-cuts', label: 'Corner Cuts' }, { value: 'scan-strips', label: 'Scan Strips' }, { value: 'circuit', label: 'Circuit' }, { value: 'hud', label: 'HUD' }];
 const BLEND_OPTIONS = [{ value: 'normal', label: 'Normal' }, { value: 'overlay', label: 'Overlay' }, { value: 'soft-light', label: 'Soft Light' }, { value: 'screen', label: 'Screen' }, { value: 'multiply', label: 'Multiply' }];
+const ATMOSPHERE_BACKGROUND_OPTIONS = [{ value: 'mesh', label: 'Mesh' }, { value: 'aurora', label: 'Aurora' }, { value: 'spotlight', label: 'Spotlight' }, { value: 'strata', label: 'Strata' }, { value: 'grid', label: 'Grid' }, { value: 'mist', label: 'Mist' }, { value: 'none', label: 'None' }];
+const ATMOSPHERE_TEXTURE_OPTIONS = [{ value: 'none', label: 'Clean' }, { value: 'grain', label: 'Grain' }, { value: 'paper', label: 'Paper' }, { value: 'film', label: 'Film' }, { value: 'terminal', label: 'Terminal' }];
+const ATMOSPHERE_MOTION_OPTIONS = [{ value: 'still', label: 'Still' }, { value: 'drift', label: 'Drift' }, { value: 'pulse', label: 'Pulse' }, { value: 'scan', label: 'Scan' }];
 
 const csv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
 const joinCsv = (value?: string[]) => value?.join(', ') || '';
@@ -64,6 +70,20 @@ function buildCss(theme: ExtendedThemePalette): string {
         if (theme.effects.meshIntensity !== undefined) lines.push(`  --theme-effects-mesh-intensity: ${theme.effects.meshIntensity};`);
         if (theme.effects.meshAnimated !== undefined) lines.push(`  --theme-effects-mesh-animated: ${theme.effects.meshAnimated ? 1 : 0};`);
         if (theme.effects.overlayBlend) lines.push(`  --theme-effects-overlay-blend: ${theme.effects.overlayBlend};`);
+    }
+    if (theme.style) {
+        if (theme.style.motif) lines.push(`  --theme-style-motif: ${theme.style.motif};`);
+        if (theme.style.motifIntensity !== undefined) lines.push(`  --theme-style-motif-intensity: ${theme.style.motifIntensity};`);
+        if (theme.style.decal) lines.push(`  --theme-style-decal: ${theme.style.decal};`);
+        if (theme.style.decalIntensity !== undefined) lines.push(`  --theme-style-decal-intensity: ${theme.style.decalIntensity};`);
+        if (theme.style.controlShape) lines.push(`  --theme-style-control-shape: ${theme.style.controlShape};`);
+        if (theme.style.iconShape) lines.push(`  --theme-style-icon-shape: ${theme.style.iconShape};`);
+    }
+    if (theme.atmosphere) {
+        if (theme.atmosphere.background) lines.push(`  --theme-atmosphere-background-mode: ${theme.atmosphere.background};`);
+        if (theme.atmosphere.texture) lines.push(`  --theme-atmosphere-texture-mode: ${theme.atmosphere.texture};`);
+        if (theme.atmosphere.motion) lines.push(`  --theme-atmosphere-motion-mode: ${theme.atmosphere.motion};`);
+        if (theme.atmosphere.intensity !== undefined) lines.push(`  --theme-atmosphere-intensity: ${theme.atmosphere.intensity};`);
     }
     if (theme.adaptive) {
         if (theme.adaptive.imageReactiveStrength !== undefined) lines.push(`  --theme-adaptive-image-reactive-strength: ${theme.adaptive.imageReactiveStrength};`);
@@ -109,6 +129,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
     const [fontHeading, setFontHeading] = useState(existing?.colors.fontHeading || '');
     const [fontMono, setFontMono] = useState(existing?.colors.fontMono || '');
     const [styleSeed, setStyleSeed] = useState(resolveThemeStyle(existing || baseTheme));
+    const [atmosphereSeed, setAtmosphereSeed] = useState(resolveThemeAtmosphere(existing || baseTheme));
     const [noiseIntensity, setNoiseIntensity] = useState<number | ''>(existing?.effects?.noiseIntensity ?? '');
     const [scanlineIntensity, setScanlineIntensity] = useState<number | ''>(existing?.effects?.scanlineIntensity ?? '');
     const [meshIntensity, setMeshIntensity] = useState<number | ''>(existing?.effects?.meshIntensity ?? '');
@@ -130,7 +151,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
         setGray6(theme.colors.gray6); setGray7(theme.colors.gray7); setGray8(theme.colors.gray8); setGray9(theme.colors.gray9);
         setSuccess(theme.colors.success); setWarning(theme.colors.warning); setError(theme.colors.error); setTextPrimary(theme.colors.textPrimary || '');
         setTextSecondary(theme.colors.textSecondary || ''); setOverlayColor(theme.colors.overlayColor || ''); setFontFamily(theme.colors.fontFamily || '');
-        setFontHeading(theme.colors.fontHeading || ''); setFontMono(theme.colors.fontMono || ''); setStyleSeed(resolveThemeStyle(theme));
+        setFontHeading(theme.colors.fontHeading || ''); setFontMono(theme.colors.fontMono || ''); setStyleSeed(resolveThemeStyle(theme)); setAtmosphereSeed(resolveThemeAtmosphere(theme));
         setNoiseIntensity(theme.effects?.noiseIntensity ?? ''); setScanlineIntensity(theme.effects?.scanlineIntensity ?? '');
         setMeshIntensity(theme.effects?.meshIntensity ?? ''); setMeshAnimated(theme.effects?.meshAnimated ?? false); setOverlayBlend(theme.effects?.overlayBlend || 'normal');
         setImageReactiveStrength(theme.adaptive?.imageReactiveStrength ?? ''); setTimeOfDayStrength(theme.adaptive?.timeOfDayStrength ?? '');
@@ -145,6 +166,12 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
         if (meshIntensity !== '') effects.meshIntensity = meshIntensity;
         if (meshAnimated) effects.meshAnimated = true;
         if (overlayBlend && overlayBlend !== 'normal') effects.overlayBlend = overlayBlend as ThemeOverlayBlend;
+        const atmosphere: ThemeAtmosphereBlock = {
+            background: atmosphereSeed.background,
+            texture: atmosphereSeed.texture,
+            motion: atmosphereSeed.motion,
+            intensity: atmosphereSeed.intensity,
+        };
         const adaptive: ThemeAdaptiveBlock = {};
         if (imageReactiveStrength !== '') adaptive.imageReactiveStrength = imageReactiveStrength;
         if (timeOfDayStrength !== '') adaptive.timeOfDayStrength = timeOfDayStrength;
@@ -161,8 +188,8 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
         if (fontFamily) colors.fontFamily = fontFamily;
         if (fontHeading) colors.fontHeading = fontHeading;
         if (fontMono) colors.fontMono = fontMono;
-        return { id, name: themeName || 'Preview', category, style: styleSeed, colors, ...(Object.keys(effects).length ? { effects } : {}), ...(Object.keys(adaptive).length ? { adaptive } : {}), ...(Object.keys(meta).length ? { meta } : {}) };
-    }, [accent, brand, category, contrastGuard, error, fontFamily, fontHeading, fontMono, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, imageReactiveStrength, meshAnimated, meshIntensity, noiseIntensity, overlayBlend, overlayColor, pairedModeThemeId, recommendationIds, scanlineIntensity, styleSeed, success, tags, textPrimary, textSecondary, themeName, themeSet, timeOfDayStrength, warning]);
+        return { id, name: themeName || 'Preview', category, style: styleSeed, atmosphere, colors, ...(Object.keys(effects).length ? { effects } : {}), ...(Object.keys(adaptive).length ? { adaptive } : {}), ...(Object.keys(meta).length ? { meta } : {}) };
+    }, [accent, atmosphereSeed, brand, category, contrastGuard, error, fontFamily, fontHeading, fontMono, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, imageReactiveStrength, meshAnimated, meshIntensity, noiseIntensity, overlayBlend, overlayColor, pairedModeThemeId, recommendationIds, scanlineIntensity, styleSeed, success, tags, textPrimary, textSecondary, themeName, themeSet, timeOfDayStrength, warning]);
 
     const previewTheme = useMemo(() => makeTheme(editThemeId || 'preview'), [editThemeId, makeTheme]);
     const handleBaseThemeChange = (value: string | null) => { if (!value) return; setBaseThemeId(value); const theme = getAllThemes().find((item) => item.id === value) as ExtendedThemePalette | undefined; if (theme) applyBaseTheme(theme); };
@@ -194,6 +221,10 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
                             <Select label="Icon Mode" data={ICON_MODE_OPTIONS} value={styleSeed.iconMode} onChange={(v) => v && setStyleSeed((s) => ({ ...s, iconMode: v as ThemeIconMode }))} />
                             <Select label="Button Shape" data={CONTROL_SHAPE_OPTIONS} value={styleSeed.controlShape} onChange={(v) => v && setStyleSeed((s) => ({ ...s, controlShape: v as ThemeControlShape }))} />
                             <Select label="Icon Shape" data={ICON_SHAPE_OPTIONS} value={styleSeed.iconShape} onChange={(v) => v && setStyleSeed((s) => ({ ...s, iconShape: v as ThemeIconShape }))} />
+                            <Select label="Motif" data={MOTIF_OPTIONS} value={styleSeed.motif} onChange={(v) => v && setStyleSeed((s) => ({ ...s, motif: v as ThemeStyleMotif }))} />
+                            <NumberInput label="Motif Intensity" value={styleSeed.motifIntensity} min={0} max={1} step={0.05} decimalScale={2} onChange={(value) => setStyleSeed((s) => ({ ...s, motifIntensity: typeof value === 'number' ? value : Number(value || 0) }))} />
+                            <Select label="Decal" data={DECAL_OPTIONS} value={styleSeed.decal} onChange={(v) => v && setStyleSeed((s) => ({ ...s, decal: v as ThemeDecalStyle }))} />
+                            <NumberInput label="Decal Intensity" value={styleSeed.decalIntensity} min={0} max={1} step={0.05} decimalScale={2} onChange={(value) => setStyleSeed((s) => ({ ...s, decalIntensity: typeof value === 'number' ? value : Number(value || 0) }))} />
                             <Divider />
                             <Text size="sm" fw={600}>Primary Colors</Text>
                             <ColorInput label="Brand Color" value={brand} onChange={setBrand} format="hex" swatches={['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']} />
@@ -215,6 +246,13 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
                             <Group justify="space-between"><Stack gap={2}><Text size="sm" fw={500}>Animate Mesh</Text><Text size="xs" c="dimmed">Enable motion for energetic themes.</Text></Stack><SwarmSwitch checked={meshAnimated} onChange={(e) => setMeshAnimated(e.currentTarget.checked)} /></Group>
                             <Select label="Overlay Blend Mode" data={BLEND_OPTIONS} value={overlayBlend} onChange={(v) => setOverlayBlend((v || 'normal') as ThemeOverlayBlend)} />
                             <Divider />
+                            <Text size="sm" fw={600}>Atmosphere</Text>
+                            <Text size="xs" c="dimmed">App-wide background, texture, and ambient motion for this theme.</Text>
+                            <Select label="Background" data={ATMOSPHERE_BACKGROUND_OPTIONS} value={atmosphereSeed.background} onChange={(v) => v && setAtmosphereSeed((s) => ({ ...s, background: v as ThemeAtmosphereBackground }))} />
+                            <Select label="Texture" data={ATMOSPHERE_TEXTURE_OPTIONS} value={atmosphereSeed.texture} onChange={(v) => v && setAtmosphereSeed((s) => ({ ...s, texture: v as ThemeAtmosphereTexture }))} />
+                            <Select label="Motion" data={ATMOSPHERE_MOTION_OPTIONS} value={atmosphereSeed.motion} onChange={(v) => v && setAtmosphereSeed((s) => ({ ...s, motion: v as ThemeAtmosphereMotion }))} />
+                            <NumberInput label="Atmosphere Intensity" value={atmosphereSeed.intensity} min={0} max={1} step={0.05} decimalScale={2} onChange={(value) => setAtmosphereSeed((s) => ({ ...s, intensity: typeof value === 'number' ? value : Number(value || 0) }))} />
+                            <Divider />
                             <Text size="sm" fw={600}>Adaptive</Text>
                             <NumberInput label="Image Reactive Strength" value={imageReactiveStrength} min={0} max={1} step={0.05} decimalScale={2}onChange={(value) => setImageReactiveStrength(typeof value === 'number' ? value : value === '' ? '' : Number(value))} />
                             <NumberInput label="Follow-Sun Strength" value={timeOfDayStrength} min={0} max={1} step={0.05} decimalScale={2}onChange={(value) => setTimeOfDayStrength(typeof value === 'number' ? value : value === '' ? '' : Number(value))} />
@@ -234,7 +272,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
                         <Group gap="xs"><SwarmButton tone="secondary" emphasis="ghost" onClick={onClose} leftSection={<IconX size={14} />}>Cancel</SwarmButton><SwarmButton tone="primary" emphasis="solid" onClick={handleSave} leftSection={<IconDeviceFloppy size={14} />}>{editThemeId ? 'Update' : 'Save'} Theme</SwarmButton></Group>
                     </Group>
                 </Stack>
-                <Box style={{ flex: '0 0 220px' }}><Stack gap="xs"><Text size="xs" fw={600} c="dimmed">Live Preview</Text><ThemePreview theme={previewTheme} /><Text size="xs" c="dimmed" ta="center" className="theme-builder-preview-copy">Preview updates in real time as you edit colors, effects, adaptive values, metadata, and control shapes.</Text></Stack></Box>
+                <Box style={{ flex: '0 0 220px' }}><Stack gap="xs"><Text size="xs" fw={600} c="dimmed">Live Preview</Text><ThemePreview theme={previewTheme} /><Text size="xs" c="dimmed" ta="center" className="theme-builder-preview-copy">Preview updates in real time as you edit colors, atmosphere, effects, adaptive values, metadata, and control shapes.</Text></Stack></Box>
             </Group>
         </Modal>
     );
