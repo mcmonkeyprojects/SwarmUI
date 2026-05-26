@@ -942,7 +942,7 @@ body {
     top: 0;
     bottom: 0;
     left: var(--image-compare-split);
-    width: 6rem;
+    width: 12rem;
     transform: translateX(-50%);
     background-color: transparent;
     pointer-events: auto;
@@ -954,7 +954,7 @@ body {
     left: 0;
     right: 0;
     width: 100%;
-    height: 6rem;
+    height: 12rem;
     transform: translateY(-50%);
     cursor: ns-resize;
 }
