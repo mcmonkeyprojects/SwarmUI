@@ -166,6 +166,7 @@ interface WizardWorkflowProps {
     onGenerate?: (params: GenerateParams) => void;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getWizardTemplateMeta(templateId: string | null) {
     return WIZARD_TEMPLATES.find((template) => template.id === templateId) ?? null;
 }
@@ -267,30 +268,32 @@ export function WizardWorkflow({ onGenerate }: WizardWorkflowProps) {
                 ? 'image-to-image'
                 : 'text-to-image';
 
-        setSelectedTemplate(inferredTemplate);
-        setActiveStep(0);
-        setPrompt(String(handoff.params.prompt || ''));
-        setNegativePrompt(String(handoff.params.negativeprompt || ''));
-        setAspectRatio(
-            handoff.params.width && handoff.params.height
-                ? `${handoff.params.width}:${handoff.params.height}`
-                : '1:1'
-        );
-        setSteps(typeof handoff.params.steps === 'number' ? handoff.params.steps : 20);
-        setCfgScale(typeof handoff.params.cfgscale === 'number' ? handoff.params.cfgscale : 7);
-        setSampler(typeof handoff.params.sampler === 'string' ? handoff.params.sampler : 'euler');
-        setUploadedImage(String(handoff.imageSrc || handoff.params.initimage || '') || null);
-        if (typeof handoff.params.initimagecreativity === 'number') {
-            setInitImageCreativity(handoff.params.initimagecreativity);
-        }
-        if (typeof handoff.params.refinerupscale === 'number' && handoff.params.refinerupscale > 1) {
-            setUpscaleFactor(handoff.params.refinerupscale);
-        }
-        if (typeof handoff.params.refinerupscalemethod === 'string' && handoff.params.refinerupscalemethod) {
-            setUpscaleMethod(handoff.params.refinerupscalemethod);
-        }
-        setLastWizardTemplate(inferredTemplate);
-        setHandoff(null);
+        queueMicrotask(() => {
+            setSelectedTemplate(inferredTemplate);
+            setActiveStep(0);
+            setPrompt(String(handoff.params.prompt || ''));
+            setNegativePrompt(String(handoff.params.negativeprompt || ''));
+            setAspectRatio(
+                handoff.params.width && handoff.params.height
+                    ? `${handoff.params.width}:${handoff.params.height}`
+                    : '1:1'
+            );
+            setSteps(typeof handoff.params.steps === 'number' ? handoff.params.steps : 20);
+            setCfgScale(typeof handoff.params.cfgscale === 'number' ? handoff.params.cfgscale : 7);
+            setSampler(typeof handoff.params.sampler === 'string' ? handoff.params.sampler : 'euler');
+            setUploadedImage(String(handoff.imageSrc || handoff.params.initimage || '') || null);
+            if (typeof handoff.params.initimagecreativity === 'number') {
+                setInitImageCreativity(handoff.params.initimagecreativity);
+            }
+            if (typeof handoff.params.refinerupscale === 'number' && handoff.params.refinerupscale > 1) {
+                setUpscaleFactor(handoff.params.refinerupscale);
+            }
+            if (typeof handoff.params.refinerupscalemethod === 'string' && handoff.params.refinerupscalemethod) {
+                setUpscaleMethod(handoff.params.refinerupscalemethod);
+            }
+            setLastWizardTemplate(inferredTemplate);
+            setHandoff(null);
+        });
     }, [handoff, setHandoff, setLastWizardTemplate]);
 
     const chooseTemplate = (templateId: WizardTemplateId) => {
@@ -471,7 +474,7 @@ export function WizardWorkflow({ onGenerate }: WizardWorkflowProps) {
                             <Text size="lg" fw={600}>{copy.title}</Text>
                             <Text size="sm" c="dimmed">{copy.description}</Text>
                         </Stack>
-                        <Grid gutter="md">
+                        <Grid gap="md">
                             <Grid.Col span={{ base: 12, sm: 6 }}>
                                 <NumberInput
                                     label="Steps"
@@ -662,7 +665,7 @@ export function WizardWorkflow({ onGenerate }: WizardWorkflowProps) {
                             <Text size="lg" fw={600}>{copy.title}</Text>
                             <Text size="sm" c="dimmed">{copy.description}</Text>
                         </Stack>
-                        <Grid gutter="md">
+                        <Grid gap="md">
                             <Grid.Col span={{ base: 12, sm: 6 }}>
                                 <NumberInput
                                     label="Upscale Factor"
@@ -743,7 +746,7 @@ export function WizardWorkflow({ onGenerate }: WizardWorkflowProps) {
                             <Text size="md" fw={700}>{group.title}</Text>
                             <Text size="sm" c="var(--theme-text-secondary)">{group.description}</Text>
                         </Stack>
-                        <Grid gutter="md">
+                        <Grid gap="md">
                             {group.templates.map((template) => {
                                 const TemplateIcon = template.icon;
                                 const isRecent = lastWizardTemplate === template.id;
@@ -804,7 +807,7 @@ export function WizardWorkflow({ onGenerate }: WizardWorkflowProps) {
     const currentCopy = currentStep ? STEP_COPY[currentStep] : null;
 
     return (
-        <Grid gutter="md" align="flex-start">
+        <Grid gap="md" align="flex-start">
             <Grid.Col span={{ base: 12, lg: 8 }}>
                 <Stack gap="md">
                     <ElevatedCard elevation="paper" tone="brand" withBorder>

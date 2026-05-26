@@ -1,6 +1,6 @@
 import { Group, Indicator, Progress, Tooltip } from '@mantine/core';
 import { IconListCheck } from '@tabler/icons-react';
-import { useQueueStore } from '../stores/queue';
+import { useQueueJobs, useQueueStore } from '../stores/queue';
 import { useWebSocketStore } from '../stores/websocketStore';
 import { SwarmActionIcon, SwarmBadge, type SwarmTone } from './ui';
 import { useShallow } from 'zustand/react/shallow';
@@ -21,9 +21,9 @@ const TONE_INDICATOR_COLORS: Record<SwarmTone, string> = {
 };
 
 export function QueueStatusBadge({ compact = false, onNavigateToQueue }: QueueStatusBadgeProps) {
-    const { jobs, isProcessing, isPaused, runnerStatus } = useQueueStore(
+    const jobs = useQueueJobs();
+    const { isProcessing, isPaused, runnerStatus } = useQueueStore(
         useShallow((state) => ({
-            jobs: state.jobs,
             isProcessing: state.isProcessing,
             isPaused: state.isPaused,
             runnerStatus: state.runnerStatus,

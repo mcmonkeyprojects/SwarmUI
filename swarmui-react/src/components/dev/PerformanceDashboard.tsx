@@ -661,7 +661,7 @@ export function PerformanceDashboard() {
                 </Group>
             </Group>
 
-            <Collapse in={!isMinimized}>
+            <Collapse expanded={!isMinimized}>
                 <Divider my="xs" />
 
                 <Tabs value={activeTab} onChange={setActiveTab}>

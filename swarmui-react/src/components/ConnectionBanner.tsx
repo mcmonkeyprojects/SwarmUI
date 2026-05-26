@@ -74,29 +74,35 @@ export function ConnectionBanner({ autoHideDelay = 3000 }: ConnectionBannerProps
     // Monitor WebSocket health and update state accordingly
     useEffect(() => {
         if (connectionState === 'connected' || connectionState === 'degraded' || connectionState === 'unhealthy') {
-            if (wsHealth === 'degraded') {
-                setConnectionState('degraded');
-                setVisible(true);
-            } else if (wsHealth === 'unhealthy') {
-                setConnectionState('unhealthy');
-                setVisible(true);
-            } else if (wsHealth === 'connected' && (connectionState === 'degraded' || connectionState === 'unhealthy')) {
-                setConnectionState('connected');
-                // Auto-hide after recovery
-                if (autoHideDelay > 0) {
-                    setTimeout(() => setVisible(false), autoHideDelay);
+            queueMicrotask(() => {
+                if (wsHealth === 'degraded') {
+                    setConnectionState('degraded');
+                    setVisible(true);
                 }
-            }
+                else if (wsHealth === 'unhealthy') {
+                    setConnectionState('unhealthy');
+                    setVisible(true);
+                }
+                else if (wsHealth === 'connected' && (connectionState === 'degraded' || connectionState === 'unhealthy')) {
+                    setConnectionState('connected');
+                    // Auto-hide after recovery
+                    if (autoHideDelay > 0) {
+                        setTimeout(() => setVisible(false), autoHideDelay);
+                    }
+                }
+            });
         }
     }, [wsHealth, connectionState, autoHideDelay]);
 
     // Skip if already initialized (e.g., hot reload)
     useEffect(() => {
         if (isInitialized && connectionState === 'connecting') {
-            setConnectionState('connected');
-            if (autoHideDelay > 0) {
-                setTimeout(() => setVisible(false), autoHideDelay);
-            }
+            queueMicrotask(() => {
+                setConnectionState('connected');
+                if (autoHideDelay > 0) {
+                    setTimeout(() => setVisible(false), autoHideDelay);
+                }
+            });
         }
     }, [isInitialized, connectionState, autoHideDelay]);
 

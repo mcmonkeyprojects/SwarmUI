@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Collapse, ColorPicker, Group, Modal, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Box, Collapse, ColorPicker, Group, Modal, ScrollArea, Select, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown, IconChevronUp, IconDeviceDesktop, IconMoon, IconPlus, IconSun, IconUpload } from '@tabler/icons-react';
 import { useShallow } from 'zustand/react/shallow';
 import { type ResolvedColorScheme, type ThemeControlShape, type ThemeIconShape, type ThemeMode, type ThemePalette, useThemeStore } from '../store/themeStore';
@@ -49,14 +49,19 @@ const buildThemeCss = ({ light, dark, customAccent }: ExportThemeInput) => {
             ['--theme-surface-tint', theme.colors.surfaceTint], ['--theme-surface-tint-strength', theme.colors.surfaceTintStrength], ['--theme-panel-gradient', theme.colors.panelGradient],
         ];
         const extendedTheme = theme as ThemePalette & {
-            effects?: { noiseIntensity?: number; scanlineIntensity?: number; meshIntensity?: number; meshAnimated?: boolean; overlayBlend?: string; };
-            adaptive?: { imageReactiveStrength?: number; timeOfDayStrength?: number; contrastGuard?: boolean; };
+        effects?: { noiseIntensity?: number; scanlineIntensity?: number; meshIntensity?: number; meshAnimated?: boolean; overlayBlend?: string; };
+        atmosphere?: { background?: string; texture?: string; motion?: string; intensity?: number; };
+        adaptive?: { imageReactiveStrength?: number; timeOfDayStrength?: number; contrastGuard?: boolean; };
         };
         if (extendedTheme.effects?.noiseIntensity !== undefined) vars.push(['--theme-effects-noise-intensity', extendedTheme.effects.noiseIntensity]);
         if (extendedTheme.effects?.scanlineIntensity !== undefined) vars.push(['--theme-effects-scanline-intensity', extendedTheme.effects.scanlineIntensity]);
         if (extendedTheme.effects?.meshIntensity !== undefined) vars.push(['--theme-effects-mesh-intensity', extendedTheme.effects.meshIntensity]);
         if (extendedTheme.effects?.meshAnimated !== undefined) vars.push(['--theme-effects-mesh-animated', extendedTheme.effects.meshAnimated ? 1 : 0]);
         if (extendedTheme.effects?.overlayBlend) vars.push(['--theme-effects-overlay-blend', extendedTheme.effects.overlayBlend]);
+        if (extendedTheme.atmosphere?.background) vars.push(['--theme-atmosphere-background-mode', extendedTheme.atmosphere.background]);
+        if (extendedTheme.atmosphere?.texture) vars.push(['--theme-atmosphere-texture-mode', extendedTheme.atmosphere.texture]);
+        if (extendedTheme.atmosphere?.motion) vars.push(['--theme-atmosphere-motion-mode', extendedTheme.atmosphere.motion]);
+        if (extendedTheme.atmosphere?.intensity !== undefined) vars.push(['--theme-atmosphere-intensity', extendedTheme.atmosphere.intensity]);
         if (extendedTheme.adaptive?.imageReactiveStrength !== undefined) vars.push(['--theme-adaptive-image-reactive-strength', extendedTheme.adaptive.imageReactiveStrength]);
         if (extendedTheme.adaptive?.timeOfDayStrength !== undefined) vars.push(['--theme-adaptive-time-of-day-strength', extendedTheme.adaptive.timeOfDayStrength]);
         if (extendedTheme.adaptive?.contrastGuard !== undefined) vars.push(['--theme-adaptive-contrast-guard', extendedTheme.adaptive.contrastGuard ? 1 : 0]);
@@ -208,7 +213,7 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
                         <UnstyledButton onClick={() => setAdvancedOpen((open) => !open)} aria-expanded={advancedOpen} aria-controls="appearance-advanced-panel" className="appearance-advanced-toggle" style={{ minHeight: 32, padding: '6px 4px', display: 'block', width: '100%' }}>
                             <Group justify="space-between" align="center" wrap="nowrap"><Text size="xs" fw={700} tt="uppercase" c="dimmed">Advanced customization</Text>{advancedOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}</Group>
                         </UnstyledButton>
-                        <Collapse in={advancedOpen}>
+                        <Collapse expanded={advancedOpen}>
                             <Stack gap="md" id="appearance-advanced-panel">
                                 <Stack gap={6}>
                                     <Text size="sm" fw={600}>Discovery</Text>
@@ -244,11 +249,11 @@ export function AppearanceModal({ opened, onClose }: AppearanceModalProps) {
 
                                 <Stack gap={6}>
                                     <Text size="sm" fw={600}>Button shape</Text>
-                                    <SwarmSegmentedControl fullWidth value={controlShapeOverride || 'theme'} onChange={(value) => { if (value === 'theme') setControlShapeOverride(null); else setControlShapeOverride(value as ThemeControlShape); }} data={[{ value: 'theme', label: 'Theme' }, { value: 'rounded', label: 'Round' }, { value: 'pill', label: 'Pill' }, { value: 'square', label: 'Square' }]} aria-label="Button shape override" />
+                                    <Select value={controlShapeOverride || 'theme'} onChange={(value) => { if (value === 'theme') setControlShapeOverride(null); else if (value) setControlShapeOverride(value as ThemeControlShape); }} data={[{ value: 'theme', label: 'Theme' }, { value: 'rounded', label: 'Round' }, { value: 'pill', label: 'Pill' }, { value: 'square', label: 'Square' }, { value: 'chamfer', label: 'Chamfer' }, { value: 'slant', label: 'Slant' }, { value: 'bracket', label: 'Bracket' }]} aria-label="Button shape override" />
                                 </Stack>
                                 <Stack gap={6}>
                                     <Text size="sm" fw={600}>Icon shape</Text>
-                                    <SwarmSegmentedControl fullWidth value={iconShapeOverride || 'theme'} onChange={(value) => { if (value === 'theme') setIconShapeOverride(null); else setIconShapeOverride(value as ThemeIconShape); }} data={[{ value: 'theme', label: 'Theme' }, { value: 'rounded', label: 'Round' }, { value: 'circle', label: 'Circle' }, { value: 'square', label: 'Square' }]} aria-label="Icon shape override" />
+                                    <Select value={iconShapeOverride || 'theme'} onChange={(value) => { if (value === 'theme') setIconShapeOverride(null); else if (value) setIconShapeOverride(value as ThemeIconShape); }} data={[{ value: 'theme', label: 'Theme' }, { value: 'rounded', label: 'Round' }, { value: 'circle', label: 'Circle' }, { value: 'square', label: 'Square' }, { value: 'diamond', label: 'Diamond' }, { value: 'bracket', label: 'Bracket' }, { value: 'dot-square', label: 'Dot Square' }]} aria-label="Icon shape override" />
                                 </Stack>
 
                                 <Group gap="xs">

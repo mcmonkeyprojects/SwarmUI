@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Box, Group, Stack } from '@mantine/core';
+import { SwarmLoader } from './ui';
 
 /**
  * Skeleton placeholder that matches GeneratePage layout
@@ -71,7 +72,9 @@ export const GeneratePageSkeleton = memo(function GeneratePageSkeleton() {
                         justifyContent: 'center',
                     }}
                 >
-                    <Box style={{ ...shimmerStyle, width: 512, height: 512 }} />
+                    <Box style={{ ...shimmerStyle, width: 512, height: 512, display: 'grid', placeItems: 'center' }}>
+                        <SwarmLoader variant="pulse" size={44} />
+                    </Box>
                 </Box>
 
                 {/* Right Panel Skeleton */}

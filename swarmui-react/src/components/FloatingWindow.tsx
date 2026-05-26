@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import Draggable from 'react-draggable';
+import Draggable, { type DraggableData, type DraggableEvent } from 'react-draggable';
 import { Paper, Group, Text, Box } from '@mantine/core';
 import { IconX, IconMaximize, IconMinimize } from '@tabler/icons-react';
 import { Z_INDEX } from '../utils/zIndex';
@@ -93,9 +93,9 @@ export function FloatingWindow({
         if (opened && centered) {
             const x = Math.max(0, (window.innerWidth - size.width) / 2);
             const y = Math.max(0, (window.innerHeight - size.height) / 2);
-            setPosition({ x, y });
+            queueMicrotask(() => setPosition({ x, y }));
         }
-    }, [opened, centered]);
+    }, [opened, centered, size.height, size.width]);
 
     // Handle maximize toggle
     const handleMaximize = useCallback(() => {
@@ -182,7 +182,7 @@ export function FloatingWindow({
     }, [size, position, minWidth, minHeight, maxWidth, maxHeight]);
 
     // Handle drag stop
-    const handleDragStop = useCallback((_e: any, data: { x: number; y: number }) => {
+    const handleDragStop = useCallback((_event: DraggableEvent, data: DraggableData) => {
         setPosition({ x: data.x, y: data.y });
     }, []);
 

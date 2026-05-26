@@ -12,7 +12,7 @@ import {
 import { IconInfoCircle, IconExternalLink } from '@tabler/icons-react';
 import { HeadlessDialog } from '../headless';
 import { useT2IParams } from '../../hooks/useT2IParams';
-import { buildSegmentTag, type BuilderSegmentRule } from '../../features/promptBuilder';
+import { buildSegmentTag, type BuilderSegmentModelType, type BuilderSegmentRule } from '../../features/promptBuilder';
 import type { T2IParam } from '../../api/types';
 import { SamplingSelect, SwarmButton, SwarmSlider, SwarmSwitch } from '../ui';
 
@@ -27,7 +27,7 @@ interface SegmentSyntaxModalProps {
 
 /**
  * Modal for configuring the <segment:> syntax with a user-friendly interface.
- * Supports CLIP-Seg text matching and dynamic YOLO model selection from backend data.
+ * Supports automatic text matching and dynamic YOLO model selection from backend data.
  *
  * Uses HeadlessDialog (Radix UI) for built-in focus trapping and accessibility.
  */
@@ -39,7 +39,7 @@ export const SegmentSyntaxModal = React.memo(function SegmentSyntaxModal({
     const { params, samplerOptions, schedulerOptions } = useT2IParams();
 
     // Form state
-    const [modelType, setModelType] = useState<'clip-seg' | 'yolo'>('clip-seg');
+    const [modelType, setModelType] = useState<BuilderSegmentModelType>('auto');
     const [textMatch, setTextMatch] = useState('face');
     const [yoloModel, setYoloModel] = useState('');
     const [yoloId, setYoloId] = useState(0);
@@ -64,7 +64,7 @@ export const SegmentSyntaxModal = React.memo(function SegmentSyntaxModal({
 
     // Reset form when modal opens
     const handleOpen = useCallback(() => {
-        setModelType('clip-seg');
+        setModelType('auto');
         setTextMatch('face');
         setYoloModel(yoloOptions[0]?.value || '');
         setYoloId(0);
@@ -119,9 +119,9 @@ export const SegmentSyntaxModal = React.memo(function SegmentSyntaxModal({
         onClose,
     ]);
 
-    const canSubmit = modelType === 'clip-seg'
-        ? !!textMatch.trim()
-        : !!yoloModel.trim();
+    const canSubmit = modelType === 'yolo'
+        ? !!yoloModel.trim()
+        : !!textMatch.trim();
 
     return (
         <HeadlessDialog
@@ -151,17 +151,19 @@ export const SegmentSyntaxModal = React.memo(function SegmentSyntaxModal({
 
                 <Select
                     label="Segment Mode"
-                    description="Choose CLIP text matching or YOLO object segmentation."
+                    description="Auto keeps the normal segment syntax and lets the backend pick the strongest available detector."
                     data={[
+                        { value: 'auto', label: 'Auto (Grounded SAM2)' },
+                        { value: 'grounded-sam2', label: 'Grounded SAM2' },
                         { value: 'clip-seg', label: 'CLIP-Seg (Match by text)' },
                         { value: 'yolo', label: 'YOLOv8 (Model-based)' },
                     ]}
                     value={modelType}
-                    onChange={(value) => setModelType((value as 'clip-seg' | 'yolo') || 'clip-seg')}
+                    onChange={(value) => setModelType((value as BuilderSegmentModelType) || 'auto')}
                     comboboxProps={{ withinPortal: false }}
                 />
 
-                {modelType === 'clip-seg' ? (
+                {modelType !== 'yolo' ? (
                     <TextInput
                         label="Text Match"
                         description="Describe what to find and refine (e.g., face, hair, hands)."
@@ -201,6 +203,14 @@ export const SegmentSyntaxModal = React.memo(function SegmentSyntaxModal({
                         </Group>
                     </Stack>
                 )}
+
+                {modelType === 'auto' ? (
+                    <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+                        <Text size="sm">
+                            Auto uses GroundingDINO + SAM2 when available, then falls back to CLIPSeg.
+                        </Text>
+                    </Alert>
+                ) : null}
 
                 <div>
                     <Text size="sm" fw={500} mb={4}>Creativity: {creativity.toFixed(2)}</Text>

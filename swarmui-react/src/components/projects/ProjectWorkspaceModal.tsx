@@ -20,7 +20,7 @@ import {
 import { useGenerationStore } from '../../store/generationStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useCreativeWorkspaceStore } from '../../stores/creativeWorkspaceStore';
-import { useQueueStore } from '../../stores/queue';
+import { useQueueJobs, useQueueStore } from '../../stores/queue';
 import { useRoleplayStore } from '../../stores/roleplayStore';
 import {
   PROJECT_TEMPLATE_LABELS,
@@ -54,7 +54,7 @@ export function ProjectWorkspaceModal({ opened, onClose }: ProjectWorkspaceModal
   const generationParams = useGenerationStore((state) => state.params);
   const generationModel = useGenerationStore((state) => state.selectedModel);
   const selectedQueueJobs = useQueueStore((state) => state.selectedJobs);
-  const queueJobs = useQueueStore((state) => state.jobs);
+  const queueJobs = useQueueJobs();
   const roleplayState = useRoleplayStore();
   const {
     projects,

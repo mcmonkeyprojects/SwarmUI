@@ -128,6 +128,8 @@ export function VirtualGrid<T>({
 
     const rowCount = Math.ceil(items.length / columnCount);
 
+    // TanStack Virtual returns imperative helpers that React Compiler intentionally skips.
+    // eslint-disable-next-line react-hooks/incompatible-library
     const virtualizer = useVirtualizer({
         count: rowCount,
         getScrollElement: () => parentRef.current,
@@ -321,6 +323,8 @@ export function VirtualList<T>({
 }: VirtualListProps<T>) {
     const parentRef = useRef<HTMLDivElement>(null);
 
+    // TanStack Virtual returns imperative helpers that React Compiler intentionally skips.
+    // eslint-disable-next-line react-hooks/incompatible-library
     const virtualizer = useVirtualizer({
         count: items.length,
         getScrollElement: () => parentRef.current,

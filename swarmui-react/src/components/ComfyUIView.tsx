@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Box,
@@ -33,6 +33,7 @@ import {
     IconX,
     IconCheck,
     IconPlayerPlay,
+    IconSparkles,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../api/client';
@@ -66,6 +67,48 @@ const ROUTING_OPTIONS: { value: ComfyRoutingMode; label: string; description: st
         value: 'reserve',
         label: 'Reserved backend',
         description: 'Hold a dedicated backend for this session when isolation matters.',
+    },
+];
+
+const VAE_ALTERNATIVE_FEATURES = 'supir,glifnodes';
+
+const VAE_ALTERNATIVE_NODES = [
+    {
+        id: 'supir',
+        label: 'SUPIRApply',
+        description: 'Built-in SUPIR patch node for ComfyUI upscaling graphs.',
+    },
+    {
+        id: 'supir-kijai-loader',
+        label: 'SUPIR_model_loader_v2',
+        description: 'Kijai SUPIR loader node for full custom SUPIR workflows.',
+        required: false,
+    },
+    {
+        id: 'consistency-decoder',
+        label: 'GlifConsistencyDecoder',
+        description: 'Use this GlifNodes decoder with the local OpenAI consistency decoder weights.',
+    },
+    {
+        id: 'consistency-decoder-tiled',
+        label: 'GlifPatchConsistencyDecoderTiled',
+        description: 'Optional tiled GlifNodes decoder for larger consistency decoder workflows.',
+        required: false,
+    },
+];
+
+const VAE_ALTERNATIVE_ASSETS = [
+    {
+        id: 'taesdxl',
+        label: 'TAESDXL',
+        description: 'Local Tiny AutoEncoder weights for SDXL preview or custom experimental decode workflows.',
+        path: 'Models\\ExperimentalDecoders\\TAESDXL\\diffusion_pytorch_model.safetensors',
+    },
+    {
+        id: 'consistency-decoder',
+        label: 'OpenAI Consistency Decoder',
+        description: 'Local consistency decoder weights for GlifNodes consistency decoder workflows.',
+        path: 'Models\\ExperimentalDecoders\\ConsistencyDecoder\\diffusion_pytorch_model.fp16.safetensors',
     },
 ];
 
@@ -156,6 +199,7 @@ export function ComfyUIView() {
     const [loadErrorMessage, setLoadErrorMessage] = useState('The ComfyUI backend may not be running or is still starting up.');
     const [routingMode, setRoutingMode] = useState<ComfyRoutingMode>(readRoutingMode);
     const [iframeSrc, setIframeSrc] = useState(swarmClient.getComfyBackendDirectUrl());
+    const [installingVaeAlternativeStack, setInstallingVaeAlternativeStack] = useState(false);
 
     // Modal states
     const [saveModalOpen, setSaveModalOpen] = useState(false);
@@ -172,11 +216,45 @@ export function ComfyUIView() {
     const workflows = workflowsQuery.data ?? [];
     const loadingWorkflows = workflowsQuery.isLoading || workflowsQuery.isFetching;
 
+    const nodeTypesQuery = useQuery({
+        queryKey: queryKeys.comfy.nodeTypes(),
+        queryFn: async () => {
+            const backends = await swarmClient.listBackends({ fullData: true });
+            const comfyBackend = backends.find((backend) => (
+                String(backend.class || '').toLowerCase().includes('comfy')
+                || String(backend.type || '').toLowerCase().includes('comfy')
+            ));
+            if (!comfyBackend) {
+                return [];
+            }
+
+            const backendId = Number.parseInt(comfyBackend.id, 10);
+            if (!Number.isFinite(backendId)) {
+                return [];
+            }
+
+            const result = await swarmClient.comfyGetNodeTypesForBackend(backendId);
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            return result.node_types ?? [];
+        },
+        staleTime: 60 * 1000,
+    });
+
     // Get current generation params for Import from Generate
     const { params } = useGenerationStore();
     const { hasSeenComfyIntro, setHasSeenComfyIntro } = useWorkflowWorkspaceStore();
     const routingDetails = ROUTING_OPTIONS.find((option) => option.value === routingMode) ?? ROUTING_OPTIONS[0];
     const recentWorkflows = workflows.slice(0, 3);
+    const availableNodeTypes = new Set(nodeTypesQuery.data ?? []);
+    const vaeAlternativeNodeStatus = VAE_ALTERNATIVE_NODES.map((node) => ({
+        ...node,
+        available: availableNodeTypes.has(node.label),
+    }));
+    const vaeAlternativeStackReady = vaeAlternativeNodeStatus
+        .filter((node) => node.required !== false)
+        .every((node) => node.available);
 
     const reloadComfyIframe = () => {
         const base = swarmClient.getComfyBackendDirectUrl();
@@ -184,19 +262,21 @@ export function ComfyUIView() {
         setIframeSrc(`${base}${separator}_ts=${Date.now()}`);
     };
 
-    const loadWorkflowsList = async () => {
+    const loadWorkflowsList = useCallback(async () => {
         const result = await workflowsQuery.refetch();
         if (result.error) {
             console.error('Failed to load workflows:', result.error);
             setLoadErrorMessage('Saved workflows could not be loaded. The backend may still be starting.');
         }
-    };
+    }, [workflowsQuery]);
 
     useEffect(() => {
         if (loadModalOpen) {
-            void loadWorkflowsList();
+            queueMicrotask(() => {
+                void loadWorkflowsList();
+            });
         }
-    }, [loadModalOpen]);
+    }, [loadModalOpen, loadWorkflowsList]);
 
     // Handle iframe load
     const handleIframeLoad = () => {
@@ -378,6 +458,40 @@ export function ComfyUIView() {
         setLoadError(false);
         setLoadErrorMessage('The ComfyUI backend may not be running or is still starting up.');
         reloadComfyIframe();
+        void nodeTypesQuery.refetch();
+    };
+
+    const handleInstallVaeAlternativeStack = async () => {
+        const confirmed = window.confirm('Install SUPIR and GlifNodes into SwarmUI managed Comfy nodes? This uses SwarmUI feature installation and may restart ComfyUI backends.');
+        if (!confirmed) {
+            return;
+        }
+
+        setInstallingVaeAlternativeStack(true);
+        try {
+            const result = await swarmClient.comfyInstallFeatures(VAE_ALTERNATIVE_FEATURES);
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            notifications.show({
+                title: 'Install Started',
+                message: 'SUPIR and GlifNodes were handed to SwarmUI for installation. Refresh after ComfyUI finishes restarting.',
+                color: 'green',
+            });
+            await swarmClient.comfyEnsureRefreshable();
+            await nodeTypesQuery.refetch();
+            handleRefresh();
+        } catch (error) {
+            console.error('Failed to install VAE alternative stack:', error);
+            notifications.show({
+                title: 'Install Failed',
+                message: error instanceof Error ? error.message : 'Could not install SUPIR and GlifNodes.',
+                color: 'red',
+            });
+        } finally {
+            setInstallingVaeAlternativeStack(false);
+        }
     };
 
     const handleRoutingModeChange = (value: string | null) => {
@@ -483,6 +597,87 @@ export function ComfyUIView() {
                     </Stack>
                 </ElevatedCard>
             </SimpleGrid>
+
+            <ElevatedCard elevation="paper" tone={vaeAlternativeStackReady ? 'accent' : 'neutral'} withBorder>
+                <Stack gap="sm">
+                    <Group justify="space-between" align="flex-start" wrap="wrap">
+                        <Group gap="sm" align="flex-start">
+                            <ThemeIcon size={38} radius="xl" variant="light" color={vaeAlternativeStackReady ? 'green' : 'cyan'}>
+                                <IconSparkles size={18} />
+                            </ThemeIcon>
+                            <Stack gap={2}>
+                                <Group gap="xs">
+                                    <Text fw={700}>VAE Alternative Stack</Text>
+                                    <SwarmBadge tone={vaeAlternativeStackReady ? 'success' : 'neutral'} size="sm">
+                                        {vaeAlternativeStackReady ? 'Nodes Ready' : 'Setup Available'}
+                                    </SwarmBadge>
+                                </Group>
+                                <Text size="sm" c="var(--theme-text-secondary)">
+                                    Install and verify SUPIR and GlifNodes for custom Comfy graphs, with the downloaded experimental decoder weights shown below.
+                                </Text>
+                            </Stack>
+                        </Group>
+                        <Group gap="xs" wrap="wrap">
+                            <Button
+                                variant="light"
+                                color="cyan"
+                                leftSection={<IconDownload size={16} />}
+                                loading={installingVaeAlternativeStack}
+                                onClick={handleInstallVaeAlternativeStack}
+                            >
+                                Install VAE Stack
+                            </Button>
+                            <Button
+                                variant="subtle"
+                                leftSection={<IconRefresh size={16} />}
+                                onClick={() => void nodeTypesQuery.refetch()}
+                            >
+                                Check Nodes
+                            </Button>
+                        </Group>
+                    </Group>
+
+                    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+                        {vaeAlternativeNodeStatus.map((node) => (
+                            <Paper key={node.id} withBorder p="sm" radius="md">
+                                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                                    <Stack gap={2}>
+                                        <Text size="sm" fw={600}>{node.label}</Text>
+                                        <Text size="xs" c="var(--theme-text-secondary)">{node.description}</Text>
+                                    </Stack>
+                                    <Stack gap={4} align="flex-end">
+                                        {node.required === false ? (
+                                            <Badge color="blue" variant="light">Optional</Badge>
+                                        ) : null}
+                                        <Badge color={node.available ? 'green' : 'gray'} variant="light">
+                                            {node.available ? 'Found' : 'Missing'}
+                                        </Badge>
+                                    </Stack>
+                                </Group>
+                            </Paper>
+                        ))}
+                    </SimpleGrid>
+
+                    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+                        {VAE_ALTERNATIVE_ASSETS.map((asset) => (
+                            <Paper key={asset.id} withBorder p="sm" radius="md">
+                                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                                    <Stack gap={2}>
+                                        <Text size="sm" fw={600}>{asset.label}</Text>
+                                        <Text size="xs" c="var(--theme-text-secondary)">{asset.description}</Text>
+                                        <Text size="xs" c="dimmed">{asset.path}</Text>
+                                    </Stack>
+                                    <Badge color="blue" variant="light">Downloaded</Badge>
+                                </Group>
+                            </Paper>
+                        ))}
+                    </SimpleGrid>
+
+                    <Text size="xs" c="var(--theme-text-secondary)">
+                        These experimental decoders are not normal VAE dropdown entries. TAESDXL needs an AutoencoderTiny-compatible workflow, and the OpenAI consistency decoder path needs GlifNodes or another compatible custom-node workflow.
+                    </Text>
+                </Stack>
+            </ElevatedCard>
 
             <Paper p="xs" withBorder style={{ flexShrink: 0 }}>
                 <Group justify="space-between" align="flex-start" wrap="wrap">

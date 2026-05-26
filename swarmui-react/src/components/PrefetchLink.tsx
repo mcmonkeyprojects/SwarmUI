@@ -93,6 +93,7 @@ PrefetchLink.displayName = 'PrefetchLink';
 /**
  * Prefetch a route imperatively
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function prefetchRoute(route: RouteName): void {
     if (prefetchedRoutes.has(route)) return;
 
@@ -111,6 +112,7 @@ export function prefetchRoute(route: RouteName): void {
 /**
  * Prefetch all routes (call on idle)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function prefetchAllRoutes(): void {
     Object.keys(routeImports).forEach((route) => {
         prefetchRoute(route as RouteName);
@@ -120,6 +122,7 @@ export function prefetchAllRoutes(): void {
 /**
  * Check if route is prefetched
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function isRoutePrefetched(route: RouteName): boolean {
     return prefetchedRoutes.has(route);
 }

@@ -4,7 +4,7 @@
  * A reusable right-click context menu that positions at the cursor.
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Paper, Stack, Group, Text, Divider, Portal } from '@mantine/core';
 import { Z_INDEX } from '../utils/zIndex';
 import './context-menu.css';
@@ -41,6 +41,7 @@ export interface ContextMenuProps {
 
 export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
+    const [adjustedPosition, setAdjustedPosition] = useState<{ x: number; y: number } | null>(position);
 
     // Close on click outside
     useEffect(() => {
@@ -73,28 +74,38 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
         };
     }, [position, onClose]);
 
-    // Adjust position to stay within viewport
-    const adjustPosition = useCallback(() => {
-        if (!position || !menuRef.current) return position;
-
-        const menu = menuRef.current;
-        const rect = menu.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        let { x, y } = position;
-
-        // Adjust if menu would go off right edge
-        if (x + rect.width > viewportWidth - 10) {
-            x = viewportWidth - rect.width - 10;
+    useEffect(() => {
+        if (!position) {
+            queueMicrotask(() => {
+                setAdjustedPosition(null);
+            });
+            return;
         }
 
-        // Adjust if menu would go off bottom edge
-        if (y + rect.height > viewportHeight - 10) {
-            y = viewportHeight - rect.height - 10;
-        }
+        queueMicrotask(() => {
+            if (!menuRef.current) {
+                setAdjustedPosition(position);
+                return;
+            }
 
-        return { x: Math.max(10, x), y: Math.max(10, y) };
+            const rect = menuRef.current.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            let { x, y } = position;
+
+            // Adjust if menu would go off right edge
+            if (x + rect.width > viewportWidth - 10) {
+                x = viewportWidth - rect.width - 10;
+            }
+
+            // Adjust if menu would go off bottom edge
+            if (y + rect.height > viewportHeight - 10) {
+                y = viewportHeight - rect.height - 10;
+            }
+
+            setAdjustedPosition({ x: Math.max(10, x), y: Math.max(10, y) });
+        });
     }, [position]);
 
     const handleItemClick = useCallback((item: ContextMenuItem) => {
@@ -104,8 +115,6 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
     }, [onClose]);
 
     if (!position) return null;
-
-    const adjustedPosition = adjustPosition();
 
     return (
         <Portal>
@@ -165,6 +174,7 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
  * Hook to manage context menu state
  * Positions menu at the cursor location
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useContextMenu() {
     const [position, setPosition] = React.useState<{ x: number; y: number } | null>(null);
 
