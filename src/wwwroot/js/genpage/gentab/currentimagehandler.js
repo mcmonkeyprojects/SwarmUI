@@ -244,14 +244,13 @@ class ImageFullViewHelper {
         this.currentBatchId = batchId;
         this.updateCounter();
         let wasAlreadyOpen = this.isOpen();
-        let isVideo = isVideoExt(src);
-        let isAudio = isAudioExt(src);
+        let mediaType = getMediaType(src);
         let encodedSrc = escapeHtmlForUrl(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}" onload="imageFullView.onImgLoad()">`;
-        if (isVideo) {
+        if (mediaType == 'video') {
             imgHtml = `<div class="video-container imageview_popup_modal_img" id="imageview_popup_modal_img"><video class="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted onload="imageFullView.onImgLoad()"><source src="${encodedSrc}" type="${isVideo}"></video></div>`;
         }
-        else if (isAudio) {
+        else if (mediaType == 'audio') {
             imgHtml = `<div class="audio-container imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;"><audio class="imageview_popup_modal_img" preload="metadata" src="${encodedSrc}" onloadedmetadata="imageFullView.onImgLoad()"></audio></div>`;
         }
         this.content.innerHTML = `
@@ -267,6 +266,9 @@ class ImageFullViewHelper {
         </div>`;
         let subDiv = this.content.querySelector('.image_fullview_extra_buttons');
         for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
+            if (added.multi_only || (added.media_types && !added.media_types.includes(mediaType))) {
+                continue;
+            }
             if (added.href) {
                 if (added.is_download) {
                     subDiv.appendChild(createDiv(null, 'inline-block', `<a class="text_button basic-button translate" href="${added.href}" title="${added.title}" download>${added.label}</a>`));
@@ -287,13 +289,13 @@ class ImageFullViewHelper {
             this.toggleMetadataVisibility(true);
         }
         this.modalJq.modal('show');
-        if (isVideo) {
+        if (mediaType == 'video') {
             new VideoControls(this.getImg());
         }
-        else if (isAudio) {
+        else if (mediaType == 'audio') {
             new AudioControls(this.getImg());
         }
-        if (isVideo || isAudio) {
+        if (mediaType == 'video' || mediaType == 'audio') {
             let curImgElem = currentImageHelper.getCurrentImage();
             if (curImgElem) {
                 if (curImgElem.tagName == 'VIDEO' || curImgElem.tagName == 'AUDIO') {
