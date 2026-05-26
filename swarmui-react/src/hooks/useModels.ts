@@ -30,6 +30,14 @@ interface AllModelDataOptions {
     scopes?: AllModelDataScopes;
 }
 
+const UPSCALER_MODEL_REFRESH_INTERVAL_MS = 10000;
+
+function hasModelUpscaler(data: Model[] | undefined): boolean {
+    return (data ?? []).some((model) => (
+        model.name.startsWith('model-') || model.name.startsWith('latentmodel-')
+    ));
+}
+
 function resolveBackendRefreshInterval(autoRefresh: boolean | undefined): number | false {
     if (!autoRefresh) {
         return false;
@@ -135,8 +143,15 @@ export function useUpscalers(options: ModelQueryOptions = {}) {
     return useQuery({
         queryKey: queryKeys.upscalers.list(),
         queryFn: () => swarmClient.listUpscalers(),
-        staleTime: 10 * 60 * 1000,
+        staleTime: 30 * 1000,
         enabled: options.enabled ?? true,
+        refetchOnMount: 'always',
+        refetchOnReconnect: true,
+        refetchInterval: (query) => (
+            hasModelUpscaler(query.state.data as Model[] | undefined)
+                ? false
+                : UPSCALER_MODEL_REFRESH_INTERVAL_MS
+        ),
     });
 }
 

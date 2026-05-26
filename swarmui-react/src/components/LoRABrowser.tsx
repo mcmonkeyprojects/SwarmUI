@@ -6,9 +6,7 @@ import {
   Stack,
   Group,
   Text,
-  TextInput,
   Card,
-  Slider,
   ScrollArea,
   Loader,
   Center,
@@ -16,7 +14,6 @@ import {
   NumberInput,
   Tooltip,
   Box,
-  Paper,
 } from '@mantine/core';
 import { FloatingWindow } from './FloatingWindow';
 import {
@@ -37,7 +34,7 @@ import type { LoRA, LoRASelection } from '../api/types';
 import { LazyImage } from './LazyImage';
 import { ModelDetailModal } from './ModelDetailModal';
 import { HeadlessCombobox } from './headless/HeadlessCombobox';
-import { SwarmActionIcon, SwarmBadge, SwarmButton, SwarmSegmentedControl } from './ui';
+import { ControlTray, SwarmActionIcon, SwarmBadge, SwarmButton, SwarmSearchInput, SwarmSegmentedControl, SwarmSliderField, SwarmTooltip } from './ui';
 import { VirtualGrid } from './VirtualGrid';
 import {
   BROWSER_THUMBNAIL_SIZES,
@@ -131,7 +128,9 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
 
   useEffect(() => {
     if (opened) {
-      setTempSelections(selectedLoras);
+      queueMicrotask(() => {
+        setTempSelections(selectedLoras);
+      });
     }
   }, [opened, selectedLoras]);
 
@@ -196,7 +195,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
     const options: { value: string; label: string }[] = [{ value: 'all', label: `Root folder (${loras.length})` }];
     for (const f of folders) {
       const depth = (f as string).split(/[/\\]/).filter(Boolean).length;
-      const indent = depth > 1 ? '  '.repeat(depth - 1) + '└ ' : '';
+      const indent = depth > 1 ? `${'  '.repeat(depth - 1)}- ` : '';
       const count = totalCountMap.get(f as string) || 0;
       const name = (f as string).split(/[/\\]/).pop();
       options.push({ value: f as string, label: `${indent}${name} (${count})` });
@@ -314,7 +313,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
         key={lora.name}
         withBorder
         padding="sm"
-        className="swarm-selectable-card"
+        className="swarm-selectable-card swarm-browser-asset-card"
         data-selected={selected ? 'true' : undefined}
         style={{
           cursor: 'pointer',
@@ -328,6 +327,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
           {/* Preview Image */}
           {getPreviewUrl(lora) && (
             <Box
+              className="swarm-browser-asset-card__preview"
               style={{
                 height: BROWSER_THUMBNAIL_SIZES[thumbnailSize].card,
                 display: 'flex',
@@ -352,7 +352,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
           {/* Header */}
           <Group justify="space-between" wrap="nowrap">
             <Box style={{ flex: 1, minWidth: 0 }}>
-              <Text size="sm" fw={600} truncate>
+              <Text size="sm" fw={700} lineClamp={2} className="swarm-browser-asset-card__title">
                 {lora.title || lora.name}
               </Text>
               {lora.folder && (
@@ -391,20 +391,36 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
             </Text>
           )}
 
-          {/* More Info Button - Opens Detail Modal */}
-          <SwarmButton
-            size="xs"
-            tone="secondary"
-            emphasis="ghost"
-            fullWidth
-            rightSection={<IconChevronDown size={14} />}
-            onClick={(e: MouseEvent<HTMLButtonElement>) => {
-              e.stopPropagation();
-              openLoraDetails(lora);
-            }}
-          >
-            More Info
-          </SwarmButton>
+          <Group grow gap="xs" className="swarm-browser-asset-card__actions">
+            <SwarmButton
+              size="xs"
+              tone={selected ? 'success' : 'primary'}
+              emphasis={selected ? 'soft' : 'solid'}
+              leftSection={selected ? undefined : <IconPlus size={14} />}
+              onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                e.stopPropagation();
+                if (selected) {
+                  handleRemoveLora(lora.name);
+                } else {
+                  handleAddLora(lora);
+                }
+              }}
+            >
+              {selected ? 'Added' : 'Add'}
+            </SwarmButton>
+            <SwarmButton
+              size="xs"
+              tone="secondary"
+              emphasis="ghost"
+              rightSection={<IconChevronDown size={14} />}
+              onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                e.stopPropagation();
+                openLoraDetails(lora);
+              }}
+            >
+              More Info
+            </SwarmButton>
+          </Group>
         </Stack>
       </Card>
     );
@@ -592,6 +608,33 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
     )
     : [];
 
+  const selectedFooterTray = tempSelections.length > 0 ? (
+    <Group gap={6} wrap="nowrap" className="swarm-browser-selected-tray">
+      <Text size="xs" fw={700} c="var(--theme-text-secondary)" className="swarm-browser-selected-tray__label">
+        Stack
+      </Text>
+      <Group gap={6} wrap="nowrap" className="swarm-browser-selected-tray__chips">
+        {tempSelections.slice(0, 3).map((selection) => {
+          const lora = loras.find((item) => item.name === selection.lora);
+          return (
+            <SwarmBadge key={selection.lora} tone="success" emphasis="soft" title={selection.lora}>
+              {(lora?.title || selection.lora).split('/').pop()} · {selection.weight.toFixed(2)}
+            </SwarmBadge>
+          );
+        })}
+        {tempSelections.length > 3 ? (
+          <SwarmBadge tone="secondary" emphasis="soft">
+            +{tempSelections.length - 3}
+          </SwarmBadge>
+        ) : null}
+      </Group>
+    </Group>
+  ) : (
+    <Text size="xs" c="var(--theme-text-secondary)">
+      Pick LoRAs, then apply the stack.
+    </Text>
+  );
+
   const shouldVirtualize = featureFlags.virtualizedBrowsersV2 && filteredLoras.length >= 120;
   const virtualContainerHeight = useMemo(() => {
     if (typeof window === 'undefined') return 520;
@@ -609,35 +652,49 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
       minHeight={400}
       zIndex={Z_INDEX.modal}
     >
-      <Stack gap="md">
+      <Stack gap="md" className="swarm-browser-shell">
         {/* Controls Row */}
-        <Group grow className="swarm-browser-controls-row">
-          <TextInput
-            placeholder="Search LoRAs..."
-            leftSection={<IconSearch size={16} />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-          />
-          <HeadlessCombobox
-            placeholder="Filter by folder"
-            options={folderOptions}
-            value={selectedFolder}
-            onChange={(value) => setSelectedFolder(value || 'all')}
-            leftSection={<IconFolder size={16} />}
-            clearable
-            style={{ flex: 1 }}
-          />
-          <HeadlessCombobox
-            placeholder="Filter by model"
-            options={modelFilterOptions}
-            value={modelFilter}
-            onChange={(value) => setModelFilter((value as ModelFilter) || 'all')}
-            clearable
-            style={{ minWidth: 150 }}
-          />
-        </Group>
+        <ControlTray
+          title="LoRA Filters"
+          subtitle="Search trigger words, metadata, architecture hints, and folders."
+          status={`${filteredLoras.length} found`}
+          tone="info"
+        >
+          <Group grow className="swarm-browser-controls-row">
+            <SwarmSearchInput
+              placeholder="Search LoRAs..."
+              leftSection={<IconSearch size={16} />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.currentTarget.value)}
+              visual="glitch"
+            />
+            <HeadlessCombobox
+              placeholder="Filter by folder"
+              options={folderOptions}
+              value={selectedFolder}
+              onChange={(value) => setSelectedFolder(value || 'all')}
+              leftSection={<IconFolder size={16} />}
+              clearable
+              style={{ flex: 1 }}
+            />
+            <HeadlessCombobox
+              placeholder="Filter by model"
+              options={modelFilterOptions}
+              value={modelFilter}
+              onChange={(value) => setModelFilter((value as ModelFilter) || 'all')}
+              clearable
+              style={{ minWidth: 150 }}
+            />
+          </Group>
+        </ControlTray>
 
         {/* View Options */}
+        <ControlTray
+          title="Browser View"
+          subtitle="Switch density, folder depth, and thumbnail scale."
+          status={viewMode}
+          tone="secondary"
+        >
         <div className="swarm-browser-view-row">
           <div className="swarm-browser-view-row__left">
             <SwarmSegmentedControl
@@ -665,7 +722,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
               size="xs"
               rightSection={
                 folderDepth < 99 ? (
-                  <Tooltip label="Show all depths">
+                  <SwarmTooltip label="Show all depths">
                     <Box
                       component="button"
                       type="button"
@@ -674,7 +731,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
                     >
                       <Text size="xs" c="dimmed">All</Text>
                     </Box>
-                  </Tooltip>
+                  </SwarmTooltip>
                 ) : undefined
               }
             />
@@ -700,10 +757,16 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
             className="swarm-browser-view-row__right"
           />
         </div>
+        </ControlTray>
 
         {/* Selected LoRAs */}
         {tempSelections.length > 0 && (
-          <Paper withBorder p="md">
+          <ControlTray
+            title="Selected LoRAs"
+            subtitle="Adjust weights before applying the selected stack to Generate."
+            status={`${tempSelections.length} selected`}
+            tone="success"
+          >
             <Stack gap="md">
               <Group justify="space-between">
                 <Text size="sm" fw={600}>
@@ -746,14 +809,16 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
                               <IconX size={16} />
                             </SwarmActionIcon>
                           </Group>
-                          <Group gap="md" grow>
-                            <Slider
+                          <SwarmSliderField
+                              label="Weight"
                               min={-5}
                               max={5}
                               step={0.01}
                               value={selection.weight}
                               onChange={(value) => handleWeightChange(selection.lora, value)}
-                              style={{ flex: 1 }}
+                              decimalScale={2}
+                              status={Math.abs(selection.weight) > 2 ? 'caution' : 'neutral'}
+                              tone="success"
                               marks={[
                                 { value: -5, label: '-5' },
                                 { value: -2.5, label: '' },
@@ -763,10 +828,6 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
                                 { value: 5, label: '5' },
                               ]}
                             />
-                            <Text size="sm" ta="center" style={{ minWidth: 60 }}>
-                              {selection.weight.toFixed(2)}
-                            </Text>
-                          </Group>
                         </Stack>
                       </Card>
                     );
@@ -774,22 +835,23 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
                 </Stack>
               </ScrollArea>
             </Stack>
-          </Paper>
+          </ControlTray>
         )}
 
         <Divider />
 
         {/* Available LoRAs */}
-        {loading ? (
-          <Center h={300}>
-            <Loader size="lg" />
-          </Center>
-        ) : filteredLoras.length === 0 ? (
-          <Center h={200}>
-            <Text c="dimmed">No LoRAs found</Text>
-          </Center>
-        ) : (
-          <>
+        <Box className="swarm-browser-results">
+          {loading ? (
+            <Center h={300}>
+              <Loader size="lg" />
+            </Center>
+          ) : filteredLoras.length === 0 ? (
+            <Center h={200}>
+              <Text c="dimmed">No LoRAs found</Text>
+            </Center>
+          ) : (
+            <>
             {viewMode === 'cards' && (
               shouldVirtualize ? (
                 <VirtualGrid
@@ -839,19 +901,23 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
                 </div>
               )
             )}
-          </>
-        )}
+            </>
+          )}
+        </Box>
 
         {/* Actions - Sticky Footer */}
         <Group
-          className="swarm-browser-footer swarm-browser-footer--end"
+          className="swarm-browser-footer swarm-browser-footer--between"
         >
-          <SwarmButton tone="secondary" emphasis="ghost" onClick={onClose}>
-            Cancel
-          </SwarmButton>
-          <SwarmButton onClick={handleApply} tone="info" emphasis="solid" className="gradient-button with-glow">
-            Apply LoRAs ({tempSelections.length})
-          </SwarmButton>
+          {selectedFooterTray}
+          <Group gap="xs" wrap="nowrap">
+            <SwarmButton tone="secondary" emphasis="ghost" onClick={onClose}>
+              Cancel
+            </SwarmButton>
+            <SwarmButton onClick={handleApply} tone="info" emphasis="solid" className="gradient-button with-glow">
+              Apply LoRAs ({tempSelections.length})
+            </SwarmButton>
+          </Group>
         </Group>
       </Stack>
 

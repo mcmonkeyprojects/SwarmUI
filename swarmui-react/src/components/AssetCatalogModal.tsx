@@ -9,16 +9,14 @@ import {
     SimpleGrid,
     Stack,
     Text,
-    TextInput,
 } from '@mantine/core';
-import { IconSearch } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useAllModelData, useLoRAs } from '../hooks/useModels';
 import { useGenerationStore, useModeToggles } from '../store/generationStore';
 import { buildAssetCatalog, type AssetCatalogItem, type AssetCatalogKind } from '../features/assets/catalog';
 import { useNavigationStore } from '../stores/navigationStore';
 import { useCreativeWorkspaceStore } from '../stores/creativeWorkspaceStore';
-import { SwarmButton } from './ui';
+import { SwarmButton, SwarmSearchInput } from './ui';
 
 interface AssetCatalogModalProps {
     opened: boolean;
@@ -152,11 +150,11 @@ export function AssetCatalogModal({ opened, onClose }: AssetCatalogModalProps) {
                     Unified browser for models, LoRAs, embeddings, control nets, upscalers, VAEs, and wildcards.
                 </Text>
                 <Group grow align="end">
-                    <TextInput
+                    <SwarmSearchInput
                         value={query}
                         onChange={(event) => setQuery(event.currentTarget.value)}
-                        leftSection={<IconSearch size={16} />}
                         placeholder="Search assets, capabilities, or notes..."
+                        visual="glitch"
                     />
                     <SegmentedControl
                         value={kind}

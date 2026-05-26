@@ -5,7 +5,6 @@ import {
     Stack,
     Group,
     Text,
-    TextInput,
     Card,
     NumberInput,
     Loader,
@@ -37,7 +36,7 @@ import { FloatingWindow } from './FloatingWindow';
 import { LazyImage } from './LazyImage';
 import { ModelDetailModal } from './ModelDetailModal';
 import { HeadlessCombobox } from './headless/HeadlessCombobox';
-import { SwarmActionIcon, SwarmBadge, SwarmButton, SwarmSegmentedControl } from './ui';
+import { ControlTray, SwarmActionIcon, SwarmBadge, SwarmButton, SwarmSearchInput, SwarmSegmentedControl, SwarmTooltip } from './ui';
 import { VirtualGrid } from './VirtualGrid';
 import {
     BROWSER_THUMBNAIL_SIZES,
@@ -56,6 +55,9 @@ export interface EmbeddingInsertRequest {
     embeddingText: string;
     targetField: EmbeddingTargetField;
     preferredPosition: 'prepend';
+    dedupeKeys?: string[];
+    embeddingTag?: string;
+    sourceLabel?: string;
 }
 
 interface EmbeddingBrowserProps {
@@ -65,6 +67,12 @@ interface EmbeddingBrowserProps {
 }
 
 type ViewMode = 'cards' | 'list' | 'icons';
+type EmbeddingTargetReason = 'negative-metadata' | 'likely-negative' | 'positive-default';
+
+interface EmbeddingTargetClassification {
+    targetField: EmbeddingTargetField;
+    reason: EmbeddingTargetReason;
+}
 
 const EMBEDDING_SEARCH_FIELDS: (keyof Model)[] = ['name', 'title', 'description', 'architecture'];
 const EMBEDDING_BROWSER_VIEW_MODE_OPTIONS = [
@@ -77,6 +85,30 @@ const EMBEDDING_INSERT_MODE_OPTIONS = [
     { value: 'prompt', label: 'Positive' },
     { value: 'negativeprompt', label: 'Negative' },
 ] as const;
+const NEGATIVE_EMBEDDING_NAME_PATTERNS = [
+    /(^|[^a-z0-9])negative([^a-z0-9]|$)/i,
+    /easy[-_\s]?negative/i,
+    /fast[-_\s]?negative/i,
+    /deep[-_\s]?negative/i,
+    /ng[-_\s]?deep[-_\s]?negative/i,
+    /very[-_\s]?bad[-_\s]?image/i,
+    /bad[-_\s]?(hand|hands|prompt|artist|image|images|picture|pictures|quality|dream|anatomy|face|eyes)/i,
+    /unaesthetic/i,
+] as const;
+const NEGATIVE_EMBEDDING_TEXT_PATTERNS = [
+    /negative\s+(prompt|embedding|textual inversion)/i,
+    /(use|used|place|put|add|insert)\s+(this\s+)?(in|for|with)\s+(the\s+)?negative/i,
+    /(for|with)\s+(the\s+)?negative\s+prompt/i,
+] as const;
+const NEGATIVE_EMBEDDING_TAGS = new Set([
+    'negative',
+    'negative prompt',
+    'negative embedding',
+    'negative textual inversion',
+    'bad hands',
+    'bad anatomy',
+    'unaesthetic',
+]);
 
 function getPreviewUrl(model: Model): string | null {
     const rawPreview = (model.preview_image || model.preview) as string | undefined;
@@ -104,6 +136,138 @@ function sanitizeSnippet(input?: string): string {
         .trim();
 }
 
+function getStringField(model: Model, field: string): string {
+    const value = model[field];
+    return typeof value === 'string' ? value : '';
+}
+
+function getStringArrayField(model: Model, field: string): string[] {
+    const value = model[field];
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+function getBooleanField(model: Model, field: string): boolean {
+    const value = model[field];
+    if (value === true) {
+        return true;
+    }
+    return typeof value === 'string' && value.toLowerCase() === 'true';
+}
+
+function getEmbeddingFileLabel(model: Model): string {
+    const normalizedName = model.name.replace(/\\/g, '/');
+    const fileName = normalizedName.split('/').pop() || normalizedName;
+    return fileName.replace(/\.[^.]+$/, '');
+}
+
+function getEmbeddingTag(model: Model): string {
+    return `<embed:${model.name}>`;
+}
+
+function getEmbeddingActivationWords(model: Model): string[] {
+    const rawText = [
+        getStringField(model, 'trigger_phrase'),
+        getStringField(model, 'activationText'),
+        ...getStringArrayField(model, 'trainedWords'),
+    ].join('\n');
+    if (!rawText.trim()) {
+        return [];
+    }
+
+    const seen = new Set<string>();
+    return rawText
+        .split(/[,\n;]+/)
+        .map((word) => word.trim())
+        .filter((word) => {
+            if (word.length <= 1 || word.length > 96) {
+                return false;
+            }
+            const normalized = word.toLowerCase();
+            if (seen.has(normalized)) {
+                return false;
+            }
+            seen.add(normalized);
+            return true;
+        })
+        .slice(0, 12);
+}
+
+function getEmbeddingPromptText(embeddingTag: string, activationWords: string[], textOverride?: string): string {
+    const requestedText = textOverride?.trim();
+    if (requestedText) {
+        if (requestedText === embeddingTag) {
+            return embeddingTag;
+        }
+        return `${requestedText}, ${embeddingTag}`;
+    }
+    if (activationWords.length > 0) {
+        return `${activationWords.join(', ')}, ${embeddingTag}`;
+    }
+    return embeddingTag;
+}
+
+function getEmbeddingSourceLabel(embeddingText: string, embeddingTag: string): string {
+    return embeddingText === embeddingTag ? 'embedding tag' : 'activation words and embedding tag';
+}
+
+function getEmbeddingInsertLabel(model: Model): string {
+    return getEmbeddingActivationWords(model).length > 0 ? 'activation words and embedding tag' : 'embedding tag';
+}
+
+function matchesAnyPattern(input: string, patterns: readonly RegExp[]): boolean {
+    return patterns.some((pattern) => pattern.test(input));
+}
+
+function classifyEmbeddingPromptTarget(model: Model): EmbeddingTargetClassification {
+    if (getBooleanField(model, 'is_negative_embedding')) {
+        return {
+            targetField: 'negativeprompt',
+            reason: 'negative-metadata',
+        };
+    }
+
+    const itemIdentityText = [
+        getEmbeddingFileLabel(model),
+        getStringField(model, 'title'),
+    ].join(' ');
+    const hasNegativeTag = getStringArrayField(model, 'tags')
+        .map((tag) => tag.trim().toLowerCase())
+        .some((tag) => NEGATIVE_EMBEDDING_TAGS.has(tag));
+    const descriptiveText = [
+        getStringField(model, 'description'),
+        getStringField(model, 'usage_hint'),
+    ].join(' ');
+
+    if (
+        matchesAnyPattern(itemIdentityText, NEGATIVE_EMBEDDING_NAME_PATTERNS)
+        || hasNegativeTag
+        || matchesAnyPattern(descriptiveText, NEGATIVE_EMBEDDING_TEXT_PATTERNS)
+    ) {
+        return {
+            targetField: 'negativeprompt',
+            reason: 'likely-negative',
+        };
+    }
+
+    return {
+        targetField: 'prompt',
+        reason: 'positive-default',
+    };
+}
+
+function getTargetReasonLabel(reason: EmbeddingTargetReason): string {
+    if (reason === 'negative-metadata') {
+        return 'Negative metadata';
+    }
+    if (reason === 'likely-negative') {
+        return 'Likely negative';
+    }
+    return 'Positive default';
+}
+
 export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: EmbeddingBrowserProps) {
     const [selectedFolder, setSelectedFolder] = useState<string>('all');
     const [folderDepth, setFolderDepth] = useState<number>(1);
@@ -111,7 +275,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
     const [viewMode, setViewMode] = useState<ViewMode>('cards');
     const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>(DEFAULT_THUMBNAIL_SIZE);
     const [insertMode, setInsertMode] = useState<EmbeddingInsertMode>('smart');
-    const [detailEmbeddingName, setDetailEmbeddingName] = useState('');
+    const [detailEmbedding, setDetailEmbedding] = useState<Model | null>(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const embeddingsQuery = useQuery({
         queryKey: queryKeys.embeddings.browser(),
@@ -185,28 +349,38 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
         if (effectiveMode === 'prompt' || effectiveMode === 'negativeprompt') {
             return effectiveMode;
         }
-        return embedding.is_negative_embedding ? 'negativeprompt' : 'prompt';
+        return classifyEmbeddingPromptTarget(embedding).targetField;
     };
 
-    const handleSelectEmbedding = (embedding: Model, modeOverride?: EmbeddingInsertMode) => {
-        const embeddingText = `<embedding:${embedding.name}>`;
+    const handleSelectEmbedding = (embedding: Model, modeOverride?: EmbeddingInsertMode, textOverride?: string) => {
+        const embeddingTag = getEmbeddingTag(embedding);
+        const activationWords = getEmbeddingActivationWords(embedding);
+        const embeddingText = getEmbeddingPromptText(embeddingTag, activationWords, textOverride);
         const targetField = resolveTargetField(embedding, modeOverride);
+        const sourceLabel = getEmbeddingSourceLabel(embeddingText, embeddingTag);
 
         onSelectEmbedding({
             embeddingText,
             targetField,
             preferredPosition: 'prepend',
+            dedupeKeys: [embeddingText, embeddingTag],
+            embeddingTag,
+            sourceLabel,
         });
 
         notifications.show({
             title: 'Embedding Added',
-            message: `Added ${embedding.name} to ${targetField === 'prompt' ? 'positive' : 'negative'} prompt`,
+            message: `Added ${sourceLabel} for ${embedding.name} to ${targetField === 'prompt' ? 'positive' : 'negative'} prompt`,
             color: 'green',
         });
     };
 
+    const handleSelectEmbeddingTag = (embedding: Model, modeOverride?: EmbeddingInsertMode) => {
+        handleSelectEmbedding(embedding, modeOverride, getEmbeddingTag(embedding));
+    };
+
     const handleCopyEmbedding = (embedding: Model) => {
-        const embeddingText = `<embedding:${embedding.name}>`;
+        const embeddingText = getEmbeddingTag(embedding);
         void navigator.clipboard.writeText(embeddingText);
         notifications.show({
             title: 'Copied',
@@ -215,8 +389,8 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
         });
     };
 
-    const openEmbeddingDetails = (embeddingName: string) => {
-        setDetailEmbeddingName(embeddingName);
+    const openEmbeddingDetails = (embedding: Model) => {
+        setDetailEmbedding(embedding);
         setDetailModalOpen(true);
     };
 
@@ -296,6 +470,52 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
         );
     };
 
+    const renderActivationChips = (embedding: Model, maxCount = 4) => {
+        const activationWords = getEmbeddingActivationWords(embedding);
+        if (activationWords.length === 0) {
+            return null;
+        }
+        return (
+            <Group gap={4} wrap="wrap">
+                {activationWords.slice(0, maxCount).map((word) => (
+                    <SwarmBadge
+                        key={word}
+                        tone="success"
+                        emphasis="soft"
+                        size="xs"
+                        style={{ cursor: 'pointer' }}
+                        onClick={(e: MouseEvent<HTMLDivElement>) => {
+                            e.stopPropagation();
+                            handleSelectEmbedding(embedding, undefined, word);
+                        }}
+                    >
+                        {word}
+                    </SwarmBadge>
+                ))}
+                {activationWords.length > maxCount && (
+                    <Badge size="xs" variant="light">
+                        +{activationWords.length - maxCount}
+                    </Badge>
+                )}
+            </Group>
+        );
+    };
+
+    const renderTagChip = (embedding: Model) => (
+        <SwarmBadge
+            tone="secondary"
+            emphasis="soft"
+            size="xs"
+            style={{ cursor: 'pointer', fontFamily: 'monospace' }}
+            onClick={(e: MouseEvent<HTMLDivElement>) => {
+                e.stopPropagation();
+                handleSelectEmbeddingTag(embedding);
+            }}
+        >
+            {getEmbeddingTag(embedding)}
+        </SwarmBadge>
+    );
+
     const renderInsertActions = (embedding: Model) => (
         <Group gap={4} wrap="nowrap">
             <SwarmActionIcon
@@ -317,7 +537,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                 label={`View details for ${embedding.name}`}
                 onClick={(e: MouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
-                    openEmbeddingDetails(embedding.name);
+                    openEmbeddingDetails(embedding);
                 }}
             >
                 <IconEye size={14} />
@@ -326,7 +546,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                 size="sm"
                 tone="success"
                 emphasis="ghost"
-                label={`Insert ${embedding.name} using current target`}
+                label={`Insert ${getEmbeddingInsertLabel(embedding)} for ${embedding.name} using current target`}
                 onClick={(e: MouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
                     handleSelectEmbedding(embedding);
@@ -338,7 +558,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                 size="sm"
                 tone="primary"
                 emphasis="ghost"
-                label={`Insert ${embedding.name} into positive prompt`}
+                label={`Insert ${getEmbeddingInsertLabel(embedding)} for ${embedding.name} into positive prompt`}
                 onClick={(e: MouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
                     handleSelectEmbedding(embedding, 'prompt');
@@ -350,7 +570,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                 size="sm"
                 tone="warning"
                 emphasis="ghost"
-                label={`Insert ${embedding.name} into negative prompt`}
+                label={`Insert ${getEmbeddingInsertLabel(embedding)} for ${embedding.name} into negative prompt`}
                 onClick={(e: MouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
                     handleSelectEmbedding(embedding, 'negativeprompt');
@@ -364,6 +584,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
     const renderEmbeddingCard = (embedding: Model) => {
         const folder = getFolder(normalizePath(embedding.name));
         const description = sanitizeSnippet(embedding.description);
+        const targetClassification = classifyEmbeddingPromptTarget(embedding);
         return (
             <Card
                 key={embedding.name}
@@ -404,10 +625,15 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                         {embedding.architecture && (
                             <Badge size="xs" variant="outline">{embedding.architecture}</Badge>
                         )}
-                        <Badge size="xs" variant="light">
-                            {resolveTargetField(embedding) === 'prompt' ? 'Positive default' : 'Negative default'}
+                        <Badge
+                            size="xs"
+                            variant="light"
+                            color={targetClassification.targetField === 'negativeprompt' ? 'orange' : undefined}
+                        >
+                            {getTargetReasonLabel(targetClassification.reason)}
                         </Badge>
                     </Group>
+                    {renderActivationChips(embedding)}
                     {description ? (
                         <Text size="xs" c="var(--theme-gray-2)" lineClamp={3}>
                             {description}
@@ -415,9 +641,9 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                     ) : (
                         <Text size="xs" c="dimmed">No description available.</Text>
                     )}
-                    <Text size="xs" c="var(--theme-gray-4)" style={{ fontFamily: 'monospace' }}>
-                        {`<embedding:${embedding.name}>`}
-                    </Text>
+                    <Group gap={4} wrap="wrap">
+                        {renderTagChip(embedding)}
+                    </Group>
                     {renderInsertActions(embedding)}
                 </Stack>
             </Card>
@@ -427,6 +653,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
     const renderEmbeddingListItem = (embedding: Model) => {
         const folder = getFolder(normalizePath(embedding.name));
         const description = sanitizeSnippet(embedding.description);
+        const targetClassification = classifyEmbeddingPromptTarget(embedding);
         return (
             <Card
                 key={embedding.name}
@@ -460,8 +687,16 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                                 {embedding.is_negative_embedding === true && (
                                     <SwarmBadge tone="warning" size="sm">Negative</SwarmBadge>
                                 )}
+                                <Badge
+                                    size="xs"
+                                    variant="light"
+                                    color={targetClassification.targetField === 'negativeprompt' ? 'orange' : undefined}
+                                >
+                                    {getTargetReasonLabel(targetClassification.reason)}
+                                </Badge>
                             </Group>
                         </Group>
+                        {renderActivationChips(embedding, 6)}
                         {description ? (
                             <Text size="xs" c="var(--theme-gray-2)" lineClamp={2}>
                                 {description}
@@ -470,9 +705,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                             <Text size="xs" c="dimmed">No description available.</Text>
                         )}
                         <Group justify="space-between" align="center" wrap="wrap">
-                            <Text size="xs" c="var(--theme-gray-4)" style={{ fontFamily: 'monospace' }}>
-                                {`<embedding:${embedding.name}>`}
-                            </Text>
+                            {renderTagChip(embedding)}
                             {renderInsertActions(embedding)}
                         </Group>
                     </Stack>
@@ -499,12 +732,14 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                 {embedding.is_negative_embedding === true && (
                     <SwarmBadge tone="warning" size="sm">Negative</SwarmBadge>
                 )}
+                {getEmbeddingActivationWords(embedding).length > 0 && renderActivationChips(embedding, 2)}
+                {renderTagChip(embedding)}
                 <Group gap={4}>
                     <SwarmActionIcon
                         size="sm"
                         tone="success"
                         emphasis="ghost"
-                        label={`Insert ${embedding.name}`}
+                        label={`Insert ${getEmbeddingInsertLabel(embedding)} for ${embedding.name}`}
                         onClick={(e: MouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation();
                             handleSelectEmbedding(embedding);
@@ -519,7 +754,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                         label={`View details for ${embedding.name}`}
                         onClick={(e: MouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation();
-                            openEmbeddingDetails(embedding.name);
+                            openEmbeddingDetails(embedding);
                         }}
                     >
                         <IconEye size={14} />
@@ -554,28 +789,42 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                 minHeight={480}
                 zIndex={Z_INDEX.modal}
             >
-                <Stack gap="md">
-                    <Group grow className="swarm-browser-controls-row">
-                        <TextInput
-                            placeholder="Search embeddings..."
-                            leftSection={<IconSearch size={16} />}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                            style={{ flex: 2 }}
-                        />
-                        {folderOptions.length > 1 && (
-                            <HeadlessCombobox
-                                placeholder="Filter by folder"
-                                options={folderOptions}
-                                value={selectedFolder}
-                                onChange={(value: string | null) => setSelectedFolder(value || 'all')}
-                                leftSection={<IconFolder size={16} />}
-                                clearable
-                                style={{ flex: 1 }}
+                <Stack gap="md" className="swarm-browser-shell">
+                    <ControlTray
+                        title="Embedding Filters"
+                        subtitle="Search textual inversions by name, tags, metadata, or prompt usage."
+                        status={`${filteredEmbeddings.length} found`}
+                        tone="info"
+                    >
+                        <Group grow className="swarm-browser-controls-row">
+                            <SwarmSearchInput
+                                placeholder="Search embeddings..."
+                                leftSection={<IconSearch size={16} />}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                                style={{ flex: 2 }}
+                                visual="glitch"
                             />
-                        )}
-                    </Group>
+                            {folderOptions.length > 1 && (
+                                <HeadlessCombobox
+                                    placeholder="Filter by folder"
+                                    options={folderOptions}
+                                    value={selectedFolder}
+                                    onChange={(value: string | null) => setSelectedFolder(value || 'all')}
+                                    leftSection={<IconFolder size={16} />}
+                                    clearable
+                                    style={{ flex: 1 }}
+                                />
+                            )}
+                        </Group>
+                    </ControlTray>
 
+                    <ControlTray
+                        title="Insert Mode"
+                        subtitle="Choose the target prompt field and the visible browser density."
+                        status={insertMode}
+                        tone={insertMode === 'negativeprompt' ? 'warning' : 'success'}
+                    >
                     <div className="swarm-browser-view-row">
                         <div className="swarm-browser-view-row__left">
                             <SwarmSegmentedControl
@@ -623,7 +872,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                                 size="xs"
                                 rightSection={
                                     folderDepth < 99 ? (
-                                        <Tooltip label="Show all depths">
+                                        <SwarmTooltip label="Show all depths">
                                             <Box
                                                 component="button"
                                                 type="button"
@@ -632,7 +881,7 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                                             >
                                                 <Text size="xs" c="dimmed">All</Text>
                                             </Box>
-                                        </Tooltip>
+                                        </SwarmTooltip>
                                     ) : undefined
                                 }
                             />
@@ -649,22 +898,28 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                             {filteredEmbeddings.length} Embedding{filteredEmbeddings.length !== 1 ? 's' : ''} found
                         </Text>
                     </div>
+                    </ControlTray>
 
-                    <Paper withBorder p="sm">
+                    <ControlTray
+                        title="Primary Insert Behavior"
+                        subtitle="The main plus action can include activation words, raw tags, or force a target field."
+                        status={insertMode === 'smart' ? 'Smart' : insertMode === 'prompt' ? 'Positive' : 'Negative'}
+                        tone={insertMode === 'negativeprompt' ? 'warning' : 'success'}
+                    >
                         <Group justify="space-between" wrap="wrap">
                             <Text size="sm" c="dimmed">
                                 Primary add action currently targets{' '}
                                 {insertMode === 'smart'
-                                    ? 'the smart prompt field based on embedding type'
+                                    ? 'the smart prompt field and includes activation words when available'
                                     : insertMode === 'prompt'
                                         ? 'the positive prompt'
                                         : 'the negative prompt'}.
                             </Text>
                             <Text size="xs" c="dimmed">
-                                Use `P` or `N` on any item to override.
+                                Use `P` or `N` to override the destination, or the tag chip to insert the raw embedding tag.
                             </Text>
                         </Group>
-                    </Paper>
+                    </ControlTray>
 
                     <Divider />
 
@@ -726,9 +981,19 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
 
             <ModelDetailModal
                 opened={detailModalOpen}
-                onClose={() => setDetailModalOpen(false)}
-                modelName={detailEmbeddingName}
+                onClose={() => {
+                    setDetailModalOpen(false);
+                    setDetailEmbedding(null);
+                }}
+                modelName={detailEmbedding?.name || ''}
                 subtype="Embedding"
+                onAddTriggerToPrompt={(trigger) => {
+                    if (!detailEmbedding) {
+                        return;
+                    }
+                    handleSelectEmbedding(detailEmbedding, undefined, trigger);
+                }}
+                extraTriggerKeywords={detailEmbedding ? [getEmbeddingTag(detailEmbedding)] : []}
             />
         </>
     );

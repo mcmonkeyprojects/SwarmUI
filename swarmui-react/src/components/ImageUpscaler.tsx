@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import {
   Modal,
@@ -18,10 +18,19 @@ import { logger } from '../utils/logger';
 import type { GenerateParams } from '../api/types';
 import { imageUrlToDataUrl, toRuntimeImageUrl } from '../utils/imageData';
 import { useQueueStore, type QueueJob } from '../stores/queue';
-import { SwarmButton, SwarmSegmentedControl, SwarmSlider, SwarmSwitch } from './ui';
-import { useModels, useUpscalers } from '../hooks/useModels';
+import { SwarmButton, SwarmSegmentedControl, SwarmSlider } from './ui';
+import { useUpscalers } from '../hooks/useModels';
 import { swarmClient } from '../api/client';
 import { queryClient, queryKeys } from '../api/queryClient';
+import {
+  DEFAULT_UPSCALE_METHOD,
+  applyLegacyVaeSelection,
+  isModelUpscaleMethod,
+} from '../utils/upscalePayload';
+import {
+  mergeGenerationPreviewSnapshot,
+  type GenerationPreviewSnapshot,
+} from '../utils/generationProgress';
 
 interface ImageUpscalerProps {
   opened: boolean;
@@ -35,12 +44,6 @@ interface ImageUpscalerProps {
 }
 
 type UpscaleMethod = 'hires-fix' | 'model-based';
-
-const DEFAULT_UPSCALE_METHOD = 'pixel-lanczos';
-
-const isModelUpscaleMethod = (value: string): boolean => {
-  return value.startsWith('model-') || value.startsWith('latentmodel-');
-};
 
 function buildUpscaleResultUrl(imageData: unknown): string {
   if (typeof imageData === 'string') {
@@ -83,16 +86,14 @@ export function ImageUpscaler({
   const [upscaleMethod, setUpscaleMethod] = useState<UpscaleMethod>('hires-fix');
   const [upscaleModel, setUpscaleModel] = useState(DEFAULT_UPSCALE_METHOD);
   const [scaleFactor, setScaleFactor] = useState(2);
-  const [creativity, setCreativity] = useState(0.4); // For hi-res fix
-  const [modelCreativity, setModelCreativity] = useState(0.1); // For model-based
+  const [creativity, setCreativity] = useState(0.4); // For classic image-to-image upscale
+  const [modelCreativity, setModelCreativity] = useState(0); // For model-based
   const [steps, setSteps] = useState(20);
   const [cfgScale, setCfgScale] = useState(7);
   const [upscaledImage, setUpscaledImage] = useState<string | null>(null);
+  const [previewState, setPreviewState] = useState<GenerationPreviewSnapshot>({});
   const [refreshingUpscalers, setRefreshingUpscalers] = useState(false);
-  const [useSeparateRefinerModel, setUseSeparateRefinerModel] = useState(false);
-  const [refinerModel, setRefinerModel] = useState('');
   const upscalersQuery = useUpscalers({ enabled: opened });
-  const diffusionModelsQuery = useModels('Stable-Diffusion', { enabled: opened && useSeparateRefinerModel });
 
   const upscaleModels = useMemo(() => {
     return (upscalersQuery.data ?? [])
@@ -106,33 +107,6 @@ export function ImageUpscaler({
   const modelUpscaleOptions = useMemo(() => {
     return upscaleModels.filter((model) => isModelUpscaleMethod(model.value));
   }, [upscaleModels]);
-
-  const diffusionModelOptions = useMemo(() => {
-    return [
-      { value: '', label: 'Use Source Image Model' },
-      ...(diffusionModelsQuery.data ?? []).map((model) => ({
-        value: model.name,
-        label: model.title || model.name,
-      })),
-    ];
-  }, [diffusionModelsQuery.data]);
-
-  useEffect(() => {
-    if (upscaling) {
-      return;
-    }
-
-    if (upscaleMethod === 'model-based') {
-      if (!isModelUpscaleMethod(upscaleModel)) {
-        setUpscaleModel(modelUpscaleOptions[0]?.value || '');
-      }
-      return;
-    }
-
-    if (!upscaleModel) {
-      setUpscaleModel(DEFAULT_UPSCALE_METHOD);
-    }
-  }, [modelUpscaleOptions, upscaleMethod, upscaleModel, upscaling]);
 
   // Extract generation params from metadata
   const getParamsFromMetadata = (): {
@@ -234,11 +208,10 @@ export function ImageUpscaler({
       return;
     }
 
-    // For hi-res fix, we need original dimensions
-    if (upscaleMethod === 'hires-fix' && (!params.width || !params.height)) {
+    if (!params.width || !params.height) {
       notifications.show({
         title: 'Dimensions Not Found',
-        message: 'Could not detect original image dimensions from metadata. Try Model-Based upscale instead.',
+        message: 'Could not detect original image dimensions from metadata. Please use an image with SwarmUI metadata or reuse its parameters first.',
         color: 'orange',
       });
       return;
@@ -263,6 +236,7 @@ export function ImageUpscaler({
     setUpscaling(true);
     setProgress(0);
     setUpscaledImage(null);
+    setPreviewState({});
 
     // Timeout to prevent infinite waiting
     const TIMEOUT_MS = 300000; // 5 minutes max for upscaling (larger images take longer)
@@ -271,13 +245,8 @@ export function ImageUpscaler({
     let queueFinalized = false;
     let latestImageUrl = '';
     const selectedUpscaleModelLabel = upscaleModels.find((model) => model.value === upscaleModel)?.label || upscaleModel;
-    const selectedRefinerModel = useSeparateRefinerModel && refinerModel.trim().length > 0 ? refinerModel.trim() : '';
-    const selectedRefinerModelLabel = selectedRefinerModel
-      ? diffusionModelOptions.find((model) => model.value === selectedRefinerModel)?.label || selectedRefinerModel
-      : '';
-
     const queueJobName = upscaleMethod === 'hires-fix'
-      ? `Upscale ${scaleFactor}x - Hi-Res Fix`
+      ? `Upscale ${scaleFactor}x - Classic Img2Img`
       : `Upscale ${scaleFactor}x - ${selectedUpscaleModelLabel}`;
     const queueTags = ['upscale', upscaleMethod, `${scaleFactor}x`];
 
@@ -299,6 +268,7 @@ export function ImageUpscaler({
         status,
         completedAt: Date.now(),
         ...(status === 'completed' ? { progress: 100 } : {}),
+        ...(status === 'completed' ? { previewImage: null } : {}),
         ...updates,
       });
     };
@@ -313,7 +283,12 @@ export function ImageUpscaler({
       const imageBase64 = await imageUrlToDataUrl(fullImageUrl);
       setProgress(15);
 
-      // Build params based on upscale method
+      const sourceWidth = params.width || 1024;
+      const sourceHeight = params.height || 1024;
+      const targetWidth = Math.round(sourceWidth * scaleFactor);
+      const targetHeight = Math.round(sourceHeight * scaleFactor);
+
+      // Build params based on the two backend-supported upscale flows.
       const upscaleParams: GenerateParams = upscaleMethod === 'hires-fix'
         ? {
           prompt: params.prompt || '',
@@ -322,14 +297,8 @@ export function ImageUpscaler({
           initimage: imageBase64,
           initimagecreativity: creativity,
           aspectratio: 'Custom',
-          width: params.width || 1024,
-          height: params.height || 1024,
-          refinermethod: 'PostApply',
-          refinercontrol: 0,
-          refinercontrolpercentage: 0,
-          refinerupscale: scaleFactor,
-          refinerupscalemethod: upscaleModel || DEFAULT_UPSCALE_METHOD,
-          ...(selectedRefinerModel ? { refinermodel: selectedRefinerModel } : {}),
+          width: targetWidth,
+          height: targetHeight,
           steps: steps,
           cfgscale: cfgScale,
           images: 1,
@@ -341,16 +310,20 @@ export function ImageUpscaler({
           model: params.model,
           initimage: imageBase64,
           initimagecreativity: modelCreativity,
+          aspectratio: 'Custom',
+          width: sourceWidth,
+          height: sourceHeight,
           refinermethod: 'PostApply',
           refinercontrol: 0,
           refinercontrolpercentage: 0,
           refinerupscale: scaleFactor,
           refinerupscalemethod: upscaleModel,
-          ...(selectedRefinerModel ? { refinermodel: selectedRefinerModel } : {}),
           steps: steps,
           cfgscale: cfgScale,
           images: 1,
+          seed: params.seed || -1,
         };
+      const vaeSelection = applyLegacyVaeSelection(upscaleParams);
 
       queueJobId = addQueueJob(upscaleParams, {
         name: queueJobName,
@@ -371,13 +344,12 @@ export function ImageUpscaler({
         color: 'blue',
       });
 
-      const methodLabel = selectedRefinerModelLabel
-        ? `${upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : selectedUpscaleModelLabel} with ${selectedRefinerModelLabel}`
-        : (upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : selectedUpscaleModelLabel);
+      const methodLabel = upscaleMethod === 'hires-fix' ? 'Classic Img2Img' : selectedUpscaleModelLabel;
       const initImageValue = typeof upscaleParams.initimage === 'string' ? upscaleParams.initimage : '';
       logger.debug('[Upscaler] Starting upscale with params (base64 truncated):', {
         ...upscaleParams,
         initimage: `${initImageValue.substring(0, 50)}... (${initImageValue.length} chars)`,
+        vaeSelection,
       });
 
       // Track progress
@@ -411,6 +383,23 @@ export function ImageUpscaler({
               syncQueueJob({
                 progress: nextProgress,
                 status: 'generating',
+              });
+            },
+            onNormalizedProgress: (progressData) => {
+              logger.debug('[Upscaler] Normalized progress:', progressData);
+              const nextProgress = Math.min(90, Math.round(progressData.overallPercent));
+              setProgress(nextProgress);
+              setPreviewState((currentPreviewState) => {
+                const nextPreviewState = mergeGenerationPreviewSnapshot(currentPreviewState, progressData);
+                syncQueueJob({
+                  progress: nextProgress,
+                  status: 'generating',
+                  ...nextPreviewState,
+                });
+                return {
+                  ...currentPreviewState,
+                  ...nextPreviewState,
+                };
               });
             },
             onImage: (imageData) => {
@@ -499,6 +488,7 @@ export function ImageUpscaler({
     setUpscaledImage(null);
     setProgress(0);
     setUpscaling(false);
+    setPreviewState({});
     onClose();
   };
 
@@ -568,65 +558,63 @@ export function ImageUpscaler({
           <Text size="sm" fw={500}>Upscale Method</Text>
           <SwarmSegmentedControl
             value={upscaleMethod}
-            onChange={(value) => setUpscaleMethod(value as UpscaleMethod)}
+            onChange={(value) => {
+              const nextMethod = value as UpscaleMethod;
+              setUpscaleMethod(nextMethod);
+              if (nextMethod === 'model-based' && !isModelUpscaleMethod(upscaleModel)) {
+                setUpscaleModel(modelUpscaleOptions[0]?.value || '');
+              } else if (nextMethod === 'hires-fix' && !upscaleModel) {
+                setUpscaleModel(DEFAULT_UPSCALE_METHOD);
+              }
+            }}
             data={[
-              { label: 'Hi-Res Fix (Recommended)', value: 'hires-fix' },
-              { label: 'Model-Based', value: 'model-based' },
+              { label: 'Classic Img2Img', value: 'hires-fix' },
+              { label: 'Upscale Model', value: 'model-based' },
             ]}
             disabled={upscaling}
             fullWidth
           />
           <Text size="xs" c="dimmed">
             {upscaleMethod === 'hires-fix'
-              ? 'Regenerate at higher resolution using original prompt. Best quality.'
-              : 'Use upscale model to enhance resolution. Faster but may lose some detail.'}
+              ? 'Matches SwarmUI Upscale 2x: sends this image as init image and increases width and height.'
+              : 'Matches SwarmUI Refine / Upscale: sends refinerupscale and the selected backend upscaler model.'}
           </Text>
         </Stack>
 
-        {/* Upscale Model - always show for model-based, optional for hi-res fix */}
-        <Stack gap="xs">
-          <Select
-            label={upscaleMethod === 'hires-fix' ? 'Upscaler Method' : 'Upscale Model'}
-            description={upscaleMethod === 'hires-fix'
-              ? 'Choose the backend resize/model method used by hi-res fix'
-              : 'Select a model from upscale_models or latent_upscale_models'}
-            data={upscaleMethod === 'model-based' ? modelUpscaleOptions : upscaleModels}
-            value={upscaleModel}
-            onChange={(value) => {
-              if (upscaleMethod === 'hires-fix') {
-                setUpscaleModel(value || DEFAULT_UPSCALE_METHOD);
-                return;
-              }
-              if (value) {
-                setUpscaleModel(value);
-              }
-            }}
-            disabled={upscaling || upscalersQuery.isLoading || (upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0)}
-            clearable={upscaleMethod === 'hires-fix'}
-            searchable
-            placeholder={upscalersQuery.isLoading ? 'Loading upscalers...' : 'Select upscale method'}
-            nothingFoundMessage={
-              upscaleMethod === 'model-based'
-                ? 'No model upscalers found. Refresh after adding files to upscale_models or latent_upscale_models.'
-                : 'No upscale methods found'
-            }
-          />
-          <Group justify="space-between" align="center">
-            <Text size="xs" c="dimmed">
-              Added files under Models/upscale_models appear here after backend model refresh.
-            </Text>
-            <SwarmButton
-              size="xs"
-              emphasis="soft"
-              tone="secondary"
-              onClick={handleRefreshUpscalers}
-              loading={refreshingUpscalers}
-              disabled={upscaling || upscalersQuery.isLoading}
-            >
-              Refresh Upscalers
-            </SwarmButton>
-          </Group>
-        </Stack>
+        {upscaleMethod === 'model-based' && (
+          <Stack gap="xs">
+            <Select
+              label="Upscale Model"
+              description="Select a backend refiner upscaler from upscale_models or latent_upscale_models"
+              data={modelUpscaleOptions}
+              value={upscaleModel}
+              onChange={(value) => {
+                if (value) {
+                  setUpscaleModel(value);
+                }
+              }}
+              disabled={upscaling || upscalersQuery.isLoading || modelUpscaleOptions.length === 0}
+              searchable
+              placeholder={upscalersQuery.isLoading ? 'Loading upscalers...' : 'Select upscale model'}
+              nothingFoundMessage="No model upscalers found. Refresh after adding files to upscale_models or latent_upscale_models."
+            />
+            <Group justify="space-between" align="center">
+              <Text size="xs" c="dimmed">
+                Added files under Models/upscale_models appear here after backend model refresh.
+              </Text>
+              <SwarmButton
+                size="xs"
+                emphasis="soft"
+                tone="secondary"
+                onClick={handleRefreshUpscalers}
+                loading={refreshingUpscalers}
+                disabled={upscaling || upscalersQuery.isLoading}
+              >
+                Refresh Upscalers
+              </SwarmButton>
+            </Group>
+          </Stack>
+        )}
 
         {upscaleMethod === 'model-based' && modelUpscaleOptions.length === 0 && !upscalersQuery.isLoading && (
           <Text size="xs" c="orange">
@@ -634,45 +622,16 @@ export function ImageUpscaler({
           </Text>
         )}
 
-        <Stack gap="xs">
-          <SwarmSwitch
-            label="Use separate diffusion refiner model"
-            size="xs"
-            checked={useSeparateRefinerModel}
-            onChange={(event) => setUseSeparateRefinerModel(event.currentTarget.checked)}
-            disabled={upscaling}
-          />
-          <Text size="xs" c="dimmed">
-            Off uses the source image model. On sends a separate diffusion refiner checkpoint in addition to the upscaler method.
-          </Text>
-          {useSeparateRefinerModel && (
-            <Select
-              label="Diffusion Refiner Model"
-              description="Optional checkpoint used for the refinement stage. This is separate from the upscaler model."
-              data={diffusionModelOptions}
-              value={refinerModel}
-              onChange={(value) => setRefinerModel(value || '')}
-              searchable
-              clearable
-              disabled={upscaling || diffusionModelsQuery.isLoading}
-              placeholder={diffusionModelsQuery.isLoading ? 'Loading models...' : 'Use source image model'}
-              nothingFoundMessage="No diffusion models found"
-            />
-          )}
-        </Stack>
-
-        {(isModelUpscaleMethod(upscaleModel) || (useSeparateRefinerModel && refinerModel)) && (
+        {upscaleMethod === 'model-based' && isModelUpscaleMethod(upscaleModel) && (
           <Text size="xs" c="dimmed">
             {isModelUpscaleMethod(upscaleModel)
               ? `Upscale method model: ${upscaleModels.find((model) => model.value === upscaleModel)?.label || upscaleModel}. `
               : `Upscale method: ${upscaleModels.find((model) => model.value === upscaleModel)?.label || upscaleModel}. `}
-            {useSeparateRefinerModel && refinerModel
-              ? `Then refine with diffusion model: ${diffusionModelOptions.find((model) => model.value === refinerModel)?.label || refinerModel}.`
-              : 'No separate diffusion refiner model is selected.'}
+            No diffusion refiner model will be sent.
           </Text>
         )}
 
-        {/* Creativity slider - for hi-res fix */}
+        {/* Creativity slider - for classic image-to-image upscale */}
         {upscaleMethod === 'hires-fix' && (
           <Stack gap="xs">
             <Group justify="space-between">
@@ -758,10 +717,38 @@ export function ImageUpscaler({
 
         {upscaling && (
           <Stack gap="xs">
+            {previewState.previewImage ? (
+              <Card withBorder>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" fw={600}>Live Preview</Text>
+                    {previewState.stageLabel ? (
+                      <Badge color="blue">{previewState.stageLabel}</Badge>
+                    ) : null}
+                  </Group>
+                  <Image
+                    src={previewState.previewImage}
+                    alt="Upscale live preview"
+                    fit="contain"
+                    h={260}
+                  />
+                  {previewState.currentStep && previewState.totalSteps ? (
+                    <Text size="xs" c="dimmed" ta="center">
+                      Step {Math.min(previewState.currentStep, previewState.totalSteps)}/{previewState.totalSteps}
+                    </Text>
+                  ) : null}
+                </Stack>
+              </Card>
+            ) : null}
             <Progress value={progress} size="lg" animated />
             <Text size="sm" ta="center" c="dimmed">
               Upscaling... {progress}%
             </Text>
+            {previewState.stageLabel && !previewState.previewImage ? (
+              <Text size="xs" ta="center" c="dimmed">
+                {previewState.stageLabel}
+              </Text>
+            ) : null}
             <Text size="xs" ta="center" c="dimmed">
               This run is also tracked in Queue, so you can leave this page and keep monitoring it there.
             </Text>
@@ -783,7 +770,7 @@ export function ImageUpscaler({
                 h={300}
               />
               <Text size="xs" c="dimmed">
-                Resolution increased by {scaleFactor}x using {upscaleMethod === 'hires-fix' ? 'Hi-Res Fix' : upscaleModel}
+              Resolution increased by {scaleFactor}x using {upscaleMethod === 'hires-fix' ? 'Classic Img2Img' : upscaleModel}
               </Text>
             </Stack>
           </Card>
@@ -807,6 +794,7 @@ export function ImageUpscaler({
                 onClick={() => {
                   setUpscaledImage(null);
                   setProgress(0);
+                  setPreviewState({});
                 }}
               >
                 Upscale Again

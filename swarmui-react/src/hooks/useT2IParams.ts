@@ -35,6 +35,16 @@ interface T2IParamsState {
   reload: () => Promise<void>;
 }
 
+function getRangeViewMax(param: T2IParam): number | undefined {
+  if (typeof param.view_max === 'number' && param.view_max > 0) {
+    return Math.min(param.view_max, param.max ?? param.view_max);
+  }
+  if (param.id === 'images' && typeof param.max === 'number') {
+    return Math.min(10, param.max);
+  }
+  return undefined;
+}
+
 // Parameter IDs that have dedicated UI components
 const KNOWN_PARAM_IDS = new Set([
   'prompt', 'negativeprompt', 'images', 'steps', 'cfgscale',
@@ -156,7 +166,7 @@ export function useT2IParams(): T2IParamsState {
           max: param.max,
           step: param.step,
           default: param.default,
-          viewMax: param.view_max,
+          viewMax: getRangeViewMax(param),
         };
       }
     }

@@ -643,41 +643,45 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
   // Can download?
   const canDownload =
     url.trim() !== '' && fileName.trim() !== '' && !isLoadingMetadata && isUrlValid;
-  const allFolderPaths = folderCandidates;
-  const rootFolderSet = new Set<string>();
-  for (const folderPath of allFolderPaths) {
-    const segments = normalizeFolderPath(folderPath)
-      .split('/')
-      .filter(Boolean);
-    for (let i = 1; i <= segments.length; i++) {
-      rootFolderSet.add(segments.slice(0, i).join('/'));
+  const rootFolderValues = useMemo(() => {
+    const rootFolderSet = new Set<string>();
+    for (const folderPath of folderCandidates) {
+      const segments = normalizeFolderPath(folderPath)
+        .split('/')
+        .filter(Boolean);
+      for (let i = 1; i <= segments.length; i++) {
+        rootFolderSet.add(segments.slice(0, i).join('/'));
+      }
     }
-  }
-  // Include subfolder paths discovered under the selected root
-  // Always add them so subfolders appear in Base Folder dropdown
-  for (const sub of foldersUnderRoot) {
-    const normalized = normalizeFolderPath(sub);
-    if (normalized) {
-      if (rootFolder && rootFolder !== '(None)') {
-        rootFolderSet.add(composeFolderPath(rootFolder, normalized));
-      } else {
-        // When at root, subfolders ARE root-level paths
-        rootFolderSet.add(normalized);
-        // Also decompose into prefix segments for nested paths
-        const segments = normalized.split('/').filter(Boolean);
-        for (let i = 1; i <= segments.length; i++) {
-          rootFolderSet.add(segments.slice(0, i).join('/'));
+    // Include subfolder paths discovered under the selected root
+    // Always add them so subfolders appear in Base Folder dropdown
+    for (const sub of foldersUnderRoot) {
+      const normalized = normalizeFolderPath(sub);
+      if (normalized) {
+        if (rootFolder && rootFolder !== '(None)') {
+          rootFolderSet.add(composeFolderPath(rootFolder, normalized));
+        } else {
+          // When at root, subfolders ARE root-level paths
+          rootFolderSet.add(normalized);
+          // Also decompose into prefix segments for nested paths
+          const segments = normalized.split('/').filter(Boolean);
+          for (let i = 1; i <= segments.length; i++) {
+            rootFolderSet.add(segments.slice(0, i).join('/'));
+          }
         }
       }
     }
-  }
-  if (rootFolder && rootFolder !== '(None)') {
-    rootFolderSet.add(rootFolder);
-  }
-  const rootFolderOptions = [
-    { value: '(None)', label: `${modelType} root` },
-    ...Array.from(rootFolderSet).sort().map((entry) => ({ value: entry, label: entry })),
-  ];
+    if (rootFolder && rootFolder !== '(None)') {
+      rootFolderSet.add(rootFolder);
+    }
+    return Array.from(rootFolderSet).sort();
+  }, [folderCandidates, foldersUnderRoot, rootFolder]);
+  const rootFolderOptions = useMemo(() => {
+    return [
+      { value: '(None)', label: `${modelType} root` },
+      ...rootFolderValues.map((entry) => ({ value: entry, label: entry })),
+    ];
+  }, [modelType, rootFolderValues]);
   const subfolderSet = new Set<string>();
   for (const folderPath of foldersUnderRoot) {
     const normalized = normalizeFolderPath(folderPath);
@@ -702,15 +706,15 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
         return { root: '(None)', subfolder: '' };
       }
       // Check if exact match in known API folders
-      if (allFolderPaths.includes(normalized)) {
+      if (folderCandidates.includes(normalized)) {
         return { root: normalized, subfolder: '' };
       }
       // Check if exact match in rootFolderSet (includes subfolder paths)
-      if (rootFolderSet.has(normalized)) {
+      if (rootFolderValues.includes(normalized)) {
         return { root: normalized, subfolder: '' };
       }
       // Find the best matching prefix folder
-      const allCandidates = [...new Set([...allFolderPaths, ...Array.from(rootFolderSet)])];
+      const allCandidates = [...new Set([...folderCandidates, ...rootFolderValues])];
       let bestPrefix: string | null = null;
       for (const candidate of allCandidates) {
         const normalizedCandidate = normalizeFolderPath(candidate);
@@ -730,17 +734,17 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
         subfolder: normalized.slice(bestPrefix.length + 1),
       };
     },
-    [allFolderPaths, rootFolderSet]
+    [folderCandidates, rootFolderValues]
   );
 
   // All browsable paths = API-returned folders + subfolder paths from rootFolderSet
   const allBrowsablePaths = useMemo(() => {
-    const combined = new Set(allFolderPaths);
-    for (const entry of rootFolderSet) {
+    const combined = new Set(folderCandidates);
+    for (const entry of rootFolderValues) {
       combined.add(entry);
     }
     return Array.from(combined).sort();
-  }, [allFolderPaths, rootFolderSet]);
+  }, [folderCandidates, rootFolderValues]);
 
   const mapNativePathToKnownFolder = useCallback(
     (nativePath: string): string | null => {
@@ -778,7 +782,9 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
   useEffect(() => {
     if (!opened) {
       refreshedIndexForCurrentOpenRef.current = false;
-      setIsFolderIndexReady(false);
+      queueMicrotask(() => {
+        setIsFolderIndexReady(false);
+      });
       return;
     }
 
@@ -822,22 +828,26 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
       const overrideParts = deriveRootAndSubfolder(normalizedOverride);
       const isManualOverride =
         normalizedOverride !== '(None)' && !nextFolders.includes(normalizedOverride);
-      setFolder(normalizedOverride);
-      setRootFolder(overrideParts.root);
-      setSubfolder(overrideParts.subfolder);
-      setManualFolderPath(isManualOverride ? normalizedOverride : '');
-      setUseManualFolder(isManualOverride);
-      setIsFolderAutoMapped(false);
+      queueMicrotask(() => {
+        setFolder(normalizedOverride);
+        setRootFolder(overrideParts.root);
+        setSubfolder(overrideParts.subfolder);
+        setManualFolderPath(isManualOverride ? normalizedOverride : '');
+        setUseManualFolder(isManualOverride);
+        setIsFolderAutoMapped(false);
+      });
       return;
     }
 
     const mappedFolder = normalizeFolderPath(findAutoMappedFolder(modelType, folderCandidates)) || '(None)';
-    setFolder(mappedFolder);
-    setRootFolder(mappedFolder);
-    setSubfolder('');
-    setManualFolderPath('');
-    setUseManualFolder(false);
-    setIsFolderAutoMapped(mappedFolder !== '(None)');
+    queueMicrotask(() => {
+      setFolder(mappedFolder);
+      setRootFolder(mappedFolder);
+      setSubfolder('');
+      setManualFolderPath('');
+      setUseManualFolder(false);
+      setIsFolderAutoMapped(mappedFolder !== '(None)');
+    });
   }, [opened, isFolderIndexReady, folderCandidates, folderCandidatesQuery.isPlaceholderData, modelType, deriveRootAndSubfolder]);
 
   const clearMetadataState = () => {
@@ -1168,17 +1178,23 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
 
   useEffect(() => {
     if (!embedThumbnail || !thumbnailUrl) {
-      setThumbnailDataUrl(null);
-      setIsConvertingThumbnail(false);
+      queueMicrotask(() => {
+        setThumbnailDataUrl(null);
+        setIsConvertingThumbnail(false);
+      });
       return;
     }
     if (thumbnailUrl.startsWith('data:image/')) {
-      setThumbnailDataUrl(thumbnailUrl);
-      setIsConvertingThumbnail(false);
+      queueMicrotask(() => {
+        setThumbnailDataUrl(thumbnailUrl);
+        setIsConvertingThumbnail(false);
+      });
       return;
     }
     let cancelled = false;
-    setIsConvertingThumbnail(true);
+    queueMicrotask(() => {
+      setIsConvertingThumbnail(true);
+    });
     convertImageUrlToDataUrl(thumbnailUrl)
       .then((dataUrl) => {
         if (!cancelled) {
@@ -2576,6 +2592,7 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     if (!canDownload) return;
 
     const fullName = folder && folder !== '(None)' ? `${folder}/${fileName}` : fileName;
+    // eslint-disable-next-line react-hooks/purity
     const downloadId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const normalizedDownloadUrl = url.split('#')[0].toLowerCase();
     const downloadExtension = normalizedDownloadUrl.endsWith('.gguf') ? 'gguf' : 'safetensors';
@@ -3196,7 +3213,7 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
                 </Badge>
               </Group>
             </UnstyledButton>
-            <Collapse in={!metadataScannerCollapsed}>
+            <Collapse expanded={!metadataScannerCollapsed}>
               <Stack gap="xs" mt="xs">
                 <Text size="xs" c="dimmed">
                   Scans {modelType} models and fills missing metadata from CivitAI/HuggingFace with source locking and sync diagnostics.

@@ -1,11 +1,11 @@
 import { memo, type ReactNode } from 'react';
-import { Card, Checkbox } from '@mantine/core';
+import { Card } from '@mantine/core';
 import { IconStar, IconStarFilled, IconTrash, IconCopy, IconPhoto, IconUpload, IconRotate, IconMaximize } from '@tabler/icons-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ImageListItem } from '../api/types';
 import { LazyImage } from './LazyImage';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from './ContextMenu';
-import { SwarmActionIcon, SwarmBadge } from './ui';
+import { SwarmActionIcon, SwarmBadge, SwarmCheckbox } from './ui';
 import { getHistoryUpscalePreviewInfo } from '../features/history/historyUtils';
 
 interface ImageCardProps {
@@ -521,22 +521,12 @@ function SelectionCheckbox({
     onSelectionToggle?: (event?: { shiftKey?: boolean }) => void;
 }) {
     return (
-        <Checkbox
+        <SwarmCheckbox
             checked={isSelected}
             onChange={(event) => onSelectionToggle?.({ shiftKey: (event.nativeEvent as MouseEvent).shiftKey })}
             size="md"
-            color="green"
-            styles={{
-                input: {
-                    backgroundColor: isSelected
-                        ? 'var(--theme-selected-border)'
-                        : 'color-mix(in srgb, var(--theme-surface-raised) 88%, transparent)',
-                    borderColor: isSelected
-                        ? 'var(--theme-selected-border)'
-                        : 'var(--theme-border-subtle)',
-                    cursor: 'pointer',
-                },
-            }}
+            tone="success"
+            visual="squishy"
         />
     );
 }

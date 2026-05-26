@@ -45,7 +45,7 @@ import type { Model } from '../api/types';
 import { LazyImage } from './LazyImage';
 import { ModelDetailModal } from './ModelDetailModal';
 import { HeadlessCombobox } from './headless/HeadlessCombobox';
-import { SwarmActionIcon, SwarmBadge, SwarmButton, SwarmSegmentedControl } from './ui';
+import { ControlTray, SwarmActionIcon, SwarmBadge, SwarmButton, SwarmSearchInput, SwarmSegmentedControl, SwarmTooltip } from './ui';
 import { VirtualGrid } from './VirtualGrid';
 import {
     BROWSER_THUMBNAIL_SIZES,
@@ -233,7 +233,9 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
             return;
         }
         const nextLoadedModelNames = new Set(loadedModelsQuery.data.map((model) => model.name));
-        setLoadedModelNames((current) => setsEqual(current, nextLoadedModelNames) ? current : nextLoadedModelNames);
+        queueMicrotask(() => {
+            setLoadedModelNames((current) => setsEqual(current, nextLoadedModelNames) ? current : nextLoadedModelNames);
+        });
     }, [loadedModelsQuery.data]);
 
     useEffect(() => {
@@ -241,7 +243,9 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
             return;
         }
         const nextStarredModels = new Set(starredModelsQuery.data);
-        setStarredModels((current) => setsEqual(current, nextStarredModels) ? current : nextStarredModels);
+        queueMicrotask(() => {
+            setStarredModels((current) => setsEqual(current, nextStarredModels) ? current : nextStarredModels);
+        });
     }, [opened, starredModelsQuery.data]);
 
     const handleToggleStar = async (modelName: string) => {
@@ -374,7 +378,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
         const options: { value: string; label: string }[] = [{ value: 'all', label: `Root folder (${models.length})` }];
         for (const f of folders) {
             const depth = (f as string).split('/').filter(Boolean).length;
-            const indent = depth > 1 ? '  '.repeat(depth - 1) + '└ ' : '';
+            const indent = depth > 1 ? `${'  '.repeat(depth - 1)}- ` : '';
             const count = totalCountMap.get(f as string) || 0;
             options.push({ value: f as string, label: `${indent}${(f as string).split('/').pop()} (${count})` });
         }
@@ -468,7 +472,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                 key={model.name}
                 withBorder
                 padding="md"
-                className="swarm-selectable-card"
+                className="swarm-selectable-card swarm-browser-asset-card"
                 data-selected={isSelected ? 'true' : undefined}
                 style={{
                     cursor: 'pointer',
@@ -481,6 +485,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                     {/* Preview Image */}
                     {previewUrl && (
                         <Box
+                            className="swarm-browser-asset-card__preview"
                             style={{
                                 height: BROWSER_THUMBNAIL_SIZES[thumbnailSize].card,
                                 display: 'flex',
@@ -505,7 +510,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                     {/* Header */}
                     <Group justify="space-between" wrap="nowrap">
                         <Box style={{ flex: 1, minWidth: 0 }}>
-                            <Text size="sm" fw={600} truncate>
+                            <Text size="sm" fw={700} lineClamp={2} className="swarm-browser-asset-card__title">
                                 {model.title || model.name}
                             </Text>
                             {folder && (
@@ -569,20 +574,32 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                     )}
                     {renderModelTags(model)}
 
-                    {/* More Info Button - Toggles expand */}
-                    <SwarmButton
-                        size="xs"
-                        tone="secondary"
-                        emphasis="ghost"
-                        fullWidth
-                        rightSection={<IconEye size={14} />}
-                        onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                            e.stopPropagation();
-                            handleViewDetails(model.name);
-                        }}
-                    >
-                        More Info
-                    </SwarmButton>
+                    <Group grow gap="xs" className="swarm-browser-asset-card__actions">
+                        <SwarmButton
+                            size="xs"
+                            tone={isSelected ? 'success' : 'primary'}
+                            emphasis={isSelected ? 'soft' : 'solid'}
+                            leftSection={isSelected ? <IconCheck size={14} /> : undefined}
+                            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                                e.stopPropagation();
+                                handleSelectModel(model.name);
+                            }}
+                        >
+                            {isSelected ? 'Selected' : 'Select'}
+                        </SwarmButton>
+                        <SwarmButton
+                            size="xs"
+                            tone="secondary"
+                            emphasis="ghost"
+                            rightSection={<IconEye size={14} />}
+                            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                                e.stopPropagation();
+                                handleViewDetails(model.name);
+                            }}
+                        >
+                            More Info
+                        </SwarmButton>
+                    </Group>
                 </Stack>
             </Card>
         );
@@ -728,7 +745,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                     </Group>
 
                     {/* Expanded Info */}
-                    <Collapse in={expanded}>
+                    <Collapse expanded={expanded}>
                         <Stack gap="xs" mt="xs">
                             <Divider />
                             {model.description && (
@@ -895,27 +912,41 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
             minHeight={400}
             zIndex={Z_INDEX.modal}
         >
-            <Stack gap="md">
+            <Stack gap="md" className="swarm-browser-shell">
                 {/* Controls Row */}
-                <Group grow className="swarm-browser-controls-row">
-                    <TextInput
-                        placeholder="Search Models..."
-                        leftSection={<IconSearch size={16} />}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                    />
-                    <HeadlessCombobox
-                        placeholder="Filter by folder"
-                        options={folderOptions}
-                        value={selectedFolder}
-                        onChange={(value: string | null) => setSelectedFolder(value || 'all')}
-                        leftSection={<IconFolder size={16} />}
-                        clearable
-                        style={{ flex: 1 }}
-                    />
-                </Group>
+                <ControlTray
+                    title="Model Filters"
+                    subtitle="Search by name, metadata, architecture, or narrow the current folder path."
+                    status={`${filteredModels.length} found`}
+                    tone="info"
+                >
+                    <Group grow className="swarm-browser-controls-row">
+                        <SwarmSearchInput
+                            placeholder="Search Models..."
+                            leftSection={<IconSearch size={16} />}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                            visual="glitch"
+                        />
+                        <HeadlessCombobox
+                            placeholder="Filter by folder"
+                            options={folderOptions}
+                            value={selectedFolder}
+                            onChange={(value: string | null) => setSelectedFolder(value || 'all')}
+                            leftSection={<IconFolder size={16} />}
+                            clearable
+                            style={{ flex: 1 }}
+                        />
+                    </Group>
+                </ControlTray>
 
                 {/* View Options */}
+                <ControlTray
+                    title="Browser View"
+                    subtitle="Tune how much of the model library is visible at once."
+                    status={viewMode}
+                    tone="secondary"
+                >
                 <div className="swarm-browser-view-row">
                     <div className="swarm-browser-view-row__left">
                         <SwarmSegmentedControl
@@ -943,7 +974,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                             size="xs"
                             rightSection={
                                 folderDepth < 99 ? (
-                                    <Tooltip label="Show all depths">
+                                    <SwarmTooltip label="Show all depths">
                                         <Box
                                             component="button"
                                             type="button"
@@ -952,7 +983,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                                         >
                                             <Text size="xs" c="dimmed">All</Text>
                                         </Box>
-                                    </Tooltip>
+                                    </SwarmTooltip>
                                 ) : undefined
                             }
                         />
@@ -976,20 +1007,22 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                         className="swarm-browser-view-row__right"
                     />
                 </div>
+                </ControlTray>
 
                 <Divider />
 
                 {/* Available Models */}
-                {loading ? (
-                    <Center h={300}>
-                        <Loader size="lg" />
-                    </Center>
-                ) : filteredModels.length === 0 ? (
-                    <Center h={200}>
-                        <Text c="dimmed">No Models found</Text>
-                    </Center>
-                ) : (
-                    <>
+                <Box className="swarm-browser-results">
+                    {loading ? (
+                        <Center h={300}>
+                            <Loader size="lg" />
+                        </Center>
+                    ) : filteredModels.length === 0 ? (
+                        <Center h={200}>
+                            <Text c="dimmed">No Models found</Text>
+                        </Center>
+                    ) : (
+                        <>
                         {viewMode === 'cards' && (
                             shouldVirtualize ? (
                                 <VirtualGrid
@@ -1039,8 +1072,9 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                                 </div>
                             )
                         )}
-                    </>
-                )}
+                        </>
+                    )}
+                </Box>
 
                 {/* Actions */}
                 <Group className="swarm-browser-footer swarm-browser-footer--between">
