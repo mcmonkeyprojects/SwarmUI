@@ -323,11 +323,11 @@ public class T2IParamTypes
         return update;
     }
 
-    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, SegmentApplyAfter, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat, Text2AudioTimeSignature, Text2AudioLanguage, Text2AudioKeyScale, Text2AudioStyle;
-    public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, SegmentSteps, Text2VideoFrames, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
+    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, WildcardSeedBehavior, SegmentDetector, SegmentSortOrder, SegmentTargetResolution, SegmentApplyAfter, SegmentSam2ModelSize, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat, Text2AudioTimeSignature, Text2AudioLanguage, Text2AudioKeyScale, Text2AudioStyle;
+    public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, SegmentMaxBoxes, SegmentSteps, Text2VideoFrames, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed, Text2AudioBPM;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
-        FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale, Text2AudioDuration;
+        FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentGroundingThreshold, SegmentCFGScale, FluxGuidanceScale, Text2AudioDuration;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
     public static T2IRegisteredParam<AudioFile> VideoAudioInput, VideoAudioReference;
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, VideoExtendModel, VideoExtendSwapModel;
@@ -712,9 +712,9 @@ public class T2IParamTypes
         MistralModel = Register<T2IModel>(new("Mistral Model", "Which Mistral LLM to use as a text encoder, for Flux.2-style 'diffusion_models' folder models.",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 20, ChangeWeight: 7
             ));
-        GemmaModel = Register<T2IModel>(new("Gemma Model", "Which Gemma LLM to use as a text encoder, for models that use Gemma (such as Lumina2, LTX2).",
+        GemmaModel = Register<T2IModel>(new("Gemma Model", "Which Gemma LLM to use as a text encoder, for models that use Gemma (such as Lumina2, LTX2, PixelDiT).",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 20, ChangeWeight: 7
-            ));
+        ));
         TorchCompile = Register<string>(new("Torch Compile", "Torch.Compile is a way to dynamically accelerate AI models.\nIt wastes a bit of time (around a minute) on the first call compiling a graph of the generation, and then all subsequent generations run faster thanks to the compiled graph.\nTorch.Compile depends on Triton, which is difficult to install on Windows, easier on Linux.",
             "Disabled", IgnoreIf: "Disabled", GetValues: _ => ["Disabled", "inductor", "cudagraphs"], OrderPriority: 40, Group: GroupAdvancedModelAddons
             ));
@@ -830,6 +830,18 @@ public class T2IParamTypes
             ));
         SegmentThresholdMax = Register<double>(new("Segment Threshold Max", "Maximum mask match value of a segment before clamping.\nLower values force more of the mask to be counted as maximum masking.\nToo-low values may include unwanted areas of the image.\nHigher values may soften the mask.",
             "1", Min: 0, Max: 1, Step: 0.05, Toggleable: true, ViewType: ParamViewType.SLIDER, Group: GroupSegmentRefining, OrderPriority: 6
+            ));
+        SegmentDetector = Register<string>(new("Segment Detector", "Detector used for normal '<segment:>' prompt syntax.\nAuto prefers GroundingDINO boxes with SAM2 masks when available, then falls back to CLIPSeg.\nExplicit '<segment:yolo-*>' syntax always keeps using YOLO.",
+            "Auto", IgnoreIf: "Auto", GetValues: _ => ["Auto", "Grounded SAM2", "CLIPSeg", "YOLO explicit only"], Group: GroupSegmentRefining, OrderPriority: 6.1, IsAdvanced: true
+            ));
+        SegmentGroundingThreshold = Register<double>(new("Segment Grounding Threshold", "Confidence threshold for GroundingDINO text box detection used by the Auto and Grounded SAM2 segment detectors.",
+            "0.25", IgnoreIf: "0.25", Min: 0, Max: 1, Step: 0.01, ViewType: ParamViewType.SLIDER, Group: GroupSegmentRefining, OrderPriority: 6.2, IsAdvanced: true
+            ));
+        SegmentMaxBoxes = Register<int>(new("Segment Max Boxes", "Maximum number of GroundingDINO boxes to pass to SAM2 for each segment text query.",
+            "1", IgnoreIf: "1", Min: 1, Max: 16, Step: 1, Group: GroupSegmentRefining, OrderPriority: 6.3, IsAdvanced: true
+            ));
+        SegmentSam2ModelSize = Register<string>(new("Segment SAM2 Model Size", "SAM2 model size used by the Auto and Grounded SAM2 segment detectors.",
+            "base_plus", IgnoreIf: "base_plus", GetValues: _ => ["small", "base_plus", "large"], Group: GroupSegmentRefining, OrderPriority: 6.4, IsAdvanced: true
             ));
         SegmentSortOrder = Register<string>(new("Segment Sort Order", "How to sort segments when using '<segment:yolo->' syntax with indices.\nFor example: <segment:yolo-face_yolov8m-seg_60.pt-2> with largest-smallest, will select the second largest face segment.",
             "left-right", IgnoreIf: "left-right", GetValues: _ => ["left-right", "right-left", "top-bottom", "bottom-top", "largest-smallest", "smallest-largest"], Group: GroupSegmentRefining, OrderPriority: 7

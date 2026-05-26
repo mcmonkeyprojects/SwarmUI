@@ -274,6 +274,31 @@ class SwarmMaskThreshold:
         return (mask,)
 
 
+class SwarmMaskFallback:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "primary_mask": ("MASK",),
+                "fallback_mask": ("MASK",),
+                "use_primary": ("BOOLEAN", {"default": True}),
+            },
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "fallback"
+    CATEGORY = "SwarmUI/masks"
+    DESCRIPTION = "Chooses a primary mask when the detector succeeded, otherwise falls back to a secondary mask."
+
+    def fallback(self, primary_mask, fallback_mask, use_primary):
+        primary_mask, fallback_mask = mask_size_match(primary_mask, fallback_mask)
+        if use_primary and primary_mask.max() > 0:
+            return (primary_mask,)
+        if fallback_mask.max() > 0:
+            return (fallback_mask,)
+        return (primary_mask,)
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmSquareMaskFromPercent": SwarmSquareMaskFromPercent,
     "SwarmCleanOverlapMasks": SwarmCleanOverlapMasks,
@@ -284,4 +309,5 @@ NODE_CLASS_MAPPINGS = {
     "SwarmMaskGrow": SwarmMaskGrow,
     "SwarmMaskBlur": SwarmMaskBlur,
     "SwarmMaskThreshold": SwarmMaskThreshold,
+    "SwarmMaskFallback": SwarmMaskFallback,
 }

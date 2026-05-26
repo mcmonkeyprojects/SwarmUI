@@ -58,6 +58,7 @@ public class ComfyUIBackendExtension : Extension
         ["RIFE VFI"] = "frameinterps",
         ["GIMMVFI_interpolate"] = "frameinterps_gimmvfi",
         ["Sam2Segmentation"] = "sam2",
+        ["SwarmGroundingDinoDetection"] = "groundingdino",
         ["SwarmYoloDetection"] = "yolov8",
         ["PixArtCheckpointLoader"] = "extramodelspixart",
         ["SanaCheckpointLoader"] = "extramodelssana",

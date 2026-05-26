@@ -71,7 +71,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     public static bool IsComfyModelFileEmitted = false;
 
     /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards. Can also have ';' separated list of additional paths to forward to the same folder name.</summary>
-    public static List<string> FoldersToForwardInComfyPath = ["unet", "diffusion_models", "gligen", "ipadapter", "yolov8", "tensorrt", "clipseg", "style_models", "latent_upscale_models"];
+    public static List<string> FoldersToForwardInComfyPath = ["unet", "diffusion_models", "gligen", "ipadapter", "yolov8", "groundingdino", "tensorrt", "clipseg", "style_models", "latent_upscale_models"];
 
     /// <summary>List of functions that modify the comfy paths YAML data. The simplest no-op impl is: <c>string MyFunc(string yaml) { return yaml; }</c></summary>
     public static List<Func<string, string>> ModifyComfyYaml = [];
@@ -112,6 +112,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
         ("omegaconf", "omegaconf"), // some yolo models require this but ultralytics itself doesn't? wut?
+        ("timm", "timm"),
         //("mesonpy", "meson-python") // Build requirement sometimes. Probably will be required when python 3.13 is stably supported.
     ];
 

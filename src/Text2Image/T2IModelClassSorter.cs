@@ -70,6 +70,8 @@ public class T2IModelClassSorter
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false }),
+        CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
+        CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones
@@ -184,6 +186,8 @@ public class T2IModelClassSorter
         bool isZImageLora(JObject h) => (hasLoraKey(h, "layers.0.adaLN_modulation.0") && hasLoraKey(h, "layers.9.feed_forward.w3"))
             || (hasLoraKey(h, "context_refiner.1.attention.to_k") && hasLoraKey(h, "layers.29.attention.to_v") && hasLoraKey(h, "noise_refiner.0.attention.to_q"));
         bool isZImageControlNetDiffPatch(JObject h) => h.ContainsKey("control_layers.0.adaLN_modulation.0.weight") && h.ContainsKey("control_noise_refiner.0.adaLN_modulation.0.weight") && h.ContainsKey("control_layers.0.feed_forward.w3.weight");
+        bool isPiD(JObject h) => hasKey(h, "lq_proj.latent_proj.0.weight");
+        bool isPixelDiT(JObject h) => hasKey(h, "core.pixel_embedder.proj.weight");
         bool tryGetWanTok(JObject h, out JToken tok) => h.TryGetValue("model.diffusion_model.blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("lora_unet_blocks_0_cross_attn_k.lora_down.weight", out tok);
         bool tryGetPatchEmbedTok(JObject h, out JToken tok) => h.TryGetValue("patch_embedding.weight", out tok) || h.TryGetValue("model.diffusion_model.patch_embedding.weight", out tok);
         bool isWan21_1_3b(JObject h) => tryGetWanTok(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 1536;
@@ -738,6 +742,15 @@ public class T2IModelClassSorter
         {
             return isAnimaLora(h);
         }});
+        // ====================== PixelDiT / PiD ======================
+        Register(new() { ID = "pixeldit-t2i", CompatClass = CompatPixelDiT, Name = "NVIDIA PixelDiT Text2Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isPixelDiT(h) && !isPiD(h);
+        }});
+        Register(new() { ID = "pid", CompatClass = CompatPiD, Name = "NVIDIA PiD Pixel Diffusion Decoder", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isPiD(h);
+        }});
         // ====================== Hunyuan Image 2.1 ======================
         Register(new() { ID = "hunyuan-image-2_1", CompatClass = CompatHunyuanImage2_1, Name = "Hunyuan Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
@@ -819,6 +832,7 @@ public class T2IModelClassSorter
         Register(new() { ID = "pixart-ms-sigma-xl-2", CompatClass = CompatPixartMsSigmaXl2, Name = "PixArtMS Sigma XL 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "pixart-ms-sigma-xl-2-2k", CompatClass = CompatPixartMsSigmaXl2, Name = "PixArtMS Sigma XL 2 (2K)", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "auraflow-v1/tensorrt", CompatClass = CompatAuraFlow, Name = "AuraFlow (TensorRT Engine)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
+        Register(new() { ID = "pixeldit-t2i/vae", CompatClass = CompatPixelDiT, Name = "PixelDiT Pixel-Space VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         // ====================== General correction remaps ======================
         Remaps["flux-1-dev"] = "Flux.1-dev";
         Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
@@ -835,6 +849,10 @@ public class T2IModelClassSorter
         Remaps["flux.1-schnell/lora"] = "Flux.1-dev/lora";
         Remaps["flux.1-schnell/controlnet"] = "Flux.1-dev/controlnet";
         Remaps["flux.1-ae"] = "flux.1/vae";
+        Remaps["pixeldit"] = "pixeldit-t2i";
+        Remaps["pixeldit_t2i"] = "pixeldit-t2i";
+        Remaps["pixeldit-t2i"] = "pixeldit-t2i";
+        Remaps["pixeldit-t2i/vae"] = "pixeldit-t2i/vae";
         Remaps["stable-cascade-v1-stage-a"] = "stable-cascade-v1-stage-a/vae";
         Remaps["stable-diffusion-3-3-5-large"] = "stable-diffusion-v3.5-large";
         Remaps["stable-diffusion-3-3-5-large/lora"] = "stable-diffusion-v3.5-large/lora";

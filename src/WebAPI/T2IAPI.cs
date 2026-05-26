@@ -255,13 +255,31 @@ public static class T2IAPI
         {
             output(BasicAPIFeatures.GetCurrentStatusRaw(session));
         }
+        long timeStart = Environment.TickCount64;
+        int eventSequence = 0;
+        void emitGenerationOutput(JObject obj)
+        {
+            bool isGenerationEvent = obj.ContainsKey("gen_progress") || obj.ContainsKey("image") || obj.ContainsKey("error") || obj.ContainsKey("discard_indices");
+            if (isGenerationEvent)
+            {
+                int sequence = Interlocked.Increment(ref eventSequence);
+                long elapsed = Environment.TickCount64 - timeStart;
+                obj["sui_event_sequence"] = sequence;
+                obj["sui_event_ms"] = elapsed;
+                if (obj.TryGetValue("gen_progress", out JToken progressToken) && progressToken is JObject progressObj)
+                {
+                    progressObj["event_sequence"] = sequence;
+                    progressObj["server_time_ms"] = elapsed;
+                }
+            }
+            output(obj);
+        }
         void setError(string message)
         {
             Logs.Debug($"Refused to generate image for {session.User.UserID}: {message}");
-            output(new JObject() { ["error"] = message });
+            emitGenerationOutput(new JObject() { ["error"] = message });
             claim.LocalClaimInterrupt.Cancel();
         }
-        long timeStart = Environment.TickCount64;
         T2IParamInput user_input;
         try
         {
@@ -361,7 +379,7 @@ public static class T2IAPI
             {
                 output(new JObject() { ["raw_swarm_data"] = new JObject() { ["params_used"] = JArray.FromObject(thisParams.ParamsQueried.ToArray()) } });
             }
-            output(new JObject() { ["image"] = url, ["batch_index"] = $"{actualIndex}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
+            emitGenerationOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{actualIndex}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
         }
         for (int i = 0; i < images && !claim.ShouldCancel; i++)
         {
@@ -390,7 +408,7 @@ public static class T2IAPI
                 }
             }
             int numCalls = 0;
-            tasks.Add(Task.Run(() => T2IEngine.CreateImageTask(thisParams, $"{imageIndex}", claim, output, setError, isWS,
+            tasks.Add(Task.Run(() => T2IEngine.CreateImageTask(thisParams, $"{imageIndex}", claim, emitGenerationOutput, setError, isWS,
                 (image, metadata) =>
                 {
                     int actualIndex = imageIndex + numCalls;

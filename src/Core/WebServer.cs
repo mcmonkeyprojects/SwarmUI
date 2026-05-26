@@ -282,6 +282,8 @@ public class WebServer
         WebApp.MapRazorPages().DisableAntiforgery();
         timer.Check("[Web] core use calls");
         WebApp.MapGet("/", () => Results.Redirect("Text2Image"));
+        WebApp.MapGet("/react", ViewReactIndex);
+        WebApp.MapGet("/react/", ViewReactIndex);
         WebApp.Map("/API/{*Call}", API.HandleAsyncRequest);
         WebApp.MapGet("/Output/{*Path}", ViewOutput);
         WebApp.MapGet("/View/{*Path}", ViewOutput);
@@ -317,6 +319,17 @@ public class WebServer
         Logs.Init("Scan for web extensions...");
         GatherExtensionPageAdditions();
         timer.Check("[Web] end");
+    }
+
+    /// <summary>Web route for the React frontend root.</summary>
+    public IResult ViewReactIndex()
+    {
+        string indexPath = Path.Combine("src", "wwwroot", "react", "index.html");
+        if (!File.Exists(indexPath))
+        {
+            return Results.NotFound();
+        }
+        return Results.File(indexPath, "text/html");
     }
 
     public void GatherExtensionPageAdditions()

@@ -29,6 +29,34 @@ def download_model(path, urlbase):
                 f.write(requests.get(f"{urlbase}{file}").content)
 
 
+def fallback_mask(mask, fallback_region):
+    if fallback_region == "none":
+        return mask
+    result = torch.zeros_like(mask)
+    height = result.shape[-2]
+    width = result.shape[-1]
+    def fill(x0, y0, x1, y1):
+        ix0 = max(0, min(width - 1, int(width * x0)))
+        iy0 = max(0, min(height - 1, int(height * y0)))
+        ix1 = max(ix0 + 1, min(width, int(width * x1)))
+        iy1 = max(iy0 + 1, min(height, int(height * y1)))
+        result[..., iy0:iy1, ix0:ix1] = 1.0
+    if fallback_region == "face":
+        fill(0.30, 0.03, 0.70, 0.30)
+    elif fallback_region == "hands":
+        fill(0.02, 0.34, 0.33, 0.78)
+        fill(0.67, 0.34, 0.98, 0.78)
+    elif fallback_region == "breasts":
+        fill(0.25, 0.24, 0.75, 0.52)
+    elif fallback_region == "genitals":
+        fill(0.32, 0.45, 0.68, 0.70)
+    elif fallback_region == "butt":
+        fill(0.25, 0.42, 0.75, 0.72)
+    elif fallback_region == "feet":
+        fill(0.18, 0.76, 0.82, 0.99)
+    return result
+
+
 class SwarmClipSeg:
     @classmethod
     def INPUT_TYPES(s):
@@ -37,6 +65,9 @@ class SwarmClipSeg:
                 "images": ("IMAGE",),
                 "match_text": ("STRING", {"multiline": True, "tooltip": "A short description (a few words) to describe something within the image to find and mask."}),
                 "threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step":0.01, "round": False, "tooltip": "Threshold to apply to the mask, higher values will make the mask more strict. Without sufficient thresholding, CLIPSeg may include random stray content around the edges."}),
+            },
+            "optional": {
+                "fallback_region": (["none", "face", "hands", "breasts", "genitals", "butt", "feet"], {"default": "none", "tooltip": "Optional conservative body-region fallback to use when CLIPSeg produces an empty mask."}),
             }
         }
 
@@ -45,7 +76,7 @@ class SwarmClipSeg:
     FUNCTION = "seg"
     DESCRIPTION = "Segment an image using CLIPSeg, creating a mask of what part of an image appears to match the given text."
 
-    def seg(self, images, match_text, threshold):
+    def seg(self, images, match_text, threshold, fallback_region="none"):
         # TODO: Batch support?
         i = 255.0 * images[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -59,6 +90,9 @@ class SwarmClipSeg:
         mask = torch.nn.functional.threshold(mask.sigmoid(), threshold, 0)
         mask -= mask.min()
         max = mask.max()
+        if max <= 0:
+            mask = fallback_mask(mask, fallback_region)
+            max = mask.max()
         if max > 0:
             mask /= max
         while mask.ndim < 4:

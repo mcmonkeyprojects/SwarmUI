@@ -238,6 +238,33 @@ public partial class WorkflowGenerator
         return result;
     }
 
+    /// <summary>Adds SwarmUI progress metadata to a workflow node.</summary>
+    public void AnnotateNodeStage(string nodeId, string stageId = null, string stageLabel = null, string stageDetail = null)
+    {
+        if (string.IsNullOrWhiteSpace(nodeId) || !Workflow.TryGetValue(nodeId, out JToken nodeToken) || nodeToken is not JObject node)
+        {
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(stageId) && string.IsNullOrWhiteSpace(stageLabel) && string.IsNullOrWhiteSpace(stageDetail))
+        {
+            return;
+        }
+        JObject meta = node["_meta"] as JObject ?? new JObject();
+        if (!string.IsNullOrWhiteSpace(stageId))
+        {
+            meta["sui_stage_id"] = stageId;
+        }
+        if (!string.IsNullOrWhiteSpace(stageLabel))
+        {
+            meta["sui_stage_label"] = stageLabel;
+        }
+        if (!string.IsNullOrWhiteSpace(stageDetail))
+        {
+            meta["sui_stage_detail"] = stageDetail;
+        }
+        node["_meta"] = meta;
+    }
+
     /// <summary>Helper to download a core model file required by the workflow.</summary>
     public void DownloadModel(string name, string filePath, string url, string hash)
     {
@@ -751,7 +778,7 @@ public partial class WorkflowGenerator
     public string DefaultPreviews = "default";
 
     /// <summary>Creates a KSampler and returns its node ID.</summary>
-    public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false, string explicitSampler = null, string explicitScheduler = null, int sectionId = 0)
+    public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false, string explicitSampler = null, string explicitScheduler = null, int sectionId = 0, string stageId = null, string stageLabel = null, string stageDetail = null)
     {
         if (IsVideoModel())
         {
@@ -1142,6 +1169,7 @@ public partial class WorkflowGenerator
                 ["latent_image"] = latentImage,
                 ["noise"] = NodePath(noiseNode, 0)
             }, id);
+            AnnotateNodeStage(finalSampler, stageId, stageLabel, stageDetail);
             return finalSampler;
         }
         if (classId == "stable-diffusion-xl-v1-edit")
@@ -1211,8 +1239,9 @@ public partial class WorkflowGenerator
                 ["stage_c"] = NodePath(created, 0),
                 ["conditioning"] = pos
             });
-            created = CreateKSampler(cascadeModel.Path, [stageBCond, 0], neg, [latent[0], 1], 1.1, steps, startStep, endStep, seed + 27, returnWithLeftoverNoise, addNoise, sigmin, sigmax, previews ?? previews, defsampler, defscheduler, id, true, sectionId: sectionId);
+            created = CreateKSampler(cascadeModel.Path, [stageBCond, 0], neg, [latent[0], 1], 1.1, steps, startStep, endStep, seed + 27, returnWithLeftoverNoise, addNoise, sigmin, sigmax, previews ?? previews, defsampler, defscheduler, id, true, sectionId: sectionId, stageId: stageId, stageLabel: stageLabel, stageDetail: stageDetail);
         }
+        AnnotateNodeStage(created, stageId, stageLabel, stageDetail);
         return created;
     }
 

@@ -1339,7 +1339,8 @@ public class WorkflowGeneratorSteps
             {
                 g.CurrentMedia = g.CurrentMedia.AsSamplingLatent(g.CurrentVae, g.CurrentAudioVae);
                 g.CreateKSampler(g.CurrentModel.Path, g.FinalPrompt, g.FinalNegativePrompt, g.CurrentMedia.Path, cfg, steps, startStep, endStep,
-                    g.UserInput.Get(T2IParamTypes.Seed), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true, sectionId: T2IParamInput.SectionID_BaseOnly);
+                    g.UserInput.Get(T2IParamTypes.Seed), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true, sectionId: T2IParamInput.SectionID_BaseOnly,
+                    stageId: "base_sample", stageLabel: "Base Sampling", stageDetail: "Primary diffusion pass");
                 g.CurrentMedia = g.CurrentMedia.WithPath(["10", 0]);
                 if (g.UserInput.Get(T2IParamTypes.UseReferenceOnly, false))
                 {
@@ -1451,6 +1452,7 @@ public class WorkflowGeneratorSteps
                                 ["upscale_method"] = upscaleMethod.After("pixel-"),
                                 ["crop"] = "disabled"
                             }, "26");
+                            g.AnnotateNodeStage("26", "upscale_pixel", "Pixel Upscale", $"{upscaleMethod.After("pixel-")} to {width}x{height}");
                         }
                         else
                         {
@@ -1458,11 +1460,13 @@ public class WorkflowGeneratorSteps
                             {
                                 ["model_name"] = upscaleMethod.After("model-")
                             }, "27");
+                            g.AnnotateNodeStage("27", "upscale_model_load", "Load Upscaler", upscaleMethod.After("model-"));
                             g.CreateNode("ImageUpscaleWithModel", new JObject()
                             {
                                 ["upscale_model"] = NodePath("27", 0),
                                 ["image"] = decoded.Path
                             }, "28");
+                            g.AnnotateNodeStage("28", "upscale_model_apply", "AI Upscale", upscaleMethod.After("model-"));
                             g.CreateNode("ImageScale", new JObject()
                             {
                                 ["image"] = NodePath("28", 0),
@@ -1471,6 +1475,7 @@ public class WorkflowGeneratorSteps
                                 ["upscale_method"] = "lanczos",
                                 ["crop"] = "disabled"
                             }, "26");
+                            g.AnnotateNodeStage("26", "upscale_fit", "Fit Upscale Result", $"{width}x{height}");
                         }
                         decoded = decoded.WithPath(["26", 0]);
                         decoded.Width = width;
@@ -1495,6 +1500,7 @@ public class WorkflowGeneratorSteps
                         ["upscale_method"] = upscaleMethod.After("latent-"),
                         ["scale_by"] = refineUpscale
                     }, "26");
+                    g.AnnotateNodeStage("26", "upscale_latent", "Latent Upscale", $"{upscaleMethod.After("latent-")} by {refineUpscale:0.##}x");
                     g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0]);
                     g.CurrentMedia.Width = width;
                     g.CurrentMedia.Height = height;
@@ -1505,6 +1511,7 @@ public class WorkflowGeneratorSteps
                     {
                         ["model_name"] = upscaleMethod.After("latentmodel-")
                     }, "27");
+                    g.AnnotateNodeStage("27", "upscale_latent_model_load", "Load Latent Upscaler", upscaleMethod.After("latentmodel-"));
                     if (g.IsHunyuanVideo15())
                     {
                         g.CreateNode("HunyuanVideo15LatentUpscaleWithModel", new JObject()
@@ -1516,6 +1523,7 @@ public class WorkflowGeneratorSteps
                             ["height"] = height,
                             ["crop"] = "disabled"
                         }, "26");
+                        g.AnnotateNodeStage("26", "upscale_latent_model_apply", "Latent Model Upscale", $"{width}x{height}");
                         g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0], WGNodeData.DT_LATENT_VIDEO);
                     }
                     else if (g.IsLTXV2())
@@ -1535,6 +1543,7 @@ public class WorkflowGeneratorSteps
                             ["samples"] = NodePath(cropGuides, 2),
                             ["upscale_model"] = NodePath("27", 0)
                         }, "26");
+                        g.AnnotateNodeStage("26", "upscale_latent_model_apply", "Latent Model Upscale", $"{width}x{height}");
                         g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0], WGNodeData.DT_LATENT_VIDEO);
                     }
                     else
@@ -1564,7 +1573,8 @@ public class WorkflowGeneratorSteps
                 string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
                 g.CreateKSampler(model.Path, prompt, negPrompt, g.CurrentMedia.Path, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
                     g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
-                    explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
+                    explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner,
+                    stageId: "refiner_sample", stageLabel: "Refiner Sampling", stageDetail: "Secondary diffusion pass");
                 g.CurrentMedia = g.CurrentMedia.WithPath(["23", 0]);
                 g.IsRefinerStage = false;
             }
@@ -1579,6 +1589,240 @@ public class WorkflowGeneratorSteps
         }, 1);
         #endregion
         #region Segmentation Processing
+        string segmentStageLabel(PromptRegion.Part part, int index)
+        {
+            string label = part.DataText?.Replace('|', '+').Trim() ?? "";
+            if (label.StartsWith("yolo-", StringComparison.Ordinal))
+            {
+                label = label.After("yolo-");
+            }
+            if (label.Length > 48)
+            {
+                label = $"{label[..45]}...";
+            }
+            return string.IsNullOrWhiteSpace(label) ? $"Segment {index + 1}" : $"Segment {index + 1}: {label}";
+        }
+
+        string segmentStageDetail(PromptRegion.Part part)
+        {
+            string prompt = part.Prompt?.Replace('\n', ' ').Replace('\r', ' ').Trim() ?? "";
+            if (prompt.Length > 96)
+            {
+                prompt = $"{prompt[..93]}...";
+            }
+            return prompt;
+        }
+
+        void annotateSegmentNode(WorkflowGenerator g, string nodeId, int index, string process, string detail = null)
+        {
+            string safeDetail = detail?.Replace('\n', ' ').Replace('\r', ' ').Trim();
+            if (safeDetail is not null && safeDetail.Length > 96)
+            {
+                safeDetail = $"{safeDetail[..93]}...";
+            }
+            g.AnnotateNodeStage(nodeId, $"segment_{index + 1}_{process.ToLowerFast()}", $"Segment {index + 1} {process}", safeDetail);
+        }
+
+        void addSegmentSection(List<string> sections, HashSet<string> seen, string section)
+        {
+            section = section.Trim();
+            if (seen.Add(section.ToLowerFast()))
+            {
+                sections.Add(section);
+            }
+        }
+
+        void addSegmentAliases(List<string> sections, HashSet<string> seen, params string[] aliases)
+        {
+            foreach (string alias in aliases)
+            {
+                addSegmentSection(sections, seen, alias);
+            }
+        }
+
+        string[] expandSegmentSections(string dataText)
+        {
+            string[] rawSections = dataText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (rawSections.Length == 0)
+            {
+                rawSections = [""];
+            }
+            List<string> sections = [];
+            HashSet<string> seen = [];
+            foreach (string rawSection in rawSections)
+            {
+                addSegmentSection(sections, seen, rawSection);
+                string normalized = rawSection.Trim().ToLowerFast();
+                if (normalized.StartsWith("yolo-", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                if (normalized == "face" || normalized == "facial" || normalized == "facial-features" || normalized == "head")
+                {
+                    addSegmentAliases(sections, seen, "face", "head", "eyes", "mouth");
+                }
+                else if (normalized == "eye" || normalized == "eyes")
+                {
+                    addSegmentAliases(sections, seen, "eyes", "face");
+                }
+                else if (normalized == "mouth" || normalized == "lip" || normalized == "lips")
+                {
+                    addSegmentAliases(sections, seen, "mouth", "lips", "face");
+                }
+                else if (normalized == "hand" || normalized == "hands")
+                {
+                    addSegmentAliases(sections, seen, "hand", "hands", "fingers");
+                }
+                else if (normalized == "finger" || normalized == "fingers")
+                {
+                    addSegmentAliases(sections, seen, "fingers", "hand");
+                }
+                else if (normalized == "breast" || normalized == "breasts" || normalized == "boob" || normalized == "boobs" || normalized == "cleavage" || normalized == "bust" || normalized == "chest")
+                {
+                    addSegmentAliases(sections, seen, "breasts", "breast", "female chest", "chest", "cleavage", "upper torso");
+                }
+                else if (normalized == "nipple" || normalized == "nipples")
+                {
+                    addSegmentAliases(sections, seen, "nipples", "breasts");
+                }
+                else if (normalized == "vulva" || normalized == "pussy" || normalized == "vagina" || normalized == "cunt" || normalized == "clitoris" || normalized == "crotch" || normalized == "groin" || normalized == "pubic")
+                {
+                    addSegmentAliases(sections, seen, "vulva", "vagina", "crotch", "groin", "pubic area");
+                }
+                else if (normalized == "penis" || normalized == "cock" || normalized == "dick" || normalized == "shaft" || normalized == "phallus" || normalized == "erection")
+                {
+                    addSegmentAliases(sections, seen, "penis", "shaft", "crotch", "groin");
+                }
+                else if (normalized == "butt" || normalized == "ass" || normalized == "booty" || normalized == "buttocks" || normalized == "anus" || normalized == "glute" || normalized == "asshole")
+                {
+                    addSegmentAliases(sections, seen, "butt", "buttocks", "rear", "hips");
+                }
+                else if (normalized == "foot" || normalized == "feet")
+                {
+                    addSegmentAliases(sections, seen, "foot", "feet", "toes");
+                }
+                else if (normalized == "toe" || normalized == "toes")
+                {
+                    addSegmentAliases(sections, seen, "toes", "foot");
+                }
+            }
+            return [.. sections];
+        }
+
+        string segmentFallbackRegion(string dataText)
+        {
+            string normalized = dataText.Trim().ToLowerFast();
+            if (normalized == "face" || normalized == "facial" || normalized == "facial-features" || normalized == "head" || normalized == "eye" || normalized == "eyes" || normalized == "mouth" || normalized == "lip" || normalized == "lips")
+            {
+                return "face";
+            }
+            if (normalized == "hand" || normalized == "hands" || normalized == "finger" || normalized == "fingers")
+            {
+                return "hands";
+            }
+            if (normalized == "breast" || normalized == "breasts" || normalized == "boob" || normalized == "boobs" || normalized == "cleavage" || normalized == "bust" || normalized == "chest" || normalized == "female chest" || normalized == "upper torso" || normalized == "nipple" || normalized == "nipples")
+            {
+                return "breasts";
+            }
+            if (normalized == "vulva" || normalized == "pussy" || normalized == "vagina" || normalized == "cunt" || normalized == "clitoris" || normalized == "crotch" || normalized == "groin" || normalized == "pubic" || normalized == "pubic area" || normalized == "penis" || normalized == "cock" || normalized == "dick" || normalized == "shaft" || normalized == "phallus" || normalized == "erection")
+            {
+                return "genitals";
+            }
+            if (normalized == "butt" || normalized == "ass" || normalized == "booty" || normalized == "buttocks" || normalized == "anus" || normalized == "glute" || normalized == "asshole" || normalized == "rear" || normalized == "hips")
+            {
+                return "butt";
+            }
+            if (normalized == "foot" || normalized == "feet" || normalized == "toe" || normalized == "toes")
+            {
+                return "feet";
+            }
+            return "none";
+        }
+
+        double segmentDetectionThreshold(PromptRegion.Part part, string dataText)
+        {
+            double threshold = Math.Abs(part.Strength);
+            string fallbackRegion = segmentFallbackRegion(dataText);
+            if (fallbackRegion == "breasts" || fallbackRegion == "genitals" || fallbackRegion == "butt")
+            {
+                return Math.Min(threshold, 0.30);
+            }
+            if (fallbackRegion == "hands" || fallbackRegion == "feet")
+            {
+                return Math.Min(threshold, 0.35);
+            }
+            if (fallbackRegion == "face")
+            {
+                return Math.Min(threshold, 0.40);
+            }
+            return threshold;
+        }
+
+        bool shouldUseGroundedSam2(WorkflowGenerator g, string detector, string dataText)
+        {
+            if (dataText.StartsWith("yolo-", StringComparison.Ordinal))
+            {
+                return false;
+            }
+            if (detector == "CLIPSeg" || detector == "YOLO explicit only")
+            {
+                return false;
+            }
+            bool canUse = g.Features.Contains("groundingdino") && g.Features.Contains("sam2");
+            if (!canUse && detector == "Grounded SAM2")
+            {
+                Logs.Warning("Segment Detector is set to Grounded SAM2, but this backend does not report GroundingDINO and SAM2 support. Falling back to CLIPSeg for this segment.");
+            }
+            return canUse && (detector == "Auto" || detector == "Grounded SAM2");
+        }
+
+        string createGroundedSam2SegmentNode(WorkflowGenerator g, PromptRegion.Part part, int index, string dataText)
+        {
+            string detectorNode = g.CreateNode("SwarmGroundingDinoDetection", new JObject()
+            {
+                ["image"] = g.CurrentMedia.Path,
+                ["text"] = dataText,
+                ["threshold"] = g.UserInput.Get(T2IParamTypes.SegmentGroundingThreshold, 0.25),
+                ["max_detections"] = g.UserInput.Get(T2IParamTypes.SegmentMaxBoxes, 1),
+                ["fallback_region"] = segmentFallbackRegion(dataText)
+            });
+            annotateSegmentNode(g, detectorNode, index, "Detection", $"GroundingDINO: {dataText}");
+            string modelSize = g.UserInput.Get(T2IParamTypes.SegmentSam2ModelSize, "base_plus");
+            string sam2ModelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs(modelSize));
+            annotateSegmentNode(g, sam2ModelNode, index, "Detection", $"SAM2 model: {modelSize}");
+            string sam2Node = g.CreateNode("Sam2Segmentation", new JObject()
+            {
+                ["sam2_model"] = NodePath(sam2ModelNode, 0),
+                ["image"] = g.CurrentMedia.Path,
+                ["keep_model_loaded"] = true,
+                ["bboxes"] = NodePath(detectorNode, 0)
+            });
+            annotateSegmentNode(g, sam2Node, index, "Mask", "SAM2 bbox mask");
+            string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
+            {
+                ["mask"] = NodePath(sam2Node, 0),
+                ["fill_holes"] = true,
+                ["hole_kernel_size"] = 5
+            });
+            annotateSegmentNode(g, postNode, index, "Mask", "SAM2 mask cleanup");
+            string clipFallbackNode = g.CreateNode("SwarmClipSeg", new JObject()
+            {
+                ["images"] = g.CurrentMedia.Path,
+                ["match_text"] = dataText,
+                ["threshold"] = segmentDetectionThreshold(part, dataText),
+                ["fallback_region"] = segmentFallbackRegion(dataText)
+            });
+            annotateSegmentNode(g, clipFallbackNode, index, "Detection", $"CLIPSeg fallback: {dataText}");
+            string fallbackNode = g.CreateNode("SwarmMaskFallback", new JObject()
+            {
+                ["primary_mask"] = NodePath(postNode, 0),
+                ["fallback_mask"] = NodePath(clipFallbackNode, 0),
+                ["use_primary"] = NodePath(detectorNode, 1)
+            });
+            annotateSegmentNode(g, fallbackNode, index, "Mask", "Grounded SAM2 with CLIPSeg fallback");
+            return fallbackNode;
+        }
+
         void RunSegmentationProcessing(WorkflowGenerator g, bool isBeforeRefiner)
         {
             PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
@@ -1605,15 +1849,12 @@ public class WorkflowGeneratorSteps
                 }
                 PromptRegion negativeRegion = new(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""));
                 PromptRegion.Part[] negativeParts = [.. negativeRegion.Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
+                string detector = g.UserInput.Get(T2IParamTypes.SegmentDetector, "Auto");
                 for (int i = 0; i < parts.Length; i++)
                 {
                     PromptRegion.Part part = parts[i];
-                    string[] segmentSections = part.DataText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    string[] segmentSections = expandSegmentSections(part.DataText);
                     string segmentNode = null;
-                    if (segmentSections.Length == 0)
-                    {
-                        segmentSections = [""];
-                    }
                     foreach (string dataText in segmentSections)
                     {
                         string newSegmentNode = null;
@@ -1646,15 +1887,25 @@ public class WorkflowGeneratorSteps
                                 ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right"),
                                 ["threshold"] = Math.Abs(part.Strength)
                             });
+                            annotateSegmentNode(g, newSegmentNode, i, "Detection", dataText);
                         }
                         else
                         {
-                            newSegmentNode = g.CreateNode("SwarmClipSeg", new JObject()
+                            if (shouldUseGroundedSam2(g, detector, dataText))
                             {
-                                ["images"] = g.CurrentMedia.Path,
-                                ["match_text"] = dataText,
-                                ["threshold"] = Math.Abs(part.Strength)
-                            });
+                                newSegmentNode = createGroundedSam2SegmentNode(g, part, i, dataText);
+                            }
+                            else
+                            {
+                                newSegmentNode = g.CreateNode("SwarmClipSeg", new JObject()
+                                {
+                                    ["images"] = g.CurrentMedia.Path,
+                                    ["match_text"] = dataText,
+                                    ["threshold"] = segmentDetectionThreshold(part, dataText),
+                                    ["fallback_region"] = segmentFallbackRegion(dataText)
+                                });
+                                annotateSegmentNode(g, newSegmentNode, i, "Detection", dataText);
+                            }
                         }
                         if (segmentSections.Length > 1 && g.UserInput.Get(T2IParamTypes.SaveSegmentMask, false))
                         {
@@ -1662,6 +1913,7 @@ public class WorkflowGeneratorSteps
                             {
                                 ["mask"] = NodePath(newSegmentNode, 0)
                             });
+                            annotateSegmentNode(g, imageNode, i, "Mask", "Saving detected sub-mask");
                             new WGNodeData([imageNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, g.GetStableDynamicID(50000, 0));
                         }
                         if (segmentNode is null)
@@ -1678,6 +1930,7 @@ public class WorkflowGeneratorSteps
                                 ["x"] = 0,
                                 ["y"] = 0
                             });
+                            annotateSegmentNode(g, segmentNode, i, "Mask", "Combining segment masks");
                         }
                     }
                     if (part.Strength < 0)
@@ -1686,6 +1939,7 @@ public class WorkflowGeneratorSteps
                         {
                             ["mask"] = NodePath(segmentNode, 0)
                         });
+                        annotateSegmentNode(g, segmentNode, i, "Mask", "Inverting segment mask");
                     }
                     int blurAmt = g.UserInput.Get(T2IParamTypes.SegmentMaskBlur, 10);
                     if (blurAmt > 0)
@@ -1696,6 +1950,7 @@ public class WorkflowGeneratorSteps
                             ["blur_radius"] = blurAmt,
                             ["sigma"] = 1
                         });
+                        annotateSegmentNode(g, segmentNode, i, "Mask", $"Blur {blurAmt}");
                     }
                     int growAmt = g.UserInput.Get(T2IParamTypes.SegmentMaskGrow, 16);
                     if (growAmt > 0)
@@ -1706,6 +1961,7 @@ public class WorkflowGeneratorSteps
                             ["expand"] = growAmt,
                             ["tapered_corners"] = true
                         });
+                        annotateSegmentNode(g, segmentNode, i, "Mask", $"Grow {growAmt}");
                     }
                     if (g.UserInput.Get(T2IParamTypes.SaveSegmentMask, false))
                     {
@@ -1713,6 +1969,7 @@ public class WorkflowGeneratorSteps
                         {
                             ["mask"] = NodePath(segmentNode, 0)
                         });
+                        annotateSegmentNode(g, imageNode, i, "Mask", "Saving final segment mask");
                         new WGNodeData([imageNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, g.GetStableDynamicID(50000, 0));
                     }
                     int oversize = g.UserInput.Get(T2IParamTypes.SegmentMaskOversize, 16);
@@ -1732,7 +1989,7 @@ public class WorkflowGeneratorSteps
                     long seed = g.UserInput.Get(T2IParamTypes.Seed) + 2 + i;
                     double cfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.SegmentCFGScale, part.ContextID) ?? g.UserInput.GetNullable(T2IParamTypes.RefinerCFGScale, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: part.ContextID);
                     WGNodeData beforeImage = g.CurrentMedia;
-                    string sampler = g.CreateKSampler(model.Path, prompt, negPrompt, [g.MaskShrunkInfo.MaskedLatent, 0], cfg, steps, startStep, 10000, seed, false, true, sectionId: part.ContextID);
+                    string sampler = g.CreateKSampler(model.Path, prompt, negPrompt, [g.MaskShrunkInfo.MaskedLatent, 0], cfg, steps, startStep, 10000, seed, false, true, sectionId: part.ContextID, stageId: $"segment_{i + 1}_sample", stageLabel: segmentStageLabel(part, i), stageDetail: segmentStageDetail(part));
                     g.CurrentMedia = g.CurrentMedia.WithPath([sampler, 0], WGNodeData.DT_LATENT_IMAGE);
                     g.CurrentMedia = g.CurrentMedia.AsRawImage(vae);
                     JArray composited = g.RecompositeCropped(g.MaskShrunkInfo.BoundsNode, [g.MaskShrunkInfo.CroppedMask, 0], beforeImage.Path, g.CurrentMedia.Path);

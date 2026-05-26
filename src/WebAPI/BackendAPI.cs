@@ -307,6 +307,7 @@ public class BackendAPI
         {
             Session.RecentlyBlockedFilenames.Clear();
         }
+        List<AbstractBackend> targets = [];
         List<Task<bool>> tasks = [];
         foreach (AbstractBackend target in Program.Backends.RunningBackendsOfType<AbstractBackend>())
         {
@@ -314,6 +315,7 @@ public class BackendAPI
             {
                 continue;
             }
+            targets.Add(target);
             tasks.Add(target.FreeMemory(system_ram));
         }
         if (tasks.IsEmpty())
@@ -321,6 +323,14 @@ public class BackendAPI
             return new JObject() { ["result"] = false, ["count"] = 0 };
         }
         await Task.WhenAll(tasks);
+        for (int i = 0; i < tasks.Count; i++)
+        {
+            if (tasks[i].Result && targets[i] is AbstractT2IBackend t2iBackend)
+            {
+                t2iBackend.CurrentModelName = null;
+            }
+        }
+        Program.Backends.ReassignLoadedModelsList();
         Utilities.CleanRAM();
         return new JObject() { ["result"] = true, ["count"] = tasks.Where(t => t.Result).Count() };
     }

@@ -112,6 +112,12 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is a Longcat Image model.</summary>
     public bool IsLongcatImage() => IsModelCompatClass(T2IModelClassSorter.CompatLongcatImage);
 
+    /// <summary>Returns true if the current model is a PixelDiT T2I model.</summary>
+    public bool IsPixelDiT() => IsModelCompatClass(T2IModelClassSorter.CompatPixelDiT);
+
+    /// <summary>Returns true if the current model is a PiD pixel diffusion decoder model.</summary>
+    public bool IsPiD() => IsModelCompatClass(T2IModelClassSorter.CompatPiD);
+
     /// <summary>Returns true if the current model is OmniGen.</summary>
     public bool IsOmniGen()
     {
@@ -274,6 +280,18 @@ public partial class WorkflowGenerator
                 ["height"] = height,
                 ["width"] = width
             }, id));
+        }
+        else if (IsPixelDiT())
+        {
+            string emptyImage = CreateNode("EmptyImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["color"] = 0,
+                ["height"] = height,
+                ["width"] = width
+            });
+            string emptyLatent = new WGNodeData([emptyImage, 0], this, WGNodeData.DT_IMAGE, CurrentCompat()).EncodeToLatent(CurrentVae, id).Path[0].ToString();
+            return resultImage(emptyLatent);
         }
         else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis() || IsKandinsky5ImgLite() || IsAnima() || IsLongcatImage())
         {
@@ -637,6 +655,11 @@ public partial class WorkflowGenerator
             return RequireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd", T2IParamTypes.GemmaModel);
         }
 
+        public string GetPixelDiTGemma2Model()
+        {
+            return RequireClipModel("PixelDiT/gemma_2_2b_it_elm_bf16.safetensors", "https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/text_encoders/gemma_2_2b_it_elm_bf16.safetensors", "e7ae59c203c392db4aa4e27783e924ec3225eb563392260cf747e1130ffcdb88", T2IParamTypes.GemmaModel);
+        }
+
         public string GetGemma3_12bModel()
         {
             return RequireClipModel("gemma_3_12B_it.safetensors", "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors", "aaca463d11e6d8d2a4bdb0d6299214c15ef78a3f73e0ef8113d5a9d0219b3f6d", T2IParamTypes.GemmaModel);
@@ -892,6 +915,10 @@ public partial class WorkflowGenerator
                         dtype = "default";
                     }
                     else if (IsAceStep15()) // ??
+                    {
+                        dtype = "default";
+                    }
+                    else if (IsPixelDiT() || IsPiD())
                     {
                         dtype = "default";
                     }
@@ -1224,6 +1251,15 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("longcat_image", helpers.GetQwenImage25_7b_tenc());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsPixelDiT())
+        {
+            helpers.LoadClip("pixeldit", helpers.GetPixelDiTGemma2Model());
+            LoadingVAE = CreateVAELoader("pixel_space");
+        }
+        else if (IsPiD())
+        {
+            throw new SwarmUserErrorException("PiD models require ComfyUI's PiD Conditioning workflow with an input latent and are not supported by SwarmUI's normal text-to-image generator yet. Use the embedded ComfyUI workflow editor for PiD graphs.");
         }
         else if (IsLumina())
         {

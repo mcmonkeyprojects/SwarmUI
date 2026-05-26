@@ -301,6 +301,114 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
         int nodesDone = 0;
         float curPercent = 0;
+        int backendProgressSequence = 0;
+        int previewFrameSequence = 0;
+        string currentNode = "";
+
+        // Parse workflow to identify progress stage nodes and sampler step counts.
+        Dictionary<string, int> samplerNodeSteps = [];
+        List<string> stageNodeOrder = [];
+        Dictionary<string, string> nodeStageIds = [];
+        Dictionary<string, string> nodeStageLabels = [];
+        Dictionary<string, string> nodeStageDetails = [];
+        HashSet<int> segmentTaskIndexes = [];
+        int readSegmentTaskIndex(string stageId)
+        {
+            if (string.IsNullOrWhiteSpace(stageId) || !stageId.StartsWith("segment_", StringComparison.Ordinal))
+            {
+                return 0;
+            }
+            string remaining = stageId.After("segment_");
+            int underscore = remaining.IndexOf('_');
+            if (underscore > 0)
+            {
+                remaining = remaining[..underscore];
+            }
+            return int.TryParse(remaining, out int segmentIndex) && segmentIndex > 0 ? segmentIndex : 0;
+        }
+        foreach (JProperty prop in workflowJson.Properties())
+        {
+            JObject nodeJson = prop.Value as JObject;
+            if (nodeJson != null && nodeJson["class_type"] != null)
+            {
+                string classType = nodeJson["class_type"].ToString();
+                bool isSampler = classType.Contains("KSampler") || classType.Contains("Sampler");
+                JToken stepsToken = nodeJson["inputs"]?["steps"];
+                int steps = 0;
+                if (stepsToken != null && int.TryParse(stepsToken.ToString(), out int parsedSteps) && parsedSteps > 0)
+                {
+                    steps = parsedSteps;
+                }
+                JObject metaJson = nodeJson["_meta"] as JObject;
+                string stageId = metaJson?["sui_stage_id"]?.ToString();
+                string stageLabel = metaJson?["sui_stage_label"]?.ToString();
+                string stageDetail = metaJson?["sui_stage_detail"]?.ToString();
+                if (classType.Contains("KSampler") || classType.Contains("Sampler"))
+                {
+                    samplerNodeSteps[prop.Name] = steps;
+                }
+                if (isSampler || !string.IsNullOrWhiteSpace(stageId) || !string.IsNullOrWhiteSpace(stageLabel))
+                {
+                    stageNodeOrder.Add(prop.Name);
+                }
+                if (!string.IsNullOrWhiteSpace(stageId))
+                {
+                    nodeStageIds[prop.Name] = stageId;
+                    int segmentIndex = readSegmentTaskIndex(stageId);
+                    if (segmentIndex > 0)
+                    {
+                        segmentTaskIndexes.Add(segmentIndex);
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(stageLabel))
+                {
+                    nodeStageLabels[prop.Name] = stageLabel;
+                }
+                if (!string.IsNullOrWhiteSpace(stageDetail))
+                {
+                    nodeStageDetails[prop.Name] = stageDetail;
+                }
+            }
+        }
+
+        // Track current backend stage information.
+        int currentStageCurrentStep = 0;
+        int currentStageTotalSteps = 0;
+        string currentStageId = null;
+        string currentStageLabel = null;
+        string currentStageDetail = null;
+        int currentStageTaskIndex = 0;
+        int currentStageTaskCount = 0;
+        int currentStageTasksRemaining = 0;
+        int currentStageIndex = 0;
+        int totalStages = stageNodeOrder.Count;
+        int totalSegmentTasks = segmentTaskIndexes.Count;
+        bool isInSamplerNode = false;
+
+        void updateStageTaskMetadata()
+        {
+            currentStageTaskIndex = 0;
+            currentStageTaskCount = 0;
+            currentStageTasksRemaining = 0;
+            if (totalSegmentTasks <= 0)
+            {
+                return;
+            }
+            int segmentIndex = readSegmentTaskIndex(currentStageId);
+            if (segmentIndex <= 0)
+            {
+                return;
+            }
+            currentStageTaskIndex = Math.Min(segmentIndex, totalSegmentTasks);
+            currentStageTaskCount = totalSegmentTasks;
+            currentStageTasksRemaining = Math.Max(0, totalSegmentTasks - currentStageTaskIndex);
+        }
+
+        if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
+        {
+            Logs.Verbose($"[Progress] Found {totalStages} progress stage nodes in workflow: {string.Join(", ", stageNodeOrder.Select(id => $"{id}(steps={samplerNodeSteps.GetValueOrDefault(id)})"))}");
+        }
+
         void yieldProgressUpdate()
         {
             JObject toSend = new()
@@ -308,7 +416,24 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 ["batch_index"] = batchId,
                 ["request_id"] = $"{user_input.UserRequestId}",
                 ["overall_percent"] = (nodesDone + curPercent) / (float)expectedNodes,
-                ["current_percent"] = curPercent
+                ["current_percent"] = curPercent,
+                ["current_percent_source"] = "comfy_node",
+                ["current_percent_is_step"] = isInSamplerNode,
+                ["stage_current_step"] = currentStageCurrentStep,
+                ["stage_total_steps"] = currentStageTotalSteps,
+                ["stage_id"] = currentStageId,
+                ["stage_label"] = currentStageLabel,
+                ["stage_detail"] = currentStageDetail,
+                ["stage_index"] = currentStageIndex + 1,
+                ["stage_count"] = totalStages,
+                ["stages_remaining"] = Math.Max(0, totalStages - currentStageIndex - 1),
+                ["stage_task_index"] = currentStageTaskIndex,
+                ["stage_task_count"] = currentStageTaskCount,
+                ["stage_tasks_remaining"] = currentStageTasksRemaining,
+                ["backend_progress_sequence"] = Interlocked.Increment(ref backendProgressSequence),
+                ["node_index"] = nodesDone,
+                ["node_count"] = expectedNodes,
+                ["current_node"] = currentNode
             };
             if (previewMetadata is not null)
             {
@@ -348,7 +473,6 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             bool isReceivingOutputs = false;
             bool isExpectingVideo = false;
             bool isExpectingText = false;
-            string currentNode = "";
             bool isMe = false;
             // autoCanceller will be cancelled via the using to end the task and not leave it waiting when the method clears
             using CancellationTokenSource autoCanceller = new();
@@ -419,6 +543,38 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                 {
                                     goto endloop;
                                 }
+
+                                // Check if transitioning to a tracked backend stage node.
+                                if (stageNodeOrder.Contains(nodeId))
+                                {
+                                    int stageOrderIndex = stageNodeOrder.IndexOf(nodeId);
+                                    if (stageOrderIndex >= 0)
+                                    {
+                                        currentStageIndex = stageOrderIndex;
+                                    }
+                                    bool nextIsSampler = samplerNodeSteps.ContainsKey(nodeId);
+                                    currentStageTotalSteps = samplerNodeSteps.GetValueOrDefault(nodeId);
+                                    currentStageCurrentStep = 0;
+                                    currentStageId = nodeStageIds.GetValueOrDefault(nodeId);
+                                    currentStageLabel = nodeStageLabels.GetValueOrDefault(nodeId) ?? (nextIsSampler ? "Sampling" : null);
+                                    currentStageDetail = nodeStageDetails.GetValueOrDefault(nodeId);
+                                    updateStageTaskMetadata();
+                                    isInSamplerNode = nextIsSampler;
+                                    Logs.Verbose($"[Progress] Entered stage node {nodeId}, steps={currentStageTotalSteps}, stage index={currentStageIndex + 1}/{totalStages}");
+                                }
+                                else if ((isInSamplerNode || currentStageId is not null || currentStageLabel is not null) && currentNode != nodeId)
+                                {
+                                    // Transitioning away from a tracked stage node.
+                                    Logs.Verbose($"[Progress] Exiting stage node {currentNode}, entering {nodeId}");
+                                    isInSamplerNode = false;
+                                    currentStageCurrentStep = 0;
+                                    currentStageTotalSteps = 0;
+                                    currentStageId = null;
+                                    currentStageLabel = null;
+                                    currentStageDetail = null;
+                                    updateStageTaskMetadata();
+                                }
+
                                 currentNode = nodeId;
                                 goto case "execution_cached";
                             case "execution_cached":
@@ -429,13 +585,34 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                 break;
                             case "progress":
                                 int max = json["data"].Value<int>("max");
-                                curPercent = json["data"].Value<float>("value") / max;
+                                int value = json["data"].Value<int>("value");
+                                curPercent = (float)value / max;
                                 isReceivingOutputs = max == 12345 || max == 12346 || max == 12347;
                                 isExpectingVideo = max == 12346;
                                 isExpectingText = max == 12347;
+
+                                // Update step progress if in a sampler node
+                                if (isInSamplerNode && max > 1 && max < 10000)
+                                {
+                                    if (currentStageTotalSteps <= 0)
+                                    {
+                                        currentStageTotalSteps = max;
+                                    }
+                                    currentStageCurrentStep = Math.Min(value, currentStageTotalSteps);
+                                    if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
+                                    {
+                                        Logs.Verbose($"[Progress] Sampler step: {currentStageCurrentStep}/{currentStageTotalSteps} (node={currentNode}, value={value}, max={max})");
+                                    }
+                                }
+
                                 yieldProgressUpdate();
                                 break;
                             case "executed":
+                                // If we just finished a sampler node, mark it complete
+                                if (isInSamplerNode && samplerNodeSteps.ContainsKey(currentNode))
+                                {
+                                    currentStageCurrentStep = currentStageTotalSteps;
+                                }
                                 nodesDone = expectedNodes;
                                 curPercent = 0;
                                 yieldProgressUpdate();
@@ -526,7 +703,25 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                 ["request_id"] = $"{user_input.UserRequestId}",
                                 ["preview"] = $"data:{mediaType.MimeType};base64,{Convert.ToBase64String(output, preBytes, output.Length - preBytes)}",
                                 ["overall_percent"] = (nodesDone + curPercent) / (float)expectedNodes,
-                                ["current_percent"] = curPercent
+                                ["current_percent"] = curPercent,
+                                ["current_percent_source"] = "comfy_node",
+                                ["current_percent_is_step"] = isInSamplerNode,
+                                ["stage_current_step"] = currentStageCurrentStep,
+                                ["stage_total_steps"] = currentStageTotalSteps,
+                                ["stage_id"] = currentStageId,
+                                ["stage_label"] = currentStageLabel,
+                                ["stage_detail"] = currentStageDetail,
+                                ["stage_index"] = currentStageIndex + 1,
+                                ["stage_count"] = totalStages,
+                                ["stages_remaining"] = Math.Max(0, totalStages - currentStageIndex - 1),
+                                ["stage_task_index"] = currentStageTaskIndex,
+                                ["stage_task_count"] = currentStageTaskCount,
+                                ["stage_tasks_remaining"] = currentStageTasksRemaining,
+                                ["backend_progress_sequence"] = Interlocked.Increment(ref backendProgressSequence),
+                                ["preview_frame_sequence"] = Interlocked.Increment(ref previewFrameSequence),
+                                ["node_index"] = nodesDone,
+                                ["node_count"] = expectedNodes,
+                                ["current_node"] = currentNode
                             });
                         }
                     }
