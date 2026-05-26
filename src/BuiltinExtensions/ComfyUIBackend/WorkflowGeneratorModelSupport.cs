@@ -85,6 +85,12 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Chroma Radiance.</summary>
     public bool IsChromaRadiance() => IsModelCompatClass(T2IModelClassSorter.CompatChromaRadiance);
 
+    /// <summary>Returns true if the current model is NVIDIA PixelDiT.</summary>
+    public bool IsPixelDiT() => IsModelCompatClass(T2IModelClassSorter.CompatPixelDiT);
+
+    /// <summary>Returns true if the current model is NVIDIA PiD.</summary>
+    public bool IsPiD() => IsModelCompatClass(T2IModelClassSorter.CompatPiD);
+
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
     public bool IsHiDream() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamI1);
 
@@ -398,7 +404,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id), frames);
         }
-        else if (IsChromaRadiance() || IsZetaChroma())
+        else if (IsChromaRadiance() || IsZetaChroma() || IsPixelDiT())
         {
             return resultImage(CreateNode("EmptyChromaRadianceLatentImage", new JObject()
             {
@@ -647,6 +653,11 @@ public partial class WorkflowGenerator
         public string GetGemma2Model()
         {
             return RequireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd", T2IParamTypes.GemmaModel);
+        }
+
+        public string GetGemma2_2bElmModel()
+        {
+            return RequireClipModel("gemma_2_2b_it_elm_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/text_encoders/gemma_2_2b_it_elm_fp8_scaled.safetensors", "87692b2ab1714028e29910ea645d96db656505ca0805051048d2298b225c02d1", T2IParamTypes.GemmaModel);
         }
 
         public string GetGemma3_12bModel()
@@ -899,7 +910,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsZImage() || IsZetaChroma() || IsAnima()) // Model is small and dense, so trust user preferred download format
+                    else if (IsZImage() || IsZetaChroma() || IsAnima() || IsPixelDiT() || IsPiD()) // Model is small and dense, so trust user preferred download format
                     {
                         dtype = "default";
                     }
@@ -1107,6 +1118,11 @@ public partial class WorkflowGenerator
             {
                 helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
             }
+        }
+        else if (IsPixelDiT() || IsPiD())
+        {
+            helpers.LoadClip("pixeldit", helpers.GetGemma2_2bElmModel());
+            LoadingVAE = CreateVAELoader("pixel_space");
         }
         else if (IsHiDream())
         {
