@@ -1,11 +1,30 @@
 import { memo, useMemo, useState } from 'react';
-import { Box, Group, Select, Stack, Text, TextInput, Textarea, Tooltip } from '@mantine/core';
+import {
+  Box,
+  Group,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Textarea,
+  Tooltip,
+  Popover,
+  ActionIcon,
+} from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconArrowBackUp, IconSparkles } from '@tabler/icons-react';
+import {
+  IconArrowBackUp,
+  IconSparkles,
+  IconMinus,
+  IconPlus,
+  IconRotate2,
+} from '@tabler/icons-react';
 import { normalizeWord, parseWordsFromText } from '../../features/presetLibrary/staging';
 import {
   PRESET_CATEGORIES,
   PRESET_CATEGORY_LABELS,
+  parseWeightedWord,
+  formatWeightedWord,
   type LibraryPreset,
   type PresetCategory,
 } from '../../features/presetLibrary/types';
@@ -56,12 +75,12 @@ export const PresetCreator = memo(function PresetCreator({
   const canSave = name.trim().length > 0 && parsedWords.length > 0;
   const categoryOptions = useMemo(
     () =>
-      PRESET_CATEGORIES.filter((presetCategory) => showExplicit || presetCategory !== 'explicit').map(
-        (presetCategory) => ({
-          value: presetCategory,
-          label: PRESET_CATEGORY_LABELS[presetCategory],
-        })
-      ),
+      PRESET_CATEGORIES.filter(
+        (presetCategory) => showExplicit || presetCategory !== 'explicit'
+      ).map((presetCategory) => ({
+        value: presetCategory,
+        label: PRESET_CATEGORY_LABELS[presetCategory],
+      })),
     [showExplicit]
   );
 
@@ -82,11 +101,23 @@ export const PresetCreator = memo(function PresetCreator({
     setWordsText(parseWordsFromText(cleanedPromptText).join(', '));
   };
 
-  const handleRemoveWord = (wordToRemove: string) => {
-    const remainingWords = parsedWords.filter(
-      (word) => normalizeWord(word) !== normalizeWord(wordToRemove)
-    );
+  const handleRemoveWord = (targetBaseWord: string) => {
+    const remainingWords = parsedWords.filter((word) => {
+      const { baseWord } = parseWeightedWord(word);
+      return normalizeWord(baseWord) !== normalizeWord(targetBaseWord);
+    });
     setWordsText(remainingWords.join(', '));
+  };
+
+  const handleAdjustWordWeight = (targetBaseWord: string, nextWeight: number) => {
+    const updatedWords = parsedWords.map((word) => {
+      const { baseWord } = parseWeightedWord(word);
+      if (normalizeWord(baseWord) === normalizeWord(targetBaseWord)) {
+        return formatWeightedWord(baseWord, nextWeight);
+      }
+      return word;
+    });
+    setWordsText(updatedWords.join(', '));
   };
 
   const handleSave = () => {
@@ -206,19 +237,74 @@ export const PresetCreator = memo(function PresetCreator({
 
           {parsedWords.length > 0 ? (
             <Group gap="xs" wrap="wrap" align="flex-start">
-              {parsedWords.map((word) => (
-                <button
-                  key={word}
-                  type="button"
-                  className="preset-library__creator-chip"
-                  aria-label={`Remove ${word}`}
-                  onClick={() => handleRemoveWord(word)}
-                >
-                  <SwarmBadge tone="primary" emphasis="soft">
-                    {word} ×
-                  </SwarmBadge>
-                </button>
-              ))}
+              {parsedWords.map((word) => {
+                const { baseWord, weight } = parseWeightedWord(word);
+                return (
+                  <Popover key={word} width={200} position="bottom" withArrow shadow="md">
+                    <Popover.Target>
+                      <button
+                        type="button"
+                        className="preset-library__creator-chip"
+                        aria-label={`Adjust weight for ${baseWord}`}
+                      >
+                        <SwarmBadge tone="primary" emphasis="soft">
+                          {baseWord} {weight !== 1.0 ? `(x${Number(weight.toFixed(2))})` : ''}
+                        </SwarmBadge>
+                      </button>
+                    </Popover.Target>
+                    <Popover.Dropdown style={{ padding: '8px 12px', zIndex: 1000 }}>
+                      <Stack gap="xs">
+                        <Group justify="space-between" align="center" wrap="nowrap">
+                          <Text size="xs" fw={700} style={{ flex: 1, minWidth: 0 }} truncate>
+                            {baseWord}
+                          </Text>
+                          <SwarmButton
+                            tone="secondary"
+                            emphasis="ghost"
+                            size="compact-xs"
+                            onClick={() => handleRemoveWord(baseWord)}
+                          >
+                            Remove
+                          </SwarmButton>
+                        </Group>
+                        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+                          <Group gap={4} wrap="nowrap">
+                            <ActionIcon
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleAdjustWordWeight(baseWord, weight - 0.05)}
+                              disabled={weight <= 0.1}
+                            >
+                              <IconMinus size={12} />
+                            </ActionIcon>
+                            <Text size="xs" fw={600} w={32} ta="center">
+                              {weight.toFixed(2)}
+                            </Text>
+                            <ActionIcon
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleAdjustWordWeight(baseWord, weight + 0.05)}
+                              disabled={weight >= 3.0}
+                            >
+                              <IconPlus size={12} />
+                            </ActionIcon>
+                          </Group>
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            color="gray"
+                            onClick={() => handleAdjustWordWeight(baseWord, 1.0)}
+                            disabled={weight === 1.0}
+                            title="Reset to 1.0"
+                          >
+                            <IconRotate2 size={12} />
+                          </ActionIcon>
+                        </Group>
+                      </Stack>
+                    </Popover.Dropdown>
+                  </Popover>
+                );
+              })}
             </Group>
           ) : (
             <Text size="sm" c="dimmed">

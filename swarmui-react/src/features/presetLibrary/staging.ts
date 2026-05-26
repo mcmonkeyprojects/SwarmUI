@@ -1,9 +1,9 @@
 import {
-  PRESET_PROMPT_SECTION_ORDER,
   type LibraryPreset,
   type PresetCategory,
   type PresetPromptSection,
 } from './types';
+import { compileStagedPrompt, type PresetCompilerOptions } from './compiler';
 
 export interface PresetCartState {
   stagedWords: string[];
@@ -12,6 +12,8 @@ export interface PresetCartState {
   wordContributors: Record<string, string[]>;
   displayByKey: Record<string, string>;
   categoryByKey: Record<string, PresetCategory>;
+  wordWeights: Record<string, number>;
+  presetMultipliers: Record<string, number>;
 }
 
 export function createEmptyPresetCartState(): PresetCartState {
@@ -22,11 +24,13 @@ export function createEmptyPresetCartState(): PresetCartState {
     wordContributors: {},
     displayByKey: {},
     categoryByKey: {},
+    wordWeights: {},
+    presetMultipliers: {},
   };
 }
 
 export function normalizeWord(word: string): string {
-  return word.toLowerCase().trim();
+  return word.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 export function dedupeWords(words: string[]): string[] {
@@ -62,6 +66,8 @@ function cloneCartState(state: PresetCartState): PresetCartState {
     ),
     displayByKey: { ...state.displayByKey },
     categoryByKey: { ...state.categoryByKey },
+    wordWeights: { ...state.wordWeights },
+    presetMultipliers: { ...state.presetMultipliers },
   };
 }
 
@@ -96,11 +102,13 @@ export function stagePresetInCart(
       nextState.categoryByKey[key] = preset.category;
       nextState.stagedWords.push(word);
       nextState.sections[preset.category] = [...(nextState.sections[preset.category] ?? []), word];
+      nextState.wordWeights[key] = 1.0;
     }
   }
 
   if (!nextState.stagedFromPresetIds.includes(preset.id)) {
     nextState.stagedFromPresetIds.push(preset.id);
+    nextState.presetMultipliers[preset.id] = 1.0;
   }
 
   return nextState;
@@ -134,12 +142,14 @@ export function unstagePresetFromCart(state: PresetCartState, presetId: string):
       delete nextState.wordContributors[key];
       delete nextState.displayByKey[key];
       delete nextState.categoryByKey[key];
+      delete nextState.wordWeights[key];
     } else {
       nextState.wordContributors[key] = remainingContributors;
     }
   }
 
   nextState.stagedFromPresetIds = nextState.stagedFromPresetIds.filter((id) => id !== presetId);
+  delete nextState.presetMultipliers[presetId];
   return nextState;
 }
 
@@ -167,6 +177,7 @@ export function unstageWordFromCart(state: PresetCartState, displayWord: string)
   delete nextState.wordContributors[key];
   delete nextState.displayByKey[key];
   delete nextState.categoryByKey[key];
+  delete nextState.wordWeights[key];
   nextState.stagedWords = nextState.stagedWords.filter((word) => word !== currentDisplayWord);
   if (category) {
     nextState.sections[category] = (nextState.sections[category] ?? []).filter(
@@ -176,9 +187,13 @@ export function unstageWordFromCart(state: PresetCartState, displayWord: string)
       delete nextState.sections[category];
     }
   }
-  nextState.stagedFromPresetIds = nextState.stagedFromPresetIds.filter((presetId) =>
-    presetStillContributes(nextState, presetId)
-  );
+  nextState.stagedFromPresetIds = nextState.stagedFromPresetIds.filter((presetId) => {
+    const keeps = presetStillContributes(nextState, presetId);
+    if (!keeps) {
+      delete nextState.presetMultipliers[presetId];
+    }
+    return keeps;
+  });
 
   return nextState;
 }
@@ -187,21 +202,11 @@ export function commitCartWords(words: string[]): string {
   return words.join(', ');
 }
 
-export function commitCartSections(state: PresetCartState): PresetPromptSection[] {
-  const sections: PresetPromptSection[] = [];
-
-  for (const category of PRESET_PROMPT_SECTION_ORDER) {
-    const words = state.sections[category] ?? [];
-    if (words.length === 0) {
-      continue;
-    }
-
-    sections.push({
-      category,
-      words: [...words],
-      text: commitCartWords(words),
-    });
-  }
-
-  return sections;
+export function commitCartSections(
+  state: PresetCartState,
+  stagedVariables: Record<string, Record<string, string>> = {},
+  deduplicatePrompts: boolean = true,
+  options: PresetCompilerOptions = {}
+): PresetPromptSection[] {
+  return compileStagedPrompt(state, stagedVariables, deduplicatePrompts, options);
 }

@@ -7,6 +7,7 @@ import {
   stagePresetInCart,
   unstagePresetFromCart,
   unstageWordFromCart,
+  normalizeWord,
 } from '../features/presetLibrary/staging';
 import type {
   LibraryPreset,
@@ -22,10 +23,16 @@ interface PresetLibraryState {
   userPresets: LibraryPreset[];
   activeCategory: PresetCategory;
   showExplicit: boolean;
+  sfwMode: boolean;
+  deduplicatePrompts: boolean;
   stagedWords: string[];
   stagedFromPresetIds: string[];
   stagedSections: PresetPromptSection[];
+  presetMultipliers: Record<string, number>;
+  stagedVariations: Record<string, string>;
+  stagedVariables: Record<string, Record<string, string>>;
   searchQuery: string;
+
   stagePreset: (preset: LibraryPreset) => void;
   unstagePreset: (presetId: string) => void;
   unstageWord: (displayWord: string) => void;
@@ -43,28 +50,48 @@ interface PresetLibraryState {
   removeUserPreset: (id: string) => void;
   setActiveCategory: (category: PresetCategory) => void;
   setShowExplicit: (show: boolean) => void;
+  setSfwMode: (enabled: boolean) => void;
+  setDeduplicatePrompts: (enabled: boolean) => void;
   setSearchQuery: (query: string) => void;
+  adjustWordWeight: (baseWord: string, weight: number) => void;
+  adjustPresetMultiplier: (presetId: string, multiplier: number) => void;
+  setStagedVariable: (presetId: string, varName: string, value: string) => void;
   resetEphemeral: () => void;
 }
 
 let privateCartState = createEmptyPresetCartState();
 
 function syncCartState(
-  cartState: ReturnType<typeof createEmptyPresetCartState>
-): Pick<PresetLibraryState, 'stagedWords' | 'stagedFromPresetIds' | 'stagedSections'> {
+  cartState: ReturnType<typeof createEmptyPresetCartState>,
+  sfwMode: boolean = false
+): Pick<
+  PresetLibraryState,
+  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections' | 'presetMultipliers'
+> {
   privateCartState = cartState;
+  let stagedVariables: Record<string, Record<string, string>> = {};
+  let deduplicatePrompts = true;
+  try {
+    const storeState = usePresetLibraryStore.getState();
+    if (storeState) {
+      stagedVariables = storeState.stagedVariables ?? {};
+      deduplicatePrompts = storeState.deduplicatePrompts ?? true;
+    }
+  } catch {}
+
   return {
     stagedWords: cartState.stagedWords,
     stagedFromPresetIds: cartState.stagedFromPresetIds,
-    stagedSections: commitCartSections(cartState),
+    stagedSections: commitCartSections(cartState, stagedVariables, deduplicatePrompts, { sfwMode }),
+    presetMultipliers: cartState.presetMultipliers,
   };
 }
 
-function clearPrivateCartState(): Pick<
+function clearPrivateCartState(sfwMode: boolean = false): Pick<
   PresetLibraryState,
-  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections'
+  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections' | 'presetMultipliers'
 > {
-  return syncCartState(createEmptyPresetCartState());
+  return syncCartState(createEmptyPresetCartState(), sfwMode);
 }
 
 function sanitizePresetWords(words: string[]): string[] {
@@ -103,9 +130,14 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
       userPresets: [],
       activeCategory: 'characters',
       showExplicit: false,
+      sfwMode: false,
+      deduplicatePrompts: true,
       stagedWords: [],
       stagedFromPresetIds: [],
       stagedSections: [],
+      presetMultipliers: {},
+      stagedVariations: {},
+      stagedVariables: {},
       searchQuery: '',
 
       stagePreset: (preset) => {
@@ -113,34 +145,36 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
           ...preset,
           words: sanitizePresetWords(preset.words),
         });
-        set(syncCartState(nextCartState));
+        set(syncCartState(nextCartState, get().sfwMode));
       },
 
       unstagePreset: (presetId) => {
         const nextCartState = unstagePresetFromCart(privateCartState, presetId);
-        set(syncCartState(nextCartState));
+        set(syncCartState(nextCartState, get().sfwMode));
       },
 
       unstageWord: (displayWord) => {
         const nextCartState = unstageWordFromCart(privateCartState, displayWord);
-        set(syncCartState(nextCartState));
+        set(syncCartState(nextCartState, get().sfwMode));
       },
 
       clearStaged: () => {
-        set(clearPrivateCartState());
+        set(clearPrivateCartState(get().sfwMode));
       },
 
       commitStaged: () => {
-        const committedText = commitCartSections(privateCartState)
+        const state = get();
+        const committedText = commitCartSections(privateCartState, state.stagedVariables, state.deduplicatePrompts, { sfwMode: state.sfwMode })
           .map((section) => section.text)
           .join('\n');
-        set(clearPrivateCartState());
+        set(clearPrivateCartState(state.sfwMode));
         return committedText;
       },
 
       commitStagedSections: () => {
-        const committedSections = commitCartSections(privateCartState);
-        set(clearPrivateCartState());
+        const state = get();
+        const committedSections = commitCartSections(privateCartState, state.stagedVariables, state.deduplicatePrompts, { sfwMode: state.sfwMode });
+        set(clearPrivateCartState(state.sfwMode));
         return committedSections;
       },
 
@@ -257,14 +291,14 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
         if (get().stagedFromPresetIds.includes(id)) {
           const clearedCart = unstagePresetFromCart(privateCartState, id);
           const restagedCart = stagePresetInCart(clearedCart, updatedPreset);
-          set(syncCartState(restagedCart));
+          set(syncCartState(restagedCart, get().sfwMode));
         }
       },
 
       removeUserPreset: (id) => {
         if (get().stagedFromPresetIds.includes(id)) {
           const nextCartState = unstagePresetFromCart(privateCartState, id);
-          set(syncCartState(nextCartState));
+          set(syncCartState(nextCartState, get().sfwMode));
         }
 
         set((state) => ({
@@ -280,13 +314,60 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
         set({ showExplicit: show });
       },
 
+      setSfwMode: (enabled) => {
+        set({ sfwMode: enabled });
+        set(syncCartState(privateCartState, enabled));
+      },
+
+      setDeduplicatePrompts: (enabled) => {
+        set({ deduplicatePrompts: enabled });
+        set(syncCartState(privateCartState, get().sfwMode));
+      },
+
       setSearchQuery: (query) => {
         set({ searchQuery: query });
       },
 
+      adjustWordWeight: (baseWord, weight) => {
+        const key = normalizeWord(baseWord);
+        const nextCartState = {
+          ...privateCartState,
+          wordWeights: {
+            ...privateCartState.wordWeights,
+            [key]: Math.max(0.1, Math.min(3.0, weight)),
+          },
+        };
+        set(syncCartState(nextCartState, get().sfwMode));
+      },
+
+      adjustPresetMultiplier: (presetId, multiplier) => {
+        const nextCartState = {
+          ...privateCartState,
+          presetMultipliers: {
+            ...privateCartState.presetMultipliers,
+            [presetId]: Math.max(0.2, Math.min(2.0, multiplier)),
+          },
+        };
+        set(syncCartState(nextCartState, get().sfwMode));
+      },
+
+      setStagedVariable: (presetId, varName, value) => {
+        const nextStagedVars = {
+          ...get().stagedVariables,
+          [presetId]: {
+            ...(get().stagedVariables[presetId] ?? {}),
+            [varName]: value,
+          },
+        };
+        set({ stagedVariables: nextStagedVars });
+        set(syncCartState(privateCartState, get().sfwMode));
+      },
+
       resetEphemeral: () => {
         set({
-          ...clearPrivateCartState(),
+          ...clearPrivateCartState(get().sfwMode),
+          stagedVariations: {},
+          stagedVariables: {},
           searchQuery: '',
         });
       },
@@ -297,6 +378,10 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
         userPresets: state.userPresets,
         activeCategory: state.activeCategory,
         showExplicit: state.showExplicit,
+        sfwMode: state.sfwMode,
+        deduplicatePrompts: state.deduplicatePrompts,
+        stagedVariables: state.stagedVariables,
+        stagedVariations: state.stagedVariations,
       }),
     }
   )

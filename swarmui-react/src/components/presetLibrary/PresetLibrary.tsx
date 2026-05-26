@@ -13,7 +13,7 @@ import {
 import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconBooks, IconChevronRight } from '@tabler/icons-react';
-import { ElevatedCard, ResizeHandle, SwarmBadge } from '../ui';
+import { ElevatedCard, ResizeHandle, SwarmBadge, SwarmButton } from '../ui';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { usePresetLibraryStore } from '../../stores/presetLibraryStore';
 import { PresetCreator } from './PresetCreator';
@@ -32,6 +32,7 @@ interface PresetLibraryProps {
   ) => void;
   currentPromptText?: string;
   compact?: boolean;
+  triggerVariant?: 'card' | 'button';
 }
 
 let defaultPresetLibraryPromise: Promise<LibraryPreset[]> | null = null;
@@ -64,6 +65,7 @@ export const PresetLibrary = memo(function PresetLibrary({
   onApplyToPrompt,
   currentPromptText = '',
   compact = false,
+  triggerVariant = 'card',
 }: PresetLibraryProps) {
   const [opened, { open, close }] = useDisclosure(false);
   const [defaultPresets, setDefaultPresets] = useState<LibraryPreset[]>([]);
@@ -77,15 +79,15 @@ export const PresetLibrary = memo(function PresetLibrary({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const viewport = useViewportSize();
   const widthPanel = useResizablePanel({
-    initialSize: 1100,
-    minSize: 780,
-    maxSize: 1500,
+    initialSize: 1280,
+    minSize: 860,
+    maxSize: 1720,
     direction: 'horizontal',
   });
   const heightPanel = useResizablePanel({
-    initialSize: 820,
-    minSize: 600,
-    maxSize: 1200,
+    initialSize: 900,
+    minSize: 680,
+    maxSize: 1320,
     direction: 'vertical',
   });
 
@@ -97,8 +99,6 @@ export const PresetLibrary = memo(function PresetLibrary({
     stagedSections,
     stagedFromPresetIds,
     searchQuery,
-    stagePreset,
-    unstagePreset,
     unstageWord,
     clearStaged,
     commitStagedSections,
@@ -181,8 +181,13 @@ export const PresetLibrary = memo(function PresetLibrary({
     () => [...defaultPresets, ...userPresets],
     [defaultPresets, userPresets]
   );
+  const stagedPresets = useMemo(() => {
+    return stagedFromPresetIds.map((id) => {
+      const preset = allPresets.find((p) => p.id === id);
+      return preset ? { id: preset.id, name: preset.name, thumbnail: preset.thumbnail } : { id, name: id };
+    });
+  }, [stagedFromPresetIds, allPresets]);
   const totalPresetCount = allPresets.length;
-  const stagedPresetIdSet = useMemo(() => new Set(stagedFromPresetIds), [stagedFromPresetIds]);
   const editingPreset = useMemo(
     () => userPresets.find((preset) => preset.id === editingPresetId) ?? null,
     [editingPresetId, userPresets]
@@ -191,7 +196,7 @@ export const PresetLibrary = memo(function PresetLibrary({
     () =>
       Math.min(
         widthPanel.size,
-        viewport.width > 0 ? Math.floor(viewport.width * 0.96) : widthPanel.size
+        viewport.width > 0 ? Math.floor(viewport.width * 0.98) : widthPanel.size
       ),
     [viewport.width, widthPanel.size]
   );
@@ -199,7 +204,7 @@ export const PresetLibrary = memo(function PresetLibrary({
     () =>
       Math.min(
         heightPanel.size,
-        viewport.height > 0 ? Math.floor(viewport.height * 0.92) : heightPanel.size
+        viewport.height > 0 ? Math.floor(viewport.height * 0.95) : heightPanel.size
       ),
     [heightPanel.size, viewport.height]
   );
@@ -236,17 +241,6 @@ export const PresetLibrary = memo(function PresetLibrary({
     resetEphemeral();
     window.requestAnimationFrame(() => triggerRef.current?.focus());
   }, [close, closeCreator, resetEphemeral]);
-
-  const handleTogglePreset = useCallback(
-    (preset: LibraryPreset) => {
-      if (stagedPresetIdSet.has(preset.id)) {
-        unstagePreset(preset.id);
-      } else {
-        stagePreset(preset);
-      }
-    },
-    [stagePreset, stagedPresetIdSet, unstagePreset]
-  );
 
   const handleToggleShowExplicit = useCallback(
     (show: boolean) => {
@@ -370,58 +364,72 @@ export const PresetLibrary = memo(function PresetLibrary({
 
   return (
     <>
-      <UnstyledButton
-        ref={triggerRef}
-        onClick={handleOpen}
-        className="swarm-control-no-select"
-        style={{ width: '100%', textAlign: 'left' }}
-        aria-label="Open Preset Library"
-      >
-        <ElevatedCard
-          elevation="paper"
-          withBorder
-          interactive
-          className={compact ? 'generate-studio__prompt-library-card--compact' : undefined}
-          style={{ padding: compact ? 10 : 14 }}
+      {triggerVariant === 'button' ? (
+        <SwarmButton
+          ref={triggerRef}
+          size="xs"
+          tone="secondary"
+          emphasis="soft"
+          leftSection={<IconBooks size={14} />}
+          onClick={handleOpen}
+          className="generate-studio__prompt-tool-button"
         >
-          <Group justify="space-between" align="center" wrap="nowrap">
-            <Group gap="sm" wrap="nowrap">
-              <ThemeIcon
-                size={compact ? 32 : 38}
-                radius="md"
-                variant="light"
-                color="gray"
-                style={{ backgroundColor: 'var(--elevation-raised)' }}
-              >
-                <IconBooks size={20} />
-              </ThemeIcon>
-              <Stack gap={2}>
-                <Group gap="xs">
-                  <Text fw={600} size="sm">
-                    Preset Library
+          Presets{stagedWords.length > 0 ? ` (${stagedWords.length})` : ''}
+        </SwarmButton>
+      ) : (
+        <UnstyledButton
+          ref={triggerRef}
+          onClick={handleOpen}
+          className="swarm-control-no-select"
+          style={{ width: '100%', textAlign: 'left' }}
+          aria-label="Open Preset Library"
+        >
+          <ElevatedCard
+            elevation="paper"
+            withBorder
+            interactive
+            className={compact ? 'generate-studio__prompt-library-card--compact' : undefined}
+            style={{ padding: compact ? 10 : 14 }}
+          >
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <Group gap="sm" wrap="nowrap">
+                <ThemeIcon
+                  size={compact ? 32 : 38}
+                  radius="md"
+                  variant="light"
+                  color="gray"
+                  style={{ backgroundColor: 'var(--elevation-raised)' }}
+                >
+                  <IconBooks size={20} />
+                </ThemeIcon>
+                <Stack gap={2}>
+                  <Group gap="xs">
+                    <Text fw={600} size="sm">
+                      Preset Library
+                    </Text>
+                    <SwarmBadge
+                      tone={stagedWords.length > 0 ? 'primary' : 'secondary'}
+                      emphasis="soft"
+                    >
+                      {triggerBadgeLabel}
+                    </SwarmBadge>
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    {compact
+                      ? 'Quick-inject curated word clusters.'
+                      : stagedWords.length > 0
+                        ? `${stagedWords.length} words staged for prompt injection`
+                        : 'Quick-inject curated word clusters'}
                   </Text>
-                  <SwarmBadge
-                    tone={stagedWords.length > 0 ? 'primary' : 'secondary'}
-                    emphasis="soft"
-                  >
-                    {triggerBadgeLabel}
-                  </SwarmBadge>
-                </Group>
-                <Text size="xs" c="dimmed">
-                  {compact
-                    ? 'Quick-inject curated word clusters.'
-                    : stagedWords.length > 0
-                      ? `${stagedWords.length} words staged for prompt injection`
-                      : 'Quick-inject curated word clusters'}
-                </Text>
-              </Stack>
+                </Stack>
+              </Group>
+              <ThemeIcon size={compact ? 28 : 32} radius="xl" variant="light" color="gray">
+                <IconChevronRight size={18} />
+              </ThemeIcon>
             </Group>
-            <ThemeIcon size={compact ? 28 : 32} radius="xl" variant="light" color="gray">
-              <IconChevronRight size={18} />
-            </ThemeIcon>
-          </Group>
-        </ElevatedCard>
-      </UnstyledButton>
+          </ElevatedCard>
+        </UnstyledButton>
+      )}
 
       <Modal
         opened={opened}
@@ -437,9 +445,9 @@ export const PresetLibrary = memo(function PresetLibrary({
             flexDirection: 'column',
             position: 'relative',
             width: `${modalWidth}px`,
-            maxWidth: '96vw',
+            maxWidth: '98vw',
             height: `${modalHeight}px`,
-            maxHeight: '92vh',
+            maxHeight: '95vh',
           },
           header: { display: 'none' },
           body: { padding: 0, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
@@ -481,7 +489,6 @@ export const PresetLibrary = memo(function PresetLibrary({
                 searchQuery={searchQuery}
                 isLoading={isLoading && !hasLoaded}
                 stagedPresetIds={stagedFromPresetIds}
-                onTogglePreset={handleTogglePreset}
                 onClearSearch={() => {
                   setSearchDraft('');
                   setSearchQuery('');
@@ -498,6 +505,7 @@ export const PresetLibrary = memo(function PresetLibrary({
             sections={stagedSections}
             onRemoveWord={unstageWord}
             onClear={clearStaged}
+            stagedPresets={stagedPresets}
           />
           <PresetLibraryFooter
             stagedWordCount={stagedWords.length}

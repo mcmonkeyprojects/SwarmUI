@@ -13,6 +13,7 @@ import {
 describe('presetLibrary staging helpers', () => {
   it('normalizes words with trim and lowercase', () => {
     expect(normalizeWord(' Knight ')).toBe('knight');
+    expect(normalizeWord('blue   eyes')).toBe('blue eyes');
   });
 
   it('dedupes words case-insensitively and keeps first casing', () => {

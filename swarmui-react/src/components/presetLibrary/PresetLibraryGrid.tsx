@@ -14,7 +14,6 @@ interface PresetLibraryGridProps {
   searchQuery: string;
   isLoading: boolean;
   stagedPresetIds: string[];
-  onTogglePreset: (preset: LibraryPreset) => void;
   onClearSearch: () => void;
   onCreatePreset: () => void;
   onEditPreset: (preset: LibraryPreset) => void;
@@ -41,7 +40,6 @@ export const PresetLibraryGrid = memo(function PresetLibraryGrid({
   searchQuery,
   isLoading,
   stagedPresetIds,
-  onTogglePreset,
   onClearSearch,
   onCreatePreset,
   onEditPreset,
@@ -62,10 +60,13 @@ export const PresetLibraryGrid = memo(function PresetLibraryGrid({
     }
 
     return activePresets.filter((preset) => {
-      return (
-        preset.name.toLowerCase().includes(normalizedQuery) ||
-        preset.description?.toLowerCase().includes(normalizedQuery)
+      const inName = preset.name.toLowerCase().includes(normalizedQuery);
+      const inDesc = preset.description?.toLowerCase().includes(normalizedQuery);
+      const inWords = preset.words.some((w) => w.toLowerCase().includes(normalizedQuery));
+      const inVars = preset.variations?.some((v) =>
+        v.words.some((w) => w.toLowerCase().includes(normalizedQuery))
       );
+      return inName || inDesc || inWords || inVars;
     });
   }, [activeCategory, presets, searchQuery, showExplicit]);
   const columns = getGridColumns(width || 1000);
@@ -86,7 +87,6 @@ export const PresetLibraryGrid = memo(function PresetLibraryGrid({
               key={preset.id}
               preset={preset}
               isStaged={stagedPresetIdSet.has(preset.id)}
-              onToggle={() => onTogglePreset(preset)}
               onEdit={preset.isDefault ? undefined : () => onEditPreset(preset)}
               onDelete={preset.isDefault ? undefined : () => onDeletePreset(preset)}
             />

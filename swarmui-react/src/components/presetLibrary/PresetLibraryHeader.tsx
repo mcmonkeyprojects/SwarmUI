@@ -22,6 +22,8 @@ interface PresetLibraryHeaderProps {
   searchInputRef: RefObject<HTMLInputElement | null>;
 }
 
+import { usePresetLibraryStore } from '../../stores/presetLibraryStore';
+
 export const PresetLibraryHeader = memo(function PresetLibraryHeader({
   activeCategory,
   searchQuery,
@@ -35,6 +37,8 @@ export const PresetLibraryHeader = memo(function PresetLibraryHeader({
   onClose,
   searchInputRef,
 }: PresetLibraryHeaderProps) {
+  const { deduplicatePrompts, setDeduplicatePrompts, sfwMode, setSfwMode } = usePresetLibraryStore();
+
   return (
     <Stack className="preset-library__header" gap="sm">
       <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
@@ -122,6 +126,20 @@ export const PresetLibraryHeader = memo(function PresetLibraryHeader({
         </Box>
 
         <Group gap="sm" align="center" wrap="wrap">
+          <SwarmSwitch
+            checked={deduplicatePrompts}
+            onChange={(event) => setDeduplicatePrompts(event.currentTarget.checked)}
+            label="Deduplicate & Layer"
+          />
+
+          {showExplicit && (
+            <SwarmSwitch
+              checked={sfwMode}
+              onChange={(event) => setSfwMode(event.currentTarget.checked)}
+              label="SFW Filter"
+            />
+          )}
+
           <SwarmSwitch
             checked={showExplicit}
             onChange={(event) => onToggleShowExplicit(event.currentTarget.checked)}
