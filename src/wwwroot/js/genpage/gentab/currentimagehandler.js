@@ -1164,7 +1164,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             includeLinkButton(added.label, added.href, added.is_download, added.title);
         }
         else {
-            includeButton(added.label, added.onclick, '', added.title, null);
+            includeButton(added.label, added.onclick, '', added.title, added.media_types);
         }
     }
     renderButtonsFromDefs();

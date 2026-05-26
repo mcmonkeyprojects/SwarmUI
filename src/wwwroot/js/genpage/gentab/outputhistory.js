@@ -215,6 +215,7 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
                 can_multi: reg.can_multi,
                 multi_only: reg.multi_only,
                 max_selected: reg.max_selected,
+                media_types: reg.mediaTypes,
                 onclick: () => reg.action(src)
             });
         }
