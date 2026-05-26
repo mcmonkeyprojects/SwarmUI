@@ -184,6 +184,8 @@ export function useParameterForm(options: UseParameterFormOptions = {}) {
                 currentFormValues.negativeprompt !== storedParams.negativeprompt ||
                 currentFormValues.steps !== storedParams.steps ||
                 currentFormValues.cfgscale !== storedParams.cfgscale ||
+                currentFormValues.images !== storedParams.images ||
+                currentFormValues.batchsize !== storedParams.batchsize ||
                 currentFormValues.width !== storedParams.width ||
                 currentFormValues.height !== storedParams.height ||
                 currentFormValues.seed !== storedParams.seed ||
@@ -201,27 +203,42 @@ export function useParameterForm(options: UseParameterFormOptions = {}) {
         if (storedParams && Object.keys(storedParams).length > 0) {
             const currentPrompt = form.values.prompt;
             const storedPrompt = storedParams.prompt;
+            const currentModel = form.values.model;
+            const storedModel = storedParams.model;
             const currentInitImage = form.values.initimage;
             const storedInitImage = storedParams.initimage;
+            const currentMaskImage = form.values.maskimage;
+            const storedMaskImage = storedParams.maskimage;
 
-            // Sync prompt changes (Reuse Parameters)
-            if (storedPrompt && storedPrompt !== currentPrompt) {
-                form.setValues(storedParams);
-                notifications.show({
-                    title: 'Parameters Loaded',
-                    message: 'Form updated with loaded parameters',
-                    color: 'blue',
+            const shouldSyncFullParams = Boolean((storedPrompt && storedPrompt !== currentPrompt)
+                || (storedModel && storedModel !== currentModel)
+                || (storedMaskImage && storedMaskImage !== currentMaskImage));
+
+            // Sync full parameter changes from explicit handoffs like History reuse or Canvas edit setup.
+            if (shouldSyncFullParams) {
+                queueMicrotask(() => {
+                    form.setValues(storedParams);
+                    if (typeof storedInitImage === 'string' && storedInitImage) {
+                        setInitImagePreview(storedInitImage);
+                    }
+                    notifications.show({
+                        title: 'Parameters Loaded',
+                        message: 'Form updated with loaded parameters',
+                        color: 'blue',
+                    });
                 });
             }
 
             // Sync init image changes (Use as Init Image button)
             if (storedInitImage && storedInitImage !== currentInitImage) {
-                form.setFieldValue('initimage', storedInitImage);
-                setInitImagePreview(storedInitImage);
+                queueMicrotask(() => {
+                    form.setFieldValue('initimage', storedInitImage);
+                    setInitImagePreview(storedInitImage);
+                });
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [storedParams.prompt, storedParams.seed, storedParams.initimage]);
+    }, [storedParams.prompt, storedParams.seed, storedParams.initimage, storedParams.maskimage, storedParams.model]);
 
     const handleLoadPreset = useCallback((presetId: string) => {
         const preset = getPreset(presetId);

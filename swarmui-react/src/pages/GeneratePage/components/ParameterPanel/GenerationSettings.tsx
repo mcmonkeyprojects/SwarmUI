@@ -4,7 +4,7 @@ import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
 import { SliderWithInput } from '../../../../components/SliderWithInput';
 import { SeedInput } from '../../../../components/SeedInput';
-import { SwarmSwitch } from '../../../../components/ui';
+import { ControlTray, SwarmSwitch, type SwarmSliderFieldStatus } from '../../../../components/ui';
 import { useT2IParams } from '../../../../hooks/useT2IParams';
 import type { QualityCoachAnalysis, QualityCoachSeverity } from '../../utils/qualityCoach';
 import { getCurrentMatrixCell } from '../../utils/qualityCoachLearningData';
@@ -12,10 +12,14 @@ import { getCurrentMatrixCell } from '../../utils/qualityCoachLearningData';
 export interface GenerationSettingsProps {
     /** Form instance */
     form: UseFormReturnType<GenerateParams>;
-    /** Enable High-Res Fix (Refiner) state */
-    enableRefiner: boolean;
-    /** Toggle Refiner */
-    setEnableRefiner: (enabled: boolean) => void;
+    /** Enable High-Res Fix state */
+    enableHiResFix: boolean;
+    /** Toggle Hi-Res Fix */
+    setEnableHiResFix: (enabled: boolean) => void;
+    /** Enable Upscale state */
+    enableUpscale: boolean;
+    /** Toggle Upscale */
+    setEnableUpscale: (enabled: boolean) => void;
     /** Live quality coach analysis */
     qualityCoach?: QualityCoachAnalysis;
 }
@@ -34,14 +38,24 @@ function getSeverityColor(severity: QualityCoachSeverity): string {
     return 'green';
 }
 
+function getSliderStatus(severity?: QualityCoachSeverity): SwarmSliderFieldStatus {
+    if (severity === 'high-risk') {
+        return 'danger';
+    }
+    if (severity === 'caution') {
+        return 'caution';
+    }
+    return 'good';
+}
+
 /**
  * Core generation settings: Steps, CFG Scale, Images count, Batch Size, Seed, and High-Res Fix.
  * Ranges are dynamically loaded from the backend via ListT2IParams.
  */
 export const GenerationSettings = memo(function GenerationSettings({
     form,
-    enableRefiner,
-    setEnableRefiner,
+    setEnableHiResFix,
+    setEnableUpscale,
     qualityCoach,
 }: GenerationSettingsProps) {
     const { paramRanges } = useT2IParams();
@@ -51,6 +65,42 @@ export const GenerationSettings = memo(function GenerationSettings({
     );
     const cfgHealth = qualityCoach?.parameterHealth.find((item) => item.key === 'cfg');
     const stepsHealth = qualityCoach?.parameterHealth.find((item) => item.key === 'steps');
+    const refinerControl = typeof form.values.refinercontrolpercentage === 'number'
+        ? form.values.refinercontrolpercentage
+        : (typeof form.values.refinercontrol === 'number' ? form.values.refinercontrol : 0);
+    const refinerUpscale = typeof form.values.refinerupscale === 'number' ? form.values.refinerupscale : 1;
+    const hiResFixEnabled = refinerControl > 0;
+    const postUpscaleEnabled = refinerUpscale > 1;
+
+    const setHiResFixEnabled = (checked: boolean) => {
+        if (checked) {
+            form.setFieldValue('refinercontrol', refinerControl > 0 ? refinerControl : 0.2);
+            form.setFieldValue('refinercontrolpercentage', refinerControl > 0 ? refinerControl : 0.2);
+            setEnableHiResFix(true);
+            return;
+        }
+
+        form.setFieldValue('refinercontrol', 0);
+        form.setFieldValue('refinercontrolpercentage', 0);
+        if (!postUpscaleEnabled) {
+            setEnableHiResFix(false);
+        }
+    };
+
+    const setPostUpscaleEnabled = (checked: boolean) => {
+        if (checked) {
+            if (refinerUpscale <= 1) {
+                form.setFieldValue('refinerupscale', 2);
+            }
+            setEnableUpscale(true);
+            return;
+        }
+
+        form.setFieldValue('refinerupscale', 1);
+        if (!hiResFixEnabled) {
+            setEnableUpscale(false);
+        }
+    };
 
     const stepsRange = paramRanges['steps'];
     const cfgRange = paramRanges['cfgscale'];
@@ -81,29 +131,48 @@ export const GenerationSettings = memo(function GenerationSettings({
             {/* Generation Settings - Steps & CFG */}
             <Accordion.Item value="generation">
                 <Accordion.Control>
-                    <Text size="xs" fw={700} c="invokeGray.0" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
-                        Generation
-                    </Text>
+                    <div className="generate-accordion-control">
+                        <Text size="xs" fw={700} c="invokeGray.0" tt="uppercase" className="generate-accordion-control__title" style={{ letterSpacing: '0.5px' }}>
+                            Generation
+                        </Text>
+                        <span className="generate-accordion-control__summary">
+                            {form.values.steps || 20} steps | CFG {form.values.cfgscale || 7}
+                        </span>
+                    </div>
                 </Accordion.Control>
                 <Accordion.Panel>
                     <Stack gap="sm">
-                        <SwarmSwitch
-                            label="High-Res Fix"
-                            size="xs"
-                            checked={enableRefiner}
-                            onChange={(e) => setEnableRefiner(e.currentTarget.checked)}
-                        />
-                        <Paper
-                            p="sm"
-                            radius="sm"
-                            style={{ border: '1px solid var(--mantine-color-invokeGray-7)' }}
+                        <ControlTray
+                            title="Subsystems"
+                            subtitle="Large switches arm the major generation paths."
+                            status={`${hiResFixEnabled ? 'Refine on' : 'Refine off'} | ${postUpscaleEnabled ? 'Upscale on' : 'Upscale off'}`}
+                            tone={hiResFixEnabled || postUpscaleEnabled ? 'info' : 'secondary'}
+                        >
+                            <SwarmSwitch
+                                label="Hi-Res Fix"
+                                size="xs"
+                                checked={hiResFixEnabled}
+                                onChange={(e) => setHiResFixEnabled(e.currentTarget.checked)}
+                                tone="info"
+                            />
+                            <SwarmSwitch
+                                label="Post Upscale"
+                                size="xs"
+                                checked={postUpscaleEnabled}
+                                onChange={(e) => setPostUpscaleEnabled(e.currentTarget.checked)}
+                                tone="success"
+                            />
+                        </ControlTray>
+                        <ControlTray
+                            title="Live Baking Status"
+                            subtitle={matrixCell.description}
+                            status={matrixCell.title}
+                            tone={matrixCell.severity === 'high-risk' ? 'danger' : matrixCell.severity === 'caution' ? 'warning' : 'success'}
                         >
                             <Group justify="space-between" align="flex-start" wrap="nowrap">
                                 <div>
-                                    <Text size="sm" fw={600}>Live Baking Status</Text>
-                                    <Text size="xs" c="dimmed">
-                                        {matrixCell.description}
-                                    </Text>
+                                    <Text size="xs" fw={600}>Current balance</Text>
+                                    <Text size="xs" c="dimmed">CFG strictness and step time are watched together.</Text>
                                 </div>
                                 <Badge color={getSeverityColor(matrixCell.severity)} variant="light">
                                     {matrixCell.title}
@@ -126,7 +195,7 @@ export const GenerationSettings = memo(function GenerationSettings({
                             <Text size="xs" mt="sm">
                                 Baking analogy: CFG is recipe strictness, steps are oven time. Mid CFG with mid steps is usually the safe sweet spot.
                             </Text>
-                        </Paper>
+                        </ControlTray>
                         {/* Steps */}
                         <SliderWithInput
                             label="Steps"
@@ -135,6 +204,8 @@ export const GenerationSettings = memo(function GenerationSettings({
                             onChange={(value) => form.setFieldValue('steps', value)}
                             min={stepsMin}
                             max={stepsMax}
+                            unit=" steps"
+                            status={getSliderStatus(stepsHealth?.severity)}
                             marks={[
                                 { value: stepsMin, label: String(stepsMin) },
                                 { value: 20, label: '20' },
@@ -153,6 +224,7 @@ export const GenerationSettings = memo(function GenerationSettings({
                             max={cfgMax}
                             step={cfgStep}
                             decimalScale={1}
+                            status={getSliderStatus(cfgHealth?.severity)}
                             marks={[
                                 { value: cfgMin, label: String(cfgMin) },
                                 { value: 7, label: '7' },
@@ -167,9 +239,14 @@ export const GenerationSettings = memo(function GenerationSettings({
             {/* Batch Settings - Images & Seed */}
             <Accordion.Item value="batch">
                 <Accordion.Control>
-                    <Text size="xs" fw={700} c="invokeGray.0" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
-                        Batch & Seed
-                    </Text>
+                    <div className="generate-accordion-control">
+                        <Text size="xs" fw={700} c="invokeGray.0" tt="uppercase" className="generate-accordion-control__title" style={{ letterSpacing: '0.5px' }}>
+                            Batch & Seed
+                        </Text>
+                        <span className="generate-accordion-control__summary">
+                            {form.values.images || 1} img | batch {form.values.batchsize || 1}
+                        </span>
+                    </div>
                 </Accordion.Control>
                 <Accordion.Panel>
                     <Stack gap="sm">
@@ -182,6 +259,7 @@ export const GenerationSettings = memo(function GenerationSettings({
                                 min={imagesMin}
                                 max={imagesMax}
                                 step={1}
+                                unit=" img"
                                 marks={[
                                     { value: imagesMin, label: String(imagesMin) },
                                     { value: imagesMax > 10 ? 10 : imagesMax, label: String(imagesMax > 10 ? 10 : imagesMax) },
@@ -195,6 +273,7 @@ export const GenerationSettings = memo(function GenerationSettings({
                                 min={batchSizeMin}
                                 max={batchSizeMax}
                                 step={1}
+                                unit=" batch"
                                 marks={[
                                     { value: batchSizeMin, label: String(batchSizeMin) },
                                     { value: batchSizeMax, label: String(batchSizeMax) },

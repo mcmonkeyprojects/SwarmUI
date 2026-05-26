@@ -1,12 +1,13 @@
 import { memo, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useWebSocketStore } from '../../../stores/websocketStore';
+import { usePipelineStore } from '../../../stores/pipelineStore';
 import { resolveAssetUrl } from '../../../config/runtimeEndpoints';
-import { useProgressivePreview } from '../../../hooks/useProgressivePreview';
 import { useRenderProfiler } from '../../../hooks/useRenderProfiler';
 import { CanvasPanel } from '../../../components/generation/CanvasPanel';
 import type { GenerateParams } from '../../../api/types';
 import type { GenerateWorkspaceMode } from '../../../stores/navigationStore';
+import { formatGenerationStatusText } from '../../../utils/generationProgressDisplay';
 
 interface FavoriteImage {
     path: string;
@@ -39,7 +40,6 @@ interface LiveGenerationCanvasStageProps {
     selectedModel?: string;
     selectedBackend?: string;
     generationParams?: Partial<GenerateParams>;
-    uxRefresh?: boolean;
     onChooseModel?: () => void;
     onFocusPrompt?: () => void;
     onOpenGenerationSettings?: () => void;
@@ -70,84 +70,6 @@ function withPreviewRevision(source: string | null, revision: number): string | 
     }
 }
 
-function buildGenerationStageText(generation: {
-    currentBatch: number;
-    totalBatches: number;
-    stageLabel: string | null;
-    stageDetail: string | null;
-}): string {
-    const batchPrefix = generation.totalBatches > 1
-        ? `Image ${generation.currentBatch || 1}/${generation.totalBatches} | `
-        : '';
-    const label = generation.stageLabel || 'Generating';
-    const detail = generation.stageDetail && generation.stageDetail !== generation.stageLabel
-        ? ` | ${generation.stageDetail}`
-        : '';
-    return `${batchPrefix}${label}${detail}`;
-}
-
-function buildGenerationStatusText(generation: {
-    error: string | null;
-    isGenerating: boolean;
-    phase: 'idle' | 'starting' | 'connected' | 'waiting' | 'progress' | 'image' | 'complete' | 'error';
-    imagesCount: number;
-    hasProgressEvent: boolean;
-    currentStep: number;
-    totalSteps: number;
-    progress: number;
-    currentBatch: number;
-    totalBatches: number;
-    stageLabel: string | null;
-    stageDetail: string | null;
-}): string {
-    if (generation.error) {
-        return generation.imagesCount > 0
-            ? `Completed with warning: ${generation.error}. Diagnostics captured.`
-            : `Error: ${generation.error}. Diagnostics captured.`;
-    }
-
-    if (!generation.isGenerating) {
-        if (generation.phase === 'complete' && generation.imagesCount > 0) {
-            return 'Generation complete!';
-        }
-        return '';
-    }
-
-    if (!generation.hasProgressEvent) {
-        if (generation.phase === 'starting') {
-            return 'Starting generation request...';
-        }
-        if (generation.phase === 'connected' || generation.phase === 'waiting') {
-            return 'Connected to backend... preparing workflow';
-        }
-        if (generation.phase === 'image') {
-            return 'Receiving generated image output...';
-        }
-        return 'Starting generation... waiting for backend progress';
-    }
-
-    const step = generation.currentStep;
-    const total = generation.totalSteps;
-    const percent = Math.round(generation.progress);
-    const stageText = buildGenerationStageText(generation);
-    const batchPrefix = generation.totalBatches > 1
-        ? `Image ${generation.currentBatch || 1}/${generation.totalBatches} | `
-        : '';
-
-    if ((step ?? 0) <= 0) {
-        if (generation.stageLabel) {
-            return stageText;
-        }
-        return `Preparing workflow... ${batchPrefix}${percent}%`;
-    }
-
-    if (generation.stageLabel) {
-        return stageText;
-    }
-
-    return `Generating... ${batchPrefix}Step ${step}/${total || '?'} (${percent}%)`;
-}
-
 export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage({
     selectedImage,
     totalImages,
@@ -166,7 +88,6 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
     selectedModel,
     selectedBackend,
     generationParams,
-    uxRefresh = false,
     onChooseModel,
     onFocusPrompt,
     onOpenGenerationSettings,
@@ -180,6 +101,7 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
             progress: state.generation.progress,
             currentStep: state.generation.currentStep,
             totalSteps: state.generation.totalSteps,
+            stepSource: state.generation.stepSource,
             stageLabel: state.generation.stageLabel,
             stageDetail: state.generation.stageDetail,
             stageIndex: state.generation.stageIndex,
@@ -199,23 +121,37 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
         }))
     );
 
+    const pipelineContext = usePipelineStore(
+        useShallow((state) => ({
+            isRunning: state.isRunning,
+            currentStageIndex: state.currentStageIndex,
+            stages: state.stages,
+        }))
+    );
+
+    const enabledPipelineStages = useMemo(
+        () => pipelineContext.stages.filter((stage) => stage.enabled),
+        [pipelineContext.stages]
+    );
+
     const resolvedPreviewImage = useMemo(
         () => resolvePreviewAsset(generation.previewImage),
         [generation.previewImage]
     );
 
-    const previewImage = useProgressivePreview(
-        withPreviewRevision(resolvedPreviewImage, generation.previewRevision),
-        generation.isGenerating,
-        {
-            metricPrefix: 'ws:preview',
-        }
+    const previewImage = useMemo(
+        () => withPreviewRevision(resolvedPreviewImage, generation.previewRevision),
+        [generation.previewRevision, resolvedPreviewImage]
     );
 
     const statusText = useMemo(
-        () => buildGenerationStatusText(generation),
+        () => formatGenerationStatusText(generation),
         [generation]
     );
+
+    const activePipelineStage = pipelineContext.isRunning
+        ? enabledPipelineStages[pipelineContext.currentStageIndex] ?? null
+        : null;
 
     return (
         <CanvasPanel
@@ -225,6 +161,7 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
             statusText={statusText}
             totalSteps={generation.totalSteps}
             currentStep={generation.currentStep}
+            stepSource={generation.stepSource}
             stageLabel={generation.stageLabel}
             stageDetail={generation.stageDetail}
             stageIndex={generation.stageIndex}
@@ -252,10 +189,13 @@ export const LiveGenerationCanvasStage = memo(function LiveGenerationCanvasStage
             selectedModel={selectedModel}
             selectedBackend={selectedBackend}
             generationParams={generationParams}
-            uxRefresh={uxRefresh}
             onChooseModel={onChooseModel}
             onFocusPrompt={onFocusPrompt}
             onOpenGenerationSettings={onOpenGenerationSettings}
+            phase={generation.phase}
+            pipelineStageIndex={pipelineContext.isRunning ? pipelineContext.currentStageIndex : null}
+            pipelineStageCount={enabledPipelineStages.length}
+            pipelineStageLabel={activePipelineStage?.label ?? null}
         />
     );
 });

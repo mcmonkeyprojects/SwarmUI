@@ -5,6 +5,7 @@ import type { VideoWorkflow } from './videoModelProfiles';
  * Determines initial workflow state from the current init image preview.
  * Exported for testing.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function resolveInitialWorkflow(initImagePreview: string | null): VideoWorkflow {
     return initImagePreview ? 'i2v' : 't2v';
 }

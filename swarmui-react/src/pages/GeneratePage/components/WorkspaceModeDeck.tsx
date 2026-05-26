@@ -64,6 +64,8 @@ interface WorkspaceModeDeckProps {
     modelMediaCapabilities: ModelMediaCapabilities;
     activeRecipe: GenerationRecipe | null;
     issues: GenerationIssue[];
+    previewing?: boolean;
+    onTogglePreviews?: () => void;
 }
 
 function ToggleCard({
@@ -131,6 +133,8 @@ export const WorkspaceModeDeck = memo(function WorkspaceModeDeck({
     modelMediaCapabilities,
     activeRecipe,
     issues,
+    previewing,
+    onTogglePreviews,
 }: WorkspaceModeDeckProps) {
     const modelOptions = models.map((model) => ({
         value: model.name,
@@ -272,6 +276,11 @@ export const WorkspaceModeDeck = memo(function WorkspaceModeDeck({
                                 onGenerateAndUpscale={onGenerateAndUpscale}
                                 currentValues={form.values}
                                 selectedModel={selectedModel}
+                                previewing={previewing}
+                                onTogglePreviews={onTogglePreviews}
+                                onInsertPromptSyntax={(text) => {
+                                    form.setFieldValue('prompt', (form.values.prompt || '').trim() + ' ' + text.trim());
+                                }}
                             />
 
                             <Group grow>
@@ -515,6 +524,11 @@ export const WorkspaceModeDeck = memo(function WorkspaceModeDeck({
                             onGenerateAndUpscale={onGenerateAndUpscale}
                             currentValues={form.values}
                             selectedModel={selectedModel}
+                            previewing={previewing}
+                            onTogglePreviews={onTogglePreviews}
+                            onInsertPromptSyntax={(text) => {
+                                form.setFieldValue('prompt', (form.values.prompt || '').trim() + ' ' + text.trim());
+                            }}
                         />
                     </Stack>
                 </form>

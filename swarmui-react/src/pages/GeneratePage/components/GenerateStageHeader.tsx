@@ -33,7 +33,6 @@ interface GenerateStageHeaderProps {
     onOpenDiagnostics: () => void;
     onOpenShortcuts: () => void;
     onPromoteToWorkflow: () => void;
-    uxRefresh?: boolean;
 }
 
 export function GenerateStageHeader({
@@ -56,20 +55,20 @@ export function GenerateStageHeader({
     onOpenDiagnostics,
     onOpenShortcuts,
     onPromoteToWorkflow,
-    uxRefresh = false,
 }: GenerateStageHeaderProps) {
     const modeLabel = currentMode === 'quick' ? 'Quick'
         : currentMode === 'guided' ? 'Guided'
             : currentMode === 'video' ? 'Video'
-                : 'Advanced';
+                : currentMode === 'pipeline' ? 'Pipeline'
+                    : 'Advanced';
 
     return (
         <>
-            <Group justify="space-between" align={uxRefresh ? 'center' : 'flex-start'} wrap="wrap" gap={uxRefresh ? 'sm' : 'md'}>
-                <Stack gap={uxRefresh ? 2 : 4}>
+            <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+                <Stack gap={2}>
                     <Group gap="xs" wrap="wrap">
                         <Text size="xs" fw={700} tt="uppercase" c="var(--theme-text-secondary)">
-                            {uxRefresh ? 'Stage' : 'Canvas Stage'}
+                            Stage
                         </Text>
                         <SwarmBadge tone="primary" emphasis="soft">
                             {modeLabel}
@@ -92,7 +91,7 @@ export function GenerateStageHeader({
                     <Text size="sm" fw={600}>
                         {selectedModelName || 'No model selected yet'}
                     </Text>
-                    {(!uxRefresh || generating) && (
+                    {generating && (
                         <Text size="xs" c="var(--theme-text-secondary)">
                             {stageHeaderCopy}
                         </Text>

@@ -13,21 +13,25 @@ import { IconUpload, IconX } from '@tabler/icons-react';
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
 import { SliderWithInput } from '../../../../components/SliderWithInput';
-import { SwarmButton, SwarmSwitch } from '../../../../components/ui';
+import { ControlTray, SwarmButton, SwarmSwitch } from '../../../../components/ui';
+import { PREPROCESSOR_OPTIONS } from './controlNetOptions';
 
 type ControlNetFieldKey =
     | 'controlnetimageinput'
     | 'controlnetmodel'
+    | 'controlnetpreprocessor'
     | 'controlnetstrength'
     | 'controlnetstart'
     | 'controlnetend'
     | 'controlnettwoimageinput'
     | 'controlnettwomodel'
+    | 'controlnettwopreprocessor'
     | 'controlnettwostrength'
     | 'controlnettwostart'
     | 'controlnettwoend'
     | 'controlnetthreeimageinput'
     | 'controlnetthreemodel'
+    | 'controlnetthreepreprocessor'
     | 'controlnetthreestrength'
     | 'controlnetthreestart'
     | 'controlnetthreeend';
@@ -37,6 +41,7 @@ interface ControlNetSlotConfig {
     title: string;
     imageKey: ControlNetFieldKey;
     modelKey: ControlNetFieldKey;
+    preprocessorKey: ControlNetFieldKey;
     strengthKey: ControlNetFieldKey;
     startKey: ControlNetFieldKey;
     endKey: ControlNetFieldKey;
@@ -48,6 +53,7 @@ const CONTROL_NET_SLOTS: ControlNetSlotConfig[] = [
         title: 'ControlNet',
         imageKey: 'controlnetimageinput',
         modelKey: 'controlnetmodel',
+        preprocessorKey: 'controlnetpreprocessor',
         strengthKey: 'controlnetstrength',
         startKey: 'controlnetstart',
         endKey: 'controlnetend',
@@ -57,6 +63,7 @@ const CONTROL_NET_SLOTS: ControlNetSlotConfig[] = [
         title: 'ControlNet Two',
         imageKey: 'controlnettwoimageinput',
         modelKey: 'controlnettwomodel',
+        preprocessorKey: 'controlnettwopreprocessor',
         strengthKey: 'controlnettwostrength',
         startKey: 'controlnettwostart',
         endKey: 'controlnettwoend',
@@ -66,34 +73,11 @@ const CONTROL_NET_SLOTS: ControlNetSlotConfig[] = [
         title: 'ControlNet Three',
         imageKey: 'controlnetthreeimageinput',
         modelKey: 'controlnetthreemodel',
+        preprocessorKey: 'controlnetthreepreprocessor',
         strengthKey: 'controlnetthreestrength',
         startKey: 'controlnetthreestart',
         endKey: 'controlnetthreeend',
     },
-];
-
-export const PREPROCESSOR_OPTIONS = [
-    { value: '', label: 'Auto (let backend choose)' },
-    { value: 'None', label: 'None' },
-    { value: 'Canny', label: 'Canny Edge' },
-    { value: 'DepthMiDaS', label: 'Depth (MiDaS)' },
-    { value: 'DepthZoe', label: 'Depth (ZoeDepth)' },
-    { value: 'NormalBAE', label: 'Normal (BAE)' },
-    { value: 'LineartCoarse', label: 'Lineart Coarse' },
-    { value: 'LineartFine', label: 'Lineart Fine' },
-    { value: 'LineartAnime', label: 'Lineart Anime' },
-    { value: 'Scribble', label: 'Scribble' },
-    { value: 'HED', label: 'HED Soft Edge' },
-    { value: 'MLSD', label: 'MLSD Lines' },
-    { value: 'Shuffle', label: 'Shuffle' },
-    { value: 'SDPoseDrawKeypoints', label: 'Pose (Draw Keypoints)' },
-    { value: 'SDPoseFaceBBoxes', label: 'Pose (Face BBoxes)' },
-    { value: 'SDPoseKeypointExtractor', label: 'Pose (Keypoint Extractor)' },
-    { value: 'CropByBBoxes', label: 'Crop by BBoxes' },
-    { value: 'MediaPipeFace', label: 'MediaPipe Face' },
-    { value: 'Segment', label: 'Segmentation' },
-    { value: 'Recolor', label: 'Recolor' },
-    { value: 'Reference', label: 'Reference' },
 ];
 
 export interface ControlNetAccordionProps {
@@ -116,6 +100,8 @@ export const ControlNetAccordion = memo(function ControlNetAccordion({
     controlNetOptions = [],
     loadingControlNets,
 }: ControlNetAccordionProps) {
+    const activeSlotCount = CONTROL_NET_SLOTS.filter((slot) => Boolean(form.values[slot.imageKey] || form.values[slot.modelKey])).length;
+
     const handleImageUpload = (key: ControlNetFieldKey, file: File | null) => {
         if (file) {
             const reader = new FileReader();
@@ -132,15 +118,30 @@ export const ControlNetAccordion = memo(function ControlNetAccordion({
 
     return (
         <Accordion.Item value="controlnet">
-            <Accordion.Control>ControlNet</Accordion.Control>
+            <Accordion.Control>
+                <div className="generate-accordion-control">
+                    <span className="generate-accordion-control__title">ControlNet</span>
+                    <span className="generate-accordion-control__summary">
+                        {enabled ? `${activeSlotCount || 1} layer${activeSlotCount === 1 ? '' : 's'}` : 'Off'}
+                    </span>
+                </div>
+            </Accordion.Control>
             <Accordion.Panel>
                 <Stack gap="md">
-                    <SwarmSwitch
-                        label="Enable ControlNet"
-                        size="xs"
-                        checked={enabled}
-                        onChange={(e) => onToggle(e.currentTarget.checked)}
-                    />
+                    <ControlTray
+                        title="Structural Guidance"
+                        subtitle="Enable the ControlNet stack, then configure each active layer."
+                        status={enabled ? 'Armed' : 'Off'}
+                        tone={enabled ? 'info' : 'secondary'}
+                    >
+                        <SwarmSwitch
+                            label="Enable ControlNet"
+                            size="xs"
+                            checked={enabled}
+                            onChange={(e) => onToggle(e.currentTarget.checked)}
+                            tone="info"
+                        />
+                    </ControlTray>
 
                     <Text size="xs" c="invokeGray.3">
                         Use up to three ControlNet layers to guide generation with structural input.
@@ -212,6 +213,17 @@ export const ControlNetAccordion = memo(function ControlNetAccordion({
                                             description={`Model for ${slot.title.toLowerCase()} guidance`}
                                         />
 
+                                        <Select
+                                            label={`${slot.title} Preprocessor`}
+                                            placeholder="Auto"
+                                            data={PREPROCESSOR_OPTIONS}
+                                            value={(form.values[slot.preprocessorKey] as string | undefined) || ''}
+                                            onChange={(value) => form.setFieldValue(slot.preprocessorKey, value || '')}
+                                            searchable
+                                            clearable
+                                            description="Optional structural preprocessor for this ControlNet layer"
+                                        />
+
                                         <SliderWithInput
                                             label={`${slot.title} Strength`}
                                             value={(form.values[slot.strengthKey] as number | undefined) || 1}
@@ -220,6 +232,7 @@ export const ControlNetAccordion = memo(function ControlNetAccordion({
                                             max={2}
                                             step={0.05}
                                             decimalScale={2}
+                                            status={((form.values[slot.strengthKey] as number | undefined) || 1) > 1.4 ? 'caution' : 'neutral'}
                                             marks={[
                                                 { value: 0, label: '0' },
                                                 { value: 1, label: '1' },
@@ -236,6 +249,7 @@ export const ControlNetAccordion = memo(function ControlNetAccordion({
                                                 max={1}
                                                 step={0.05}
                                                 decimalScale={2}
+                                                unit="%"
                                                 description="When to start applying"
                                             />
                                             <SliderWithInput
@@ -246,6 +260,7 @@ export const ControlNetAccordion = memo(function ControlNetAccordion({
                                                 max={1}
                                                 step={0.05}
                                                 decimalScale={2}
+                                                unit="%"
                                                 description="When to stop applying"
                                             />
                                         </Group>

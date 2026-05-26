@@ -43,7 +43,9 @@ export function PreflightCheck({ requiredComponents, onStatusChange }: Preflight
 
     // Reset state whenever requiredComponents changes
     useEffect(() => {
-        setStates(requiredComponents.map(makeInitialState));
+        queueMicrotask(() => {
+            setStates(requiredComponents.map(makeInitialState));
+        });
         socketRefs.current = requiredComponents.map(() => null);
     }, [requiredComponents]);
 

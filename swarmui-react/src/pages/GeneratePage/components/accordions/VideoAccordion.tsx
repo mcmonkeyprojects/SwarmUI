@@ -10,7 +10,7 @@ import {
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
 import { SliderWithInput } from '../../../../components/SliderWithInput';
-import { SwarmSwitch } from '../../../../components/ui';
+import { ControlTray, SwarmSwitch } from '../../../../components/ui';
 import type { ModelMediaCapabilities } from '../../../../utils/modelCapabilities';
 
 export interface VideoAccordionProps {
@@ -39,16 +39,31 @@ export const VideoAccordion = memo(function VideoAccordion({
 
     return (
         <Accordion.Item value="video">
-            <Accordion.Control>Video</Accordion.Control>
+            <Accordion.Control>
+                <div className="generate-accordion-control">
+                    <span className="generate-accordion-control__title">Video</span>
+                    <span className="generate-accordion-control__summary">
+                        {enabled ? `${form.values.videoframes || form.values.text2videoframes || 25} frames` : 'Off'}
+                    </span>
+                </div>
+            </Accordion.Control>
             <Accordion.Panel>
                 <Stack gap="md">
-                    <SwarmSwitch
-                        label="Enable Video Generation"
-                        size="xs"
-                        checked={enabled}
-                        onChange={(e) => onToggle(e.currentTarget.checked)}
-                        disabled={!hasVideoSupport}
-                    />
+                    <ControlTray
+                        title="Video Mode"
+                        subtitle={hasVideoSupport ? `${selectedLabel} can expose video controls here.` : 'Select a video-capable model to arm this mode.'}
+                        status={enabled ? 'Armed' : 'Off'}
+                        tone={enabled ? 'warning' : 'secondary'}
+                    >
+                        <SwarmSwitch
+                            label="Enable Video Generation"
+                            size="xs"
+                            checked={enabled}
+                            onChange={(e) => onToggle(e.currentTarget.checked)}
+                            disabled={!hasVideoSupport}
+                            tone="warning"
+                        />
+                    </ControlTray>
 
                     {!hasVideoSupport ? (
                         <Alert color="gray" variant="light">
@@ -83,6 +98,8 @@ export const VideoAccordion = memo(function VideoAccordion({
                                         onChange={(value) => form.setFieldValue('videoframes', value)}
                                         min={1}
                                         max={257}
+                                        unit=" frames"
+                                        tone="warning"
                                         marks={[
                                             { value: 14, label: '14 (SVD)' },
                                             { value: 25, label: '25 (SVD-XT)' },
@@ -96,6 +113,8 @@ export const VideoAccordion = memo(function VideoAccordion({
                                         onChange={(value) => form.setFieldValue('videosteps', value)}
                                         min={1}
                                         max={100}
+                                        unit=" steps"
+                                        status={(form.values.videosteps || 20) > 60 ? 'caution' : 'neutral'}
                                     />
 
                                     <SliderWithInput
@@ -106,6 +125,7 @@ export const VideoAccordion = memo(function VideoAccordion({
                                         max={20}
                                         step={0.5}
                                         decimalScale={1}
+                                        status={(form.values.videocfg ?? 3.5) > 12 ? 'caution' : 'neutral'}
                                         marks={[
                                             { value: 2.5, label: '2.5 (SVD)' },
                                             { value: 7, label: '7' },
@@ -118,6 +138,7 @@ export const VideoAccordion = memo(function VideoAccordion({
                                         onChange={(value) => form.setFieldValue('videofps', value)}
                                         min={1}
                                         max={60}
+                                        unit=" fps"
                                         marks={[
                                             { value: 6, label: '6 (SVD)' },
                                             { value: 24, label: '24 (LTXV)' },
@@ -172,6 +193,8 @@ export const VideoAccordion = memo(function VideoAccordion({
                                         onChange={(value) => form.setFieldValue('text2videoframes', value)}
                                         min={1}
                                         max={257}
+                                        unit=" frames"
+                                        tone="warning"
                                         marks={[
                                             { value: 25, label: '25 (Mochi)' },
                                             { value: 73, label: '73 (Hunyuan)' },
@@ -185,6 +208,7 @@ export const VideoAccordion = memo(function VideoAccordion({
                                         onChange={(value) => form.setFieldValue('text2videofps', value)}
                                         min={1}
                                         max={60}
+                                        unit=" fps"
                                     />
 
                                     <Select

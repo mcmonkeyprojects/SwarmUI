@@ -10,7 +10,8 @@ interface UseGeneratePageControllerOptions {
     openQuickModules: string[];
     embeddingModalOpened: boolean;
     enableControlNet: boolean;
-    enableRefiner: boolean;
+    enableHiResFix: boolean;
+    enableUpscale: boolean;
 }
 
 export function useGeneratePageController({
@@ -19,7 +20,8 @@ export function useGeneratePageController({
     openQuickModules,
     embeddingModalOpened,
     enableControlNet,
-    enableRefiner,
+    enableHiResFix,
+    enableUpscale,
 }: UseGeneratePageControllerOptions) {
     useRenderProfiler('GeneratePage');
     const [routeEnteredAt] = useState(() => performance.now());
@@ -31,7 +33,8 @@ export function useGeneratePageController({
         openQuickModules,
         embeddingModalOpened,
         enableControlNet,
-        enableRefiner,
+        enableHiResFix,
+        enableUpscale,
     });
 
     return {

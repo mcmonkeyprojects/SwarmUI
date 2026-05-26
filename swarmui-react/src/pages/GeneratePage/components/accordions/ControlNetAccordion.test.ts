@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PREPROCESSOR_OPTIONS } from './ControlNetAccordion';
+import { PREPROCESSOR_OPTIONS } from './controlNetOptions';
 
 describe('PREPROCESSOR_OPTIONS', () => {
     it('has Auto as the first option with empty string sentinel', () => {

@@ -1,8 +1,9 @@
 import { memo } from 'react';
-import { Paper, Group, Stack, Select, Badge, Box } from '@mantine/core';
+import { Paper, Group, Stack, Select, Badge, Box, Text } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
 import { SliderWithInput } from '../../../../components/SliderWithInput';
+import { ControlTray } from '../../../../components/ui';
 import {
   ASPECT_RATIO_PRESETS,
   detectAspectRatio,
@@ -28,8 +29,8 @@ export const DimensionControls = memo(function DimensionControls({
   const width = form.values.width || 1024;
   const height = form.values.height || 1024;
 
-  // Calculate preview dimensions
-  const maxSize = 70;
+  // Calculate preview dimensions — prominent visual indicator
+  const maxSize = 96;
   const previewWidth = width >= height ? maxSize : Math.round((width / height) * maxSize);
   const previewHeight = height >= width ? maxSize : Math.round((height / width) * maxSize);
 
@@ -39,56 +40,90 @@ export const DimensionControls = memo(function DimensionControls({
       p={embedded ? 0 : 'xs'}
       radius="sm"
     >
-      <Group align="flex-start" gap="sm" wrap="nowrap">
-        {/* Left: Aspect Ratio and Controls */}
-        <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
-          {/* Aspect Ratio Selector */}
-          <Group
-            gap="xs"
-            align="flex-end"
-            wrap="nowrap"
-            className="generate-studio__dimension-header"
+      <Stack gap="xs">
+        {/* Aspect Ratio Selector */}
+        <Group
+          gap="xs"
+          align="flex-end"
+          wrap="nowrap"
+          className="generate-studio__dimension-header"
+        >
+          <Select
+            label="Aspect"
+            data={ASPECT_RATIO_PRESETS.map((p) => ({
+              value: p.value,
+              label: p.label,
+            }))}
+            value={detectAspectRatio(width, height)}
+            onChange={(value) => {
+              if (!value || value === 'custom') return;
+              const dims = getDimensionsForRatio(value);
+              if (dims) {
+                form.setFieldValue('width', dims[0]);
+                form.setFieldValue('height', dims[1]);
+              }
+            }}
+            size="xs"
+            style={{ width: 92 }}
+          />
+          {/* Dimension Display */}
+          <Badge
+            size="md"
+            variant="light"
+            color="invokeGray"
+            style={{ fontFamily: 'monospace' }}
+            className="generate-studio__dimension-badge"
           >
-            <Select
-              label="Aspect"
-              data={ASPECT_RATIO_PRESETS.map((p) => ({
-                value: p.value,
-                label: p.label,
-              }))}
-              value={detectAspectRatio(width, height)}
-              onChange={(value) => {
-                if (!value || value === 'custom') return;
-                const dims = getDimensionsForRatio(value);
-                if (dims) {
-                  form.setFieldValue('width', dims[0]);
-                  form.setFieldValue('height', dims[1]);
-                }
-              }}
-              size="xs"
-              style={{ width: 92 }}
-            />
-            {/* Dimension Display */}
-            <Badge
-              size="md"
-              variant="light"
-              color="invokeGray"
-              style={{ fontFamily: 'monospace' }}
-              className="generate-studio__dimension-badge"
-            >
-              {width}x{height}
-            </Badge>
-            {/* Ratio Badge */}
-            <Badge
-              size="md"
-              variant="light"
-              color="invokeBrand"
-              className="generate-studio__dimension-badge"
-            >
-              {calculateRatioString(width, height)}
-            </Badge>
-          </Group>
+            {width}x{height}
+          </Badge>
+          {/* Ratio Badge */}
+          <Badge
+            size="md"
+            variant="light"
+            color="invokeBrand"
+            className="generate-studio__dimension-badge"
+          >
+            {calculateRatioString(width, height)}
+          </Badge>
+        </Group>
 
-          {/* Width/Height Sliders */}
+        {/* Visual Aspect Ratio Preview — prominent centered row */}
+        <Box className="generate-studio__dimension-preview-frame">
+          <Box
+            className="generate-studio__dimension-preview"
+            style={{
+              width: previewWidth,
+              height: previewHeight,
+            }}
+          >
+            {[...Array(9)].map((_, i) => {
+              let classes = 'generate-studio__dimension-preview-grid-cell';
+              if (i % 3 !== 2) {
+                classes += ' cell-border-right';
+              }
+              if (i < 6) {
+                classes += ' cell-border-bottom';
+              }
+              return (
+                <Box
+                  key={i}
+                  className={classes}
+                />
+              );
+            })}
+          </Box>
+          <Text className="generate-studio__dimension-preview-label">
+            {width} × {height}
+          </Text>
+        </Box>
+
+        {/* Width/Height Sliders - full width */}
+        <ControlTray
+          title="Canvas Size"
+          subtitle="Manual dimensions stay paired with the aspect preview."
+          status={calculateRatioString(width, height)}
+          tone="info"
+        >
           <SliderWithInput
             label="Width"
             value={width}
@@ -96,6 +131,8 @@ export const DimensionControls = memo(function DimensionControls({
             min={64}
             max={2048}
             step={64}
+            unit="px"
+            tone="info"
           />
           <SliderWithInput
             label="Height"
@@ -104,51 +141,11 @@ export const DimensionControls = memo(function DimensionControls({
             min={64}
             max={2048}
             step={64}
+            unit="px"
+            tone="info"
           />
-        </Stack>
-
-        {/* Right: Visual Aspect Ratio Preview */}
-        <Box
-          className="generate-studio__dimension-preview-frame"
-          style={{
-            width: 68,
-            height: 68,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Box
-            className="generate-studio__dimension-preview"
-            style={{
-              width: previewWidth,
-              height: previewHeight,
-              border: '2px solid var(--mantine-color-invokeBrand-6)',
-              borderRadius: 4,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gridTemplateRows: 'repeat(3, 1fr)',
-              overflow: 'hidden',
-              background:
-                'linear-gradient(135deg, var(--mantine-color-invokeGray-8) 0%, var(--mantine-color-invokeGray-7) 100%)',
-              boxShadow:
-                '0 0 12px rgba(var(--mantine-color-invokeBrand-6-rgb, 124, 58, 237), 0.2), inset 0 1px 2px rgba(255,255,255,0.05)',
-            }}
-          >
-            {/* Grid lines inside */}
-            {[...Array(9)].map((_, i) => (
-              <Box
-                key={i}
-                style={{
-                  borderRight: i % 3 !== 2 ? '1px solid var(--mantine-color-invokeGray-4)' : 'none',
-                  borderBottom: i < 6 ? '1px solid var(--mantine-color-invokeGray-4)' : 'none',
-                  backgroundColor: 'transparent',
-                }}
-              />
-            ))}
-          </Box>
-        </Box>
-      </Group>
+        </ControlTray>
+      </Stack>
     </Paper>
   );
 });

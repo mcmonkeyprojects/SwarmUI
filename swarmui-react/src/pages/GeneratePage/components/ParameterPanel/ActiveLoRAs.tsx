@@ -150,6 +150,7 @@ export const ActiveLoRAs = memo(function ActiveLoRAs({
                                                     min={-5}
                                                     max={5}
                                                     step={0.01}
+                                                    status={Math.abs(lora.weight) > 2 ? 'caution' : 'neutral'}
                                                     style={{ flex: 1 }}
                                                     size="xs"
                                                     marks={[

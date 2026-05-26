@@ -163,7 +163,7 @@ export function analyzeGenerateQuality(params: Partial<GenerateParams>, selected
     const refinerCfgScale = toNumber(params.refinercfgscale);
     const refinerControl = toNumber(params.refinercontrolpercentage ?? params.refinercontrol);
     const hasInitImage = Boolean(params.initimage);
-    const hasRefiner = Boolean(params.refinermodel) || refinerSteps !== null || refinerCfgScale !== null || refinerControl !== null;
+    const hasRefiner = refinerControl !== null && refinerControl > 0;
     const checked = [
         'Prompt',
         'Negative prompt',

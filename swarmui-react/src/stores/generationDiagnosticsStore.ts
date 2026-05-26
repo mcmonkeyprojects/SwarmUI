@@ -71,6 +71,13 @@ interface RecordGenerationProgressInput {
     requestId?: string;
     progress: number;
     previewImage?: string | null;
+    eventSequence?: number;
+    serverElapsedMs?: number;
+    stepSource?: string | null;
+    nodeIndex?: number | null;
+    nodeCount?: number | null;
+    currentNode?: string | null;
+    currentPercentSource?: string | null;
     stageId?: string | null;
     stageLabel?: string | null;
     currentStep?: number | null;
@@ -334,6 +341,13 @@ export const useGenerationDiagnosticsStore = create<GenerationDiagnosticsState>(
                                     message: `Entered stage: ${input.stageLabel}`,
                                     level: 'info',
                                     details: {
+                                        eventSequence: input.eventSequence,
+                                        serverElapsedMs: input.serverElapsedMs,
+                                        stepSource: input.stepSource,
+                                        nodeIndex: input.nodeIndex,
+                                        nodeCount: input.nodeCount,
+                                        currentNode: input.currentNode,
+                                        currentPercentSource: input.currentPercentSource,
                                         stageId: input.stageId,
                                         currentStep: input.currentStep,
                                         totalSteps: input.totalSteps,
@@ -349,6 +363,13 @@ export const useGenerationDiagnosticsStore = create<GenerationDiagnosticsState>(
                                         message: `Progress reached ${Math.round(input.progress)}%`,
                                         level: 'debug',
                                         details: {
+                                            eventSequence: input.eventSequence,
+                                            serverElapsedMs: input.serverElapsedMs,
+                                            stepSource: input.stepSource,
+                                            nodeIndex: input.nodeIndex,
+                                            nodeCount: input.nodeCount,
+                                            currentNode: input.currentNode,
+                                            currentPercentSource: input.currentPercentSource,
                                             currentStep: input.currentStep,
                                             totalSteps: input.totalSteps,
                                             stageLabel: input.stageLabel,

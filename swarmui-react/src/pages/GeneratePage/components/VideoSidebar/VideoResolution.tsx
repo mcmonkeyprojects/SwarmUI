@@ -12,6 +12,7 @@ export interface ResolutionPreset {
 /**
  * Returns the preset label matching the given dimensions, or 'Custom' if none match.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getActivePreset(
     width: number,
     height: number,

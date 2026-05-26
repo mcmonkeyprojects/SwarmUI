@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Stack, Group, Badge, Text, Box, Tooltip } from '@mantine/core';
+import { Stack, Group, Badge, Text, Box } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
 import { IconRefresh, IconUsers, IconX } from '@tabler/icons-react';
@@ -8,7 +8,7 @@ import { PromptWizard } from '../../../../components/PromptWizard';
 import { PromptInput } from '../../../../components/PromptInput';
 import { QuickModeIndicator } from '../../../../components/QuickModeIndicator';
 import { CharacterRegionsBuilderModal } from '../../../../components/CharacterRegionsBuilderModal';
-import { SwarmActionIcon, SwarmButton } from '../../../../components/ui';
+import { SwarmActionIcon, SwarmButton, SwarmTooltip } from '../../../../components/ui';
 import { usePromptBuilderStore } from '../../../../stores/promptBuilderStore';
 import {
   compilePromptBuilder,
@@ -89,10 +89,10 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
 
   return (
     <Stack gap="sm" className="generate-studio__prompt-section">
-      {/* Prompt tools */}
-      <Box className="generate-studio__prompt-library-trigger">
+      <Group gap="xs" wrap="wrap" className="generate-studio__prompt-tools">
         <PromptWizard
           compact
+          triggerVariant="button"
           onApplyToPrompt={(text, mode) => {
             if (mode === 'replace') {
               form.setFieldValue('prompt', text);
@@ -111,9 +111,7 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
             }
           }}
         />
-      </Box>
 
-      <Box className="generate-studio__prompt-library-trigger">
         <SwarmButton
           size="xs"
           emphasis="soft"
@@ -123,11 +121,10 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
         >
           Character Regions
         </SwarmButton>
-      </Box>
 
-      <Box className="generate-studio__prompt-library-trigger">
         <PresetLibrary
           compact
+          triggerVariant="button"
           currentPromptText={form.values.prompt || ''}
           onApplyToPrompt={(text, mode, sections) => {
             if (mode === 'replace') {
@@ -145,7 +142,7 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
             }
           }}
         />
-      </Box>
+      </Group>
 
       {showBuilderStatus && (
         <Stack gap={6} className="generate-studio__prompt-builder-status">
@@ -169,7 +166,7 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
               </Badge>
             </Group>
             <Group gap="xs" className="generate-studio__prompt-builder-actions">
-              <Tooltip label="Resync prompt builder content from the canvas">
+              <SwarmTooltip label="Resync prompt builder content from the canvas">
                 <SwarmActionIcon
                   size="sm"
                   tone="secondary"
@@ -180,8 +177,8 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
                 >
                   <IconRefresh size={15} />
                 </SwarmActionIcon>
-              </Tooltip>
-              <Tooltip label="Remove the managed prompt block">
+              </SwarmTooltip>
+              <SwarmTooltip label="Remove the managed prompt block">
                 <SwarmActionIcon
                   size="sm"
                   tone="secondary"
@@ -192,7 +189,7 @@ export const PromptSection = memo(function PromptSection({ form }: PromptSection
                 >
                   <IconX size={15} />
                 </SwarmActionIcon>
-              </Tooltip>
+              </SwarmTooltip>
             </Group>
           </Group>
           {syncState === 'manual_override' && (

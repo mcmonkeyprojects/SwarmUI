@@ -6,7 +6,7 @@ import {
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
 import { SliderWithInput } from '../../../../components/SliderWithInput';
-import { SamplingSelect } from '../../../../components/ui';
+import { ControlTray, SamplingSelect } from '../../../../components/ui';
 import { useT2IParams } from '../../../../hooks/useT2IParams';
 
 export interface SamplerAccordionProps {
@@ -29,24 +29,38 @@ export const SamplerAccordion = memo(function SamplerAccordion({
 
     return (
         <Accordion.Item value="sampler">
-            <Accordion.Control>Sampler & Scheduler</Accordion.Control>
+            <Accordion.Control>
+                <div className="generate-accordion-control">
+                    <span className="generate-accordion-control__title">Sampler & Scheduler</span>
+                    <span className="generate-accordion-control__summary">
+                        {form.values.sampler || 'Sampler'} | {form.values.scheduler || 'Scheduler'}
+                    </span>
+                </div>
+            </Accordion.Control>
             <Accordion.Panel>
                 <Stack gap="md">
-                    <SamplingSelect
-                        kind="sampler"
-                        label="Sampler"
-                        data={samplerOptions}
-                        searchable
-                        {...form.getInputProps('sampler')}
-                    />
+                    <ControlTray
+                        title="Sampling Route"
+                        subtitle="Sampler family and scheduler define how the denoise path behaves."
+                        status={form.values.sampler || 'Default'}
+                        tone="primary"
+                    >
+                        <SamplingSelect
+                            kind="sampler"
+                            label="Sampler"
+                            data={samplerOptions}
+                            searchable
+                            {...form.getInputProps('sampler')}
+                        />
 
-                    <SamplingSelect
-                        kind="scheduler"
-                        label="Scheduler"
-                        data={schedulerOptions}
-                        searchable
-                        {...form.getInputProps('scheduler')}
-                    />
+                        <SamplingSelect
+                            kind="scheduler"
+                            label="Scheduler"
+                            data={schedulerOptions}
+                            searchable
+                            {...form.getInputProps('scheduler')}
+                        />
+                    </ControlTray>
 
                     <SliderWithInput
                         label="CLIP Stop At Layer"
@@ -54,6 +68,8 @@ export const SamplerAccordion = memo(function SamplerAccordion({
                         onChange={(value: number) => form.setFieldValue('clipstopatlayer', value)}
                         min={clipMin}
                         max={clipMax}
+                        unit=" layer"
+                        status={Math.abs(form.values.clipstopatlayer || -1) >= 6 ? 'caution' : 'neutral'}
                     />
                 </Stack>
             </Accordion.Panel>

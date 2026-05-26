@@ -12,7 +12,7 @@ import { IconUpload, IconX } from '@tabler/icons-react';
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams } from '../../../../api/types';
 import { SliderWithInput } from '../../../../components/SliderWithInput';
-import { SwarmActionIcon, SwarmButton, SwarmSwitch } from '../../../../components/ui';
+import { ControlTray, SwarmActionIcon, SwarmButton, SwarmSwitch } from '../../../../components/ui';
 
 export interface InitImageAccordionProps {
     form: UseFormReturnType<GenerateParams>;
@@ -38,33 +38,46 @@ export const InitImageAccordion = memo(function InitImageAccordion({
     return (
         <Accordion.Item value="initimage">
             <Accordion.Control>
-                Init Image (Img2Img)
+                <div className="generate-accordion-control">
+                    <span className="generate-accordion-control__title">Init Image (Img2Img)</span>
+                    <span className="generate-accordion-control__summary">
+                        {enabled ? `Creativity ${Math.round((form.values.initimagecreativity ?? 0.6) * 100)}%` : 'Off'}
+                    </span>
+                </div>
             </Accordion.Control>
             <Accordion.Panel>
                 <Stack gap="md">
-                    <SwarmSwitch
-                        label="Enable Init Image"
-                        size="xs"
-                        checked={enabled}
-                        onChange={(e) => onToggle(e.currentTarget.checked)}
-                    />
-
-                    <FileButton
-                        onChange={onUpload}
-                        accept="image/png,image/jpeg,image/webp"
+                    <ControlTray
+                        title="Image Influence"
+                        subtitle="Init image controls how strongly the source image guides the result."
+                        status={initImagePreview ? 'Image loaded' : 'No image'}
+                        tone={enabled ? 'info' : 'secondary'}
                     >
-                        {(props) => (
-                            <SwarmButton
-                                {...props}
-                                leftSection={<IconUpload size={16} />}
-                                tone="secondary"
-                                emphasis="soft"
-                                fullWidth
-                            >
-                                {initImagePreview ? 'Change Init Image' : 'Upload Init Image'}
-                            </SwarmButton>
-                        )}
-                    </FileButton>
+                        <SwarmSwitch
+                            label="Enable Init Image"
+                            size="xs"
+                            checked={enabled}
+                            onChange={(e) => onToggle(e.currentTarget.checked)}
+                            tone="info"
+                        />
+
+                        <FileButton
+                            onChange={onUpload}
+                            accept="image/png,image/jpeg,image/webp"
+                        >
+                            {(props) => (
+                                <SwarmButton
+                                    {...props}
+                                    leftSection={<IconUpload size={16} />}
+                                    tone="secondary"
+                                    emphasis="soft"
+                                    fullWidth
+                                >
+                                    {initImagePreview ? 'Change Init Image' : 'Upload Init Image'}
+                                </SwarmButton>
+                            )}
+                        </FileButton>
+                    </ControlTray>
 
                     {initImagePreview && (
                         <Box style={{ position: 'relative' }}>
@@ -95,6 +108,8 @@ export const InitImageAccordion = memo(function InitImageAccordion({
                         max={1}
                         step={0.05}
                         decimalScale={2}
+                        unit="%"
+                        status={(form.values.initimagecreativity ?? 0.6) > 0.85 ? 'caution' : 'neutral'}
                     />
 
                     <SliderWithInput
@@ -106,6 +121,7 @@ export const InitImageAccordion = memo(function InitImageAccordion({
                         max={1}
                         step={0.05}
                         decimalScale={2}
+                        unit="%"
                     />
 
                     <SliderWithInput
@@ -117,13 +133,15 @@ export const InitImageAccordion = memo(function InitImageAccordion({
                         max={1}
                         step={0.05}
                         decimalScale={2}
+                        unit="%"
+                        status={(form.values.initimagenoise ?? 0) > 0.5 ? 'caution' : 'neutral'}
                     />
 
                     <Select
                         label="Resize Mode"
                         description="How to resize the init image to match target dimensions"
                         data={[
-                            { value: 'strech', label: 'Just Resize (Stretch)' },
+                            { value: 'stretch', label: 'Just Resize (Stretch)' },
                             { value: 'crop', label: 'Crop and Resize' },
                             { value: 'fill', label: 'Fill and Resize' },
                             { value: 'focus', label: 'Focus and Resize' },
@@ -153,6 +171,7 @@ export const InitImageAccordion = memo(function InitImageAccordion({
                             checked={form.values.invertmask || false}
                             onChange={(e) => form.setFieldValue('invertmask', e.currentTarget.checked)}
                             disabled={!form.values.maskimage}
+                            tone="warning"
                         />
                     </Group>
 
@@ -164,6 +183,7 @@ export const InitImageAccordion = memo(function InitImageAccordion({
                             min={0}
                             max={64}
                             step={1}
+                            unit="px"
                         />
                     )}
                 </Stack>

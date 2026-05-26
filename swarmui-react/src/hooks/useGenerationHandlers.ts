@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useTransition } from 'react';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../api/client';
 import { logger } from '../utils/logger';
+import { clientLogger } from '../utils/clientLogger';
 import type { GenerateParams } from '../api/types';
 import { useSessionImages, useCanvasNavigationState } from '../store/generationStore';
 import { useAdaptiveAccentStore } from '../store/adaptiveAccentStore';
@@ -22,11 +23,14 @@ import { usePromptCacheStore } from '../stores/promptCacheStore';
 import { resolveAssetUrl } from '../config/runtimeEndpoints';
 import type { ModelMediaCapabilities } from '../utils/modelCapabilities';
 import { imageUrlToDataUrl } from '../utils/imageData';
+import { applyLegacyVaeSelection } from '../utils/upscalePayload';
+import { normalizePromptForGeneration } from '../utils/promptTextTools';
 import { matchVideoProfile } from '../pages/GeneratePage/components/VideoSidebar/videoModelProfiles';
 
 interface GenerationFeatureToggles {
     enableInitImage: boolean;
-    enableRefiner: boolean;
+    enableHiResFix: boolean;
+    enableUpscale: boolean;
     enableControlNet: boolean;
     enableVideo: boolean;
     enableVariation: boolean;
@@ -37,11 +41,19 @@ interface UseGenerationHandlersParams {
     mediaCapabilities: ModelMediaCapabilities;
 }
 
+export interface GenerationRunOptions {
+    forceEnableInitImage?: boolean;
+    forceEnableHiResFix?: boolean;
+    forceEnableUpscale?: boolean;
+    mode?: 'normal' | 'preview';
+    previewOmitParamIds?: string[];
+}
+
 interface UseGenerationHandlersReturn {
     generating: boolean;
     generatedImages: string[];
     currentImageIndex: number;
-    handleGenerate: (values: GenerateParams, options?: { forceEnableRefiner?: boolean }) => Promise<void>;
+    handleGenerate: (values: GenerateParams, options?: GenerationRunOptions) => Promise<void>;
     handleInterrupt: () => Promise<void>;
     setCurrentImageIndex: (index: number) => void;
     goToNextImage: () => void;
@@ -94,6 +106,7 @@ export function useGenerationHandlers({
 }: UseGenerationHandlersParams): UseGenerationHandlersReturn {
     const isGenerating = useWebSocketStore((state) => state.generation.isGenerating);
     const generationId = useWebSocketStore((state) => state.generation.generationId);
+    const activeGenerationCorrelationId = generationId ?? undefined;
     const generationPhase = useWebSocketStore((state) => state.generation.phase);
     const generationRequestId = useWebSocketStore((state) => state.generation.requestId);
     const generationImageCount = useWebSocketStore((state) => state.generation.images.length);
@@ -112,6 +125,7 @@ export function useGenerationHandlers({
     const lastErrorRef = useRef<string | null>(null);
     const lastCompletionRef = useRef<string | null>(null);
     const lastDebugContextRef = useRef<GenerationDebugContext | null>(null);
+    const previewGenerationIdsRef = useRef<Set<string>>(new Set());
     const startDiagnosticsEntry = useGenerationDiagnosticsStore((state) => state.startEntry);
     const appendDiagnosticsEvent = useGenerationDiagnosticsStore((state) => state.appendEvent);
     const markDiagnosticsError = useGenerationDiagnosticsStore((state) => state.markError);
@@ -138,7 +152,7 @@ export function useGenerationHandlers({
         generatedImagesRef.current = generatedImages;
     }, [generatedImages]);
 
-    const { enableInitImage, enableRefiner, enableControlNet, enableVideo, enableVariation } = featureToggles;
+    const { enableInitImage, enableControlNet, enableVideo, enableVariation } = featureToggles;
     const addPromptToCache = usePromptCacheStore((state) => state.addEntry);
 
     useEffect(() => {
@@ -150,8 +164,16 @@ export function useGenerationHandlers({
             ? latestGeneratedImage
             : resolveAssetUrl(latestGeneratedImage.startsWith('/') ? latestGeneratedImage : `/${latestGeneratedImage}`);
 
-        if (!generatedImagesRef.current.includes(imagePath)) {
+        const isPreviewGeneration = activeGenerationCorrelationId
+            ? previewGenerationIdsRef.current.has(activeGenerationCorrelationId)
+            : false;
+
+if (!isPreviewGeneration && !generatedImagesRef.current.includes(imagePath)) {
             const nextImageIndex = generatedImagesRef.current.length;
+            clientLogger.debug('generation', `Image received (${nextImageIndex + 1})`, {
+                correlationId: activeGenerationCorrelationId,
+                metadata: { index: nextImageIndex, isPreview: latestGeneratedImage.startsWith('data:') },
+            });
             startGalleryTransition(() => {
                 setCurrentImageIndex(nextImageIndex);
                 addSessionImage(imagePath);
@@ -159,6 +181,7 @@ export function useGenerationHandlers({
         }
         setAdaptiveAccentSourceImageUrl(imagePath);
     }, [
+        activeGenerationCorrelationId,
         addSessionImage,
         latestGeneratedImage,
         setAdaptiveAccentSourceImageUrl,
@@ -173,6 +196,19 @@ export function useGenerationHandlers({
                 const completionKey = `${generationRequestId || 'no-request'}:${imageCount}`;
                 if (lastCompletionRef.current !== completionKey) {
                     lastCompletionRef.current = completionKey;
+                    const isPreviewGeneration = activeGenerationCorrelationId
+                        ? previewGenerationIdsRef.current.has(activeGenerationCorrelationId)
+                        : false;
+                    if (isPreviewGeneration) {
+                        clientLogger.debug('generation', 'Preview generation complete', {
+                            metadata: {
+                                imageCount,
+                                requestId: generationRequestId,
+                            },
+                            correlationId: activeGenerationCorrelationId,
+                        });
+                        return;
+                    }
                     if (generatedImages.length > 0) {
                         setCurrentImageIndex(generatedImages.length - 1);
                     }
@@ -180,6 +216,26 @@ export function useGenerationHandlers({
                         title: 'Success',
                         message: `Generated ${imageCount} image(s)`,
                         color: 'green',
+                    });
+
+                    clientLogger.info('generation', 'Generation complete', {
+                        metadata: {
+                            imageCount,
+                            duration: Date.now() - (lastDebugContextRef.current?.requestStartedAt ?? Date.now()),
+                            requestId: generationRequestId,
+                            model: paramsRef.current?.model,
+                        },
+                        correlationId: activeGenerationCorrelationId,
+                    });
+
+                    clientLogger.info('generation', 'Generation complete', {
+                        metadata: {
+                            imageCount,
+                            duration: Date.now() - (lastDebugContextRef.current?.requestStartedAt ?? Date.now()),
+                            requestId: generationRequestId,
+                            model: paramsRef.current?.model,
+                        },
+                        correlationId: activeGenerationCorrelationId,
                     });
 
                     if (paramsRef.current.prompt && paramsRef.current.model) {
@@ -196,6 +252,7 @@ export function useGenerationHandlers({
             lastCompletionRef.current = null;
         }
     }, [
+        activeGenerationCorrelationId,
         addPromptToCache,
         generationImageCount,
         generationPhase,
@@ -226,8 +283,26 @@ export function useGenerationHandlers({
                 : generationError;
             const surfacedErrorMessage = `${errorMessage} Diagnostics captured.`;
 
-            if (lastErrorRef.current !== generationError) {
+if (lastErrorRef.current !== generationError) {
                 lastErrorRef.current = generationError;
+
+                const errorMetadata: Record<string, unknown> = {
+                    error: generationError,
+                    errorId: generationErrorId,
+                    requestId: generationRequestId,
+                    imagesSeen: generationImageCount,
+                    phase: generationPhase,
+                };
+                if (lastDebugContextRef.current) {
+                    errorMetadata.model = lastDebugContextRef.current.model;
+                    errorMetadata.payloadKeys = lastDebugContextRef.current.payloadKeys;
+                }
+
+                clientLogger.error('generation', `Generation failed: ${generationError}`, {
+                    metadata: errorMetadata,
+                    correlationId: activeGenerationCorrelationId,
+                });
+
                 if (generationImageCount > 0) {
                     notifications.show({
                         title: 'Generation Warning',
@@ -255,6 +330,7 @@ export function useGenerationHandlers({
             lastErrorRef.current = null;
         }
     }, [
+        activeGenerationCorrelationId,
         generationError,
         generationErrorData,
         generationErrorId,
@@ -263,7 +339,7 @@ export function useGenerationHandlers({
         generationRequestId,
     ]);
 
-    const handleGenerate = useCallback(async (values: GenerateParams, options?: { forceEnableRefiner?: boolean }) => {
+    const handleGenerate = useCallback(async (values: GenerateParams, options?: GenerationRunOptions) => {
         const normalizeModelValue = (value: unknown): string | null => {
             if (typeof value === 'string') {
                 const trimmed = value.trim();
@@ -303,6 +379,12 @@ export function useGenerationHandlers({
         };
 
         const generationId = createGenerationId();
+        if (options?.mode === 'preview') {
+            if (previewGenerationIdsRef.current.size > 50) {
+                previewGenerationIdsRef.current.clear();
+            }
+            previewGenerationIdsRef.current.add(generationId);
+        }
         const rawFormSummary = summarizeRecord(values as Record<string, unknown>);
         const normalizedModel = normalizeModelValue(values.model);
 
@@ -347,10 +429,14 @@ export function useGenerationHandlers({
             });
         };
 
-        if (!normalizedModel) {
+if (!normalizedModel) {
             recordEarlyFailure('frontend_missing_model', 'Please select a model before generating.', {
                 rawModel: values.model ?? null,
                 availableKeys: Object.keys(values || {}).sort(),
+            });
+            clientLogger.error('generation', 'No model selected for generation', {
+                metadata: { rawModel: values.model ?? null },
+                correlationId: generationId,
             });
             notifications.show({
                 title: 'No Model Selected',
@@ -360,9 +446,13 @@ export function useGenerationHandlers({
             return;
         }
 
-        if (!isInitialized) {
+if (!isInitialized) {
             recordEarlyFailure('frontend_not_ready', 'WebSocket connection not initialized. Please wait.', {
                 model: normalizedModel,
+            });
+            clientLogger.error('generation', 'WebSocket not initialized, cannot generate', {
+                metadata: { model: normalizedModel },
+                correlationId: generationId,
             });
             notifications.show({
                 title: 'Not Ready',
@@ -372,7 +462,12 @@ export function useGenerationHandlers({
             return;
         }
 
-        const normalizedValues = { ...values, model: normalizedModel } as GenerateParams;
+        const normalizedValues = {
+            ...values,
+            model: normalizedModel,
+            prompt: normalizePromptForGeneration(values.prompt),
+            negativeprompt: normalizePromptForGeneration(values.negativeprompt),
+        } as GenerateParams;
 
         const normalizeImageField = async (key: 'initimage' | 'maskimage') => {
             const rawValue = typeof normalizedValues[key] === 'string' ? normalizedValues[key].trim() : '';
@@ -383,15 +478,19 @@ export function useGenerationHandlers({
         };
 
         try {
-            if (enableInitImage) {
+            const shouldIncludeInitImage = options?.forceEnableInitImage ?? enableInitImage;
+            if (shouldIncludeInitImage) {
                 await normalizeImageField('initimage');
                 await normalizeImageField('maskimage');
             }
-        } catch (error) {
+} catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to prepare init-image data.';
             recordEarlyFailure('frontend_invalid_initimage', message, {
                 initimage: values.initimage ?? null,
                 maskimage: values.maskimage ?? null,
+            });
+            clientLogger.error('generation', `Init image failed: ${message}`, {
+                correlationId: generationId,
             });
             notifications.show({
                 title: 'Init Image Failed',
@@ -414,6 +513,8 @@ export function useGenerationHandlers({
         ) {
             normalizedValues.refinercontrolpercentage = normalizedValues.refinercontrol as number;
         }
+
+        const vaeSelection = applyLegacyVaeSelection(normalizedValues);
 
         // --- Video workflow injection ---
         // If video is enabled and the model matches a known profile, inject the workflow ID
@@ -442,22 +543,22 @@ export function useGenerationHandlers({
         const submittedRefinerControl = readFiniteNumber(
             normalizedValues.refinercontrolpercentage ?? normalizedValues.refinercontrol
         );
-        const submittedRefinerModel = typeof normalizedValues.refinermodel === 'string'
-            ? normalizedValues.refinermodel.trim()
-            : '';
-        const submittedRefinerRequested = Boolean(
-            (submittedRefinerUpscale !== null && submittedRefinerUpscale !== 1)
-            || (submittedRefinerControl !== null && submittedRefinerControl > 0)
-            || submittedRefinerModel
-        );
-        const shouldIncludeRefiner = options?.forceEnableRefiner ?? (enableRefiner || submittedRefinerRequested);
+        const submittedRefinerControlActive = submittedRefinerControl !== null && submittedRefinerControl > 0;
+        const submittedRefinerUpscaleActive = submittedRefinerUpscale !== null && submittedRefinerUpscale !== 1;
+        const shouldIncludeHiResFix = options?.forceEnableHiResFix ?? submittedRefinerControlActive;
+        const shouldIncludeUpscale = options?.forceEnableUpscale ?? submittedRefinerUpscaleActive;
+        const shouldIncludeRefiner = shouldIncludeHiResFix || shouldIncludeUpscale;
+        const shouldIncludeRefinerDiffusionPass = shouldIncludeHiResFix && submittedRefinerControlActive;
 
+        const shouldIncludeInitImage = options?.forceEnableInitImage ?? enableInitImage;
+        const previewOmitParamIds = new Set(options?.previewOmitParamIds ?? []);
         const includeParam = (key: string): boolean => {
+            if (previewOmitParamIds.has(key)) return false;
             if (coreParams.has(key)) return true;
 
-            if (['initimage', 'initimagecreativity', 'initimageresettonorm', 'initimagenoise'].includes(key)) return enableInitImage;
-            if (['resizemode', 'seamlesstileable'].includes(key)) return enableInitImage;
-            if (['maskimage', 'maskblur', 'invertmask'].includes(key)) return enableInitImage && hasMask;
+            if (['initimage', 'initimagecreativity', 'initimageresettonorm', 'initimagenoise'].includes(key)) return shouldIncludeInitImage;
+            if (['resizemode', 'seamlesstileable'].includes(key)) return shouldIncludeInitImage;
+            if (['maskimage', 'maskblur', 'invertmask'].includes(key)) return shouldIncludeInitImage && hasMask;
 
             if (['variationseed', 'variationseedstrength'].includes(key)) return enableVariation;
             if (['loras', 'loraweights'].includes(key)) return hasLoras;
@@ -465,17 +566,21 @@ export function useGenerationHandlers({
 
             if (
                 [
-                    'refinermodel',
                     'refinercontrolpercentage',
                     'refinerupscale',
                     'refinermethod',
-                    'refinervae',
-                    'refinersteps',
-                    'refinercfgscale',
                     'refinerdotiling',
                     'refinerupscalemethod',
                 ].includes(key)
             ) return shouldIncludeRefiner;
+
+            if (key === 'refinermodel') return shouldIncludeRefinerDiffusionPass;
+            if (key === 'refinersteps' || key === 'refinercfgscale') return shouldIncludeRefinerDiffusionPass;
+            if (key === 'refinervae') {
+                return shouldIncludeRefinerDiffusionPass
+                    && normalizedValues.refinervae !== 'None'
+                    && normalizedValues.refinervae !== 'Automatic';
+            }
 
             if (
                 [
@@ -510,6 +615,7 @@ export function useGenerationHandlers({
 
             if (key === 'batchsize') return normalizedValues.batchsize !== undefined && normalizedValues.batchsize !== 1;
             if (key === 'vae') return normalizedValues.vae !== undefined && normalizedValues.vae !== 'Automatic' && normalizedValues.vae !== '';
+            if (key === 'automaticvae') return normalizedValues.automaticvae === true;
             if (key === 'clipstopatlayer') return normalizedValues.clipstopatlayer !== undefined && normalizedValues.clipstopatlayer !== -1;
             if (key === 'seamlesstileable') return !!normalizedValues.seamlesstileable;
             if (key === 'removebackground') return normalizedValues.removebackground === true;
@@ -560,11 +666,19 @@ export function useGenerationHandlers({
         }
 
         const backendModel = normalizeModelValue(backendParams.model);
-        if (!backendModel) {
+if (!backendModel) {
             logger.error('[useGenerationHandlers] Model sync issue: backend payload missing valid model', {
                 valuesModel: values.model,
                 normalizedModel,
                 backendPayloadModel: backendParams.model,
+            });
+            clientLogger.error('generation', 'Model sync issue: backend payload missing valid model', {
+                metadata: {
+                    valuesModel: values.model,
+                    normalizedModel,
+                    backendPayloadModel: backendParams.model,
+                },
+                correlationId: generationId,
             });
             startDiagnosticAttempt({
                 model: normalizedModel,
@@ -622,6 +736,7 @@ export function useGenerationHandlers({
                 },
                 finalPayloadKeys: payloadKeys,
                 omittedParameters,
+                vaeSelection,
             },
         });
 
@@ -637,15 +752,46 @@ export function useGenerationHandlers({
             requestStartedAt: Date.now(),
         };
 
-        logger.debug('[useGenerationHandlers] Starting generation with WebSocket store:', backendParams);
+logger.debug('[useGenerationHandlers] Starting generation with WebSocket store:', backendParams);
         logger.info('Starting generation with WebSocket store:', backendParams);
 
-        startGeneration(backendParams as GenerateParams, generationId);
+        clientLogger.info('generation', 'Generation started', {
+            metadata: {
+                model: backendModel,
+                steps: backendParams.steps,
+                cfgScale: backendParams.cfgscale,
+                width: backendParams.width,
+                height: backendParams.height,
+                images: backendParams.images,
+                promptLength: backendParams.prompt?.length ?? 0,
+                hasNegativePrompt: !!(backendParams.negativeprompt),
+                hasInitImage: enableInitImage,
+                hasRefiner: shouldIncludeRefiner,
+                hasControlNet: enableControlNet,
+                hasVideo: enableVideo,
+                hasVariation: enableVariation,
+                loraCount: normalizedValues.loras ? (typeof normalizedValues.loras === 'string' ? normalizedValues.loras.split(',').filter(Boolean).length : 0) : 0,
+                payloadKeyCount: payloadKeys.length,
+                omittedParamCount: omittedParameters.length,
+            },
+            correlationId: generationId,
+        });
+
+        clientLogger.debug('generation', 'Payload prepared', {
+            metadata: {
+                payloadKeys,
+                omittedParams: omittedParameters.slice(0, 20).map((p) => ({ key: p.key, reason: p.reason })),
+            },
+            correlationId: generationId,
+        });
+
+        startGeneration(backendParams as GenerateParams, generationId, {
+            preservePreviewImage: options?.mode === 'preview',
+        });
     }, [
         appendDiagnosticsEvent,
         enableControlNet,
         enableInitImage,
-        enableRefiner,
         enableVariation,
         enableVideo,
         featureToggles,
@@ -657,10 +803,13 @@ export function useGenerationHandlers({
         startGeneration,
     ]);
 
-    const handleInterrupt = useCallback(async () => {
+const handleInterrupt = useCallback(async () => {
         try {
             if (generationId) {
                 markDiagnosticsInterrupted(generationId, 'User interrupted generation.');
+                clientLogger.warn('generation', 'Generation interrupted by user', {
+                    correlationId: generationId,
+                });
             }
 
             stopGeneration();

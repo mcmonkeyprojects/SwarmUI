@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { GenerateParams } from '../api/types';
+import { clientLogger } from '../utils/clientLogger';
 
 interface GenerationState {
     // Generation Params
@@ -25,7 +26,9 @@ interface GenerationState {
 
     // Mode Toggles - explicit control over which features are enabled
     enableInitImage: boolean;
-    enableRefiner: boolean;
+    enableHiResFix: boolean;
+    enableUpscale: boolean;
+    enableChainUpscale: boolean;
     enableControlNet: boolean;
     enableVideo: boolean;
     enableVariation: boolean;
@@ -58,7 +61,9 @@ interface GenerationState {
 
     // Mode Toggle Setters
     setEnableInitImage: (enabled: boolean) => void;
-    setEnableRefiner: (enabled: boolean) => void;
+    setEnableHiResFix: (enabled: boolean) => void;
+    setEnableUpscale: (enabled: boolean) => void;
+    setEnableChainUpscale: (enabled: boolean) => void;
     setEnableControlNet: (enabled: boolean) => void;
     setEnableVideo: (enabled: boolean) => void;
     setEnableVariation: (enabled: boolean) => void;
@@ -101,22 +106,46 @@ export const useGenerationStore = create<GenerationState>()(
 
                 // Mode toggles - all OFF by default
                 enableInitImage: false,
-                enableRefiner: false,
+                enableHiResFix: false,
+                enableUpscale: false,
+                enableChainUpscale: false,
                 enableControlNet: false,
                 enableVideo: false,
                 enableVariation: false,
 
                 setParams: (newParams) => set((state) => ({ params: { ...state.params, ...newParams } })),
-                setSelectedModel: (model) => set({ selectedModel: model }),
-                setSelectedBackend: (backend) => set({ selectedBackend: backend }),
+                setSelectedModel: (model) => {
+                    const prev = useGenerationStore.getState().selectedModel;
+                    if (prev !== model) {
+                        clientLogger.info('model', `Model selected: ${model || '(cleared)'}`, {
+                            metadata: { model, previousModel: prev },
+                        });
+                    }
+                    set({ selectedModel: model });
+                },
+                setSelectedBackend: (backend) => {
+                    const prev = useGenerationStore.getState().selectedBackend;
+                    if (prev !== backend) {
+                        clientLogger.info('model', `Backend selected: ${backend || '(cleared)'}`, {
+                            metadata: { backend, previousBackend: prev },
+                        });
+                    }
+                    set({ selectedBackend: backend });
+                },
 
                 addLora: (lora, weight) => set((state) => {
                     if (state.activeLoras.some(l => l.lora === lora)) return state;
+                    clientLogger.info('model', `LoRA added: ${lora} (${weight})`, {
+                        metadata: { lora, weight },
+                    });
                     return { activeLoras: [...state.activeLoras, { lora, weight }] };
                 }),
-                removeLora: (lora) => set((state) => ({
-                    activeLoras: state.activeLoras.filter(l => l.lora !== lora)
-                })),
+                removeLora: (lora) => set((state) => {
+                    clientLogger.info('model', `LoRA removed: ${lora}`, {
+                        metadata: { lora },
+                    });
+                    return { activeLoras: state.activeLoras.filter(l => l.lora !== lora) };
+                }),
                 updateLoraWeight: (lora, weight) => set((state) => ({
                     activeLoras: state.activeLoras.map(l => l.lora === lora ? { ...l, weight } : l)
                 })),
@@ -156,7 +185,9 @@ export const useGenerationStore = create<GenerationState>()(
 
                 // Mode toggle setters
                 setEnableInitImage: (enabled) => set({ enableInitImage: enabled }),
-                setEnableRefiner: (enabled) => set({ enableRefiner: enabled }),
+                setEnableHiResFix: (enabled) => set({ enableHiResFix: enabled }),
+                setEnableUpscale: (enabled) => set({ enableUpscale: enabled }),
+                setEnableChainUpscale: (enabled) => set({ enableChainUpscale: enabled }),
                 setEnableControlNet: (enabled) => set({ enableControlNet: enabled }),
                 setEnableVideo: (enabled) => set({ enableVideo: enabled }),
                 setEnableVariation: (enabled) => set({ enableVariation: enabled }),
@@ -174,7 +205,9 @@ export const useGenerationStore = create<GenerationState>()(
                     currentImageIndex: 0,
                     statusText: '',
                     enableInitImage: false,
-                    enableRefiner: false,
+                    enableHiResFix: false,
+                    enableUpscale: false,
+                    enableChainUpscale: false,
                     enableControlNet: false,
                     enableVideo: false,
                     enableVariation: false,
@@ -191,7 +224,9 @@ export const useGenerationStore = create<GenerationState>()(
                     activeWildcards: state.activeWildcards,
                     wildcardText: state.wildcardText,
                     enableInitImage: state.enableInitImage,
-                    enableRefiner: state.enableRefiner,
+                    enableHiResFix: state.enableHiResFix,
+                    enableUpscale: state.enableUpscale,
+                    enableChainUpscale: state.enableChainUpscale,
                     enableControlNet: state.enableControlNet,
                     enableVideo: state.enableVideo,
                     enableVariation: state.enableVariation,
@@ -278,12 +313,16 @@ export const useActiveWildcards = () => useGenerationStore(
 export const useModeToggles = () => useGenerationStore(
     useShallow((state) => ({
         enableInitImage: state.enableInitImage,
-        enableRefiner: state.enableRefiner,
+        enableHiResFix: state.enableHiResFix,
+        enableUpscale: state.enableUpscale,
+        enableChainUpscale: state.enableChainUpscale,
         enableControlNet: state.enableControlNet,
         enableVideo: state.enableVideo,
         enableVariation: state.enableVariation,
         setEnableInitImage: state.setEnableInitImage,
-        setEnableRefiner: state.setEnableRefiner,
+        setEnableHiResFix: state.setEnableHiResFix,
+        setEnableUpscale: state.setEnableUpscale,
+        setEnableChainUpscale: state.setEnableChainUpscale,
         setEnableControlNet: state.setEnableControlNet,
         setEnableVideo: state.setEnableVideo,
         setEnableVariation: state.setEnableVariation,
@@ -301,12 +340,32 @@ export const useInitImageToggle = () => useGenerationStore(
 );
 
 /**
- * Select just the refiner toggle
+ * Select just the hi-res fix toggle
  */
-export const useRefinerToggle = () => useGenerationStore(
+export const useHiResFixToggle = () => useGenerationStore(
     useShallow((state) => ({
-        enableRefiner: state.enableRefiner,
-        setEnableRefiner: state.setEnableRefiner,
+        enableHiResFix: state.enableHiResFix,
+        setEnableHiResFix: state.setEnableHiResFix,
+    }))
+);
+
+/**
+ * Select just the upscale toggle
+ */
+export const useUpscaleToggle = () => useGenerationStore(
+    useShallow((state) => ({
+        enableUpscale: state.enableUpscale,
+        setEnableUpscale: state.setEnableUpscale,
+    }))
+);
+
+/**
+ * Select just the chain upscale toggle
+ */
+export const useChainUpscaleToggle = () => useGenerationStore(
+    useShallow((state) => ({
+        enableChainUpscale: state.enableChainUpscale,
+        setEnableChainUpscale: state.setEnableChainUpscale,
     }))
 );
 

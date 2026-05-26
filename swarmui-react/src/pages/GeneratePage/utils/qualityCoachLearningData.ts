@@ -8,7 +8,6 @@ export interface QualityCoachParameterGuide {
     key: string;
     title: string;
     expandedName: string;
-    analogy: string;
     description: string;
     sweetSpot: string;
     defaultStartingPoint: string;
@@ -18,7 +17,6 @@ export interface QualityCoachParameterGuide {
     effects: Array<{
         range: string;
         visualResult: string;
-        analogy: string;
     }>;
     teachingPoints: string[];
 }
@@ -54,7 +52,6 @@ export interface QualityCoachMatrixCell {
     stepsBand: MatrixBand;
     title: string;
     description: string;
-    analogy: string;
     severity: QualityCoachSeverity;
 }
 
@@ -63,7 +60,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'cfgscale',
         title: 'CFG Scale',
         expandedName: 'Classifier-Free Guidance',
-        analogy: 'How strictly you follow the recipe',
         description: 'Controls how aggressively the model tries to match your prompt. Higher values make the model listen harder; lower values give it more freedom.',
         sweetSpot: 'SDXL / Illustrious sweet spot: CFG 5.0-8.0',
         defaultStartingPoint: 'Start around CFG 7.0',
@@ -73,27 +69,22 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: 'CFG 1.0-3.0',
                 visualResult: 'Soft, dreamy, muted, and often loose with prompt details.',
-                analogy: 'Following the recipe from memory instead of measuring carefully.',
             },
             {
                 range: 'CFG 4.0-6.0',
                 visualResult: 'Balanced creativity and prompt adherence with natural colours.',
-                analogy: 'Following the recipe while still seasoning to taste.',
             },
             {
                 range: 'CFG 7.0-9.0',
                 visualResult: 'Sharper details, stronger prompt adherence, vivid colours.',
-                analogy: 'Following the recipe precisely and getting a reliable bake.',
             },
             {
                 range: 'CFG 10.0-15.0',
                 visualResult: 'Oversaturation, harsh contrast, distorted fine detail, and crunchy textures.',
-                analogy: 'Adding extra of everything just to be safe and overcooking the cake.',
             },
             {
                 range: 'CFG 15.0-30.0',
                 visualResult: 'Severe artifacts, banding, background chaos, and warped faces.',
-                analogy: 'Following the recipe so aggressively that you set the kitchen on fire.',
             },
         ],
         teachingPoints: [
@@ -106,7 +97,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'steps',
         title: 'Sampling Steps',
         expandedName: 'Sampling Steps',
-        analogy: 'How long the cake stays in the oven',
         description: 'Each step is another refinement pass from noise toward the prompt. More steps add refinement until returns diminish.',
         sweetSpot: 'SDXL / Illustrious sweet spot: 20-35 steps',
         defaultStartingPoint: 'Start around 28 steps',
@@ -116,27 +106,22 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: 'Steps 1-5',
                 visualResult: 'Blurry blobs and barely recognisable shapes.',
-                analogy: 'Raw batter with a warm crust.',
             },
             {
                 range: 'Steps 6-15',
                 visualResult: 'Basic structure but soft details and undercooked faces.',
-                analogy: 'Undercooked cake that has shape but is not set.',
             },
             {
                 range: 'Steps 16-25',
                 visualResult: 'Good quality for many uses with detail starting to lock in.',
-                analogy: 'Properly baked with a solid centre.',
             },
             {
                 range: 'Steps 25-40',
                 visualResult: 'Peak quality zone for many SDXL samplers.',
-                analogy: 'The perfect bake with just enough crispness on the edges.',
             },
             {
                 range: 'Steps 40+',
                 visualResult: 'Diminishing returns, more time cost, and possible drift or drying-out artifacts.',
-                analogy: 'Leaving it in the oven just because longer must be better.',
             },
         ],
         teachingPoints: [
@@ -149,7 +134,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'sampler',
         title: 'Sampler',
         expandedName: 'Sampling Method',
-        analogy: 'The type of oven you are baking in',
         description: 'The sampler decides how each denoising step is taken. Some converge quickly, some stay stochastic and exploratory.',
         sweetSpot: 'For SDXL / Illustrious, DPM++ 2M Karras is a strong default',
         defaultStartingPoint: 'Try DPM++ 2M with Karras scheduler',
@@ -159,17 +143,14 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: 'Fast / convergent',
                 visualResult: 'Efficient, stable results in fewer steps.',
-                analogy: 'A reliable convection oven that heats evenly.',
             },
             {
                 range: 'Ancestral / stochastic',
                 visualResult: 'More randomness, more variation, less convergence.',
-                analogy: 'An oven that opens itself and changes the airflow every few minutes.',
             },
             {
                 range: 'High-step samplers',
                 visualResult: 'Can be excellent, but only if you give them enough passes.',
-                analogy: 'A slow gentle bake that needs more time to finish properly.',
             },
         ],
         teachingPoints: [
@@ -182,7 +163,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'scheduler',
         title: 'Scheduler',
         expandedName: 'Noise Schedule',
-        analogy: 'How the oven heat is distributed through the bake',
         description: 'Controls how much denoising work happens early versus late in the process.',
         sweetSpot: 'Karras is the safest default for SDXL / Illustrious workflows',
         defaultStartingPoint: 'Try Karras unless a model or sampler strongly suggests otherwise',
@@ -192,17 +172,14 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: 'Normal',
                 visualResult: 'Even work across the whole denoising run.',
-                analogy: 'Steady oven heat from start to finish.',
             },
             {
                 range: 'Karras',
                 visualResult: 'Cleaner results with more useful early denoising and gentle fine-tuning later.',
-                analogy: 'Getting the cake set early, then finishing with controlled heat.',
             },
             {
                 range: 'Exponential / aggressive',
                 visualResult: 'Sharper early results that can miss subtle finishing detail.',
-                analogy: 'A very hot oven that risks setting the outside too quickly.',
             },
         ],
         teachingPoints: [
@@ -214,7 +191,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'resolution',
         title: 'Resolution',
         expandedName: 'Resolution and Aspect Ratio',
-        analogy: 'The size and shape of the baking tin',
         description: 'Models are trained around native canvas sizes. Larger or stranger canvases can break composition instead of improving quality.',
         sweetSpot: 'SDXL native: 1024x1024 with about one megapixel total area',
         defaultStartingPoint: 'Generate near native size and upscale after',
@@ -224,17 +200,14 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: 'Too low',
                 visualResult: 'Muddy details and painted-over features.',
-                analogy: 'Too little batter spread too thin.',
             },
             {
                 range: 'Native-ish',
                 visualResult: 'Reliable anatomy, composition, and detail.',
-                analogy: 'Using the tin size the recipe was designed for.',
             },
             {
                 range: 'Too high or too extreme',
                 visualResult: 'Double heads, repeated subjects, tiling, or warped anatomy.',
-                analogy: 'Using the wrong tin size so the cake cooks unevenly.',
             },
         ],
         teachingPoints: [
@@ -246,7 +219,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'initimagecreativity',
         title: 'Denoise Strength',
         expandedName: 'Denoise Strength for img2img and inpainting',
-        analogy: 'How much of the original cake you are rebuilding',
         description: 'Controls how much of the original image remains when doing img2img or inpainting.',
         sweetSpot: 'General sweet spot: 0.3-0.7',
         defaultStartingPoint: 'Start around 0.45-0.55 for controlled edits',
@@ -257,22 +229,18 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: '0.0-0.2',
                 visualResult: 'Very subtle changes, often barely noticeable.',
-                analogy: 'Dusting the cake with icing sugar.',
             },
             {
                 range: '0.3-0.5',
                 visualResult: 'Structure preserved, details and style change cleanly.',
-                analogy: 'Re-icing the cake while keeping its shape.',
             },
             {
                 range: '0.5-0.7',
                 visualResult: 'Major changes while still keeping broad composition.',
-                analogy: 'Taking the cake apart and rebuilding it.',
             },
             {
                 range: '0.7-1.0',
                 visualResult: 'Near full regeneration with weak source retention.',
-                analogy: 'Throwing the cake out and starting again in the same tin.',
             },
         ],
         teachingPoints: [
@@ -284,7 +252,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'clipstopatlayer',
         title: 'CLIP Skip',
         expandedName: 'Contrastive Language-Image Pre-training skip',
-        analogy: 'How literally the kitchen interprets the recipe wording',
         description: 'Changes how the text encoder interprets the prompt. Higher skip values make the interpretation broader and less literal.',
         sweetSpot: 'SDXL base often prefers -1, Illustrious / anime often prefers -2',
         defaultStartingPoint: 'Use -1 for SDXL realism, -2 for Illustrious/anime-style models',
@@ -295,17 +262,14 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: '-1',
                 visualResult: 'Most literal prompt interpretation.',
-                analogy: 'Reading every line of the recipe in full detail.',
             },
             {
                 range: '-2',
                 visualResult: 'More vibe-driven interpretation, often useful for anime-style finetunes.',
-                analogy: 'Following the spirit of the recipe more than each exact word.',
             },
             {
                 range: '-3 and below',
                 visualResult: 'Prompt specifics start getting lost or mushy.',
-                analogy: 'Only skimming the recipe before cooking.',
             },
         ],
         teachingPoints: [
@@ -317,7 +281,6 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
         key: 'vae',
         title: 'VAE',
         expandedName: 'Variational Autoencoder',
-        analogy: 'The colour printer that turns the model output into pixels',
         description: 'The VAE converts latent output into actual image colours. A mismatched or poor VAE can make an otherwise good image look washed out or broken.',
         sweetSpot: 'Use the VAE recommended by the model author, or a strong SDXL VAE for SDXL-family models',
         defaultStartingPoint: 'Stay with the model-recommended VAE unless colours look wrong',
@@ -327,12 +290,10 @@ export const QUALITY_COACH_PARAMETER_GUIDES: QualityCoachParameterGuide[] = [
             {
                 range: 'Good match',
                 visualResult: 'Healthy colours and clean gradients.',
-                analogy: 'Using the right printer profile for the job.',
             },
             {
                 range: 'Mismatch',
                 visualResult: 'Grey, washed-out, shifted, or sometimes black output.',
-                analogy: 'Printing with the wrong ink settings.',
             },
         ],
         teachingPoints: [
@@ -348,7 +309,6 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'low',
         title: 'Blurry mush',
         description: 'Low CFG and low steps usually produce a raw, weakly guided image that barely locks onto the prompt.',
-        analogy: 'Raw batter with barely any structure.',
         severity: 'high-risk',
     },
     {
@@ -356,7 +316,6 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'low',
         title: 'Half-baked',
         description: 'The image has structure, but it does not have enough passes to fully resolve details cleanly.',
-        analogy: 'Baked on the outside, underdone in the middle.',
         severity: 'caution',
     },
     {
@@ -364,7 +323,6 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'low',
         title: 'Burnt outside, raw inside',
         description: 'High CFG with too few steps forces the prompt hard without enough time to resolve it, causing harsh noisy unfinished results.',
-        analogy: 'The oven is too hot and the cake never cooks through.',
         severity: 'high-risk',
     },
     {
@@ -372,7 +330,6 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'mid',
         title: 'Dreamy and soft',
         description: 'The image can look smooth and artistic, but may drift from the prompt or feel too generic.',
-        analogy: 'A soft bake that tastes fine but is not exactly what you ordered.',
         severity: 'caution',
     },
     {
@@ -380,7 +337,6 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'mid',
         title: 'Sweet spot',
         description: 'This is the balanced zone for SDXL / Illustrious workflows: prompt adherence, clean detail, and reliable colours.',
-        analogy: 'A perfect bake with good structure and flavour.',
         severity: 'balanced',
     },
     {
@@ -388,7 +344,6 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'mid',
         title: 'Starting to overbake',
         description: 'Prompt adherence is strong, but colours and edges can start to become harsh or crunchy.',
-        analogy: 'A cake that is still edible but already drying out.',
         severity: 'caution',
     },
     {
@@ -396,15 +351,13 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'high',
         title: 'Smooth but drifting',
         description: 'The image can look polished, but the prompt may feel diluted or generic by the end of the run.',
-        analogy: 'Steamed until it loses character.',
         severity: 'caution',
     },
     {
         cfgBand: 'mid',
         stepsBand: 'high',
-        title: 'Overheld in the oven',
+        title: 'Overheld',
         description: 'The image may still look good, but the extra time adds less value and can start drying the result out.',
-        analogy: 'Left in five minutes too long.',
         severity: 'caution',
     },
     {
@@ -412,7 +365,6 @@ export const QUALITY_COACH_MATRIX: QualityCoachMatrixCell[] = [
         stepsBand: 'high',
         title: 'Deep-fried',
         description: 'Maximum overbaking risk: severe artifacts, colour banding, distorted faces, and hard noisy detail.',
-        analogy: 'The cake is charcoal and the kitchen is on fire.',
         severity: 'high-risk',
     },
 ];
@@ -612,44 +564,29 @@ export function getLearningLevelLabel(level: LearningDifficulty): string {
     return 'Advanced';
 }
 
-export function getGuidesForDifficulty(level: LearningDifficulty): QualityCoachParameterGuide[] {
-    const order: Record<LearningDifficulty, number> = {
-        beginner: 0,
-        intermediate: 1,
-        advanced: 2,
-    };
-    return QUALITY_COACH_PARAMETER_GUIDES.filter((guide) => order[guide.difficulty] <= order[level]);
+export function getAllGuides(): QualityCoachParameterGuide[] {
+    return QUALITY_COACH_PARAMETER_GUIDES;
 }
 
-export function getFailureModesForDifficulty(level: LearningDifficulty): QualityCoachFailureMode[] {
-    const order: Record<LearningDifficulty, number> = {
-        beginner: 0,
-        intermediate: 1,
-        advanced: 2,
-    };
-    return QUALITY_COACH_FAILURE_MODES.filter((mode) => order[mode.difficulty] <= order[level]);
+export function getAllFailureModes(): QualityCoachFailureMode[] {
+    return QUALITY_COACH_FAILURE_MODES;
 }
 
-export function getRecipesForDifficulty(level: LearningDifficulty): QualityCoachRecipe[] {
-    const order: Record<LearningDifficulty, number> = {
-        beginner: 0,
-        intermediate: 1,
-        advanced: 2,
-    };
-    return QUALITY_COACH_RECIPES.filter((recipe) => order[recipe.difficulty] <= order[level]);
+export function getAllRecipes(): QualityCoachRecipe[] {
+    return QUALITY_COACH_RECIPES;
 }
 
 export function getMatrixBandForCfg(cfg: number | null): MatrixBand {
     if (cfg === null) return 'mid';
-    if (cfg < 5) return 'low';
-    if (cfg <= 8) return 'mid';
+    if (cfg < 4) return 'low';
+    if (cfg <= 10) return 'mid';
     return 'high';
 }
 
 export function getMatrixBandForSteps(steps: number | null): MatrixBand {
     if (steps === null) return 'mid';
-    if (steps < 16) return 'low';
-    if (steps <= 35) return 'mid';
+    if (steps < 18) return 'low';
+    if (steps <= 45) return 'mid';
     return 'high';
 }
 

@@ -23,8 +23,11 @@ export type { ControlNetAccordionProps } from './ControlNetAccordion';
 export { VideoAccordion } from './VideoAccordion';
 export type { VideoAccordionProps } from './VideoAccordion';
 
-export { RefinerAccordion } from './RefinerAccordion';
-export type { RefinerAccordionProps } from './RefinerAccordion';
+export { HiResFixAccordion } from './HiResFixAccordion';
+export type { HiResFixAccordionProps } from './HiResFixAccordion';
+
+export { UpscaleAccordion } from './UpscaleAccordion';
+export type { UpscaleAccordionProps } from './UpscaleAccordion';
 
 export { OptionsAccordion } from './OptionsAccordion';
 export type { OptionsAccordionProps } from './OptionsAccordion';

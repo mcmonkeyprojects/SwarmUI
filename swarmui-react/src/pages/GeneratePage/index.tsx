@@ -1,8 +1,7 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, lazy, Suspense, memo } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, lazy, Suspense, memo } from 'react';
 import {
     Box,
     Modal,
-    Loader,
     Drawer,
     Stack,
     Group,
@@ -24,20 +23,26 @@ import {
 } from '../../store/generationStore';
 import { useFavoritesStore } from '../../stores/favoritesStore';
 import { useGenerationDiagnosticsStore } from '../../stores/generationDiagnosticsStore';
+import { usePipelineStore } from '../../stores/pipelineStore';
 import { useQueueStore } from '../../stores/queue';
 import { useCanvasWorkflowStore } from '../../stores/canvasWorkflowStore';
 import { useKeyboardShortcuts, KEYBOARD_SHORTCUTS } from '../../hooks/useKeyboardShortcuts';
-import { useGenerationHandlers } from '../../hooks/useGenerationHandlers';
+import { useGenerationHandlers, type GenerationRunOptions } from '../../hooks/useGenerationHandlers';
+import { usePipelineOrchestrator } from '../../hooks/usePipelineOrchestrator';
+import { buildAutoPipelineStages, useAutoPipelineBuilder } from './hooks/useAutoPipelineBuilder';
+import { PipelinePreview } from './components/PipelinePreview';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
-import { ResizeHandle, SwarmButton } from '../../components/ui';
+import { useT2IParams } from '../../hooks/useT2IParams';
+import { ResizeHandle, SwarmButton, SwarmLoader } from '../../components/ui';
 import { usePromptBuilderStore } from '../../stores/promptBuilderStore';
 import {
     compilePromptBuilder,
     upsertManagedBlock,
 } from '../../features/promptBuilder';
 import { buildCanvasApplyPatch, buildCanvasPrompt } from '../../features/canvasWorkflow/compat';
-import { useGenerateWorkspaceActions, useGenerateWorkspaceLayout } from '../../stores/layoutStore';
+import { useGenerateWorkspaceActions, useGenerateWorkspaceLayout, useLeftPanel } from '../../stores/layoutStore';
 import { imageUrlToDataUrl } from '../../utils/imageData';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import {
     useGeneratePageController,
     useGenerateTransientUiState,
@@ -47,7 +52,7 @@ import {
 import { useAllModelData } from '../../hooks/useModels';
 import { DEFAULT_FORM_VALUES } from './hooks/useParameterForm';
 import { getModelMediaCapabilities } from '../../utils/modelCapabilities';
-import type { ImageListItem } from '../../api/types';
+import type { GenerateParams, ImageListItem } from '../../api/types';
 import type { EmbeddingInsertRequest } from '../../components/EmbeddingBrowser';
 import type { AssistantApplyPatch } from '../../types/assistant';
 import { useAssistantStore } from '../../stores/assistantStore';
@@ -63,7 +68,9 @@ import {
 } from './components/GeneratePerformanceMilestones';
 import { useNavigationStore, type GenerateRouteState, type GenerateWorkspaceMode } from '../../stores/navigationStore';
 import { useWorkflowWorkspaceStore } from '../../stores/workflowWorkspaceStore';
-import { featureFlags } from '../../config/featureFlags';
+import { matchVideoProfile } from './components/VideoSidebar/videoModelProfiles';
+import { applyLegacyVaeSelection } from '../../utils/upscalePayload';
+import { normalizePromptForGeneration } from '../../utils/promptTextTools';
 
 const LoRABrowser = lazy(() =>
     import('../../components/LoRABrowser').then((module) => ({ default: module.LoRABrowser }))
@@ -98,6 +105,9 @@ const WorkspaceModeDeck = lazy(() =>
 const VideoSidebar = lazy(() =>
     import('./components/VideoSidebar').then((module) => ({ default: module.VideoSidebar }))
 );
+const PipelineBuilder = lazy(() =>
+    import('./components/PipelineBuilder/PipelineBuilder').then((module) => ({ default: module.PipelineBuilder }))
+);
 const LiveGenerationCanvasStage = lazy(() =>
     import('./components/LiveGenerationCanvasStage').then((module) => ({ default: module.LiveGenerationCanvasStage }))
 );
@@ -107,9 +117,57 @@ const GalleryPanel = lazy(() =>
 
 const ModalLoader = () => (
     <Box style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-        <Loader size="lg" />
+        <SwarmLoader variant="material" size={36} />
     </Box>
 );
+
+const PREVIEW_PRESET_NAME = 'Preview';
+const PREVIEW_LOOP_INTERVAL_MS = 100;
+
+function serializePreviewParams(values: GenerateParams): string {
+    const entries = Object.entries(values)
+        .filter(([, value]) => value !== undefined)
+        .sort(([left], [right]) => left.localeCompare(right));
+    return JSON.stringify(entries);
+}
+
+function isRandomSeed(value: unknown): boolean {
+    if (value === -1) {
+        return true;
+    }
+    return typeof value === 'string' && value.trim() === '-1';
+}
+
+function resolvePreviewPresetValue(templateValue: unknown, currentValue: unknown): unknown {
+    if (typeof templateValue !== 'string' || !templateValue.includes('{value}')) {
+        return templateValue;
+    }
+    return templateValue.replaceAll('{value}', currentValue === undefined || currentValue === null ? '' : String(currentValue));
+}
+
+function applyPreviewPreset(baseValues: GenerateParams, presetParams: Partial<GenerateParams> | undefined): GenerateParams {
+    const nextValues: GenerateParams = {
+        ...baseValues,
+        images: 1,
+        donotsave: true,
+    };
+
+    for (const [key, templateValue] of Object.entries(presetParams ?? {})) {
+        const currentValue = nextValues[key];
+        const resolvedValue = resolvePreviewPresetValue(templateValue, currentValue);
+        if ((key === 'loras' || key === 'loraweights') && resolvedValue !== undefined && resolvedValue !== null && String(resolvedValue).trim()) {
+            const currentText = currentValue === undefined || currentValue === null ? '' : String(currentValue).trim();
+            const resolvedText = String(resolvedValue).trim();
+            nextValues[key] = currentText ? `${currentText},${resolvedText}` : resolvedText;
+            continue;
+        }
+        nextValues[key] = resolvedValue;
+    }
+
+    nextValues.images = 1;
+    nextValues.donotsave = true;
+    return nextValues;
+}
 
 const WorkspaceShellLoader = memo(function WorkspaceShellLoader() {
     return (
@@ -121,7 +179,7 @@ const WorkspaceShellLoader = memo(function WorkspaceShellLoader() {
                 justifyContent: 'center',
             }}
         >
-            <Loader size="lg" />
+            <SwarmLoader variant="trace" size={42} label="Loading studio" />
         </Box>
     );
 });
@@ -136,7 +194,7 @@ const PanelLoader = memo(function PanelLoader() {
                 justifyContent: 'center',
             }}
         >
-            <Loader size="md" />
+            <SwarmLoader variant="pulse" size={34} />
         </Box>
     );
 });
@@ -154,8 +212,12 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
     const {
         enableInitImage,
         setEnableInitImage,
-        enableRefiner,
-        setEnableRefiner,
+        enableHiResFix,
+        setEnableHiResFix,
+        enableUpscale,
+        setEnableUpscale,
+        enableChainUpscale,
+        setEnableChainUpscale,
         enableControlNet,
         setEnableControlNet,
         enableVideo,
@@ -182,6 +244,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
     const isGeneratePageActive = useNavigationStore((state) => state.currentPage === 'generate');
     const workspaceLayout = useGenerateWorkspaceLayout();
     const workspaceActions = useGenerateWorkspaceActions();
+    // eslint-disable-next-line prefer-const
+    let leftPanel = useLeftPanel();
     const assistantPanelOpen = useAssistantStore((state) => state.panelOpen);
     const setAssistantPanelOpen = useAssistantStore((state) => state.setPanelOpen);
     const setGenerateModeRoute = useNavigationStore((state) => state.setGenerateMode);
@@ -216,6 +280,19 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
     const paramForm = useParameterForm();
     const formValues = paramForm.form.values;
     const latestFormValuesRef = useRef(formValues);
+    const { params: t2iParams } = useT2IParams();
+    const previewOmitParamIds = useMemo(
+        () => t2iParams.filter((param) => param.do_not_preview).map((param) => param.id),
+        [t2iParams]
+    );
+    const previewPreset = useMemo(
+        () => paramForm.presets.find((preset) => preset.name === PREVIEW_PRESET_NAME || preset.id === PREVIEW_PRESET_NAME),
+        [paramForm.presets]
+    );
+    const [previewing, setPreviewing] = useState(false);
+    const previewingRef = useRef(false);
+    const previewLastSignatureRef = useRef<string | null>(null);
+    const previewLaunchInProgressRef = useRef(false);
 
     useEffect(() => {
         latestFormValuesRef.current = formValues;
@@ -236,7 +313,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         openQuickModules: workspaceLayout.openQuickModules,
         embeddingModalOpened: modals.embeddingModalOpened,
         enableControlNet,
-        enableRefiner,
+        enableHiResFix,
+        enableUpscale,
     });
 
     const dataLoaders = useAllModelData({
@@ -290,12 +368,23 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         validationValues,
     ]);
 
-    const handleEmbeddingInsert = ({ embeddingText, targetField }: EmbeddingInsertRequest) => {
+    const handleEmbeddingInsert = ({ embeddingText, targetField, dedupeKeys, embeddingTag }: EmbeddingInsertRequest) => {
         const currentValue = (paramForm.form.values[targetField] as string | undefined) || '';
-        if (currentValue.includes(embeddingText)) {
+        if (embeddingTag?.trim() && currentValue.includes(embeddingTag.trim())) {
             notifications.show({
                 title: 'Embedding Already Present',
-                message: `${embeddingText} is already in the ${targetField === 'prompt' ? 'positive' : 'negative'} prompt.`,
+                message: `${embeddingTag.trim()} is already in the ${targetField === 'prompt' ? 'positive' : 'negative'} prompt.`,
+                color: 'yellow',
+            });
+            return;
+        }
+        const duplicateKey = (dedupeKeys && dedupeKeys.length > 0 ? dedupeKeys : [embeddingText])
+            .filter((key) => !embeddingTag?.trim() || key.trim() !== embeddingTag.trim())
+            .find((key) => key.trim() && currentValue.includes(key.trim()));
+        if (duplicateKey) {
+            notifications.show({
+                title: 'Embedding Already Present',
+                message: `${duplicateKey} is already in the ${targetField === 'prompt' ? 'positive' : 'negative'} prompt.`,
                 color: 'yellow',
             });
             return;
@@ -327,13 +416,23 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
     } = useGenerationHandlers({
         featureToggles: {
             enableInitImage,
-            enableRefiner,
+            enableHiResFix,
+            enableUpscale,
             enableControlNet,
             enableVideo,
             enableVariation,
         },
         mediaCapabilities: modelMediaCapabilities,
     });
+    const generatingRef = useRef(generating);
+
+    useEffect(() => {
+        generatingRef.current = generating;
+    }, [generating]);
+
+    useEffect(() => {
+        previewingRef.current = previewing;
+    }, [previewing]);
     const deferredDatasets = useMemo<GenerateDeferredDataset[]>(() => ([
         {
             key: 'vaes',
@@ -399,8 +498,6 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
 
     const isGalleryDrawer = useMediaQuery('(max-width: 1199px)');
     const isStacked = useMediaQuery('(max-width: 959px)');
-    const generateUxRefresh = featureFlags.generateUxRefresh;
-
     const sidebarPanel = useResizablePanel({
         initialSize: workspaceLayout.sidebarWidth,
         minSize: 320,
@@ -475,24 +572,39 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         const refinerUpscale = typeof paramForm.form.values.refinerupscale === 'number'
             ? paramForm.form.values.refinerupscale
             : 1;
-        const hasRefinerModel = typeof paramForm.form.values.refinermodel === 'string'
-            && paramForm.form.values.refinermodel.trim().length > 0;
-        if (!enableRefiner && (refinerUpscale > 1 || hasRefinerModel)) {
-            setEnableRefiner(true);
+        const refinerControl = typeof paramForm.form.values.refinercontrolpercentage === 'number'
+            ? paramForm.form.values.refinercontrolpercentage
+            : (typeof paramForm.form.values.refinercontrol === 'number' ? paramForm.form.values.refinercontrol : 0);
+        const shouldEnableHiResFix = refinerControl > 0;
+        const shouldEnableUpscale = refinerUpscale > 1;
+        if (!enableHiResFix && shouldEnableHiResFix) {
+            setEnableHiResFix(true);
+        }
+        else if (enableHiResFix && !shouldEnableHiResFix) {
+            setEnableHiResFix(false);
+        }
+        if (!enableUpscale && shouldEnableUpscale) {
+            setEnableUpscale(true);
+        }
+        else if (enableUpscale && !shouldEnableUpscale) {
+            setEnableUpscale(false);
         }
     }, [
-        enableRefiner,
+        enableHiResFix,
+        enableUpscale,
+        paramForm.form.values.refinercontrol,
+        paramForm.form.values.refinercontrolpercentage,
         paramForm.form.values.refinerupscale,
-        paramForm.form.values.refinermodel,
-        setEnableRefiner,
+        setEnableHiResFix,
+        setEnableUpscale,
     ]);
 
-    const handleGenerateWithBuilder = useCallback((values: typeof paramForm.form.values, options?: { forceEnableRefiner?: boolean }) => {
+    const validateGenerateValues = useCallback((values: GenerateParams, options?: { forceEnableInitImage?: boolean }) => {
         const preflightIssues = validateGeneration(values, {
             selectedBackend,
             enableControlNet,
             enableVideo,
-            enableInitImage,
+            enableInitImage: enableInitImage || options?.forceEnableInitImage === true,
         });
         setIssues(preflightIssues);
 
@@ -503,9 +615,19 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                 message: blockingIssue.message,
                 color: 'red',
             });
-            return;
+            return false;
         }
 
+        return true;
+    }, [
+        enableControlNet,
+        enableInitImage,
+        enableVideo,
+        selectedBackend,
+        setIssues,
+    ]);
+
+    const buildEffectiveGenerateValues = useCallback((values: GenerateParams, options?: { forceEnableHiResFix?: boolean; forceEnableUpscale?: boolean }) => {
         const builderState = usePromptBuilderStore.getState();
         const shouldCompileFromState =
             (builderState.regions.length > 0 || builderState.segments.length > 0 || !!builderState.lastCompiledBlockHash)
@@ -540,14 +662,9 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         const requestedRefinerControl = effectiveValues.refinercontrolpercentage
             ?? effectiveValues.refinercontrol
             ?? 0;
-        const requestedRefinerModel = typeof effectiveValues.refinermodel === 'string'
-            ? effectiveValues.refinermodel.trim()
-            : '';
-        const shouldPrepareRefiner = enableRefiner
-            || requestedRefinerUpscale !== 1
-            || requestedRefinerControl > 0
-            || requestedRefinerModel.length > 0
-            || options?.forceEnableRefiner === true;
+        const shouldPrepareHiResFix = requestedRefinerControl > 0 || options?.forceEnableHiResFix === true;
+        const shouldPrepareUpscale = requestedRefinerUpscale !== 1 || options?.forceEnableUpscale === true;
+        const shouldPrepareRefiner = shouldPrepareHiResFix || shouldPrepareUpscale;
 
         if (shouldPrepareRefiner) {
             const refinerControl = effectiveValues.refinercontrolpercentage
@@ -563,17 +680,264 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             };
         }
 
-        handleGenerate(effectiveValues, options);
+        const promptForGeneration = normalizePromptForGeneration(effectiveValues.prompt);
+        const negativePromptForGeneration = normalizePromptForGeneration(effectiveValues.negativeprompt);
+        if (
+            promptForGeneration !== (effectiveValues.prompt ?? '')
+            || negativePromptForGeneration !== (effectiveValues.negativeprompt ?? '')
+        ) {
+            if (promptForGeneration !== (effectiveValues.prompt ?? '')) {
+                paramForm.form.setFieldValue('prompt', promptForGeneration);
+            }
+            if (negativePromptForGeneration !== (effectiveValues.negativeprompt ?? '')) {
+                paramForm.form.setFieldValue('negativeprompt', negativePromptForGeneration);
+            }
+            effectiveValues = {
+                ...effectiveValues,
+                prompt: promptForGeneration,
+                negativeprompt: negativePromptForGeneration,
+            };
+        }
+
+        return effectiveValues;
     }, [
+        paramForm.form,
+        promptValue,
+    ]);
+
+    const prepareQueuedGenerateValues = useCallback(async (values: GenerateParams) => {
+        const nextValues = buildEffectiveGenerateValues(values);
+        const queuedValues = { ...nextValues } as GenerateParams;
+
+        const normalizeImageField = async (key: 'initimage' | 'maskimage') => {
+            const rawValue = typeof queuedValues[key] === 'string' ? queuedValues[key].trim() : '';
+            if (!rawValue || rawValue.startsWith('data:')) {
+                return;
+            }
+            queuedValues[key] = await imageUrlToDataUrl(rawValue);
+        };
+
+        const shouldIncludeRefiner = Boolean(
+            (typeof queuedValues.refinerupscale === 'number' && queuedValues.refinerupscale !== 1)
+            || (typeof queuedValues.refinercontrolpercentage === 'number' && queuedValues.refinercontrolpercentage > 0)
+            || (typeof queuedValues.refinercontrol === 'number' && queuedValues.refinercontrol > 0)
+        );
+
+        if (enableInitImage) {
+            await normalizeImageField('initimage');
+            await normalizeImageField('maskimage');
+        } else {
+            delete queuedValues.initimage;
+            delete queuedValues.initimagecreativity;
+            delete queuedValues.initimageresettonorm;
+            delete queuedValues.initimagenoise;
+            delete queuedValues.maskimage;
+            delete queuedValues.maskblur;
+            delete queuedValues.invertmask;
+            delete queuedValues.resizemode;
+        }
+
+        if (!enableVariation) {
+            delete queuedValues.variationseed;
+            delete queuedValues.variationseedstrength;
+        }
+
+        if (!enableControlNet) {
+            for (const key of Object.keys(queuedValues)) {
+                if (key.startsWith('controlnet')) {
+                    delete queuedValues[key];
+                }
+            }
+        }
+
+        if (!shouldIncludeRefiner) {
+            for (const key of Object.keys(queuedValues)) {
+                if (key.startsWith('refiner')) {
+                    delete queuedValues[key];
+                }
+            }
+        } else if (
+            queuedValues.refinercontrolpercentage === undefined
+            && queuedValues.refinercontrol !== undefined
+            && queuedValues.refinercontrol !== null
+        ) {
+            queuedValues.refinercontrolpercentage = queuedValues.refinercontrol as number;
+        }
+
+        if (typeof queuedValues.upscalemodel === 'string' && queuedValues.upscalemodel) {
+            queuedValues.refinerupscalemethod = queuedValues.upscalemodel;
+        }
+        delete queuedValues.refinercontrol;
+        delete queuedValues.upscalemodel;
+        applyLegacyVaeSelection(queuedValues);
+
+        if (enableVideo && typeof queuedValues.model === 'string') {
+            const videoProfile = matchVideoProfile(queuedValues.model);
+            if (videoProfile) {
+                const videoWorkflow = queuedValues.initimage ? 'i2v' : 't2v';
+                const workflowId = videoProfile.workflowId[videoWorkflow];
+                if (workflowId) {
+                    queuedValues.comfyuiworkflow = workflowId;
+                }
+            }
+        } else {
+            delete queuedValues.comfyuiworkflow;
+        }
+
+        return queuedValues;
+    }, [
+        buildEffectiveGenerateValues,
         enableControlNet,
         enableInitImage,
-        enableRefiner,
+        enableVariation,
         enableVideo,
+    ]);
+
+    const { runPipeline, stopPipeline, isRunning: pipelineRunning } = usePipelineOrchestrator();
+
+    const handleRunPipeline = useCallback(async (values: Partial<GenerateParams>) => {
+        const generateValues = values as GenerateParams;
+        if (!validateGenerateValues(generateValues)) {
+            return;
+        }
+        try {
+            const preparedValues = await prepareQueuedGenerateValues(generateValues);
+            runPipeline(preparedValues);
+        } catch (error) {
+            notifications.show({
+                title: 'Pipeline Preparation Failed',
+                message: error instanceof Error ? error.message : 'Could not prepare the pipeline generation request.',
+                color: 'red',
+            });
+        }
+    }, [
+        prepareQueuedGenerateValues,
+        runPipeline,
+        validateGenerateValues,
+    ]);
+
+    const runChainedUpscalePipeline = useCallback((values: GenerateParams) => {
+        const stages = buildAutoPipelineStages(values, enableHiResFix, enableUpscale, enableChainUpscale);
+        usePipelineStore.setState({
+            stages,
+            isRunning: false,
+            currentRun: null,
+            currentStageIndex: 0,
+            stageResults: {},
+        });
+        runPipeline(values);
+    }, [
+        enableChainUpscale,
+        enableHiResFix,
+        enableUpscale,
+        runPipeline,
+    ]);
+
+    const handleGenerateWithBuilder = useCallback(async (values: GenerateParams, options?: GenerationRunOptions) => {
+        if (!validateGenerateValues(values, options)) {
+            return false;
+        }
+
+        const effectiveValues = buildEffectiveGenerateValues(values, options);
+        if (enableChainUpscale && currentMode !== 'video' && options?.mode !== 'preview') {
+            runChainedUpscalePipeline(effectiveValues);
+            return true;
+        }
+        await handleGenerate(effectiveValues, options);
+        return true;
+    }, [
+        buildEffectiveGenerateValues,
+        currentMode,
+        enableChainUpscale,
         handleGenerate,
-        paramForm,
-        promptValue,
-        selectedBackend,
-        setIssues,
+        runChainedUpscalePipeline,
+        validateGenerateValues,
+    ]);
+
+    const runPreviewGeneration = useCallback(async () => {
+        if (!previewingRef.current || generatingRef.current || previewLaunchInProgressRef.current) {
+            return;
+        }
+
+        const baseValues = {
+            ...latestFormValuesRef.current,
+            seed: isRandomSeed(latestFormValuesRef.current.seed) ? 1 : latestFormValuesRef.current.seed,
+        } as GenerateParams;
+        const nextSignature = serializePreviewParams(baseValues);
+        if (previewLastSignatureRef.current === nextSignature) {
+            return;
+        }
+
+        previewLaunchInProgressRef.current = true;
+        try {
+            const previewValues = applyPreviewPreset(baseValues, previewPreset?.params);
+            const started = await handleGenerateWithBuilder(previewValues, {
+                mode: 'preview',
+                previewOmitParamIds,
+            });
+            if (started) {
+                previewLastSignatureRef.current = nextSignature;
+            }
+        } finally {
+            previewLaunchInProgressRef.current = false;
+        }
+    }, [
+        handleGenerateWithBuilder,
+        previewOmitParamIds,
+        previewPreset?.params,
+    ]);
+
+    const handleToggleGeneratePreviews = useCallback(() => {
+        if (previewingRef.current) {
+            setPreviewing(false);
+            previewLastSignatureRef.current = null;
+            if (generatingRef.current) {
+                void handleInterrupt();
+            }
+            return;
+        }
+
+        if (isRandomSeed(latestFormValuesRef.current.seed)) {
+            const nextValues = {
+                ...latestFormValuesRef.current,
+                seed: 1,
+            };
+            latestFormValuesRef.current = nextValues;
+            paramForm.form.setFieldValue('seed', 1);
+        }
+
+        if (!previewPreset) {
+            notifications.show({
+                title: 'Preview Preset Missing',
+                message: 'Generating previews with the current settings until a Preview preset is available.',
+                color: 'yellow',
+            });
+        }
+
+        previewLastSignatureRef.current = null;
+        setPreviewing(true);
+    }, [
+        handleInterrupt,
+        paramForm.form,
+        previewPreset,
+    ]);
+
+    useEffect(() => {
+        if (!previewing) {
+            return;
+        }
+
+        void runPreviewGeneration();
+        const intervalId = window.setInterval(() => {
+            void runPreviewGeneration();
+        }, PREVIEW_LOOP_INTERVAL_MS);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [
+        previewing,
+        runPreviewGeneration,
     ]);
 
     const handleGenerateAndUpscale = () => {
@@ -587,10 +951,31 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             refinercontrolpercentage: 0,
         };
 
-        setEnableRefiner(true);
+        setEnableUpscale(true);
         paramForm.form.setValues(nextValues);
-        handleGenerateWithBuilder(nextValues, { forceEnableRefiner: true });
+        handleGenerateWithBuilder(nextValues, { forceEnableUpscale: true });
     };
+
+    useAutoPipelineBuilder({
+        formValues: paramForm.form.values,
+        enableHiResFix,
+        enableUpscale,
+        enableChainUpscale,
+        currentMode,
+    });
+
+    const modelOptions = useMemo(
+        () => dataLoaders.models.map((m) => ({ value: m.name, label: m.title || m.name })),
+        [dataLoaders.models]
+    );
+
+    const upscaleMethodOptions = useMemo(
+        () => {
+            const options = dataLoaders.upscalers.map((u) => ({ value: u.name, label: u.title || u.name }));
+            return options;
+        },
+        [dataLoaders.upscalers]
+    );
 
     const applyAssistantPatch = (patch: AssistantApplyPatch) => {
         const nextValues = applyAssistantPatchToParams(paramForm.form.values, patch);
@@ -622,7 +1007,10 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         }
 
         const payload = pendingCanvasGenerateRequest.payload;
-        const currentValues = paramForm.form.values;
+        const currentValues = {
+            ...paramForm.form.values,
+            ...pendingCanvasGenerateRequest.params,
+        };
         const patch = buildCanvasApplyPatch(payload);
         const nextValues = {
             ...currentValues,
@@ -651,7 +1039,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         }
 
         markCanvasAwaitingResult(true, generatedImages.length);
-        handleGenerateWithBuilder(nextValues);
+        handleGenerateWithBuilder(nextValues, { forceEnableInitImage: true });
     }, [
         consumeCanvasGenerateRequest,
         generatedImages.length,
@@ -772,7 +1160,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
 
     const showSidebar = !workspaceLayout.focusMode;
     const showGalleryRail = galleryPinned && usesAdvancedRail && !workspaceLayout.focusMode && !isGalleryDrawer;
-    const supportingSidebarWidth = currentMode === 'quick' ? 336 : 352;
+    const supportingSidebarWidth = currentMode === 'quick' ? 336 : currentMode === 'pipeline' ? 420 : 352;
     const resolvedSidebarWidth = usesAdvancedRail ? workspaceLayout.sidebarWidth : supportingSidebarWidth;
     const selectedGalleryImage = generatedImages[currentImageIndex] || null;
     const deferredGalleryImages = useDeferredValue(generatedImages);
@@ -826,9 +1214,9 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             ? 'Curated controls on the left, with the stage ready for review and iteration.'
             : currentMode === 'video'
                 ? 'Focused video generation with text-to-video and image-to-video controls.'
-                : generateUxRefresh
-                    ? 'Ready for the next image.'
-                    : 'Full studio workspace with the canvas leading and support tools around it.';
+                : currentMode === 'pipeline'
+                    ? 'Build a multi-stage pipeline: Generate, Upscale, Refine, AI Upscale.'
+                    : 'Ready for the next image.';
     const stageHeaderCopy = generating
         ? 'Generation in progress. Live preview and detailed status are shown on the canvas.'
         : modeStageCopy;
@@ -1088,7 +1476,12 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                 backendCount={dataLoaders.backends.length}
                 diffCount={recipeDiffCount}
             />
-            <Box className="generate-studio__workspace">
+            <Box
+                className="generate-studio__workspace"
+                data-generate-mode={currentMode}
+                data-generating={generating ? 'true' : undefined}
+                data-previewing={previewing ? 'true' : undefined}
+            >
                 {showSidebar && (
                     <>
                         <Box
@@ -1103,136 +1496,206 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 minHeight: usesAdvancedRail ? 320 : 280,
                                 maxHeight: usesAdvancedRail ? '45%' : '40%',
                             } : {
-                                flex: `0 0 ${resolvedSidebarWidth}px`,
-                                minWidth: resolvedSidebarWidth,
-                                maxWidth: resolvedSidebarWidth,
+                                flex: `0 0 ${leftPanel.collapsed ? 48 : resolvedSidebarWidth}px`,
+                                minWidth: leftPanel.collapsed ? 48 : resolvedSidebarWidth,
+                                maxWidth: leftPanel.collapsed ? 48 : resolvedSidebarWidth,
                             }}
                         >
-                            <Suspense fallback={<WorkspaceShellLoader />}>
-                                {currentMode === 'video' ? (
-                                    <VideoSidebar
-                                        form={paramForm.form}
-                                        onGenerate={handleGenerateWithBuilder}
-                                        models={dataLoaders.models}
-                                        loadingModels={dataLoaders.loadingModels}
-                                        loadingModel={paramForm.loadingModel}
-                                        onModelSelect={paramForm.handleModelSelect}
-                                        modelMediaCapabilities={modelMediaCapabilities}
-                                        generating={generating}
-                                        onStop={handleInterrupt}
-                                        onOpenSchedule={modals.openScheduleModal}
-                                        onOpenHistory={modals.openHistoryDrawer}
-                                        initImagePreview={
-                                            paramForm.form.values.initimage || paramForm.initImagePreview || null
-                                        }
-                                        onInitImageUpload={paramForm.handleInitImageUpload}
-                                        onClearInitImage={paramForm.clearInitImage}
-                                        activeLoras={activeLoras}
-                                        onLoraChange={paramForm.handleLoraChange}
-                                        onOpenLoraBrowser={modals.openLoraModal}
-                                    />
-                                ) : usesAdvancedRail ? (
-                                    <WorkspaceSidebar
-                                        form={paramForm.form}
-                                        onGenerate={handleGenerateWithBuilder}
-                                        onResetWorkspace={handleResetWorkspace}
-                                        presets={paramForm.presets || []}
-                                        onLoadPreset={paramForm.handleLoadPreset}
-                                        onOpenSaveModal={modals.openSavePresetModal}
-                                        onDeletePreset={paramForm.handleDeletePreset}
-                                        onDuplicatePreset={paramForm.handleDuplicatePreset}
-                                        onOpenHistory={modals.openHistoryDrawer}
-                                        backends={dataLoaders.backends}
-                                        backendOptions={dataLoaders.backendOptions}
-                                        selectedBackend={selectedBackend}
-                                        onBackendChange={setSelectedBackend}
-                                        loadingBackends={dataLoaders.loadingBackends}
-                                        activeLoras={activeLoras}
-                                        onLoraChange={paramForm.handleLoraChange}
-                                        onOpenLoraBrowser={modals.openLoraModal}
-                                        onOpenEmbeddingBrowser={modals.openEmbeddingModal}
-                                        onOpenModelBrowser={modals.openModelBrowser}
-                                        generating={generating}
-                                        onStop={handleInterrupt}
-                                        onOpenSchedule={modals.openScheduleModal}
-                                        onGenerateAndUpscale={handleGenerateAndUpscale}
-                                        enableRefiner={enableRefiner}
-                                        setEnableRefiner={setEnableRefiner}
-                                        enableInitImage={enableInitImage}
-                                        setEnableInitImage={setEnableInitImage}
-                                        initImagePreview={paramForm.form.values.initimage || paramForm.initImagePreview}
-                                        onInitImageUpload={paramForm.handleInitImageUpload}
-                                        onClearInitImage={paramForm.clearInitImage}
-                                        enableVariation={enableVariation}
-                                        setEnableVariation={setEnableVariation}
-                                        enableControlNet={enableControlNet}
-                                        setEnableControlNet={setEnableControlNet}
-                                        enableVideo={enableVideo}
-                                        setEnableVideo={setEnableVideo}
-                                        modelMediaCapabilities={modelMediaCapabilities}
-                                        models={dataLoaders.models}
-                                        loadingModels={dataLoaders.loadingModels}
-                                        loadingModel={paramForm.loadingModel}
-                                        onModelSelect={paramForm.handleModelSelect}
-                                        vaeOptions={dataLoaders.vaeOptions}
-                                        loadingVAEs={dataLoaders.loadingVAEs}
-                                        controlNetOptions={dataLoaders.controlNetOptions}
-                                        loadingControlNets={dataLoaders.loadingControlNets}
-                                        onRefreshControlNets={dataLoaders.loadControlNets}
-                                        upscaleModels={dataLoaders.upscaleModels}
-                                        embeddingOptions={dataLoaders.embeddingOptions}
-                                        wildcardOptions={dataLoaders.wildcardOptions}
-                                        wildcardText={wildcardText}
-                                        onWildcardTextChange={setWildcardText}
-                                        quickModules={workspaceLayout.openQuickModules}
-                                        onQuickModulesChange={workspaceActions.setOpenQuickModules}
-                                        inspectorSections={workspaceLayout.openInspectorSections}
-                                        onInspectorSectionsChange={workspaceActions.setOpenInspectorSections}
-                                        lastInspectorJumpTarget={workspaceLayout.lastInspectorJumpTarget}
-                                        onLastInspectorJumpTargetChange={workspaceActions.setLastInspectorJumpTarget}
-                                        uxRefresh={generateUxRefresh}
-                                    />
+                            {/* Floating toggle expand/collapse button */}
+                            {!isStacked && (
+                                <Box
+                                    className={`generate-studio__sidebar-toggle-btn ${leftPanel.collapsed ? 'generate-studio__sidebar-toggle-btn--collapsed' : ''}`}
+                                    onClick={leftPanel.toggle}
+                                    title={leftPanel.collapsed ? 'Expand Parameters Bar' : 'Collapse Parameters Bar'}
+                                >
+                                    {leftPanel.collapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
+                                </Box>
+                            )}
+
+                            <Box
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                }}
+                            >
+                                {leftPanel.collapsed ? (
+                                    <Stack
+                                        align="center"
+                                        gap="md"
+                                        style={{ height: '100%', paddingTop: 20, cursor: 'pointer' }}
+                                        onClick={leftPanel.toggle}
+                                        title="Click to expand"
+                                    >
+                                        <Text
+                                            style={{
+                                                writingMode: 'vertical-rl',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: 2,
+                                                fontSize: 10,
+                                                fontWeight: 700,
+                                                color: 'var(--theme-text-secondary)',
+                                                opacity: 0.6,
+                                                transform: 'rotate(180deg)',
+                                                margin: 'auto 0',
+                                                userSelect: 'none',
+                                            }}
+                                        >
+                                            Parameters
+                                        </Text>
+                                    </Stack>
                                 ) : (
-                                    <WorkspaceModeDeck
-                                        mode={currentMode as Extract<GenerateWorkspaceMode, 'quick' | 'guided'>}
-                                        form={paramForm.form}
-                                        onGenerate={handleGenerateWithBuilder}
-                                        backends={dataLoaders.backends}
-                                        backendOptions={dataLoaders.backendOptions}
-                                        selectedBackend={selectedBackend}
-                                        onBackendChange={setSelectedBackend}
-                                        loadingBackends={dataLoaders.loadingBackends}
-                                        models={dataLoaders.models}
-                                        loadingModels={dataLoaders.loadingModels}
-                                        loadingModel={paramForm.loadingModel}
-                                        onModelSelect={paramForm.handleModelSelect}
-                                        generating={generating}
-                                        onStop={handleInterrupt}
-                                        onOpenSchedule={modals.openScheduleModal}
-                                        onGenerateAndUpscale={handleGenerateAndUpscale}
-                                        onOpenHistory={modals.openHistoryDrawer}
-                                        onOpenModelBrowser={modals.openModelBrowser}
-                                        onOpenLoraBrowser={modals.openLoraModal}
-                                        onOpenEmbeddingBrowser={modals.openEmbeddingModal}
-                                        onPromoteWorkflow={handlePromoteToWorkflow}
-                                        enableRefiner={enableRefiner}
-                                        setEnableRefiner={setEnableRefiner}
-                                        enableInitImage={enableInitImage}
-                                        setEnableInitImage={setEnableInitImage}
-                                        enableVariation={enableVariation}
-                                        setEnableVariation={setEnableVariation}
-                                        enableControlNet={enableControlNet}
-                                        setEnableControlNet={setEnableControlNet}
-                                        enableVideo={enableVideo}
-                                        setEnableVideo={setEnableVideo}
-                                        modelMediaCapabilities={modelMediaCapabilities}
-                                        activeRecipe={activeRecipe}
-                                        issues={issues}
-                                    />
+                                    <Suspense fallback={<WorkspaceShellLoader />}>
+                                        {currentMode === 'pipeline' ? (
+                                            <PipelineBuilder
+                                                modelOptions={modelOptions}
+                                                upscaleMethodOptions={upscaleMethodOptions}
+                                                onRunPipeline={handleRunPipeline}
+                                                onStopPipeline={stopPipeline}
+                                                isRunning={pipelineRunning}
+                                                baseParams={paramForm.form.values}
+                                            />
+                                        ) : currentMode === 'video' ? (
+                                            <VideoSidebar
+                                                form={paramForm.form}
+                                                onGenerate={handleGenerateWithBuilder}
+                                                models={dataLoaders.models}
+                                                loadingModels={dataLoaders.loadingModels}
+                                                loadingModel={paramForm.loadingModel}
+                                                onModelSelect={paramForm.handleModelSelect}
+                                                modelMediaCapabilities={modelMediaCapabilities}
+                                                generating={generating || pipelineRunning}
+                                                onStop={pipelineRunning ? stopPipeline : handleInterrupt}
+                                                onOpenSchedule={modals.openScheduleModal}
+                                                previewing={previewing}
+                                                onTogglePreviews={handleToggleGeneratePreviews}
+                                                onOpenHistory={modals.openHistoryDrawer}
+                                                initImagePreview={
+                                                    paramForm.form.values.initimage || paramForm.initImagePreview || null
+                                                }
+                                                onInitImageUpload={paramForm.handleInitImageUpload}
+                                                onClearInitImage={paramForm.clearInitImage}
+                                                activeLoras={activeLoras}
+                                                onLoraChange={paramForm.handleLoraChange}
+                                                onOpenLoraBrowser={modals.openLoraModal}
+                                            />
+                                        ) : usesAdvancedRail ? (
+                                            <WorkspaceSidebar
+                                                form={paramForm.form}
+                                                onGenerate={handleGenerateWithBuilder}
+                                                onResetWorkspace={handleResetWorkspace}
+                                                presets={paramForm.presets || []}
+                                                onLoadPreset={paramForm.handleLoadPreset}
+                                                onOpenSaveModal={modals.openSavePresetModal}
+                                                onDeletePreset={paramForm.handleDeletePreset}
+                                                onDuplicatePreset={paramForm.handleDeletePreset}
+                                                onOpenHistory={modals.openHistoryDrawer}
+                                                backends={dataLoaders.backends}
+                                                backendOptions={dataLoaders.backendOptions}
+                                                selectedBackend={selectedBackend}
+                                                onBackendChange={setSelectedBackend}
+                                                loadingBackends={dataLoaders.loadingBackends}
+                                                activeLoras={activeLoras}
+                                                onLoraChange={paramForm.handleLoraChange}
+                                                onOpenLoraBrowser={modals.openLoraModal}
+                                                onOpenEmbeddingBrowser={modals.openEmbeddingModal}
+                                                onOpenModelBrowser={modals.openModelBrowser}
+                                                generating={generating || pipelineRunning}
+                                                onStop={pipelineRunning ? stopPipeline : handleInterrupt}
+                                                onOpenSchedule={modals.openScheduleModal}
+                                                onGenerateAndUpscale={handleGenerateAndUpscale}
+                                                previewing={previewing}
+                                                onTogglePreviews={handleToggleGeneratePreviews}
+                                                enableHiResFix={enableHiResFix}
+                                                setEnableHiResFix={setEnableHiResFix}
+                                                enableUpscale={enableUpscale}
+                                                setEnableUpscale={setEnableUpscale}
+                                                enableChainUpscale={enableChainUpscale}
+                                                setEnableChainUpscale={setEnableChainUpscale}
+                                                enableInitImage={enableInitImage}
+                                                setEnableInitImage={setEnableInitImage}
+                                                initImagePreview={paramForm.form.values.initimage || paramForm.initImagePreview}
+                                                onInitImageUpload={paramForm.handleInitImageUpload}
+                                                onClearInitImage={paramForm.clearInitImage}
+                                                enableVariation={enableVariation}
+                                                setEnableVariation={setEnableVariation}
+                                                enableControlNet={enableControlNet}
+                                                setEnableControlNet={setEnableControlNet}
+                                                enableVideo={enableVideo}
+                                                setEnableVideo={setEnableVideo}
+                                                modelMediaCapabilities={modelMediaCapabilities}
+                                                models={dataLoaders.models}
+                                                loadingModels={dataLoaders.loadingModels}
+                                                loadingModel={paramForm.loadingModel}
+                                                onModelSelect={paramForm.handleModelSelect}
+                                                vaeOptions={dataLoaders.vaeOptions}
+                                                loadingVAEs={dataLoaders.loadingVAEs}
+                                                controlNetOptions={dataLoaders.controlNetOptions}
+                                                loadingControlNets={dataLoaders.loadingControlNets}
+                                                onRefreshControlNets={dataLoaders.loadControlNets}
+                                                upscaleModels={dataLoaders.upscaleModels}
+                                                embeddingOptions={dataLoaders.embeddingOptions}
+                                                wildcardOptions={dataLoaders.wildcardOptions}
+                                                wildcardText={wildcardText}
+                                                onWildcardTextChange={setWildcardText}
+                                                quickModules={workspaceLayout.openQuickModules}
+                                                onQuickModulesChange={workspaceActions.setOpenQuickModules}
+                                                inspectorSections={workspaceLayout.openInspectorSections}
+                                                onInspectorSectionsChange={workspaceActions.setOpenInspectorSections}
+                                                lastInspectorJumpTarget={workspaceLayout.lastInspectorJumpTarget}
+                                                onLastInspectorJumpTargetChange={workspaceActions.setLastInspectorJumpTarget}
+                                            />
+                                        ) : (
+                                            <WorkspaceModeDeck
+                                                mode={currentMode as Extract<GenerateWorkspaceMode, 'quick' | 'guided'>}
+                                                form={paramForm.form}
+                                                onGenerate={handleGenerateWithBuilder}
+                                                backends={dataLoaders.backends}
+                                                backendOptions={dataLoaders.backendOptions}
+                                                selectedBackend={selectedBackend}
+                                                onBackendChange={setSelectedBackend}
+                                                loadingBackends={dataLoaders.loadingBackends}
+                                                models={dataLoaders.models}
+                                                loadingModels={dataLoaders.loadingModels}
+                                                loadingModel={paramForm.loadingModel}
+                                                onModelSelect={paramForm.handleModelSelect}
+                                                generating={generating || pipelineRunning}
+                                                onStop={pipelineRunning ? stopPipeline : handleInterrupt}
+                                                onOpenSchedule={modals.openScheduleModal}
+                                                onGenerateAndUpscale={handleGenerateAndUpscale}
+                                                previewing={previewing}
+                                                onTogglePreviews={handleToggleGeneratePreviews}
+                                                onOpenHistory={modals.openHistoryDrawer}
+                                                onOpenModelBrowser={modals.openModelBrowser}
+                                                onOpenLoraBrowser={modals.openLoraModal}
+                                                onOpenEmbeddingBrowser={modals.openEmbeddingModal}
+                                                onPromoteWorkflow={handlePromoteToWorkflow}
+                                                enableHiResFix={enableHiResFix}
+                                                setEnableHiResFix={setEnableHiResFix}
+                                                enableUpscale={enableUpscale}
+                                                setEnableUpscale={setEnableUpscale}
+                                                enableChainUpscale={enableChainUpscale}
+                                                setEnableChainUpscale={setEnableChainUpscale}
+                                                enableInitImage={enableInitImage}
+                                                setEnableInitImage={setEnableInitImage}
+                                                enableVariation={enableVariation}
+                                                setEnableVariation={setEnableVariation}
+                                                enableControlNet={enableControlNet}
+                                                setEnableControlNet={setEnableControlNet}
+                                                enableVideo={enableVideo}
+                                                setEnableVideo={setEnableVideo}
+                                                modelMediaCapabilities={modelMediaCapabilities}
+                                                activeRecipe={activeRecipe}
+                                                issues={issues}
+                                            />
+                                        )}
+                                    </Suspense>
                                 )}
-                            </Suspense>
+                            </Box>
                         </Box>
-                        {!isStacked && usesAdvancedRail && (
+                        {!isStacked && usesAdvancedRail && !leftPanel.collapsed && (
                             <ResizeHandle
                                 direction="horizontal"
                                 onPointerDown={sidebarPanel.handlePointerDown}
@@ -1247,8 +1710,9 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                     <Box
                         className={[
                             'generate-studio__stage-header',
-                            generateUxRefresh ? 'generate-studio__stage-header--quiet' : '',
+                            'generate-studio__stage-header--quiet',
                         ].filter(Boolean).join(' ')}
+                        data-generating={generating ? 'true' : undefined}
                     >
                         <GenerateStageHeader
                             currentMode={currentMode}
@@ -1270,11 +1734,21 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                             onOpenDiagnostics={() => setDiagnosticsModalOpen(true)}
                             onOpenShortcuts={modals.openShortcutsModal}
                             onPromoteToWorkflow={handlePromoteToWorkflow}
-                            uxRefresh={generateUxRefresh}
                         />
                     </Box>
 
-                    <Box className="generate-studio__stage-body">
+                    <Box className="generate-studio__stage-body" data-generating={generating ? 'true' : undefined}>
+                        <PipelinePreview
+                            enableHiResFix={enableHiResFix}
+                            enableUpscale={enableUpscale}
+                            enableChainUpscale={enableChainUpscale}
+                            refinerControl={typeof formValues.refinercontrolpercentage === 'number' ? formValues.refinercontrolpercentage : 0}
+                            refinerUpscale={typeof formValues.refinerupscale === 'number' ? formValues.refinerupscale : 1}
+                            refinerUpscaleMethod={typeof formValues.refinerupscalemethod === 'string' ? formValues.refinerupscalemethod : ''}
+                            chainUpscaleScale={typeof formValues.chainupscalescale === 'number' ? formValues.chainupscalescale : 1.5}
+                            currentMode={currentMode}
+                            onSwitchToPipeline={() => setCurrentMode('pipeline')}
+                        />
                         <Suspense fallback={<PanelLoader />}>
                             <LiveGenerationCanvasStage
                                 selectedImage={generatedImages[currentImageIndex] || null}
@@ -1294,7 +1768,6 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 selectedModel={selectedModelName}
                                 selectedBackend={selectedBackend}
                                 generationParams={formValues}
-                                uxRefresh={generateUxRefresh}
                                 onChooseModel={modals.openModelBrowser}
                                 onFocusPrompt={focusPromptField}
                                 onOpenGenerationSettings={openGenerationSettings}
@@ -1532,8 +2005,24 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                     <ScheduleJobModal
                         opened={modals.scheduleModalOpen}
                         onClose={modals.closeScheduleModal}
-                        onSchedule={(options) => {
-                            addQueueJob(formValues, {
+                        onSchedule={async (options) => {
+                            if (!validateGenerateValues(formValues)) {
+                                return;
+                            }
+
+                            let queuedValues: GenerateParams;
+                            try {
+                                queuedValues = await prepareQueuedGenerateValues(formValues);
+                            } catch (error) {
+                                notifications.show({
+                                    title: 'Queue Preparation Failed',
+                                    message: error instanceof Error ? error.message : 'Failed to prepare this job for the queue.',
+                                    color: 'red',
+                                });
+                                return;
+                            }
+
+                            addQueueJob(queuedValues, {
                                 name: options.name,
                                 priority: options.priority,
                                 scheduledAt: options.scheduledAt,
@@ -1590,7 +2079,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 : [],
                             featureFlags: [
                                 ...(enableInitImage ? ['Init Image'] : []),
-                                ...(enableRefiner ? ['Refiner'] : []),
+                                ...(enableHiResFix ? ['Hi-Res Fix'] : []),
+                                ...(enableUpscale ? ['Upscale'] : []),
                                 ...(enableControlNet ? ['ControlNet'] : []),
                                 ...(enableVideo ? ['Video'] : []),
                                 ...(enableVariation ? ['Variation'] : []),

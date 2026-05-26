@@ -1,20 +1,18 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import {
     Accordion,
     Stack,
     Group,
     Text,
     Select,
-    Checkbox,
     Divider,
     Collapse,
     Box,
-    Tooltip,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import type { GenerateParams, Model } from '../../../../api/types';
 import { SliderWithInput } from '../../../../components/SliderWithInput';
-import { SwarmSwitch } from '../../../../components/ui';
+import { ControlTray, SwarmCheckbox, SwarmSwitch } from '../../../../components/ui';
 
 export interface RefinerAccordionProps {
     form: UseFormReturnType<GenerateParams>;
@@ -129,25 +127,24 @@ const STATIC_UPSCALE_METHOD_OPTIONS: UpscaleMethodGroup[] = [
  */
 export const RefinerAccordion = memo(function RefinerAccordion({
     form,
-    enabled,
     onToggle,
     models = [],
     upscaleModels = [],
     vaeOptions = [],
 }: RefinerAccordionProps) {
     const refinerUpscale = form.values.refinerupscale || 1;
+    const refinerControl = typeof form.values.refinercontrolpercentage === 'number'
+        ? form.values.refinercontrolpercentage
+        : (typeof form.values.refinercontrol === 'number' ? form.values.refinercontrol : 0);
     const hasRefinerModel = typeof form.values.refinermodel === 'string' && form.values.refinermodel.trim().length > 0;
+    const hiResFixEnabled = refinerControl > 0;
+    const postUpscaleEnabled = refinerUpscale > 1;
+    const diffusionRefineActive = hiResFixEnabled;
 
     // Toggleable override states
     const [stepsOverrideEnabled, setStepsOverrideEnabled] = useState(false);
     const [cfgOverrideEnabled, setCfgOverrideEnabled] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
-
-    useEffect(() => {
-        if (!enabled && (refinerUpscale > 1 || hasRefinerModel)) {
-            onToggle(true);
-        }
-    }, [enabled, hasRefinerModel, onToggle, refinerUpscale]);
 
     // Build model options - show all models and mark loaded for better UX
     const modelOptions = [
@@ -261,20 +258,86 @@ export const RefinerAccordion = memo(function RefinerAccordion({
         ? modelOptions.find((option) => option.value === form.values.refinermodel)?.label || form.values.refinermodel
         : '';
 
+    const setRefinerControlValue = (value: number) => {
+        form.setFieldValue('refinercontrol', value);
+        form.setFieldValue('refinercontrolpercentage', value);
+        if (value > 0) {
+            onToggle(true);
+        } else if (!postUpscaleEnabled) {
+            onToggle(false);
+        }
+    };
+
+    const setHiResFixEnabled = (checked: boolean) => {
+        if (checked) {
+            setRefinerControlValue(refinerControl > 0 ? refinerControl : 0.2);
+            return;
+        }
+
+        form.setFieldValue('refinercontrol', 0);
+        form.setFieldValue('refinercontrolpercentage', 0);
+        if (!postUpscaleEnabled) {
+            onToggle(false);
+        }
+    };
+
+    const setPostUpscaleEnabled = (checked: boolean) => {
+        if (checked) {
+            if (refinerUpscale <= 1) {
+                form.setFieldValue('refinerupscale', 2);
+            }
+            onToggle(true);
+            return;
+        }
+
+        form.setFieldValue('refinerupscale', 1);
+        if (!hiResFixEnabled) {
+            onToggle(false);
+        }
+    };
+
+    const setRefinerUpscaleValue = (value: number) => {
+        form.setFieldValue('refinerupscale', value);
+        if (value > 1) {
+            onToggle(true);
+        } else if (!hiResFixEnabled) {
+            onToggle(false);
+        }
+    };
+
     return (
         <Accordion.Item value="refiner">
-            <Accordion.Control>Refiner / Upscale</Accordion.Control>
+            <Accordion.Control>
+                <div className="generate-accordion-control">
+                    <span className="generate-accordion-control__title">Refine / Upscale</span>
+                    <span className="generate-accordion-control__summary">
+                        {hiResFixEnabled ? `${Math.round(refinerControl * 100)}% refine` : 'Refine off'} | {postUpscaleEnabled ? `${refinerUpscale}x` : 'Upscale off'}
+                    </span>
+                </div>
+            </Accordion.Control>
             <Accordion.Panel>
                 <Stack gap="md">
-                    <SwarmSwitch
-                        label="Enable Refiner"
-                        size="xs"
-                        checked={enabled}
-                        onChange={(e) => onToggle(e.currentTarget.checked)}
-                    />
                     <Text size="xs" c="dimmed">
-                        Hi-res fix lives inside Refiner / Upscale. Turning this off keeps all refiner and hi-res settings out of the generate request.
+                        Hi-Res Fix and Post Upscale are independent frontend paths. They only share the backend refiner/upscale parameter group when one of them is enabled.
                     </Text>
+
+                    <Divider label="Hi-Res Fix / Diffusion Refine" labelPosition="center" />
+
+                    <ControlTray
+                        title="Diffusion Refine"
+                        subtitle="Runs a second diffusion phase after the base image."
+                        status={hiResFixEnabled ? 'Armed' : 'Off'}
+                        tone={hiResFixEnabled ? 'info' : 'secondary'}
+                    >
+                        <SwarmSwitch
+                            label="Enable Hi-Res Fix / Diffusion Refine"
+                            size="xs"
+                            checked={hiResFixEnabled}
+                            onChange={(event) => setHiResFixEnabled(event.currentTarget.checked)}
+                            tone="info"
+                        />
+                    </ControlTray>
+
                     <Select
                         label="Diffusion Refiner Model"
                         placeholder="Use Base Model"
@@ -284,9 +347,6 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                         value={form.values.refinermodel || ''}
                         onChange={(value) => {
                             form.setFieldValue('refinermodel', value || '');
-                            if (value && value.trim().length > 0 && !enabled) {
-                                onToggle(true);
-                            }
                         }}
                         description="Optional secondary diffusion checkpoint for refinement. This is separate from the upscaler model."
                     />
@@ -299,56 +359,73 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                             { value: 'StepSwapNoisy', label: 'Step Swap Noisy (Modified)' },
                         ]}
                         {...form.getInputProps('refinermethod')}
-                        description="PostApply runs base then refiner; StepSwap swaps mid-generation"
+                        description="Only affects the diffusion refiner pass when refiner control is above 0."
                     />
 
                     <SliderWithInput
-                        label="Refiner Control Percentage"
-                        value={form.values.refinercontrolpercentage ?? form.values.refinercontrol ?? 0.2}
-                        onChange={(value) => {
-                            form.setFieldValue('refinercontrol', value);
-                            form.setFieldValue('refinercontrolpercentage', value);
-                        }}
+                        label="Diffusion Refiner Control"
+                        value={refinerControl}
+                        onChange={setRefinerControlValue}
                         min={0}
                         max={1}
                         step={0.05}
                         decimalScale={2}
+                        unit="%"
+                        status={refinerControl > 0.55 ? 'caution' : refinerControl > 0 ? 'good' : 'neutral'}
                         marks={[
                             { value: 0, label: '0' },
                             { value: 0.2, label: '0.2' },
                             { value: 0.4, label: '0.4' },
                         ]}
-                        description="Fraction of steps given to refiner (higher = refiner controls more). Set to 0 for upscale-only."
+                        description="Fraction of steps given to diffusion refinement. Set to 0 for upscale-only."
                     />
 
-                    <Divider label="Upscale Settings" labelPosition="center" />
+                    <Text size="xs" c={diffusionRefineActive ? 'dimmed' : 'orange'}>
+                        {diffusionRefineActive
+                            ? 'Diffusion refinement is active. Refiner model, method, steps, CFG, and VAE overrides can affect the final image.'
+                            : 'Diffusion refinement is off. Refiner model, method, steps, CFG, and VAE overrides will not be sent.'}
+                    </Text>
+
+                    <Divider label="Post Upscale" labelPosition="center" />
+
+                    <ControlTray
+                        title="Post Upscale"
+                        subtitle="Scales the image after the base pass; diffusion refine is optional."
+                        status={postUpscaleEnabled ? `${refinerUpscale}x` : 'Off'}
+                        tone={postUpscaleEnabled ? 'success' : 'secondary'}
+                    >
+                        <SwarmSwitch
+                            label="Enable Post Upscale"
+                            size="xs"
+                            checked={postUpscaleEnabled}
+                            onChange={(event) => setPostUpscaleEnabled(event.currentTarget.checked)}
+                            tone="success"
+                        />
+                    </ControlTray>
 
                     <SliderWithInput
-                        label="Refiner Upscale (Hi-Res Fix)"
+                        label="Upscale Scale"
                         value={refinerUpscale}
-                        onChange={(value) => {
-                            form.setFieldValue('refinerupscale', value);
-                            if (value > 1 && !enabled) {
-                                onToggle(true);
-                            }
-                        }}
+                        onChange={setRefinerUpscaleValue}
                         min={1}
                         max={4}
                         step={0.25}
                         decimalScale={2}
+                        unit="x"
+                        tone="success"
                         marks={[
                             { value: 1, label: '1x' },
                             { value: 1.5, label: '1.5x' },
                             { value: 2, label: '2x' },
                             { value: 4, label: '4x' },
                         ]}
-                        description="Upscale image between base and refiner stages. Values above 1x will automatically enable Refiner / Upscale."
+                        description="Values above 1x enable the post-upscale path. This does not enable diffusion refinement."
                     />
 
-                    {refinerUpscale > 1 && (
+                    {postUpscaleEnabled && (
                         <>
                             <Select
-                                label="Upscale Method / Upscaler Model"
+                                label="Upscale Method"
                                 data={upscaleMethodOptions}
                                 value={selectedUpscaleMethodValue}
                                 onChange={(value) => {
@@ -360,21 +437,18 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                                 description={selectedUpscaleDescription}
                                 searchable
                                 nothingFoundMessage="No upscale methods found"
+                                comboboxProps={{ withinPortal: false }}
                                 renderOption={({ option }) => {
                                     const description = upscaleMethodDescriptionMap.get(option.value) || '';
                                     return (
-                                        <Tooltip
-                                            label={description}
-                                            position="right"
-                                            withArrow
-                                            multiline
-                                            w={320}
-                                            disabled={!description}
-                                        >
-                                            <Box style={{ width: '100%' }}>
-                                                <Text size="sm">{option.label}</Text>
-                                            </Box>
-                                        </Tooltip>
+                                        <Box style={{ width: '100%' }}>
+                                            <Text size="sm">{option.label}</Text>
+                                            {description ? (
+                                                <Text size="xs" c="dimmed" lineClamp={2}>
+                                                    {description}
+                                                </Text>
+                                            ) : null}
+                                        </Box>
                                     );
                                 }}
                             />
@@ -387,6 +461,7 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                                     searchable
                                     clearable
                                     value={selectedUpscaleModelValue}
+                                    comboboxProps={{ withinPortal: false }}
                                     onChange={(value) => {
                                         if (value) {
                                             form.setFieldValue('refinerupscalemethod', value);
@@ -404,17 +479,20 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                                     {selectedUpscaleModelValue
                                         ? `Upscale with ${selectedUpscaleModelLabel}. `
                                         : `Upscale with ${selectedUpscaleMethodValue}. `}
-                                    {hasRefinerModel
+                                    {diffusionRefineActive && hasRefinerModel
                                         ? `Then refine with diffusion model ${selectedRefinerModelLabel}.`
-                                        : 'No separate diffusion refiner model is selected.'}
+                                        : diffusionRefineActive
+                                            ? 'Then run diffusion refinement using the base model.'
+                                            : 'No diffusion refinement pass will run.'}
                                 </Text>
                             )}
 
-                            <Checkbox
+                            <SwarmCheckbox
                                 label="Refiner Tiling"
-                                description="Enable tiled generation in refiner stage (fixes artifacts from scaling, may introduce seams)"
+                                description="Only applies when diffusion refinement is active. It does not affect upscale-only model upscaling."
                                 checked={form.values.refinerdotiling || false}
                                 onChange={(e) => form.setFieldValue('refinerdotiling', e.currentTarget.checked)}
+                                visual="squishy"
                             />
                         </>
                     )}
@@ -422,14 +500,14 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                     <Divider
                         label={
                             <Group gap="xs" style={{ cursor: 'pointer' }} onClick={() => setShowAdvanced(!showAdvanced)}>
-                                <Text size="sm">Advanced Overrides</Text>
+                                <Text size="sm">Diffusion Refiner Overrides</Text>
                                 <Text size="xs" c="dimmed">{showAdvanced ? 'v' : '>'}</Text>
                             </Group>
                         }
                         labelPosition="center"
                     />
 
-                    <Collapse in={showAdvanced}>
+                    <Collapse expanded={showAdvanced}>
                         <Stack gap="md">
                             <Box>
                                 <Group gap="xs" mb="xs">
@@ -448,6 +526,7 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                                         min={1}
                                         max={200}
                                         step={1}
+                                        unit=" steps"
                                         marks={[
                                             { value: 20, label: '20' },
                                             { value: 40, label: '40' },
@@ -476,6 +555,7 @@ export const RefinerAccordion = memo(function RefinerAccordion({
                                         max={20}
                                         step={0.5}
                                         decimalScale={1}
+                                        status={(form.values.refinercfgscale || 7) >= 14 ? 'danger' : (form.values.refinercfgscale || 7) >= 10 ? 'caution' : 'neutral'}
                                         marks={[
                                             { value: 5, label: '5' },
                                             { value: 7, label: '7' },

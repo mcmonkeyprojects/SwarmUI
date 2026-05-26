@@ -5,6 +5,7 @@
  * Handles job ordering, selection, and queue control.
  */
 
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import type { GenerateParams } from '../api/types';
@@ -13,13 +14,17 @@ import type { JobEntity, BatchEntity, JobPriority, JobStatus, JobProvenance } fr
 import { swarmClient } from '../api/client';
 import { resolveAssetUrl } from '../config/runtimeEndpoints';
 import { featureFlags } from '../config/featureFlags';
+import {
+  mergeGenerationPreviewSnapshot,
+  type GenerationPreviewSnapshot,
+} from '../utils/generationProgress';
 
 // Re-export types for backward compatibility
 export type { JobPriority, JobStatus } from './entityTypes';
 export type QueueRunnerStatus = 'idle' | 'running' | 'paused' | 'stopping';
 
 // Legacy interface for backward compatibility
-export interface QueueJob {
+export interface QueueJob extends GenerationPreviewSnapshot {
   id: string;
   name?: string;
   params: GenerateParams;
@@ -159,6 +164,27 @@ const toQueueJob = (entity: JobEntity): QueueJob => ({
   tags: entity.tags,
   estimatedDuration: entity.estimatedDuration,
   provenance: entity.provenance,
+  previewImage: entity.previewImage,
+  previewRevision: entity.previewRevision,
+  previewEventSequence: entity.previewEventSequence,
+  previewFrameSequence: entity.previewFrameSequence,
+  backendProgressSequence: entity.backendProgressSequence,
+  stageId: entity.stageId,
+  stageLabel: entity.stageLabel,
+  stageDetail: entity.stageDetail,
+  stageIndex: entity.stageIndex,
+  stageCount: entity.stageCount,
+  stagesRemaining: entity.stagesRemaining,
+  stageTaskIndex: entity.stageTaskIndex,
+  stageTaskCount: entity.stageTaskCount,
+  stageTasksRemaining: entity.stageTasksRemaining,
+  currentStep: entity.currentStep,
+  totalSteps: entity.totalSteps,
+  stepSource: entity.stepSource,
+  currentBatch: entity.currentBatch,
+  totalBatches: entity.totalBatches,
+  lastProgressAt: entity.lastProgressAt,
+  lastPreviewAt: entity.lastPreviewAt,
 });
 
 // Convert BatchEntity to legacy QueueBatch format
@@ -172,8 +198,10 @@ const toBatchEntity = (entity: BatchEntity): QueueBatch => ({
 // Module-level cache for memoized selectors (avoids setState during render)
 let _jobsCache: QueueJob[] = [];
 let _jobsCacheKey: string | null = null;
+let _jobsCacheEntities: Record<string, JobEntity> | null = null;
 let _batchesCache: QueueBatch[] = [];
 let _batchesCacheKey: string | null = null;
+let _batchesCacheEntities: Record<string, BatchEntity> | null = null;
 
 // Memoized selector for jobs - only recomputes when dependencies change
 export const selectJobs = (
@@ -182,7 +210,7 @@ export const selectJobs = (
 ): QueueJob[] => {
   const cacheKey = `${state.jobIds.join(',')}:${Object.keys(entityJobs).length}`;
 
-  if (cacheKey === _jobsCacheKey) {
+  if (cacheKey === _jobsCacheKey && entityJobs === _jobsCacheEntities) {
     return _jobsCache;
   }
 
@@ -193,6 +221,7 @@ export const selectJobs = (
 
   _jobsCache = jobs;
   _jobsCacheKey = cacheKey;
+  _jobsCacheEntities = entityJobs;
 
   return jobs;
 };
@@ -204,7 +233,7 @@ export const selectBatches = (
 ): QueueBatch[] => {
   const cacheKey = `${state.batchIds.join(',')}:${Object.keys(entityBatches).length}`;
 
-  if (cacheKey === _batchesCacheKey) {
+  if (cacheKey === _batchesCacheKey && entityBatches === _batchesCacheEntities) {
     return _batchesCache;
   }
 
@@ -215,9 +244,30 @@ export const selectBatches = (
 
   _batchesCache = batches;
   _batchesCacheKey = cacheKey;
+  _batchesCacheEntities = entityBatches;
 
   return batches;
 };
+
+export function useQueueJobs(): QueueJob[] {
+  const jobIds = useQueueStore((state) => state.jobIds);
+  const entityJobs = useEntityStore((state) => state.entities.jobs);
+
+  return useMemo(() => {
+    const queueState = useQueueStore.getState();
+    return selectJobs({ ...queueState, jobIds }, entityJobs);
+  }, [entityJobs, jobIds]);
+}
+
+export function useQueueBatches(): QueueBatch[] {
+  const batchIds = useQueueStore((state) => state.batchIds);
+  const entityBatches = useEntityStore((state) => state.entities.batches);
+
+  return useMemo(() => {
+    const queueState = useQueueStore.getState();
+    return selectBatches({ ...queueState, batchIds }, entityBatches);
+  }, [batchIds, entityBatches]);
+}
 
 let activeQueueSocket: WebSocket | null = null;
 const NEXT_JOB_DELAY_MS = 250;
@@ -228,6 +278,36 @@ function resolveQueueImagePath(rawPath: string): string {
     return rawPath;
   }
   return resolveAssetUrl(rawPath.startsWith('/') ? rawPath : `/${rawPath}`);
+}
+
+function readPositiveNumber(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? Number(value)
+      : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function readNonNegativeNumber(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? Number(value)
+      : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function calculateQueueGenerationProgress(progressData: Record<string, unknown>, params: GenerateParams): number {
+  const totalImages = readPositiveNumber(params.images, 1);
+  const batchIndex = Math.max(0, Math.floor(readNonNegativeNumber(progressData.batch_index, 0)));
+  const rawOverallPercent = typeof progressData.overall_percent === 'number'
+    ? progressData.overall_percent
+    : typeof progressData.overall_percent === 'string'
+      ? Number(progressData.overall_percent)
+      : NaN;
+  const batchPercent = Math.min(1, Math.max(0, Number.isFinite(rawOverallPercent) ? rawOverallPercent : 0));
+  return Math.min(100, Math.max(0, Math.round(((batchIndex + batchPercent) / totalImages) * 100)));
 }
 
 function hasRunnableJob(jobIds: string[]): boolean {
@@ -285,6 +365,27 @@ async function runQueueRunner(version: number): Promise<void> {
     progress: 0,
     completedAt: undefined,
     error: undefined,
+    previewImage: null,
+    previewRevision: 0,
+    previewEventSequence: null,
+    previewFrameSequence: null,
+    backendProgressSequence: null,
+    stageId: null,
+    stageLabel: null,
+    stageDetail: null,
+    stageIndex: 0,
+    stageCount: 0,
+    stagesRemaining: 0,
+    stageTaskIndex: 0,
+    stageTaskCount: 0,
+    stageTasksRemaining: 0,
+    currentStep: 0,
+    totalSteps: 0,
+    stepSource: 'unknown',
+    currentBatch: 0,
+    totalBatches: readPositiveNumber(nextJob.params.images, 1),
+    lastProgressAt: undefined,
+    lastPreviewAt: undefined,
   });
 
   useQueueStore.setState({
@@ -313,7 +414,7 @@ async function runQueueRunner(version: number): Promise<void> {
       status,
       completedAt: Date.now(),
       images,
-      ...(status === 'completed' ? { progress: 100 } : {}),
+      ...(status === 'completed' ? { progress: 100, previewImage: null } : {}),
       ...updates,
     });
 
@@ -341,15 +442,27 @@ async function runQueueRunner(version: number): Promise<void> {
   try {
     const socket = swarmClient.generateImage(nextJob.params, {
       onProgress: (progressData) => {
-        const backendPercent = Number(progressData.overall_percent);
-        const progress = Number.isFinite(backendPercent)
-          ? Math.min(100, Math.max(0, Math.round(backendPercent * 100)))
-          : 0;
+        const progress = calculateQueueGenerationProgress(progressData as Record<string, unknown>, nextJob.params);
         const current = useQueueStore.getState();
         if (current.runnerVersion !== version) {
           return;
         }
         current.updateJob(nextJob.id, { progress });
+      },
+      onNormalizedProgress: (progressData) => {
+        const current = useQueueStore.getState();
+        if (current.runnerVersion !== version) {
+          return;
+        }
+        const existing = useEntityStore.getState().entities.jobs[nextJob.id];
+        const previewState = mergeGenerationPreviewSnapshot(existing ?? {}, progressData);
+        current.updateJob(nextJob.id, {
+          progress: Math.max(
+            existing?.progress ?? 0,
+            Math.round(progressData.overallPercent)
+          ),
+          ...previewState,
+        });
       },
       onImage: (imageData) => {
         const rawImagePath =
@@ -493,7 +606,7 @@ export const useQueueStore = create<QueueUIState & QueueUIActions>()(
           const entityUpdates: Partial<JobEntity> = { ...updates };
           if ('images' in updates) {
             entityUpdates.imageIds = updates.images;
-            delete (entityUpdates as any).images;
+            delete (entityUpdates as Partial<JobEntity> & { images?: string[] }).images;
           }
 
           entityStore.updateEntity('jobs', id, entityUpdates);

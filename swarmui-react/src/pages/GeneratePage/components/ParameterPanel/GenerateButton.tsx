@@ -3,6 +3,9 @@ import { Badge, Box, Group, Popover, Stack, Text, Tooltip, UnstyledButton } from
 import { IconPlayerPlay, IconPlayerPause, IconPlus, IconSparkles, IconStack2, IconUpload } from '@tabler/icons-react';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '../../../../components/ContextMenu';
 import { SwarmActionIcon, SwarmButton } from '../../../../components/ui';
+import { PromptSyntaxButton } from '../../../../components/PromptSyntaxButton';
+import { SegmentSyntaxModal } from '../../../../components/modals/SegmentSyntaxModal';
+import { RegionSyntaxModal } from '../../../../components/modals/RegionSyntaxModal';
 import type { GenerateParams, Model } from '../../../../api/types';
 import type { QualityCoachAnalysis, QualityCoachSeverity } from '../../utils/qualityCoach';
 
@@ -20,6 +23,9 @@ export interface GenerateButtonProps {
     selectedModel?: Model | null;
     disabled?: boolean;
     disabledReason?: string;
+    onInsertPromptSyntax?: (text: string) => void;
+    previewing?: boolean;
+    onTogglePreviews?: () => void;
 }
 
 function getSeverityColor(severity: QualityCoachSeverity): string {
@@ -59,9 +65,13 @@ export const GenerateButton = memo(function GenerateButton({
     selectedModel,
     disabled,
     disabledReason,
+    onInsertPromptSyntax,
+    previewing,
 }: GenerateButtonProps) {
     const contextMenu = useContextMenu();
     const [coachOpened, setCoachOpened] = useState(false);
+    const [segmentModalOpen, setSegmentModalOpen] = useState(false);
+    const [regionModalOpen, setRegionModalOpen] = useState(false);
     const [resolvedQualityCoach, setResolvedQualityCoach] = useState<QualityCoachAnalysis | null>(qualityCoach ?? null);
     const [coachLoading, setCoachLoading] = useState(false);
     const deferredCurrentValues = useDeferredValue(currentValues);
@@ -138,7 +148,7 @@ export const GenerateButton = memo(function GenerateButton({
     }, [deferredCurrentValues, qualityCoach, selectedModel]);
 
     const leadingHealthBadges = useMemo(
-        () => resolvedQualityCoach?.parameterHealth.slice(0, 4) ?? [],
+        () => resolvedQualityCoach?.parameterHealth.filter(item => item.severity !== 'balanced') ?? [],
         [resolvedQualityCoach]
     );
 
@@ -164,8 +174,64 @@ export const GenerateButton = memo(function GenerateButton({
 
     return (
         <>
+            <style>{`
+                .segmented-group-container {
+                    gap: 0 !important;
+                }
+                .segmented-group-container > button:first-of-type {
+                    border-top-left-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+                    border-bottom-left-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+                    border-top-right-radius: 0 !important;
+                    border-bottom-right-radius: 0 !important;
+                    height: auto !important;
+                    align-self: stretch !important;
+                }
+                .segmented-group-container > .gradient-button {
+                    border-top-left-radius: 0 !important;
+                    border-bottom-left-radius: 0 !important;
+                    border-top-right-radius: 0 !important;
+                    border-bottom-right-radius: 0 !important;
+                }
+                .segmented-group-container.no-left-button > .gradient-button {
+                    border-top-left-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+                    border-bottom-left-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+                    border-top-right-radius: 0 !important;
+                    border-bottom-right-radius: 0 !important;
+                }
+                .segmented-group-container > button:last-of-type {
+                    border-top-left-radius: 0 !important;
+                    border-bottom-left-radius: 0 !important;
+                    border-top-right-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+                    border-bottom-right-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+                    height: auto !important;
+                    align-self: stretch !important;
+                }
+            `}</style>
             <Stack gap="xs">
-                <Group align="stretch" gap="xs" wrap="nowrap">
+                <Group align="stretch" gap={0} wrap="nowrap" className={`segmented-group-container ${onInsertPromptSyntax ? '' : 'no-left-button'}`}>
+                    {onInsertPromptSyntax && (
+                        <PromptSyntaxButton
+                            size="lg"
+                            onInsert={onInsertPromptSyntax}
+                            onOpenModal={(id) => {
+                                if (id === 'segment') {
+                                    setSegmentModalOpen(true);
+                                } else if (id === 'region' || id === 'object') {
+                                    setRegionModalOpen(true);
+                                }
+                            }}
+                            style={{
+                                alignSelf: 'stretch',
+                                minWidth: 48,
+                                height: 'auto',
+                                borderTopLeftRadius: 'calc(12px * var(--theme-radius-multiplier))',
+                                borderBottomLeftRadius: 'calc(12px * var(--theme-radius-multiplier))',
+                                borderTopRightRadius: 0,
+                                borderBottomRightRadius: 0,
+                            }}
+                            disabled={generating || previewing || disabled}
+                        />
+                    )}
                     <Tooltip
                         label={disabledReason ?? 'Cannot generate'}
                         disabled={!disabled}
@@ -180,7 +246,15 @@ export const GenerateButton = memo(function GenerateButton({
                             className="gradient-button with-glow"
                             leftSection={<IconPlayerPlay size={18} />}
                             onContextMenu={disabled ? undefined : contextMenu.open}
-                            style={{ flex: '1 1 auto', opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : undefined }}
+                            style={{
+                                flex: '1 1 auto',
+                                opacity: disabled ? 0.5 : 1,
+                                pointerEvents: disabled ? 'none' : undefined,
+                                borderTopLeftRadius: onInsertPromptSyntax ? 0 : 'calc(12px * var(--theme-radius-multiplier))',
+                                borderBottomLeftRadius: onInsertPromptSyntax ? 0 : 'calc(12px * var(--theme-radius-multiplier))',
+                                borderTopRightRadius: 0,
+                                borderBottomRightRadius: 0,
+                            }}
                             disabled={disabled}
                         >
                             Generate
@@ -202,7 +276,7 @@ export const GenerateButton = memo(function GenerateButton({
                         withinPortal
                     >
                         <Popover.Target>
-                            <Tooltip label="Open the Stable Diffusion learning engine and live quality coach.">
+                            <Tooltip label="Open Quality Coach — live parameter diagnostics and suggestions.">
                                 <SwarmActionIcon
                                     size="lg"
                                     tone={resolvedQualityCoach?.overallSeverity === 'high-risk' ? 'danger' : resolvedQualityCoach?.overallSeverity === 'caution' ? 'warning' : 'info'}
@@ -215,7 +289,15 @@ export const GenerateButton = memo(function GenerateButton({
                                         void ensureQualityCoach();
                                     }}
                                     aria-label="Open Quality Coach"
-                                    style={{ alignSelf: 'stretch', minWidth: 48 }}
+                                    style={{
+                                        alignSelf: 'stretch',
+                                        minWidth: 48,
+                                        height: 'auto',
+                                        borderTopLeftRadius: 0,
+                                        borderBottomLeftRadius: 0,
+                                        borderTopRightRadius: 'calc(12px * var(--theme-radius-multiplier))',
+                                        borderBottomRightRadius: 'calc(12px * var(--theme-radius-multiplier))',
+                                    }}
                                 >
                                     <IconSparkles size={18} />
                                 </SwarmActionIcon>
@@ -248,59 +330,40 @@ export const GenerateButton = memo(function GenerateButton({
                     onMouseEnter={() => {
                         void ensureQualityCoach();
                     }}
+                    style={{ width: '100%' }}
                 >
                     <Box
-                        p="sm"
+                        px="sm"
+                        py={8}
                         style={{
-                            borderRadius: 12,
+                            borderRadius: 8,
                             cursor: 'pointer',
-                            transition: 'transform 120ms ease, box-shadow 120ms ease',
+                            transition: 'opacity 120ms ease',
                             ...summarySurface,
                         }}
                     >
-                        <Group justify="space-between" align="flex-start" wrap="nowrap">
-                            <div>
-                                <Text size="sm" fw={700}>Stable Diffusion Learning Engine</Text>
-                                <Text size="xs" c="dimmed" mt={2}>
-                                    {resolvedQualityCoach?.summary ?? 'Open the coach for live diagnostics, recipe guidance, and safer parameter tuning.'}
-                                </Text>
-                            </div>
-                            <Stack gap={6} align="flex-end">
-                                <Badge color={severityColor} variant="light">
-                                    {resolvedQualityCoach?.overallLabel ?? (coachLoading ? 'Loading' : 'Ready')}
+                        <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
+                            <Group gap={6} align="center" wrap="nowrap" style={{ flex: '1 1 auto', minWidth: 0 }}>
+                                <Badge color={severityColor} variant="light" size="sm" style={{ flexShrink: 0 }}>
+                                    {resolvedQualityCoach?.overallLabel ?? (coachLoading ? '...' : 'Ready')}
                                 </Badge>
-                                {resolvedQualityCoach?.familyLabel ? (
-                                    <Badge color="gray" variant="outline">
-                                        {resolvedQualityCoach.familyLabel}
-                                    </Badge>
-                                ) : null}
-                            </Stack>
-                        </Group>
-                        <Text size="xs" mt={8}>
-                            {resolvedQualityCoach
-                                ? resolvedQualityCoach.overallSeverity === 'balanced'
-                                ? 'The current bake looks healthy. Open the panel to learn why it works.'
-                                : 'Open the panel for live diagnostics, the baking matrix, recipe cards, and fixes.'
-                                : 'Diagnostics stay on-demand until you open the coach, keeping the main Generate path lighter.'}
-                        </Text>
-                        {leadingHealthBadges.length > 0 ? (
-                            <Group gap={6} mt={8}>
+                                <Text size="xs" c="dimmed" truncate style={{ flex: '1 1 auto', minWidth: 0 }}>
+                                    {resolvedQualityCoach?.summary ?? 'Open coach for live diagnostics'}
+                                </Text>
+                            </Group>
+                            <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
                                 {leadingHealthBadges.map((item) => (
                                     <Badge
                                         key={item.key}
                                         color={getSeverityColor(item.severity)}
                                         variant={item.severity === 'balanced' ? 'outline' : 'light'}
+                                        size="xs"
                                     >
-                                        {item.label}: {item.severity === 'balanced' ? 'OK' : item.severity === 'caution' ? 'Watch' : 'Fix'}
+                                        {item.label}: {item.severity === 'balanced' ? 'OK' : item.severity === 'caution' ? '!' : '!!'}
                                     </Badge>
                                 ))}
                             </Group>
-                        ) : null}
-                        <Text size="xs" c="dimmed" mt={8}>
-                            {resolvedQualityCoach
-                                ? 'Updates live as you change model, size, steps, CFG, sampler, scheduler, CLIP skip, and img2img settings.'
-                                : 'Hover or open the coach to load live analysis without front-loading the Generate page.'}
-                        </Text>
+                        </Group>
                     </Box>
                 </UnstyledButton>
             </Stack>
@@ -309,6 +372,17 @@ export const GenerateButton = memo(function GenerateButton({
                 position={contextMenu.position}
                 items={generateMenuItems}
                 onClose={contextMenu.close}
+            />
+
+            <SegmentSyntaxModal
+                opened={segmentModalOpen}
+                onClose={() => setSegmentModalOpen(false)}
+                onSubmit={onInsertPromptSyntax ?? (() => undefined)}
+            />
+            <RegionSyntaxModal
+                opened={regionModalOpen}
+                onClose={() => setRegionModalOpen(false)}
+                onSubmit={onInsertPromptSyntax ?? (() => undefined)}
             />
         </>
     );

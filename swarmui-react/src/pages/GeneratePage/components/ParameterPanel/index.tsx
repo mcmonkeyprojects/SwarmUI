@@ -217,6 +217,9 @@ export function ParameterPanel({
                                         ...overrides,
                                     });
                                 }}
+                                onInsertPromptSyntax={(text) => {
+                                    form.setFieldValue('prompt', (form.values.prompt || '').trim() + ' ' + text.trim());
+                                }}
                             />
                         </Stack>
                     </form>

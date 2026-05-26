@@ -80,6 +80,7 @@ export function WorkspaceExperiencePanel({
                                         { value: 'guided', label: 'Guided' },
                                         { value: 'advanced', label: 'Advanced' },
                                         { value: 'video', label: 'Video' },
+                                        { value: 'pipeline', label: 'Pipeline' },
                                     ]}
                                 />
                             </Box>

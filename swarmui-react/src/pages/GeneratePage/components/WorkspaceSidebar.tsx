@@ -62,6 +62,13 @@ import {
     VariationAccordion,
 } from './accordions';
 import type { ModelMediaCapabilities } from '../../../utils/modelCapabilities';
+import {
+    VAE_ALTERNATIVE_EMPTY_MESSAGE,
+    getVaeAlternativeDisplayOptions,
+    getVaeAlternativeOptionDescription,
+    isVaeAlternativeValue,
+    splitVaeOptions,
+} from '../../../utils/vaeAlternativeStack';
 
 const ControlNetAccordion = lazy(() =>
     import('./accordions/ControlNetAccordion').then((module) => ({ default: module.ControlNetAccordion }))
@@ -132,6 +139,8 @@ interface WorkspaceSidebarProps {
     lastInspectorJumpTarget: string | null;
     onLastInspectorJumpTargetChange: (target: string | null) => void;
     uxRefresh?: boolean;
+    previewing?: boolean;
+    onTogglePreviews?: () => void;
 }
 
 const QUICK_IMAGE_PREP: QuickModuleKey = 'image-prep';
@@ -336,6 +345,8 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
     lastInspectorJumpTarget,
     onLastInspectorJumpTargetChange,
     uxRefresh = false,
+    previewing,
+    onTogglePreviews,
 }: WorkspaceSidebarProps) {
     const { paramRanges, paramDefaults, samplerOptions, schedulerOptions } = useT2IParams();
     const [sidebarSections, setSidebarSections] = useState<string[]>(() => (
@@ -375,6 +386,14 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
         : -1;
 
     const quickInitImagePreview = initImagePreview || (typeof form.values.initimage === 'string' ? form.values.initimage : null);
+    const { standardOptions: standardVaeOptions, alternativeOptions: vaeAlternativeOptions } = splitVaeOptions(vaeOptions);
+    const vaeAlternativeDisplayOptions = useMemo(
+        () => getVaeAlternativeDisplayOptions(vaeAlternativeOptions),
+        [vaeAlternativeOptions]
+    );
+    const alternativeVaeValue = isVaeAlternativeValue(form.values.vae, vaeOptions)
+        ? String(form.values.vae)
+        : '';
     const hasVaeOverride = typeof form.values.vae === 'string'
         && form.values.vae !== ''
         && form.values.vae !== 'Automatic';
@@ -835,6 +854,11 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                             ...overrides,
                                         });
                                     }}
+                                    previewing={previewing}
+                                    onTogglePreviews={onTogglePreviews}
+                                    onInsertPromptSyntax={(text) => {
+                                        form.setFieldValue('prompt', (form.values.prompt || '').trim() + ' ' + text.trim());
+                                    }}
                                 />
                             </Stack>
                         </ElevatedCard>
@@ -1187,12 +1211,41 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
                                         <Accordion.Panel>
                                             <Stack gap="md">
                                                 <Select
-                                                    label="VAE"
-                                                    placeholder={loadingVAEs ? 'Loading VAEs...' : 'Select VAE'}
-                                                    data={vaeOptions}
+                                                    label="VAE Alternative Stack"
+                                                    placeholder={loadingVAEs ? 'Loading VAEs...' : 'Use standard VAE path'}
+                                                    data={vaeAlternativeDisplayOptions}
                                                     searchable
                                                     clearable
-                                                    {...form.getInputProps('vae')}
+                                                    value={alternativeVaeValue}
+                                                    disabled={loadingVAEs}
+                                                    onChange={(value) => form.setFieldValue('vae', value || '')}
+                                                    description="Overrides the standard VAE selection when selected."
+                                                    nothingFoundMessage={VAE_ALTERNATIVE_EMPTY_MESSAGE}
+                                                    renderOption={({ option }) => {
+                                                        const description = getVaeAlternativeOptionDescription(option.value);
+                                                        return (
+                                                            <Box style={{ width: '100%' }}>
+                                                                <Text size="sm">{option.label}</Text>
+                                                                {description ? (
+                                                                    <Text size="xs" c="dimmed" lineClamp={2}>
+                                                                        {description}
+                                                                    </Text>
+                                                                ) : null}
+                                                            </Box>
+                                                        );
+                                                    }}
+                                                />
+
+                                                <Select
+                                                    label="VAE"
+                                                    placeholder={loadingVAEs ? 'Loading VAEs...' : 'Select VAE'}
+                                                    data={standardVaeOptions}
+                                                    searchable
+                                                    clearable
+                                                    value={alternativeVaeValue ? '' : String(form.values.vae || '')}
+                                                    disabled={Boolean(alternativeVaeValue)}
+                                                    onChange={(value) => form.setFieldValue('vae', value || '')}
+                                                    description={alternativeVaeValue ? 'Disabled while a VAE alternative is active.' : undefined}
                                                 />
 
                                                 <Group grow>
@@ -1238,7 +1291,9 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebar({
 
                                                 <Group justify="space-between" align="center" wrap="wrap">
                                                     <Text size="xs" c="var(--theme-text-secondary)">
-                                                        Current VAE: {hasVaeOverride ? form.values.vae : 'Automatic'}.
+                                                        {alternativeVaeValue
+                                                            ? `VAE alternative: ${alternativeVaeValue}.`
+                                                            : `Current VAE: ${hasVaeOverride ? form.values.vae : 'Automatic'}.`}
                                                     </Text>
                                                     <SwarmButton
                                                         size="xs"

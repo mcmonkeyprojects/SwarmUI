@@ -68,17 +68,17 @@ const FAMILY_PROFILES: Record<string, QualityCoachFamilyProfile> = {
         label: 'Stable Diffusion 1.5 / 2.x',
         nativeResolution: { width: 512, height: 512 },
         cfg: {
-            good: [5, 8],
-            caution: [4, 10],
+            good: [4, 10],
+            caution: [2.5, 14],
             target: 7,
-            recommendedRange: 'CFG 5-8 (usually around 7)',
+            recommendedRange: 'CFG 4-10 (usually around 7)',
             evidence: 'Classic Stable Diffusion pipelines typically use moderate classifier-free guidance around the traditional 7-ish range.',
         },
         steps: {
-            good: [20, 32],
-            caution: [14, 40],
+            good: [16, 40],
+            caution: [8, 60],
             target: 28,
-            recommendedRange: '20-32 steps',
+            recommendedRange: '16-40 steps',
             evidence: 'Classic SD checkpoints usually converge in a normal multi-step denoising range rather than very short or extremely long runs.',
         },
         img2imgCreativity: {
@@ -98,17 +98,17 @@ const FAMILY_PROFILES: Record<string, QualityCoachFamilyProfile> = {
         label: 'Stable Diffusion XL',
         nativeResolution: { width: 1024, height: 1024 },
         cfg: {
-            good: [4.5, 7.5],
-            caution: [3.5, 9],
+            good: [4, 9],
+            caution: [2.5, 13],
             target: 6,
-            recommendedRange: 'CFG 4.5-7.5',
+            recommendedRange: 'CFG 4-9',
             evidence: 'SDXL docs and common pipeline defaults center around moderate guidance with a native 1024 canvas.',
         },
         steps: {
-            good: [24, 40],
-            caution: [18, 50],
+            good: [18, 45],
+            caution: [8, 60],
             target: 30,
-            recommendedRange: '24-40 steps',
+            recommendedRange: '18-45 steps',
             evidence: 'SDXL generally benefits from a normal multi-step schedule, with diminishing returns once the step count gets very long.',
         },
         img2imgCreativity: {
@@ -128,17 +128,17 @@ const FAMILY_PROFILES: Record<string, QualityCoachFamilyProfile> = {
         label: 'Illustrious / SDXL Derivative',
         nativeResolution: { width: 1024, height: 1024 },
         cfg: {
-            good: [4.5, 7],
-            caution: [3.5, 8.5],
+            good: [4, 8.5],
+            caution: [2.5, 12],
             target: 5.5,
-            recommendedRange: 'CFG 4.5-7',
+            recommendedRange: 'CFG 4-8.5',
             evidence: 'Illustrious-family checkpoints generally behave like SDXL derivatives and usually prefer moderate guidance over aggressive CFG.',
         },
         steps: {
-            good: [24, 38],
-            caution: [18, 46],
+            good: [18, 45],
+            caution: [8, 60],
             target: 30,
-            recommendedRange: '24-38 steps',
+            recommendedRange: '18-45 steps',
             evidence: 'Illustrious models generally follow SDXL-style multi-step denoising, with quality gains tapering off when runs get long.',
         },
         img2imgCreativity: {
@@ -158,17 +158,17 @@ const FAMILY_PROFILES: Record<string, QualityCoachFamilyProfile> = {
         label: 'Pony / SDXL Derivative',
         nativeResolution: { width: 1024, height: 1024 },
         cfg: {
-            good: [4.5, 7],
-            caution: [3.5, 8.5],
+            good: [4, 8.5],
+            caution: [2.5, 12],
             target: 5.5,
-            recommendedRange: 'CFG 4.5-7',
+            recommendedRange: 'CFG 4-8.5',
             evidence: 'Pony-family checkpoints are commonly used like SDXL derivatives and usually respond best to moderate guidance.',
         },
         steps: {
-            good: [24, 38],
-            caution: [18, 46],
+            good: [18, 45],
+            caution: [8, 60],
             target: 30,
-            recommendedRange: '24-38 steps',
+            recommendedRange: '18-45 steps',
             evidence: 'Pony models are typically happiest in a standard SDXL-style denoising range rather than very short or very long runs.',
         },
         img2imgCreativity: {
@@ -188,17 +188,17 @@ const FAMILY_PROFILES: Record<string, QualityCoachFamilyProfile> = {
         label: 'Stable Diffusion 3 / 3.5',
         nativeResolution: { width: 1024, height: 1024 },
         cfg: {
-            good: [4, 7],
-            caution: [3, 8.5],
+            good: [3, 8],
+            caution: [2, 12],
             target: 5.5,
-            recommendedRange: 'CFG 4-7',
+            recommendedRange: 'CFG 3-8',
             evidence: 'SD3-class models generally respond better to moderate guidance than the very high CFG values common in older workflows.',
         },
         steps: {
-            good: [20, 36],
-            caution: [14, 45],
+            good: [14, 45],
+            caution: [8, 60],
             target: 28,
-            recommendedRange: '20-36 steps',
+            recommendedRange: '14-45 steps',
             evidence: 'SD3-class pipelines still expect a standard denoising run, but overlong schedules are rarely the best tradeoff.',
         },
         img2imgCreativity: {
@@ -218,17 +218,17 @@ const FAMILY_PROFILES: Record<string, QualityCoachFamilyProfile> = {
         label: 'FLUX Guidance-Distilled',
         nativeResolution: { width: 1024, height: 1024 },
         cfg: {
-            good: [1, 3.5],
-            caution: [0.6, 5],
+            good: [1, 5],
+            caution: [0.2, 8],
             target: 2,
-            recommendedRange: 'CFG 1-3.5',
+            recommendedRange: 'CFG 1-5',
             evidence: 'FLUX guidance-distilled models generally want much lower guidance than classic Stable Diffusion checkpoints.',
         },
         steps: {
-            good: [20, 32],
-            caution: [14, 40],
+            good: [14, 45],
+            caution: [8, 60],
             target: 24,
-            recommendedRange: '20-32 steps',
+            recommendedRange: '14-45 steps',
             evidence: 'Guidance-distilled FLUX models still use a normal denoising run, but benefit more from low guidance than from excessive steps.',
         },
         img2imgCreativity: {
@@ -308,17 +308,17 @@ const FAMILY_PROFILES: Record<string, QualityCoachFamilyProfile> = {
         label: 'Generic Diffusion Model',
         nativeResolution: { width: 1024, height: 1024 },
         cfg: {
-            good: [5, 8],
-            caution: [4, 10],
+            good: [4, 10],
+            caution: [2.5, 14],
             target: 7,
-            recommendedRange: 'CFG 5-8',
+            recommendedRange: 'CFG 4-10',
             evidence: 'When model-specific guidance is unavailable, a moderate CFG range is the safest starting point for standard diffusion models.',
         },
         steps: {
-            good: [20, 36],
-            caution: [14, 45],
+            good: [16, 45],
+            caution: [8, 60],
             target: 28,
-            recommendedRange: '20-36 steps',
+            recommendedRange: '16-45 steps',
             evidence: 'Unknown checkpoints usually respond best to a standard denoising range until proven otherwise.',
         },
         img2imgCreativity: {
@@ -549,11 +549,11 @@ export function analyzeParameterRanges(
         const nativeAspectRatio = profile.nativeResolution.width / profile.nativeResolution.height;
         const aspectDelta = Math.abs(aspectRatio - nativeAspectRatio) / nativeAspectRatio;
         const gridOff = width % 64 !== 0 || height % 64 !== 0;
-        if (width > 2048 || height > 2048 || areaRatio < 0.55 || areaRatio > 1.9 || aspectDelta > 0.45) {
+        if (width > 2048 || height > 2048 || areaRatio < 0.55 || areaRatio > 1.9 || aspectDelta > 1.25) {
             resolutionSeverity = 'high-risk';
             resolutionNote = 'Canvas is far enough from the native size or aspect that composition and detail stability can degrade.';
         }
-        else if (gridOff || areaRatio < 0.75 || areaRatio > 1.35 || aspectDelta > 0.2) {
+        else if (gridOff || areaRatio < 0.75 || areaRatio > 1.35 || aspectDelta > 0.85) {
             resolutionSeverity = 'caution';
             resolutionNote = gridOff
                 ? 'Canvas is off the usual latent grid, which can cause avoidable resizing artifacts.'
@@ -634,7 +634,7 @@ export function analyzeParameterRanges(
     }
     parameterHealth.push({
         key: 'sampler-scheduler',
-        label: 'Sampler / Scheduler',
+        label: 'Sampler',
         severity: samplerSchedulerSeverity,
         currentValue: sampler || scheduler ? `${sampler || 'default'} / ${scheduler || 'default'}` : 'Defaults',
         recommendedRange: profile.samplerMode === 'rectified'

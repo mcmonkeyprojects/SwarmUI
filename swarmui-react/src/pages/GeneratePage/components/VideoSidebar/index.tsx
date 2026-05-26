@@ -58,6 +58,8 @@ export interface VideoSidebarProps {
     generating: boolean;
     onStop: () => void;
     onOpenSchedule: () => void;
+    previewing?: boolean;
+    onTogglePreviews?: () => void;
 
     // History
     onOpenHistory: () => void;
@@ -91,6 +93,8 @@ export const VideoSidebar = memo(function VideoSidebar({
     activeLoras,
     onLoraChange,
     onOpenLoraBrowser,
+    previewing,
+    onTogglePreviews,
 }: VideoSidebarProps) {
     const { samplerOptions, schedulerOptions } = useT2IParams();
     const setHandoff = useWorkflowWorkspaceStore((s) => s.setHandoff);
@@ -383,9 +387,14 @@ export const VideoSidebar = memo(function VideoSidebar({
                             generating={generating}
                             onStop={onStop}
                             onOpenSchedule={onOpenSchedule}
+                            previewing={previewing}
+                            onTogglePreviews={onTogglePreviews}
                             currentValues={form.values}
                             disabled={generateDisabled}
                             disabledReason={generateDisabledReason}
+                            onInsertPromptSyntax={(text) => {
+                                form.setFieldValue('prompt', (form.values.prompt || '').trim() + ' ' + text.trim());
+                            }}
                         />
 
                         {/* ---- ADVANCED SECTION ---- */}
