@@ -2066,6 +2066,12 @@ public partial class WorkflowGenerator
             endStep = (int)Math.Round(genInfo.Steps * (1 - genInfo.VideoSwapPercent));
             returnLeftoverNoise = true;
         }
+        if (genInfo.StartStep > 0)
+        {
+            CurrentMedia = srcImage;
+            genInfo.HasFixedMediaLen = false;
+            CurrentMedia = genInfo.FixMediaLen();
+        }
         string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: genInfo.ContextID, includeBase: false);
         string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: genInfo.ContextID, includeBase: false);
         CurrentMedia = CurrentMedia.AsSamplingLatent(genInfo.Vae, CurrentAudioVae);
