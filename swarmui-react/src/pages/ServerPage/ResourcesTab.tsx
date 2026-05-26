@@ -191,6 +191,12 @@ function MetricChip({ label, value, hint }: MetricChipProps) {
     );
 }
 
+function waitForTelemetrySettle(delayMs: number): Promise<void> {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, delayMs);
+    });
+}
+
 interface LoadedModelCardData {
     model: ModelDescription;
     hosts: BackendStatus[];
@@ -348,6 +354,27 @@ export function ResourcesTab() {
         return gpuStats[0] || null;
     }, [gpuEntries]);
 
+    const gpuSummary = useMemo(() => {
+        let totalVram = 0;
+        let usedVram = 0;
+        let freeVram = 0;
+        let peakCore = 0;
+        for (const [, gpu] of gpuEntries) {
+            totalVram += gpu.total_memory;
+            usedVram += gpu.used_memory;
+            freeVram += gpu.free_memory;
+            peakCore = Math.max(peakCore, gpu.utilization_gpu);
+        }
+        const usedPercent = totalVram > 0 ? (usedVram / totalVram) * 100 : 0;
+        return {
+            totalVram,
+            usedVram,
+            freeVram,
+            usedPercent,
+            peakCore,
+        };
+    }, [gpuEntries]);
+
     const clusterPressure = Math.max(
         resources?.cpu.usage || 0,
         ramUsedPercent,
@@ -421,6 +448,7 @@ export function ResourcesTab() {
                     `No backend reported that it released ${pickModelTitle(card.model)}.`
                 );
             }
+            await waitForTelemetrySettle(1250);
             await fetchSnapshot();
         } finally {
             setEjectingModels((current) => {
@@ -521,6 +549,11 @@ export function ResourcesTab() {
                             <Badge variant="outline">
                                 {resources ? 'Live snapshot ready' : 'Waiting for first sample'}
                             </Badge>
+                            {gpuEntries.length > 0 && (
+                                <Badge variant="outline">
+                                    {formatBytes(gpuSummary.freeVram)} GPU VRAM free
+                                </Badge>
+                            )}
                         </Group>
                         {loadError && (
                             <Text size="xs" c="var(--theme-error)">
@@ -539,6 +572,11 @@ export function ResourcesTab() {
                             label="Hottest VRAM"
                             value={hottestGpu ? `${Math.round(hottestGpu.vramPercent)}%` : 'N/A'}
                             hint={hottestGpu ? hottestGpu.name : 'No GPU telemetry'}
+                        />
+                        <MetricChip
+                            label="GPU VRAM"
+                            value={gpuEntries.length > 0 ? `${Math.round(gpuSummary.usedPercent)}%` : 'N/A'}
+                            hint={gpuEntries.length > 0 ? `${formatBytes(gpuSummary.usedVram)} used across ${gpuEntries.length} GPU${gpuEntries.length === 1 ? '' : 's'}` : 'No GPU telemetry'}
                         />
                         <MetricChip
                             label="System RAM"
@@ -570,7 +608,7 @@ export function ResourcesTab() {
                 </Stack>
             </Card>
 
-            <SimpleGrid cols={{ base: 1, sm: 2, xl: 4 }} spacing="md">
+            <SimpleGrid cols={{ base: 1, sm: 2, xl: 5 }} spacing="md">
                 <ProgressRingStat
                     value={resources.cpu.usage}
                     label="CPU"
@@ -610,9 +648,16 @@ export function ResourcesTab() {
                     tone={loadedModels.length > 0 ? 'brand' : 'neutral'}
                 />
                 <StatTile
-                    label="Resident Hosts"
-                    value={activeModelHosts.length}
-                    hint={hottestGpu ? `${hottestGpu.name} is the hottest VRAM host` : 'No GPU host mapping yet'}
+                    label="GPU VRAM"
+                    value={gpuEntries.length > 0 ? `${Math.round(gpuSummary.usedPercent)}%` : 'N/A'}
+                    hint={gpuEntries.length > 0 ? `${formatBytes(gpuSummary.usedVram)} used, ${formatBytes(gpuSummary.freeVram)} free` : 'No NVIDIA telemetry available'}
+                    icon={<IconDeviceDesktop size={14} />}
+                    tone={gpuSummary.usedPercent >= 80 ? 'warning' : gpuEntries.length > 0 ? 'brand' : 'neutral'}
+                />
+                <StatTile
+                    label="Peak GPU Core"
+                    value={gpuEntries.length > 0 ? `${Math.round(gpuSummary.peakCore)}%` : 'N/A'}
+                    hint={hottestGpu ? `${hottestGpu.name} has the highest VRAM pressure` : 'No GPU host mapping yet'}
                     icon={<IconServer size={14} />}
                     tone={activeModelHosts.length > 0 ? 'warning' : 'neutral'}
                 />
@@ -624,7 +669,7 @@ export function ResourcesTab() {
                         <Stack gap={2}>
                             <Text size="lg" fw={600}>GPU Pressure</Text>
                             <Text size="sm" c="dimmed">
-                                Live device utilization, thermals, and mapped resident-model host pressure.
+                                Live device telemetry from the server: total VRAM, free VRAM, core load, memory-bus load, and thermals.
                             </Text>
                         </Stack>
                         <ThemeIcon variant="light" radius="xl" size="lg" color="blue">
@@ -661,9 +706,9 @@ export function ResourcesTab() {
                                                 hint={gpu.temperature >= 85 ? 'Thermal caution' : gpu.temperature >= 70 ? 'Warm' : 'Stable'}
                                             />
                                             <MetricChip
-                                                label="VRAM Used"
+                                                label="Device VRAM"
                                                 value={`${Math.round(vramUsedPercent)}%`}
-                                                hint={`${formatBytes(gpu.used_memory)} / ${formatBytes(gpu.total_memory)}`}
+                                                hint={`${formatBytes(gpu.used_memory)} used, ${formatBytes(gpu.free_memory)} free of ${formatBytes(gpu.total_memory)}`}
                                             />
                                             <MetricChip
                                                 label="GPU Core"
@@ -720,7 +765,7 @@ export function ResourcesTab() {
                 <Stack gap={2}>
                     <Text size="lg" fw={600}>Loaded Model Footprint</Text>
                     <Text size="sm" c="dimmed">
-                        Backend share is exact. Host VRAM pressure is derived from the GPUs currently mapped to each model host.
+                        Residency and backend ownership are exact. GPU memory shown here is mapped device pressure, not per-model allocation.
                     </Text>
                 </Stack>
                 <ThemeIcon variant="light" radius="xl" size="lg" color="violet">
@@ -734,6 +779,7 @@ export function ResourcesTab() {
                         const heat = getLoadTone(card.heatPercent);
                         const previewUrl = card.model.preview_image;
                         const isEjecting = !!ejectingModels[card.model.name];
+                        const sharesMappedGpu = card.hostGpuIds.some((gpuId) => (gpuModelCounts[gpuId] || 0) > 1);
                         return (
                             <Card
                                 key={card.model.name}
@@ -815,9 +861,15 @@ export function ResourcesTab() {
                                             hint={`${card.hosts.length}/${loadableBackends.length} model hosts`}
                                         />
                                         <MetricChip
-                                            label="Host VRAM"
+                                            label="Mapped VRAM"
                                             value={card.hostVramPercent === null ? 'N/A' : `${Math.round(card.hostVramPercent)}%`}
-                                            hint={card.hostVramPercent === null ? 'No reliable GPU mapping yet' : `${formatBytes(card.hostVramUsed)} / ${formatBytes(card.hostVramTotal)}`}
+                                            hint={
+                                                card.hostVramPercent === null
+                                                    ? 'No reliable GPU mapping yet'
+                                                    : sharesMappedGpu
+                                                        ? `Shared GPU pressure: ${formatBytes(card.hostVramUsed)} / ${formatBytes(card.hostVramTotal)}`
+                                                        : `${formatBytes(card.hostVramUsed)} / ${formatBytes(card.hostVramTotal)} on mapped GPU`
+                                            }
                                         />
                                     </div>
 
@@ -836,7 +888,7 @@ export function ResourcesTab() {
                                         <TelemetryMeter
                                             label="Host VRAM pressure"
                                             value={card.hostVramPercent}
-                                            hint={`${formatBytes(card.hostVramUsed)} live across mapped GPUs`}
+                                            hint={sharesMappedGpu ? 'Shared with other resident models on the same GPU' : `${formatBytes(card.hostVramUsed)} live across mapped GPUs`}
                                         />
                                     )}
 

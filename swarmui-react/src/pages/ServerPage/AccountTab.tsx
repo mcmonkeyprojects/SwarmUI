@@ -114,7 +114,9 @@ function APIKeySection({ keyType, label, description }: { keyType: string; label
     }, [keyType]);
 
     useEffect(() => {
-        loadStatus();
+        queueMicrotask(() => {
+            loadStatus();
+        });
     }, [loadStatus]);
 
     const handleSave = async () => {

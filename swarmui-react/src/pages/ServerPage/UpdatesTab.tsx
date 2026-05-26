@@ -264,7 +264,10 @@ export function UpdatesTab() {
     }
     return item.group == 'core' || item.group == 'extension' || item.group == 'backend';
   }), [repos, updateBackends, updateExtensions]);
-  const selectedReposWithUpdates = selectedRepos.filter((item) => item.repo.has_updates);
+  const selectedReposWithUpdates = useMemo(
+    () => selectedRepos.filter((item) => item.repo.has_updates),
+    [selectedRepos]
+  );
   const selectedBlockers = selectedRepos
     .flatMap((item) => repoBlockers(item.repo).map((blocker) => `${item.repo.name}: ${blocker}`));
   const selectedCommitCount = selectedReposWithUpdates.reduce((sum, item) => sum + commitCountFor(item.repo), 0);
@@ -474,7 +477,7 @@ export function UpdatesTab() {
         </Stack>
       </Card>
 
-      <Collapse in={!!lastResult}>
+      <Collapse expanded={!!lastResult}>
         <Card withBorder padding="sm" className="surface-glass swarm-server-card">
           <Stack gap="xs">
             <Text size="sm" fw={600}>Last Update API Result</Text>

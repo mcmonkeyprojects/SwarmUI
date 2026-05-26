@@ -26,6 +26,8 @@ import { useBackends } from '../../hooks/useModels';
 import type { BackendDetail } from '../../api/types';
 import { useSessionStore } from '../../stores/session';
 import { SwarmButton, SwarmActionIcon } from '../../components/ui';
+import { InvokeAIConnectionPanel } from '../../features/invokeai/InvokeAIConnectionPanel';
+import { InvokeAIUtilityPanel } from '../../features/invokeai/InvokeAIUtilityPanel';
 
 function statusColor(status: string): string {
     switch (status.toLowerCase()) {
@@ -269,6 +271,9 @@ export function BackendsTab() {
                     ))}
                 </Stack>
             )}
+
+            <InvokeAIConnectionPanel />
+            <InvokeAIUtilityPanel />
 
             {/* Add Backend Modal */}
             <Modal
