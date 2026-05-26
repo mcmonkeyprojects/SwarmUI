@@ -102,15 +102,19 @@ export function PersonaManagerModal({ opened, onClose }: PersonaManagerModalProp
     if (!opened) return;
     if (selectedId && personas.some((persona) => persona.id === selectedId)) return;
     const fallback = activeSession?.activePersonaId ?? personas[0]?.id ?? null;
-    setSelectedId(fallback);
-    setIsNew(false);
+    queueMicrotask(() => {
+      setSelectedId(fallback);
+      setIsNew(false);
+    });
   }, [opened, personas, selectedId, activeSession]);
 
   // Sync draft when selection changes (unless editing a new draft).
   useEffect(() => {
     if (isNew) return;
     const persona = personas.find((item) => item.id === selectedId) ?? null;
-    setDraft(persona ? personaToDraft(persona) : emptyDraft());
+    queueMicrotask(() => {
+      setDraft(persona ? personaToDraft(persona) : emptyDraft());
+    });
   }, [selectedId, personas, isNew]);
 
   const lorebookOptions = useMemo(
@@ -200,7 +204,7 @@ export function PersonaManagerModal({ opened, onClose }: PersonaManagerModalProp
 
   return (
     <Modal opened={opened} onClose={onClose} title="Persona Manager" size="xl">
-      <Grid gutter="md">
+      <Grid gap="md">
         <Grid.Col span={{ base: 12, sm: 5 }}>
           <Stack gap="xs" h="100%">
             <Group justify="space-between">

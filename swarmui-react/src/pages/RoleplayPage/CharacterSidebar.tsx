@@ -149,6 +149,9 @@ export function CharacterSidebar() {
   const filteredCharacters = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     const nextCharacters = characters.filter((character) => {
+      if (character.id === activeCharacterId) {
+        return false;
+      }
       if (!normalizedSearch) {
         return true;
       }
@@ -178,7 +181,7 @@ export function CharacterSidebar() {
       const rightRecentIndex = recentCharacterRankById.get(right.id) ?? 9999;
       return leftRecentIndex - rightRecentIndex;
     });
-  }, [characters, recentCharacterRankById, search, sort]);
+  }, [activeCharacterId, characters, recentCharacterRankById, search, sort]);
 
   const handleNewCharacter = () => {
     setEditingCharacter(null);
@@ -514,9 +517,9 @@ export function CharacterSidebar() {
       {/* Character List */}
       <ScrollArea flex={1} p="xs">
         <Stack gap="xs">
-          {filteredCharacters.length === 0 ? (
+          {filteredCharacters.length === 0 && search.trim() ? (
             <Text size="xs" c="dimmed" ta="center" py="md">
-              No characters match this search.
+              No other characters match this search.
             </Text>
           ) : null}
           {filteredCharacters.map((character) => (

@@ -118,7 +118,9 @@ export function CharacterSourceBrowserModal({
 
   useEffect(() => {
     if (opened) {
-      setTargetCharacterId(activeCharacterId);
+      queueMicrotask(() => {
+        setTargetCharacterId(activeCharacterId);
+      });
     }
   }, [activeCharacterId, opened]);
 

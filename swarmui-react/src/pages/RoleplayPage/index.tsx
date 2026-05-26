@@ -27,7 +27,7 @@ interface RoleplayPageProps {
 }
 
 export function RoleplayPage({ routeState }: RoleplayPageProps) {
-    const [controlsPanelOpen, setControlsPanelOpen] = useState(true);
+    const [controlsPanelOpen, setControlsPanelOpen] = useState(false);
     const [deckPanelOpen, setDeckPanelOpen] = useState(true);
     const [showCharacterPicker, setShowCharacterPicker] = useState(true);
     const generateSceneRef = useRef<(() => void) | null>(null);
@@ -72,9 +72,9 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
     );
 
     const sidebar = useResizablePanel({
-        initialSize: 260,
-        minSize: 200,
-        maxSize: 400,
+        initialSize: 236,
+        minSize: 184,
+        maxSize: 340,
         direction: 'horizontal',
     });
 
@@ -130,19 +130,29 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
     const routeCharacterExists = routeCharacterId ? characterById.has(routeCharacterId) : false;
 
     useEffect(() => {
+        if (!routeCharacterId || !routeCharacterExists) {
+            return;
+        }
+        if (showCharacterPicker) {
+            queueMicrotask(() => {
+                setShowCharacterPicker(false);
+            });
+        }
         if (
-            !routeCharacterId ||
             routeCharacterId === appliedRouteCharacterIdRef.current ||
-            !routeCharacterExists
+            routeCharacterId === activeCharacterId
         ) {
             return;
         }
         appliedRouteCharacterIdRef.current = routeCharacterId;
-        if (routeCharacterId === activeCharacterId) {
-            return;
-        }
         setActiveCharacter(routeCharacterId);
-    }, [activeCharacterId, routeCharacterExists, routeCharacterId, setActiveCharacter]);
+    }, [
+        activeCharacterId,
+        routeCharacterExists,
+        routeCharacterId,
+        setActiveCharacter,
+        showCharacterPicker,
+    ]);
 
     useEffect(() => {
         if (routeCharacterId === activeCharacterId) {
@@ -268,6 +278,7 @@ export function RoleplayPage({ routeState }: RoleplayPageProps) {
                         <ChatPanel
                             onRegenerateScene={() => generateSceneRef.current?.()}
                             onGenerateSceneWithPrompt={(prompt) => generateSceneWithPromptRef.current?.(prompt)}
+                            onOpenDirector={() => setControlsPanelOpen(true)}
                         />
                     )}
                 </div>

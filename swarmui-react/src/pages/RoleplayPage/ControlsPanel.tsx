@@ -23,14 +23,18 @@ import {
   IconBrain,
   IconCircleCheck,
   IconCircleX,
+  IconDeviceFloppy,
   IconDownload,
+  IconEdit,
   IconFileImport,
   IconPhotoSpark,
   IconPlugConnected,
+  IconSearch,
   IconSend,
   IconSparkles,
   IconTrash,
   IconUserCircle,
+  IconX,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useShallow } from 'zustand/react/shallow';
@@ -90,11 +94,13 @@ import { useNavigationStore } from '../../stores/navigationStore';
 import type {
   RoleplayGenerationMode,
   RoleplayChatSession,
+  RoleplayKnowledgeDocument,
   RoleplayKnowledgeScope,
   RoleplayMemoryFact,
   RoleplayPromptBlock,
   RoleplayPromptBlockSettings,
   RoleplayPromptStack,
+  RoleplayQuickReply,
   RoleplaySessionVisualState,
   RoleplayVisualCharacterState,
 } from '../../types/roleplay';
@@ -247,10 +253,18 @@ export function ControlsPanel({
   const [roleplayImageEnhanceEnabled, setRoleplayImageEnhanceEnabled] = useState(true);
   const [quickReplyLabelDraft, setQuickReplyLabelDraft] = useState('');
   const [quickReplyScriptDraft, setQuickReplyScriptDraft] = useState('');
+  const [editingQuickReplyId, setEditingQuickReplyId] = useState<string | null>(null);
+  const [quickReplyEditLabelDraft, setQuickReplyEditLabelDraft] = useState('');
+  const [quickReplyEditScriptDraft, setQuickReplyEditScriptDraft] = useState('');
   const [knowledgeTitleDraft, setKnowledgeTitleDraft] = useState('');
   const [knowledgeContentDraft, setKnowledgeContentDraft] = useState('');
   const [knowledgeScopeDraft, setKnowledgeScopeDraft] = useState<RoleplayKnowledgeScope>('session');
   const [isVectorizingKnowledge, setIsVectorizingKnowledge] = useState(false);
+  const [knowledgeSearchDraft, setKnowledgeSearchDraft] = useState('');
+  const [editingKnowledgeDocumentId, setEditingKnowledgeDocumentId] = useState<string | null>(null);
+  const [knowledgeEditTitleDraft, setKnowledgeEditTitleDraft] = useState('');
+  const [knowledgeEditDescriptionDraft, setKnowledgeEditDescriptionDraft] = useState('');
+  const [knowledgeEditContentDraft, setKnowledgeEditContentDraft] = useState('');
   const [lastImagePromptPreview, setLastImagePromptPreview] =
     useState<RoleplayImagePromptPreview | null>(null);
   const [openSections, setOpenSections] = useState<string[]>([
@@ -443,7 +457,7 @@ export function ControlsPanel({
   const activeCharacter = useMemo(
     () =>
       activeSession?.characterId ? (characterById.get(activeSession.characterId) ?? null) : null,
-    [activeSession?.characterId, characterById]
+    [activeSession, characterById]
   );
   const personaById = useMemo(
     () => new Map(personas.map((persona) => [persona.id, persona])),
@@ -454,7 +468,7 @@ export function ControlsPanel({
       activeSession?.activePersonaId
         ? (personaById.get(activeSession.activePersonaId) ?? null)
         : null,
-    [activeSession?.activePersonaId, personaById]
+    [activeSession, personaById]
   );
   const messages = useMemo(() => activeSession?.messages ?? [], [activeSession?.messages]);
   const activePromptStack: RoleplayPromptStack = useMemo(
@@ -1010,8 +1024,7 @@ export function ControlsPanel({
       }
     },
     [
-      activeSession?.continuity.openThreads,
-      activeSession?.conversationSummary,
+      activeSession,
       effectiveModel,
       promptEnhancer,
       roleplayImageEnhanceEnabled,
@@ -1232,7 +1245,9 @@ export function ControlsPanel({
   }, [activeProjectId, addQueueJob, buildCurrentSceneBriefWithEnhancement, ensureActiveProject, saveSceneBrief]);
 
   useEffect(() => {
-    setClipOverride(imageClipStopAtLayer !== null);
+    queueMicrotask(() => {
+      setClipOverride(imageClipStopAtLayer !== null);
+    });
   }, [imageClipStopAtLayer]);
 
   useEffect(() => {
@@ -1666,6 +1681,57 @@ export function ControlsPanel({
     setQuickReplyScriptDraft('');
   };
 
+  const editingQuickReply = useMemo(
+    () =>
+      editingQuickReplyId
+        ? roleplayQuickReplies.find((reply) => reply.id === editingQuickReplyId) ?? null
+        : null,
+    [editingQuickReplyId, roleplayQuickReplies]
+  );
+
+  useEffect(() => {
+    if (editingQuickReplyId && !editingQuickReply) {
+      queueMicrotask(() => {
+        setEditingQuickReplyId(null);
+        setQuickReplyEditLabelDraft('');
+        setQuickReplyEditScriptDraft('');
+      });
+    }
+  }, [editingQuickReply, editingQuickReplyId]);
+
+  const clearQuickReplyEditDraft = () => {
+    setEditingQuickReplyId(null);
+    setQuickReplyEditLabelDraft('');
+    setQuickReplyEditScriptDraft('');
+  };
+
+  const handleEditQuickReply = (reply: RoleplayQuickReply) => {
+    setEditingQuickReplyId(reply.id);
+    setQuickReplyEditLabelDraft(reply.label);
+    setQuickReplyEditScriptDraft(reply.script);
+  };
+
+  const handleSaveQuickReplyEdit = () => {
+    if (!editingQuickReplyId) {
+      return;
+    }
+    const label = quickReplyEditLabelDraft.trim();
+    const script = quickReplyEditScriptDraft.trim();
+    if (!label || !script) {
+      notifications.show({
+        title: 'Quick Reply Needs Content',
+        message: 'Add a label and script before saving.',
+        color: 'orange',
+      });
+      return;
+    }
+    updateQuickReply(editingQuickReplyId, {
+      label,
+      script,
+    });
+    clearQuickReplyEditDraft();
+  };
+
   const scopedKnowledgeDocuments = useMemo(
     () =>
       roleplayKnowledgeDocuments.filter((document) => {
@@ -1683,8 +1749,82 @@ export function ControlsPanel({
         }
         return document.sessionId === activeSession.id;
       }),
-    [activeCharacter, activePersona?.id, activeSession, roleplayKnowledgeDocuments]
+    [activeCharacter, activePersona, activeSession, roleplayKnowledgeDocuments]
   );
+
+  const filteredKnowledgeDocuments = useMemo(() => {
+    const query = knowledgeSearchDraft.trim().toLowerCase();
+    if (!query) {
+      return scopedKnowledgeDocuments;
+    }
+    return scopedKnowledgeDocuments.filter((document) =>
+      [
+        document.title,
+        document.description,
+        document.scope,
+        document.sourceType,
+        document.content,
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [knowledgeSearchDraft, scopedKnowledgeDocuments]);
+
+  const editingKnowledgeDocument = useMemo(
+    () =>
+      editingKnowledgeDocumentId
+        ? scopedKnowledgeDocuments.find((document) => document.id === editingKnowledgeDocumentId) ?? null
+        : null,
+    [editingKnowledgeDocumentId, scopedKnowledgeDocuments]
+  );
+
+  useEffect(() => {
+    if (editingKnowledgeDocumentId && !editingKnowledgeDocument) {
+      queueMicrotask(() => {
+        setEditingKnowledgeDocumentId(null);
+        setKnowledgeEditTitleDraft('');
+        setKnowledgeEditDescriptionDraft('');
+        setKnowledgeEditContentDraft('');
+      });
+    }
+  }, [editingKnowledgeDocument, editingKnowledgeDocumentId]);
+
+  const clearKnowledgeEditDraft = () => {
+    setEditingKnowledgeDocumentId(null);
+    setKnowledgeEditTitleDraft('');
+    setKnowledgeEditDescriptionDraft('');
+    setKnowledgeEditContentDraft('');
+  };
+
+  const handleEditKnowledgeDocument = (document: RoleplayKnowledgeDocument) => {
+    setEditingKnowledgeDocumentId(document.id);
+    setKnowledgeEditTitleDraft(document.title);
+    setKnowledgeEditDescriptionDraft(document.description);
+    setKnowledgeEditContentDraft(document.content);
+  };
+
+  const handleSaveKnowledgeDocumentEdit = () => {
+    if (!editingKnowledgeDocumentId) {
+      return;
+    }
+    const title = knowledgeEditTitleDraft.trim();
+    const content = knowledgeEditContentDraft.trim();
+    if (!title || !content) {
+      notifications.show({
+        title: 'Knowledge Needs Content',
+        message: 'Add a title and knowledge text before saving.',
+        color: 'orange',
+      });
+      return;
+    }
+    updateKnowledgeDocument(editingKnowledgeDocumentId, {
+      title,
+      description: knowledgeEditDescriptionDraft.trim(),
+      content,
+    });
+    clearKnowledgeEditDraft();
+  };
 
   const handleAddKnowledgeDocument = () => {
     if (!knowledgeTitleDraft.trim() || !knowledgeContentDraft.trim()) {
@@ -2015,12 +2155,24 @@ export function ControlsPanel({
                       placeholder={ROLEPLAY_PROVIDER_DEFAULT_ENDPOINTS[chatProvider]}
                     />
                     {chatProvider !== 'local' ? (
-                      <PasswordInput
-                        label={chatProvider === 'openrouter' ? 'OpenRouter API Key' : 'API Key'}
-                        value={chatApiKey}
-                        onChange={(event) => setChatApiKey(event.currentTarget.value)}
-                        placeholder="sk-..."
-                      />
+                      <Group gap="xs" align="flex-end" wrap="nowrap">
+                        <PasswordInput
+                          label={chatProvider === 'openrouter' ? 'OpenRouter API Key' : 'API Key'}
+                          value={chatApiKey}
+                          onChange={(event) => setChatApiKey(event.currentTarget.value)}
+                          placeholder="sk-..."
+                          style={{ flex: 1 }}
+                        />
+                        <SwarmButton
+                          tone="secondary"
+                          emphasis="ghost"
+                          size="xs"
+                          onClick={() => setChatApiKey('')}
+                          disabled={!chatApiKey.trim()}
+                        >
+                          Clear
+                        </SwarmButton>
+                      </Group>
                     ) : null}
                     <SwarmButton
                       tone="brand"
@@ -2398,52 +2550,153 @@ export function ControlsPanel({
                         minRows={3}
                         autosize
                       />
-                      <Stack gap={6}>
-                        {scopedKnowledgeDocuments.slice(0, 12).map((document) => (
-                          <Group key={document.id} gap={6} wrap="nowrap">
-                            <Checkbox
-                              checked={document.enabled}
-                              onChange={(event) =>
-                                updateKnowledgeDocument(document.id, {
-                                  enabled: event.currentTarget.checked,
-                                })
-                              }
-                              size="xs"
-                              aria-label={`Toggle ${document.title}`}
-                            />
-                            <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-                              <Text size="xs" fw={600} truncate>
-                                {document.title}
-                              </Text>
-                              <Text size="xs" c="dimmed" truncate>
-                                {document.scope} | {document.chunks.length} chunks |{' '}
-                                {
-                                  document.chunks.filter(
-                                    (chunk) =>
-                                      chunk.embedding?.length &&
-                                      chunk.embeddingModel === roleplayEmbeddingModelId
-                                  ).length
-                                }{' '}
-                                vectors
-                              </Text>
-                            </Stack>
-                            <ActionIcon
-                              variant="subtle"
-                              size="xs"
-                              color="red"
-                              onClick={() => removeKnowledgeDocument(document.id)}
-                              aria-label={`Remove ${document.title}`}
-                            >
-                              <IconTrash size={12} />
-                            </ActionIcon>
-                          </Group>
-                        ))}
+                      <TextInput
+                        size="xs"
+                        placeholder="Search scoped knowledge"
+                        leftSection={<IconSearch size={12} />}
+                        value={knowledgeSearchDraft}
+                        onChange={(event) => setKnowledgeSearchDraft(event.currentTarget.value)}
+                      />
+                      <Stack gap={6} style={{ maxHeight: 220, overflowY: 'auto' }}>
+                        {filteredKnowledgeDocuments.map((document) => {
+                          const currentVectorCount = document.chunks.filter(
+                            (chunk) =>
+                              chunk.embedding?.length &&
+                              chunk.embeddingModel === roleplayEmbeddingModelId
+                          ).length;
+                          const needsVectorRefresh =
+                            Boolean(roleplayVectorRetrievalEnabled && roleplayEmbeddingModelId.trim()) &&
+                            currentVectorCount < document.chunks.length;
+                          return (
+                            <Group key={document.id} gap={6} wrap="nowrap">
+                              <Checkbox
+                                checked={document.enabled}
+                                onChange={(event) =>
+                                  updateKnowledgeDocument(document.id, {
+                                    enabled: event.currentTarget.checked,
+                                  })
+                                }
+                                size="xs"
+                                aria-label={`Toggle ${document.title}`}
+                              />
+                              <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                                <Text size="xs" fw={600} truncate>
+                                  {document.title}
+                                </Text>
+                                <Text size="xs" c="dimmed" truncate>
+                                  {document.scope} | {document.chunks.length} chunks |{' '}
+                                  {currentVectorCount} vectors
+                                  {needsVectorRefresh ? ' | needs vectors' : ''}
+                                </Text>
+                              </Stack>
+                              <ActionIcon
+                                variant="subtle"
+                                size="xs"
+                                onClick={() => handleEditKnowledgeDocument(document)}
+                                aria-label={`Edit ${document.title}`}
+                              >
+                                <IconEdit size={12} />
+                              </ActionIcon>
+                              <ActionIcon
+                                variant="subtle"
+                                size="xs"
+                                color="red"
+                                onClick={() => removeKnowledgeDocument(document.id)}
+                                aria-label={`Remove ${document.title}`}
+                              >
+                                <IconTrash size={12} />
+                              </ActionIcon>
+                            </Group>
+                          );
+                        })}
                         {scopedKnowledgeDocuments.length === 0 ? (
                           <Text size="xs" c="dimmed">
                             No scoped knowledge yet.
                           </Text>
                         ) : null}
+                        {scopedKnowledgeDocuments.length > 0 &&
+                        filteredKnowledgeDocuments.length === 0 ? (
+                          <Text size="xs" c="dimmed">
+                            No scoped knowledge matches this search.
+                          </Text>
+                        ) : null}
                       </Stack>
+                      {editingKnowledgeDocument ? (
+                        <Stack
+                          gap="xs"
+                          p="xs"
+                          style={{
+                            border: '1px solid var(--theme-border-subtle)',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Group justify="space-between" align="center" wrap="nowrap">
+                            <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                              <Text size="xs" fw={600} truncate>
+                                Edit Knowledge
+                              </Text>
+                              <Text size="xs" c="dimmed" truncate>
+                                {editingKnowledgeDocument.scope} | {editingKnowledgeDocument.sourceType} |{' '}
+                                {editingKnowledgeDocument.chunks.length} chunks
+                              </Text>
+                            </Stack>
+                            <ActionIcon
+                              variant="subtle"
+                              size="xs"
+                              onClick={clearKnowledgeEditDraft}
+                              aria-label="Close knowledge editor"
+                            >
+                              <IconX size={12} />
+                            </ActionIcon>
+                          </Group>
+                          <TextInput
+                            label="Title"
+                            size="xs"
+                            value={knowledgeEditTitleDraft}
+                            onChange={(event) => setKnowledgeEditTitleDraft(event.currentTarget.value)}
+                          />
+                          <TextInput
+                            label="Description"
+                            size="xs"
+                            value={knowledgeEditDescriptionDraft}
+                            onChange={(event) =>
+                              setKnowledgeEditDescriptionDraft(event.currentTarget.value)
+                            }
+                          />
+                          <Textarea
+                            label="Knowledge Text"
+                            size="xs"
+                            value={knowledgeEditContentDraft}
+                            onChange={(event) => setKnowledgeEditContentDraft(event.currentTarget.value)}
+                            minRows={4}
+                            autosize
+                          />
+                          <Group justify="flex-end" gap="xs">
+                            <SwarmButton
+                              tone="secondary"
+                              emphasis="ghost"
+                              size="xs"
+                              leftSection={<IconX size={12} />}
+                              onClick={clearKnowledgeEditDraft}
+                            >
+                              Cancel
+                            </SwarmButton>
+                            <SwarmButton
+                              tone="brand"
+                              emphasis="soft"
+                              size="xs"
+                              leftSection={<IconDeviceFloppy size={12} />}
+                              onClick={handleSaveKnowledgeDocumentEdit}
+                              disabled={
+                                !knowledgeEditTitleDraft.trim() ||
+                                !knowledgeEditContentDraft.trim()
+                              }
+                            >
+                              Save
+                            </SwarmButton>
+                          </Group>
+                        </Stack>
+                      ) : null}
                     </Stack>
                   </ElevatedCard>
 
@@ -2510,6 +2763,14 @@ export function ControlsPanel({
                             <ActionIcon
                               variant="subtle"
                               size="xs"
+                              onClick={() => handleEditQuickReply(reply)}
+                              aria-label={`Edit ${reply.label}`}
+                            >
+                              <IconEdit size={12} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="subtle"
+                              size="xs"
                               color="red"
                               onClick={() => removeQuickReply(reply.id)}
                               aria-label={`Remove ${reply.label}`}
@@ -2518,7 +2779,79 @@ export function ControlsPanel({
                             </ActionIcon>
                           </Group>
                         ))}
+                        {roleplayQuickReplies.length === 0 ? (
+                          <Text size="xs" c="dimmed">
+                            No quick replies yet.
+                          </Text>
+                        ) : null}
                       </Stack>
+                      {editingQuickReply ? (
+                        <Stack
+                          gap="xs"
+                          p="xs"
+                          style={{
+                            border: '1px solid var(--theme-border-subtle)',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Group justify="space-between" align="center" wrap="nowrap">
+                            <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                              <Text size="xs" fw={600} truncate>
+                                Edit Quick Reply
+                              </Text>
+                              <Text size="xs" c="dimmed" truncate>
+                                Updates the button shown under the chat.
+                              </Text>
+                            </Stack>
+                            <ActionIcon
+                              variant="subtle"
+                              size="xs"
+                              onClick={clearQuickReplyEditDraft}
+                              aria-label="Close quick reply editor"
+                            >
+                              <IconX size={12} />
+                            </ActionIcon>
+                          </Group>
+                          <TextInput
+                            label="Label"
+                            size="xs"
+                            value={quickReplyEditLabelDraft}
+                            onChange={(event) => setQuickReplyEditLabelDraft(event.currentTarget.value)}
+                          />
+                          <Textarea
+                            label="Script"
+                            size="xs"
+                            value={quickReplyEditScriptDraft}
+                            onChange={(event) => setQuickReplyEditScriptDraft(event.currentTarget.value)}
+                            minRows={3}
+                            autosize
+                          />
+                          <Group justify="flex-end" gap="xs">
+                            <SwarmButton
+                              tone="secondary"
+                              emphasis="ghost"
+                              size="xs"
+                              leftSection={<IconX size={12} />}
+                              onClick={clearQuickReplyEditDraft}
+                            >
+                              Cancel
+                            </SwarmButton>
+                            <SwarmButton
+                              tone="brand"
+                              emphasis="soft"
+                              size="xs"
+                              leftSection={<IconDeviceFloppy size={12} />}
+                              onClick={handleSaveQuickReplyEdit}
+                              disabled={
+                                !quickReplyEditLabelDraft.trim() ||
+                                !quickReplyEditScriptDraft.trim()
+                              }
+                            >
+                              Save
+                            </SwarmButton>
+                          </Group>
+                        </Stack>
+                      ) : null}
                       {activeSession.promptInjections.length > 0 ? (
                         <Stack gap={6}>
                           <Group justify="space-between">

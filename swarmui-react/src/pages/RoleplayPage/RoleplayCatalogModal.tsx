@@ -266,7 +266,7 @@ export function RoleplayCatalogModal({ opened, onClose }: RoleplayCatalogModalPr
         </Tabs.List>
 
         <Tabs.Panel value="local" pt="md">
-          <Grid gutter="md">
+          <Grid gap="md">
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Stack gap="xs">
                 <TextInput
@@ -347,7 +347,7 @@ export function RoleplayCatalogModal({ opened, onClose }: RoleplayCatalogModalPr
                     </Stack>
                   </div>
 
-                  <Grid gutter="sm">
+                  <Grid gap="sm">
                     <Grid.Col span={{ base: 12, sm: 6 }}>
                       <ElevatedCard elevation="floor">
                         <Stack gap={6}>
@@ -407,7 +407,7 @@ export function RoleplayCatalogModal({ opened, onClose }: RoleplayCatalogModalPr
         </Tabs.Panel>
 
         <Tabs.Panel value="import-file" pt="md">
-          <Grid gutter="md">
+          <Grid gap="md">
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Stack gap="sm">
                 <FileButton onChange={handlePreviewFile} accept="application/json,image/png,.json,.png">
@@ -448,7 +448,7 @@ export function RoleplayCatalogModal({ opened, onClose }: RoleplayCatalogModalPr
         </Tabs.Panel>
 
         <Tabs.Panel value="import-url" pt="md">
-          <Grid gutter="md">
+          <Grid gap="md">
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Stack gap="sm">
                 <TextInput
@@ -486,7 +486,7 @@ export function RoleplayCatalogModal({ opened, onClose }: RoleplayCatalogModalPr
         </Tabs.Panel>
 
         <Tabs.Panel value="sillytavern" pt="md">
-          <Grid gutter="md">
+          <Grid gap="md">
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Stack gap="sm">
                 <TextInput

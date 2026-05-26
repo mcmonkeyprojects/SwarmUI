@@ -828,7 +828,7 @@ function CharacterEditorForm({
   };
 
   return (
-    <Grid gutter="lg" align="flex-start" className="roleplay-character-editor-grid">
+    <Grid gap="lg" align="flex-start" className="roleplay-character-editor-grid">
       <Grid.Col span={{ base: 12, md: 5 }}>
         <Stack gap="sm" className="roleplay-portrait-studio">
           <Stack gap={2}>
@@ -1156,7 +1156,7 @@ function CharacterEditorForm({
                 onChange={(e) => setName(e.currentTarget.value)}
                 required
               />
-              <Grid gutter="xs">
+              <Grid gap="xs">
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <TextInput
                     label="Creator"
@@ -1443,7 +1443,7 @@ function CharacterEditorForm({
                   minRows={2}
                   autosize
                 />
-                <Grid gutter="xs">
+                <Grid gap="xs">
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Select
                       label="Character Note Role"
@@ -1528,7 +1528,7 @@ function CharacterEditorForm({
                           value={sourceUrl}
                           onChange={(e) => setSourceUrl(e.currentTarget.value)}
                         />
-                        <Grid gutter="xs">
+                        <Grid gap="xs">
                           <Grid.Col span={{ base: 12, sm: 6 }}>
                             <TextInput
                               label="Provider"
@@ -1545,7 +1545,7 @@ function CharacterEditorForm({
                             />
                           </Grid.Col>
                         </Grid>
-                        <Grid gutter="xs">
+                        <Grid gap="xs">
                           <Grid.Col span={{ base: 12, sm: 6 }}>
                             <TextInput
                               label="License"

@@ -286,7 +286,7 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
 
   return (
     <Modal opened={opened} onClose={onClose} title="Lorebook Manager" size="90%">
-      <Grid gutter="md">
+      <Grid gap="md">
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <Stack gap="xs">
             <Group justify="space-between">
@@ -374,7 +374,7 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
 
               <Divider label="Entries" labelPosition="left" />
 
-              <Grid gutter="sm">
+              <Grid gap="sm">
                 <Grid.Col span={{ base: 12, sm: 5 }}>
                   <Stack gap="xs">
                     <Group justify="space-between">
@@ -510,7 +510,7 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                           updateEntry(selectedEntry.id, { negativeKeywords: value })
                         }
                       />
-                      <Grid gutter="xs">
+                      <Grid gap="xs">
                         <Grid.Col span={{ base: 12, sm: 6 }}>
                           <Select
                             label="Keyword Mode"

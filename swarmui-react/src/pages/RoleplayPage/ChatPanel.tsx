@@ -4,6 +4,7 @@ import {
   Badge,
   Group,
   Loader,
+  Menu,
   ScrollArea,
   Select,
   Stack,
@@ -16,6 +17,7 @@ import {
   IconBrain,
   IconEdit,
   IconCopy,
+  IconDots,
   IconEye,
   IconEyeOff,
   IconChevronLeft,
@@ -94,6 +96,7 @@ import { CharacterAvatar } from './CharacterAvatar';
 interface ChatPanelProps {
   onRegenerateScene?: () => void;
   onGenerateSceneWithPrompt?: (prompt: string) => void;
+  onOpenDirector?: () => void;
 }
 
 function getGreetingOptions(character: RoleplayCharacter): string[] {
@@ -277,7 +280,11 @@ function recordRoleplayChatTelemetry(
   }
 }
 
-export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: ChatPanelProps) {
+export function ChatPanel({
+  onRegenerateScene,
+  onGenerateSceneWithPrompt,
+  onOpenDirector,
+}: ChatPanelProps) {
   const [input, setInput] = useState('');
   const [dismissedResumeRecapKeys, setDismissedResumeRecapKeys] = useState<string[]>([]);
   const [visibleResumeRecapKey, setVisibleResumeRecapKey] = useState<string | null>(null);
@@ -285,7 +292,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   const [checkpointName, setCheckpointName] = useState('');
   const [compareBranchId, setCompareBranchId] = useState<string | null>(null);
   const [branchNameDraft, setBranchNameDraft] = useState('');
-  const [branchNavigatorOpen, setBranchNavigatorOpen] = useState(true);
+  const [branchNavigatorOpen, setBranchNavigatorOpen] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const RESUME_RECAP_MINUTES = 20;
@@ -411,7 +418,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
   const activeCharacter = useMemo(
     () =>
       activeSession?.characterId ? (characterById.get(activeSession.characterId) ?? null) : null,
-    [activeSession?.characterId, characterById]
+    [activeSession, characterById]
   );
   const participantCharacters = useMemo(
     () =>
@@ -426,7 +433,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         ? characterById.get(activeSession.activeSpeakerCharacterId)
         : null) ??
       activeCharacter,
-    [activeCharacter, activeSession?.activeSpeakerCharacterId, characterById]
+    [activeCharacter, activeSession, characterById]
   );
   const personaById = useMemo(
     () => new Map(personas.map((persona) => [persona.id, persona])),
@@ -437,7 +444,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       activeSession?.activePersonaId
         ? (personaById.get(activeSession.activePersonaId) ?? null)
         : null,
-    [activeSession?.activePersonaId, personaById]
+    [activeSession, personaById]
   );
   const messages = useMemo(() => activeSession?.messages ?? [], [activeSession?.messages]);
   const activeBranches = activeSession?.branches ?? EMPTY_ROLEPLAY_CHAT_BRANCHES;
@@ -1136,11 +1143,20 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
 
   const handleSend = async () => {
     const nextInput = input;
-    setInput('');
     const currentMessages = activeSessionId ? getLatestSessionMessages(activeSessionId) : messages;
     const targetMessage = editingMessageId
       ? currentMessages.find((message) => message.id === editingMessageId) ?? null
       : null;
+    if (editingMessageId && !targetMessage) {
+      setEditingMessageId(null);
+      notifications.show({
+        title: 'Edit Target Missing',
+        message: 'That chat turn is no longer available.',
+        color: 'orange',
+      });
+      return;
+    }
+    setInput('');
     setEditingMessageId(null);
     if (targetMessage && activeSessionId && targetMessage.role === 'assistant') {
       replaceMessageContent(activeSessionId, targetMessage.id, nextInput.trim());
@@ -1512,15 +1528,35 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
 
   const showResumeRecap = visibleResumeRecapKey !== null;
   const displaySpeakerCharacter = activeSpeakerCharacter ?? activeCharacter;
+  const trimmedInput = input.trim();
+  const editingTargetMessage = editingMessageId
+    ? messages.find((message) => message.id === editingMessageId) ?? null
+    : null;
+  const isSlashCommandDraft = !editingMessageId && trimmedInput.startsWith('/');
+  const canSubmitChatInput =
+    Boolean(trimmedInput) &&
+    !isStreamingChat &&
+    (editingTargetMessage?.role === 'assistant' ||
+      isSlashCommandDraft ||
+      connectionStatus === 'connected');
+  const hasChatModel = Boolean(selectedModelId);
+  const chatStatusLabel =
+    connectionStatus === 'connected' && hasChatModel
+      ? selectedModelId
+      : connectionStatus === 'connected'
+        ? 'Choose chat model'
+        : 'Connect chat model';
+  const chatStatusTone =
+    connectionStatus === 'connected' && hasChatModel
+      ? 'ok'
+      : connectionStatus === 'connecting'
+        ? 'pending'
+        : 'warn';
 
   return (
     <Stack h="100%" gap={0}>
-      <Group
-        justify="space-between"
-        p="xs"
-        style={{ borderBottom: '1px solid var(--theme-gray-5)' }}
-      >
-        <div>
+      <Group justify="space-between" className="roleplay-chat-header">
+        <div className="roleplay-chat-title-block">
           <Text size="sm" fw={600}>
             {activeSession.title}
           </Text>
@@ -1535,16 +1571,15 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
               .join(' | ')}
           </Text>
         </div>
-        <Group gap="xs">
+        <Group gap="xs" className="roleplay-chat-header-actions">
           <SwarmButton
-            tone="secondary"
+            tone={chatStatusTone === 'ok' ? 'success' : 'warning'}
             emphasis="ghost"
             size="xs"
-            onClick={() => activeSessionId && clearConversation(activeSessionId)}
-            leftSection={<IconTrash size={14} />}
-            disabled={messages.length === 0}
+            className={`roleplay-connection-chip roleplay-connection-chip-${chatStatusTone}`}
+            onClick={onOpenDirector}
           >
-            Clear
+            {chatStatusLabel}
           </SwarmButton>
           <SwarmButton
             tone="brand"
@@ -1556,26 +1591,52 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
           >
             Regenerate
           </SwarmButton>
-          <SwarmButton
-            tone="secondary"
-            emphasis="ghost"
-            size="xs"
-            onClick={() => void handleImpersonate()}
-            leftSection={<IconEdit size={14} />}
-            disabled={messages.length === 0 || isStreamingChat}
-          >
-            Impersonate
-          </SwarmButton>
-          <SwarmButton
-            tone="secondary"
-            emphasis="ghost"
-            size="xs"
-            onClick={() => void handleQuietRefresh()}
-            leftSection={<IconBrain size={14} />}
-            disabled={messages.length === 0 || isStreamingChat}
-          >
-            Quiet
-          </SwarmButton>
+          <Menu shadow="md" position="bottom-end" withinPortal>
+            <Menu.Target>
+              <ActionIcon variant="subtle" size="sm" aria-label="Conversation actions">
+                <IconDots size={16} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>Conversation Actions</Menu.Label>
+              <Menu.Item
+                leftSection={<IconBrain size={14} />}
+                onClick={() => void handleQuietRefresh()}
+                disabled={messages.length === 0 || isStreamingChat}
+              >
+                Quiet Refresh
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconEdit size={14} />}
+                onClick={() => void handleImpersonate()}
+                disabled={messages.length === 0 || isStreamingChat}
+              >
+                Impersonate
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconGitBranch size={14} />}
+                onClick={() => {
+                  const latestMessageId = messages[messages.length - 1]?.id;
+                  if (activeSessionId && latestMessageId) {
+                    branchFromMessage(activeSessionId, latestMessageId);
+                    setBranchNavigatorOpen(true);
+                  }
+                }}
+                disabled={messages.length === 0}
+              >
+                Fork From Latest
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={14} />}
+                onClick={() => activeSessionId && clearConversation(activeSessionId)}
+                disabled={messages.length === 0}
+              >
+                Clear Chat
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </Group>
       </Group>
 
@@ -1619,6 +1680,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       />
 
       <ScrollArea
+        className="roleplay-chat-scroll"
         style={{
           flex: 1,
           backgroundImage: activeSession.chatBackgroundImage
@@ -1629,29 +1691,49 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         }}
         viewportRef={viewportRef}
       >
-        <Stack gap="sm" p="md">
-          {messages.length === 0 && greetingOptions.length > 0 ? (
-            <ElevatedCard elevation="floor" tone="brand">
-              <Stack gap="xs">
-                <Text size="sm" fw={600}>
-                  Start With A Greeting
-                </Text>
-                <Text size="xs" c="dimmed">
-                  Pick an opening line to seed this chat session.
-                </Text>
-                {greetingOptions.map((greeting, index) => (
-                  <SwarmButton
-                    key={`${index}-${greeting}`}
-                    tone="secondary"
-                    emphasis="ghost"
-                    size="xs"
-                    onClick={() => handleStartGreeting(greeting)}
-                  >
-                    {greeting.length > 120 ? `${greeting.slice(0, 117)}...` : greeting}
-                  </SwarmButton>
-                ))}
+        <Stack gap="sm" p="md" className="roleplay-chat-message-list">
+          {messages.length === 0 ? (
+            <div className="roleplay-empty-chat">
+              <Stack gap="md">
+                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                  <Stack gap={4}>
+                    <Text className="roleplay-empty-chat__title">
+                      {activeCharacter.name}
+                    </Text>
+                    <Text size="sm" c="dimmed" className="roleplay-empty-chat__summary">
+                      {activeCharacter.scenario.trim() ||
+                        activeCharacter.personality.trim() ||
+                        activeCharacter.description.trim() ||
+                        'Ready for the first turn.'}
+                    </Text>
+                  </Stack>
+                  {onOpenDirector ? (
+                    <SwarmButton tone="secondary" emphasis="ghost" size="xs" onClick={onOpenDirector}>
+                      Set Scene
+                    </SwarmButton>
+                  ) : null}
+                </Group>
+                {greetingOptions.length > 0 ? (
+                  <Stack gap="xs">
+                    <Text size="xs" fw={700} tt="uppercase" c="dimmed">
+                      Opening Lines
+                    </Text>
+                    <div className="roleplay-empty-chat__greetings">
+                      {greetingOptions.map((greeting, index) => (
+                        <button
+                          key={`${index}-${greeting}`}
+                          type="button"
+                          className="roleplay-empty-chat__greeting"
+                          onClick={() => handleStartGreeting(greeting)}
+                        >
+                          {greeting.length > 180 ? `${greeting.slice(0, 177)}...` : greeting}
+                        </button>
+                      ))}
+                    </div>
+                  </Stack>
+                ) : null}
               </Stack>
-            </ElevatedCard>
+            </div>
           ) : null}
 
           {showResumeRecap ? (
@@ -1786,11 +1868,11 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         </Stack>
       </ScrollArea>
 
-      {roleplayQuickReplies.some((reply) => reply.enabled) ? (
+      {messages.length > 0 && roleplayQuickReplies.some((reply) => reply.enabled) ? (
         <Group
           gap="xs"
           p="xs"
-          style={{ borderTop: '1px solid var(--theme-gray-5)' }}
+          className="roleplay-quick-replies"
         >
           {roleplayQuickReplies
             .filter((reply) => reply.enabled)
@@ -1814,24 +1896,48 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         gap="xs"
         p="xs"
         align="flex-end"
-        style={{ borderTop: '1px solid var(--theme-gray-5)' }}
+        className="roleplay-chat-composer"
       >
-        <Textarea
-          flex={1}
-          placeholder={
-            editingMessageId
-              ? 'Edit the selected turn...'
-              : `Message ${activeCharacter.name}... (Shift+Enter for new line)`
-          }
-          value={input}
-          onChange={(event) => setInput(event.currentTarget.value)}
-          onKeyDown={handleKeyDown}
-          autosize
-          minRows={1}
-          maxRows={4}
-          disabled={isStreamingChat}
-          size="sm"
-        />
+        <Stack gap={6} style={{ flex: 1, minWidth: 0 }}>
+          <Group gap={6} className="roleplay-composer-meta">
+            <Badge size="xs" variant="light">
+              {activePersona ? activePersona.name : 'No persona'}
+            </Badge>
+            <Badge size="xs" variant={hasChatModel ? 'light' : 'outline'}>
+              {hasChatModel ? selectedModelId : 'No model'}
+            </Badge>
+            <Badge size="xs" variant="outline">
+              Temp {chatTemperature.toFixed(2)}
+            </Badge>
+          </Group>
+          <Textarea
+            placeholder={
+              editingMessageId
+                ? 'Edit the selected turn...'
+                : `Message ${activeCharacter.name}... (Shift+Enter for new line)`
+            }
+            value={input}
+            onChange={(event) => setInput(event.currentTarget.value)}
+            onKeyDown={handleKeyDown}
+            autosize
+            minRows={1}
+            maxRows={4}
+            disabled={isStreamingChat}
+            size="sm"
+          />
+        </Stack>
+        {!editingMessageId ? (
+          <Tooltip label="Slash command">
+            <ActionIcon
+              variant="subtle"
+              size="lg"
+              onClick={() => setInput((current) => (current.trim() ? current : '/'))}
+              disabled={isStreamingChat}
+            >
+              /
+            </ActionIcon>
+          </Tooltip>
+        ) : null}
         {editingMessageId ? (
           <SwarmButton
             tone="secondary"
@@ -1861,10 +1967,10 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
             emphasis="solid"
             size="sm"
             onClick={() => void handleSend()}
-            disabled={!input.trim() || connectionStatus !== 'connected'}
+            disabled={!canSubmitChatInput}
             leftSection={<IconSend size={16} />}
           >
-            {editingMessageId ? 'Save Edit' : 'Send'}
+            {editingMessageId ? 'Save Edit' : isSlashCommandDraft ? 'Run' : 'Send'}
           </SwarmButton>
         )}
       </Group>
@@ -1948,10 +2054,10 @@ function BranchNavigator({
           <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
             <IconGitBranch size={15} />
             <Text size="xs" fw={700} truncate>
-              {activeBranch?.name ?? 'Branch Tree'}
+              {activeBranch?.name ?? 'Conversation'}
             </Text>
             <Badge size="xs" variant="light">
-              {activeSession.branches.length} branches
+              {activeSession.branches.length} path{activeSession.branches.length === 1 ? '' : 's'}
             </Badge>
             <Badge size="xs" variant="outline">
               {messagesLength} turns
@@ -1973,7 +2079,7 @@ function BranchNavigator({
             <Group gap={6}>
               <IconGitBranch size={15} />
               <Text size="sm" fw={700}>
-                Branch Tree
+                Conversation Paths
               </Text>
               <Badge size="xs" variant="light">
                 {activeSession.branches.length}
@@ -2073,8 +2179,8 @@ function BranchNavigator({
                         ) : null}
                       </Group>
                       <Text size="xs" c="dimmed" truncate>
-                        {branch.messages.length} turns · {childCount} child
-                        {childCount === 1 ? '' : 'ren'} · fork{' '}
+                        {branch.messages.length} turns - {childCount} child
+                        {childCount === 1 ? '' : 'ren'} - started from{' '}
                         {branch.forkMessageId ? branch.forkMessageId.slice(0, 8) : 'root'}
                       </Text>
                     </Stack>
@@ -2273,11 +2379,6 @@ function MessageBubble({
             </Text>
           </ElevatedCard>
           <Group gap={4} wrap="wrap" justify="flex-end" className="roleplay-message-toolbar">
-            <Tooltip label={message.includedInPrompt === false ? 'Include in prompt' : 'Exclude from prompt'}>
-              <ActionIcon variant="subtle" size="xs" onClick={() => onToggleIncluded(message)}>
-                {message.includedInPrompt === false ? <IconEyeOff size={12} /> : <IconEye size={12} />}
-              </ActionIcon>
-            </Tooltip>
             <Tooltip label="Copy">
               <ActionIcon variant="subtle" size="xs" onClick={() => onCopyMessage(message)}>
                 <IconCopy size={12} />
@@ -2288,26 +2389,34 @@ function MessageBubble({
                 <IconEdit size={12} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Branch from here">
-              <ActionIcon variant="subtle" size="xs" onClick={() => onBranchFromMessage(message)}>
-                <IconGitBranch size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Move up">
-              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, -1)}>
-                <IconArrowUp size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Move down">
-              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, 1)}>
-                <IconArrowDown size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Delete">
-              <ActionIcon variant="subtle" color="red" size="xs" onClick={() => onDeleteMessage(message)}>
-                <IconTrash size={12} />
-              </ActionIcon>
-            </Tooltip>
+            <Menu shadow="md" position="bottom-end" withinPortal>
+              <Menu.Target>
+                <ActionIcon variant="subtle" size="xs" aria-label="Message actions">
+                  <IconDots size={12} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={message.includedInPrompt === false ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                  onClick={() => onToggleIncluded(message)}
+                >
+                  {message.includedInPrompt === false ? 'Include In Prompt' : 'Exclude From Prompt'}
+                </Menu.Item>
+                <Menu.Item leftSection={<IconGitBranch size={14} />} onClick={() => onBranchFromMessage(message)}>
+                  Fork From Here
+                </Menu.Item>
+                <Menu.Item leftSection={<IconArrowUp size={14} />} onClick={() => onMoveMessage(message, -1)}>
+                  Move Up
+                </Menu.Item>
+                <Menu.Item leftSection={<IconArrowDown size={14} />} onClick={() => onMoveMessage(message, 1)}>
+                  Move Down
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item color="red" leftSection={<IconTrash size={14} />} onClick={() => onDeleteMessage(message)}>
+                  Delete
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </Group>
           {message.includedInPrompt === false ? (
             <Text size="xs" c="dimmed">
@@ -2387,85 +2496,79 @@ function MessageBubble({
           ) : null}
 
           <Group gap={4} wrap="wrap" className="roleplay-message-toolbar">
-            <Tooltip label={message.includedInPrompt === false ? 'Include in prompt' : 'Exclude from prompt'}>
-              <ActionIcon variant="subtle" size="xs" onClick={() => onToggleIncluded(message)}>
-                {message.includedInPrompt === false ? <IconEyeOff size={12} /> : <IconEye size={12} />}
-              </ActionIcon>
-            </Tooltip>
+            {isLatestAssistantMessage ? (
+              <>
+                <SwarmButton
+                  tone="secondary"
+                  emphasis="ghost"
+                  size="xs"
+                  onClick={onContinue}
+                >
+                  Continue
+                </SwarmButton>
+                <SwarmButton
+                  tone="secondary"
+                  emphasis="ghost"
+                  size="xs"
+                  onClick={onRegenerateReply}
+                >
+                  New Swipe
+                </SwarmButton>
+              </>
+            ) : null}
+            {onGenerateSceneWithPrompt ? (
+              <SwarmButton
+                tone="secondary"
+                emphasis="ghost"
+                size="xs"
+                leftSection={<IconPhotoPlus size={12} />}
+                onClick={() => onGenerateSceneWithPrompt(suggestedImagePrompt || content)}
+              >
+                Image
+              </SwarmButton>
+            ) : null}
             <Tooltip label="Copy">
               <ActionIcon variant="subtle" size="xs" onClick={() => onCopyMessage(message)}>
                 <IconCopy size={12} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Edit">
-              <ActionIcon variant="subtle" size="xs" onClick={() => onEditMessage(message)}>
-                <IconEdit size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Branch from here">
-              <ActionIcon variant="subtle" size="xs" onClick={() => onBranchFromMessage(message)}>
-                <IconGitBranch size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Move up">
-              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, -1)}>
-                <IconArrowUp size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Move down">
-              <ActionIcon variant="subtle" size="xs" onClick={() => onMoveMessage(message, 1)}>
-                <IconArrowDown size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Delete">
-              <ActionIcon variant="subtle" color="red" size="xs" onClick={() => onDeleteMessage(message)}>
-                <IconTrash size={12} />
-              </ActionIcon>
-            </Tooltip>
-            <SwarmButton
-              tone="secondary"
-              emphasis="ghost"
-              size="xs"
-              onClick={() => onRememberMessage(message)}
-            >
-              Remember
-            </SwarmButton>
-            <SwarmButton
-              tone="secondary"
-              emphasis="ghost"
-              size="xs"
-              onClick={() => onPinThread(message)}
-            >
-              Pin Thread
-            </SwarmButton>
-            <SwarmButton
-              tone="secondary"
-              emphasis="ghost"
-              size="xs"
-              leftSection={<IconPhotoPlus size={12} />}
-              onClick={() => onGenerateSceneWithPrompt?.(suggestedImagePrompt || content)}
-              disabled={!onGenerateSceneWithPrompt}
-            >
-              Image
-            </SwarmButton>
-            <SwarmButton
-              tone="secondary"
-              emphasis="ghost"
-              size="xs"
-              onClick={onContinue}
-              disabled={!isLatestAssistantMessage}
-            >
-              Continue
-            </SwarmButton>
-            <SwarmButton
-              tone="secondary"
-              emphasis="ghost"
-              size="xs"
-              onClick={onRegenerateReply}
-              disabled={!isLatestAssistantMessage}
-            >
-              New Swipe
-            </SwarmButton>
+            <Menu shadow="md" position="bottom-start" withinPortal>
+              <Menu.Target>
+                <ActionIcon variant="subtle" size="xs" aria-label="Message actions">
+                  <IconDots size={12} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={message.includedInPrompt === false ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                  onClick={() => onToggleIncluded(message)}
+                >
+                  {message.includedInPrompt === false ? 'Include In Prompt' : 'Exclude From Prompt'}
+                </Menu.Item>
+                <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => onEditMessage(message)}>
+                  Edit
+                </Menu.Item>
+                <Menu.Item leftSection={<IconBrain size={14} />} onClick={() => onRememberMessage(message)}>
+                  Remember
+                </Menu.Item>
+                <Menu.Item leftSection={<IconBookmark size={14} />} onClick={() => onPinThread(message)}>
+                  Pin Thread
+                </Menu.Item>
+                <Menu.Item leftSection={<IconGitBranch size={14} />} onClick={() => onBranchFromMessage(message)}>
+                  Fork From Here
+                </Menu.Item>
+                <Menu.Item leftSection={<IconArrowUp size={14} />} onClick={() => onMoveMessage(message, -1)}>
+                  Move Up
+                </Menu.Item>
+                <Menu.Item leftSection={<IconArrowDown size={14} />} onClick={() => onMoveMessage(message, 1)}>
+                  Move Down
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item color="red" leftSection={<IconTrash size={14} />} onClick={() => onDeleteMessage(message)}>
+                  Delete
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </Group>
 
           {message.includedInPrompt === false ? (
