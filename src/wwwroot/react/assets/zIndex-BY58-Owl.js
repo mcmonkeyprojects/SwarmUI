@@ -1,0 +1,1 @@
+var e={dropdown:1e3,tooltip:1100,modal:1200,modalNested:1400,notification:9999};export{e as t};

@@ -1,0 +1,1 @@
+var e=new class{formatMessage(e,t){return`[${new Date().toLocaleTimeString()}] [${e.toUpperCase()}] ${t}`}debug(e,...t){}info(e,...t){console.info(this.formatMessage(`info`,e),...t)}warn(e,...t){console.warn(this.formatMessage(`warn`,e),...t)}error(e,...t){console.error(this.formatMessage(`error`,e),...t)}group(e){}groupEnd(){}};export{e as t};
