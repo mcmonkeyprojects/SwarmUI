@@ -9,17 +9,14 @@ import {
     Stack,
     Loader,
     Center,
-    TextInput,
     Breadcrumbs,
     Anchor,
-    Tooltip,
     Select,
     Chip,
     Paper,
     Modal,
 } from '@mantine/core';
 import {
-    IconSearch,
     IconFolderFilled,
     IconHome,
     IconLayoutGrid,
@@ -55,7 +52,7 @@ import { logger } from '../utils/logger';
 import { SkeletonGrid } from '../components/SkeletonCard';
 import { VirtualGrid } from '../components/VirtualGrid';
 import { PageScaffold } from '../components/layout/PageScaffold';
-import { SectionHero, SwarmActionIcon, SwarmButton, SwarmSegmentedControl } from '../components/ui';
+import { SectionHero, SwarmActionIcon, SwarmButton, SwarmSearchInput, SwarmSegmentedControl, SwarmTooltip } from '../components/ui';
 import { useDebouncedState } from '../hooks/useDebounce';
 import { useMotionPerformancePolicy } from '../hooks/useMotionPerformancePolicy';
 import { queryClient, queryKeys } from '../api/queryClient';
@@ -1172,7 +1169,7 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                     </SwarmButton>
                                 ) : (
                                     <Group gap="xs">
-                                        <Tooltip label="Select All Visible">
+                                        <SwarmTooltip label="Select All Visible">
                                             <SwarmActionIcon
                                                 tone="secondary"
                                                 emphasis="ghost"
@@ -1181,10 +1178,10 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                             >
                                                 <IconSelectAll size={18} />
                                             </SwarmActionIcon>
-                                        </Tooltip>
+                                        </SwarmTooltip>
                                         {canStar && (
                                             <>
-                                                <Tooltip label="Star Selected">
+                                                <SwarmTooltip label="Star Selected">
                                                     <SwarmActionIcon
                                                         tone="warning"
                                                         emphasis="ghost"
@@ -1194,8 +1191,8 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                                     >
                                                         <IconStar size={18} />
                                                     </SwarmActionIcon>
-                                                </Tooltip>
-                                                <Tooltip label="Unstar Selected">
+                                                </SwarmTooltip>
+                                                <SwarmTooltip label="Unstar Selected">
                                                     <SwarmActionIcon
                                                         tone="secondary"
                                                         emphasis="ghost"
@@ -1205,11 +1202,11 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                                     >
                                                         <IconStar size={18} />
                                                     </SwarmActionIcon>
-                                                </Tooltip>
+                                                </SwarmTooltip>
                                             </>
                                         )}
                                         {canDelete && (
-                                            <Tooltip label="Delete Selected">
+                                            <SwarmTooltip label="Delete Selected">
                                                 <SwarmActionIcon
                                                     tone="danger"
                                                     emphasis="ghost"
@@ -1219,9 +1216,9 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                                 >
                                                     <IconTrash size={18} />
                                                 </SwarmActionIcon>
-                                            </Tooltip>
+                                            </SwarmTooltip>
                                         )}
-                                        <Tooltip label="Download Selected">
+                                        <SwarmTooltip label="Download Selected">
                                             <SwarmActionIcon
                                                 tone="primary"
                                                 emphasis="ghost"
@@ -1231,8 +1228,8 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                             >
                                                 <IconDownload size={18} />
                                             </SwarmActionIcon>
-                                        </Tooltip>
-                                        <Tooltip label="Compare (Select 2 Images)">
+                                        </SwarmTooltip>
+                                        <SwarmTooltip label="Compare (Select 2 Images)">
                                             <SwarmActionIcon
                                                 tone="primary"
                                                 emphasis="ghost"
@@ -1242,7 +1239,7 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                             >
                                                 <IconColumns size={18} />
                                             </SwarmActionIcon>
-                                        </Tooltip>
+                                        </SwarmTooltip>
                                         <SwarmButton
                                             tone="secondary"
                                             emphasis="ghost"
@@ -1254,7 +1251,7 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                         </SwarmButton>
                                     </Group>
                                 )}
-                                <Tooltip label="Refresh History">
+                                <SwarmTooltip label="Refresh History">
                                     <SwarmActionIcon
                                         tone="secondary"
                                         emphasis="ghost"
@@ -1263,9 +1260,9 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                     >
                                         <IconRefresh size={18} />
                                     </SwarmActionIcon>
-                                </Tooltip>
+                                </SwarmTooltip>
                                 {canOpenFolder && (
-                                    <Tooltip label="Open Image Folder in File Explorer">
+                                    <SwarmTooltip label="Open Image Folder in File Explorer">
                                         <SwarmActionIcon
                                             tone="secondary"
                                             emphasis="ghost"
@@ -1280,10 +1277,10 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                         >
                                             <IconFolderOpen size={18} />
                                         </SwarmActionIcon>
-                                    </Tooltip>
+                                    </SwarmTooltip>
                                 )}
                                 {canImport && (
-                                    <Tooltip label="Import Image to History">
+                                    <SwarmTooltip label="Import Image to History">
                                         <SwarmActionIcon
                                             tone="primary"
                                             emphasis="ghost"
@@ -1292,7 +1289,7 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                         >
                                             <IconUpload size={18} />
                                         </SwarmActionIcon>
-                                    </Tooltip>
+                                    </SwarmTooltip>
                                 )}
                                 <SwarmButton
                                     tone="secondary"
@@ -1335,12 +1332,12 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
 
                     <Paper mt="xs" p="sm" radius="md" withBorder>
                         <Group wrap="wrap" gap="sm">
-                            <TextInput
+                            <SwarmSearchInput
                                 placeholder="Search path, prompt, model, seed, resolution, or metadata..."
-                                leftSection={<IconSearch size={16} />}
                                 value={searchQuery}
                                 onChange={(event) => setSearchQuery(event.currentTarget.value)}
                                 style={{ flex: 1, minWidth: 260 }}
+                                visual="glitch"
                             />
                             <SwarmSegmentedControl
                                 value={preferences.sortBy}
@@ -1350,7 +1347,7 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                     { value: 'Name', label: 'Name' },
                                 ]}
                             />
-                            <Tooltip label={preferences.sortReverse ? 'Ascending' : 'Descending'}>
+                            <SwarmTooltip label={preferences.sortReverse ? 'Ascending' : 'Descending'}>
                                 <SwarmActionIcon
                                     tone="secondary"
                                     emphasis="ghost"
@@ -1359,7 +1356,7 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                 >
                                     {preferences.sortReverse ? <IconArrowUp size={18} /> : <IconArrowDown size={18} />}
                                 </SwarmActionIcon>
-                            </Tooltip>
+                            </SwarmTooltip>
                             <Select
                                 value={preferences.mediaType}
                                 onChange={(value) => updatePreferences({ mediaType: (value || 'all') as HistoryMediaType })}
@@ -1470,7 +1467,7 @@ function HistoryPageContent({ routeState, recoveryKey }: HistoryPageContentProps
                                 <Text size="sm" fw={600} tt="uppercase" style={{ color: 'var(--theme-gray-1)' }}>
                                     Folders
                                 </Text>
-                                <Grid gutter="xs">
+                                <Grid gap="xs">
                                     {historyFolders.map((folder) => (
                                         <Grid.Col key={folder} span={{ base: 6, xs: 4, sm: 3, md: 2 }}>
                                             <Card

@@ -28,7 +28,7 @@ export const DEFAULT_PANEL_CONFIG = {
 } as const;
 
 export type GalleryDensity = 'comfortable' | 'compact';
-export type QuickModuleKey = 'sampling' | 'image-prep' | 'hi-res-fix' | 'model-stack';
+export type QuickModuleKey = 'sampling' | 'image-prep' | 'hi-res-fix' | 'upscale' | 'model-stack';
 
 interface LayoutState {
     // Panel collapse states

@@ -134,7 +134,7 @@ export function WorkflowPage({ routeState }: WorkflowPageProps) {
         >
             <Box style={{ overflow: 'auto', flex: 1, minHeight: 0, padding: '12px 0 0' }}>
                 <Stack gap="md" pb="md">
-                    <Grid gutter="md">
+                    <Grid gap="md">
                         {WORKSPACE_DESCRIPTORS.map((workspace) => {
                             const isActive = workspace.mode === mode;
                             const lastContext = workspace.mode === 'wizard'

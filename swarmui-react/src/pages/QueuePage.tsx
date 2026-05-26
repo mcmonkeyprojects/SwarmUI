@@ -36,11 +36,8 @@ import {
   IconTableOptions,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { useQueueStore, type QueueJob, type JobPriority } from '../stores/queue';
-import { swarmClient } from '../api/client';
+import { useQueueJobs, useQueueStore, type QueueJob, type JobPriority } from '../stores/queue';
 import { useShallow } from 'zustand/react/shallow';
-import { featureFlags } from '../config/featureFlags';
-import { resolveAssetUrl } from '../config/runtimeEndpoints';
 import { useNavigationStore, type QueueRouteState } from '../stores/navigationStore';
 import { useCreativeWorkspaceStore } from '../stores/creativeWorkspaceStore';
 import type { ImageListItem } from '../api/types';
@@ -68,18 +65,11 @@ interface QueuePageProps {
 
 export function QueuePage({ routeState }: QueuePageProps) {
   const {
-    jobs,
-    isProcessing,
-    isPaused,
     runnerStatus,
     selectedJobs,
-    updateJob,
     removeJob,
     clearCompleted,
     clearAll,
-    getNextPendingJob,
-    setProcessing,
-    setPaused,
     startRunner,
     pauseRunner,
     stopRunner,
@@ -92,18 +82,11 @@ export function QueuePage({ routeState }: QueuePageProps) {
     moveJob,
   } = useQueueStore(
     useShallow((state) => ({
-      jobs: state.jobs,
-      isProcessing: state.isProcessing,
-      isPaused: state.isPaused,
       runnerStatus: state.runnerStatus,
       selectedJobs: state.selectedJobs,
-      updateJob: state.updateJob,
       removeJob: state.removeJob,
       clearCompleted: state.clearCompleted,
       clearAll: state.clearAll,
-      getNextPendingJob: state.getNextPendingJob,
-      setProcessing: state.setProcessing,
-      setPaused: state.setPaused,
       startRunner: state.startRunner,
       pauseRunner: state.pauseRunner,
       stopRunner: state.stopRunner,
@@ -116,8 +99,12 @@ export function QueuePage({ routeState }: QueuePageProps) {
       moveJob: state.moveJob,
     }))
   );
+  const jobs = useQueueJobs();
 
   const [selectedJobDetails, setSelectedJobDetails] = useState<QueueJob | null>(null);
+  const liveSelectedJobDetails = selectedJobDetails
+    ? jobs.find((job) => job.id === selectedJobDetails.id) ?? selectedJobDetails
+    : null;
   const [viewMode, setViewMode] = useState<'all' | 'batches' | 'scheduled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
@@ -140,79 +127,6 @@ export function QueuePage({ routeState }: QueuePageProps) {
     return () => clearInterval(interval);
   }, [jobs]);
 
-  // Process queue effect
-  useEffect(() => {
-    if (featureFlags.queueRunnerV2) return;
-    if (!isProcessing || isPaused) return;
-
-    const processQueue = async () => {
-      const nextJob = getNextPendingJob();
-      if (!nextJob) {
-        setProcessing(false);
-        notifications.show({
-          title: 'Queue Complete',
-          message: 'All jobs have been processed',
-          color: 'green',
-        });
-        return;
-      }
-
-      // Update job status
-      updateJob(nextJob.id, {
-        status: 'generating',
-        startedAt: Date.now(),
-      });
-
-      try {
-        const images: string[] = [];
-
-        swarmClient.generateImage(nextJob.params, {
-          onProgress: (progressData) => {
-            const backendPercent = Number(progressData.overall_percent);
-            const progress = Number.isFinite(backendPercent)
-              ? Math.min(100, Math.max(0, Math.round(backendPercent * 100)))
-              : 0;
-            updateJob(nextJob.id, {
-              progress,
-            });
-          },
-          onImage: (imageData) => {
-            const imagePath = resolveAssetUrl(
-              imageData.image?.startsWith('/') ? imageData.image : `/${imageData.image}`
-            );
-            images.push(imagePath);
-          },
-          onComplete: () => {
-            updateJob(nextJob.id, {
-              status: 'completed',
-              completedAt: Date.now(),
-              progress: 100,
-              images,
-            });
-            setTimeout(processQueue, 500);
-          },
-          onError: () => {
-            updateJob(nextJob.id, {
-              status: 'failed',
-              completedAt: Date.now(),
-              error: 'Generation failed',
-            });
-            setTimeout(processQueue, 500);
-          },
-        });
-      } catch (error) {
-        updateJob(nextJob.id, {
-          status: 'failed',
-          completedAt: Date.now(),
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        setTimeout(processQueue, 500);
-      }
-    };
-
-    processQueue();
-  }, [isProcessing, isPaused, getNextPendingJob, setProcessing, updateJob]);
-
   const handleStartQueue = () => {
     const pendingJobs = jobs.filter(j => j.status === 'pending' || j.status === 'scheduled');
     if (pendingJobs.length === 0) {
@@ -224,12 +138,7 @@ export function QueuePage({ routeState }: QueuePageProps) {
       return;
     }
 
-    if (featureFlags.queueRunnerV2) {
-      startRunner();
-    } else {
-      setProcessing(true);
-      setPaused(false);
-    }
+    startRunner();
     notifications.show({
       title: 'Queue Started',
       message: `Processing ${pendingJobs.length} job(s)`,
@@ -238,11 +147,7 @@ export function QueuePage({ routeState }: QueuePageProps) {
   };
 
   const handlePauseQueue = () => {
-    if (featureFlags.queueRunnerV2) {
-      pauseRunner();
-    } else {
-      setPaused(true);
-    }
+    pauseRunner();
     notifications.show({
       title: 'Queue Paused',
       message: 'Processing paused after current job',
@@ -251,11 +156,7 @@ export function QueuePage({ routeState }: QueuePageProps) {
   };
 
   const handleResumeQueue = () => {
-    if (featureFlags.queueRunnerV2) {
-      startRunner();
-    } else {
-      setPaused(false);
-    }
+    startRunner();
     notifications.show({
       title: 'Queue Resumed',
       message: 'Continuing queue processing',
@@ -264,12 +165,7 @@ export function QueuePage({ routeState }: QueuePageProps) {
   };
 
   const handleStopQueue = () => {
-    if (featureFlags.queueRunnerV2) {
-      stopRunner();
-    } else {
-      setProcessing(false);
-      setPaused(false);
-    }
+    stopRunner();
     notifications.show({
       title: 'Queue Stopped',
       message: 'Queue processing stopped',
@@ -384,10 +280,8 @@ export function QueuePage({ routeState }: QueuePageProps) {
   const queueCompletion = jobs.length > 0 ? (resolvedCount / jobs.length) * 100 : 0;
 
   const isAllSelected = selectedJobs.length === jobs.length && jobs.length > 0;
-  const effectiveProcessing = featureFlags.queueRunnerV2
-    ? runnerStatus === 'running' || runnerStatus === 'paused' || runnerStatus === 'stopping'
-    : isProcessing;
-  const effectivePaused = featureFlags.queueRunnerV2 ? runnerStatus === 'paused' : isPaused;
+  const effectiveProcessing = runnerStatus === 'running' || runnerStatus === 'paused' || runnerStatus === 'stopping';
+  const effectivePaused = runnerStatus === 'paused';
 
   const queueActions: QuickActionItem[] = [
     ...(effectiveProcessing
@@ -495,11 +389,11 @@ export function QueuePage({ routeState }: QueuePageProps) {
 
     if (routeState?.jobId) {
       const job = jobs.find((entry) => entry.id === routeState.jobId);
-      if (job && selectedJobDetails?.id !== job.id) {
+      if (job && selectedJobDetails !== job) {
         setSelectedJobDetails(job);
       }
     }
-  }, [jobs, routeState?.jobId, routeState?.view, selectedJobDetails?.id, viewMode]);
+  }, [jobs, routeState?.jobId, routeState?.view, selectedJobDetails, viewMode]);
 
   useEffect(() => {
     navigateToQueue({
@@ -874,26 +768,49 @@ export function QueuePage({ routeState }: QueuePageProps) {
                       </Table.Td>
                       <Table.Td>
                         {job.status === 'generating' ? (
-                          <Group gap="xs">
-                            <Progress
-                              value={job.progress}
-                              size="sm"
-                              style={{ width: 80 }}
-                              animated
-                              styles={{
-                                root: {
-                                  background: 'var(--theme-progress-track-bg)',
-                                  border: '1px solid var(--theme-progress-track-border)',
-                                },
-                                section: {
-                                  background: 'var(--theme-progress-fill)',
-                                  boxShadow: '0 0 9px var(--theme-progress-glow)',
-                                },
-                              }}
-                            />
-                            <Text size="xs" c="dimmed">
-                              {job.progress}%
-                            </Text>
+                          <Group gap="xs" wrap="nowrap">
+                            {job.previewImage ? (
+                              <img
+                                src={job.previewImage}
+                                alt=""
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  objectFit: 'contain',
+                                  borderRadius: 6,
+                                  border: '1px solid var(--theme-border)',
+                                  background: 'var(--theme-surface)',
+                                }}
+                              />
+                            ) : null}
+                            <Stack gap={2} style={{ minWidth: 110 }}>
+                              <Group gap="xs" wrap="nowrap">
+                                <Progress
+                                  value={job.progress}
+                                  size="sm"
+                                  style={{ width: 80 }}
+                                  animated
+                                  styles={{
+                                    root: {
+                                      background: 'var(--theme-progress-track-bg)',
+                                      border: '1px solid var(--theme-progress-track-border)',
+                                    },
+                                    section: {
+                                      background: 'var(--theme-progress-fill)',
+                                      boxShadow: '0 0 9px var(--theme-progress-glow)',
+                                    },
+                                  }}
+                                />
+                                <Text size="xs" c="dimmed">
+                                  {job.progress}%
+                                </Text>
+                              </Group>
+                              {job.stageLabel ? (
+                                <Text size="xs" c="dimmed" lineClamp={1}>
+                                  {job.stageLabel}
+                                </Text>
+                              ) : null}
+                            </Stack>
                           </Group>
                         ) : (
                           <Text size="sm" c="dimmed">
@@ -969,80 +886,96 @@ export function QueuePage({ routeState }: QueuePageProps) {
 
       {/* Job Details Modal */}
       <Modal
-        opened={selectedJobDetails !== null}
+        opened={liveSelectedJobDetails !== null}
         onClose={() => setSelectedJobDetails(null)}
         title="Job Details"
         size="lg"
       >
-        {selectedJobDetails && (
+        {liveSelectedJobDetails && (
           <Stack gap="md">
             <Group>
-              <SwarmBadge tone={getStatusTone(selectedJobDetails.status)} size="lg">
-                {selectedJobDetails.status}
+              <SwarmBadge tone={getStatusTone(liveSelectedJobDetails.status)} size="lg">
+                {liveSelectedJobDetails.status}
               </SwarmBadge>
-              <SwarmBadge tone={getPriorityTone(selectedJobDetails.priority)} size="lg">
-                {selectedJobDetails.priority} priority
+              <SwarmBadge tone={getPriorityTone(liveSelectedJobDetails.priority)} size="lg">
+                {liveSelectedJobDetails.priority} priority
               </SwarmBadge>
-              {selectedJobDetails.progress > 0 && (
-                <Text size="sm" c="dimmed">{selectedJobDetails.progress}% complete</Text>
+              {liveSelectedJobDetails.progress > 0 && (
+                <Text size="sm" c="dimmed">{liveSelectedJobDetails.progress}% complete</Text>
               )}
             </Group>
 
-            {selectedJobDetails.name && (
+            {liveSelectedJobDetails.previewImage ? (
+              <Paper p="sm" withBorder>
+                <Group justify="space-between" mb="xs">
+                  <Text size="sm" fw={500}>Live Preview</Text>
+                  {liveSelectedJobDetails.stageLabel ? (
+                    <SwarmBadge tone="info" size="sm">{liveSelectedJobDetails.stageLabel}</SwarmBadge>
+                  ) : null}
+                </Group>
+                <img
+                  src={liveSelectedJobDetails.previewImage}
+                  alt="Job live preview"
+                  style={{ width: '100%', maxHeight: 320, objectFit: 'contain', borderRadius: 8 }}
+                />
+              </Paper>
+            ) : null}
+
+            {liveSelectedJobDetails.name && (
               <Paper p="sm" withBorder>
                 <Text size="sm" fw={500}>Job Name</Text>
-                <Text>{selectedJobDetails.name}</Text>
+                <Text>{liveSelectedJobDetails.name}</Text>
               </Paper>
             )}
 
-            {selectedJobDetails.provenance && (
+            {liveSelectedJobDetails.provenance && (
               <Paper p="sm" withBorder>
                 <Text size="sm" fw={500}>Provenance</Text>
                 <Group gap="xs" mt="xs">
-                  <SwarmBadge tone="secondary">{selectedJobDetails.provenance.source}</SwarmBadge>
-                  {selectedJobDetails.provenance.workspaceMode ? (
-                    <SwarmBadge tone="info">{selectedJobDetails.provenance.workspaceMode}</SwarmBadge>
+                  <SwarmBadge tone="secondary">{liveSelectedJobDetails.provenance.source}</SwarmBadge>
+                  {liveSelectedJobDetails.provenance.workspaceMode ? (
+                    <SwarmBadge tone="info">{liveSelectedJobDetails.provenance.workspaceMode}</SwarmBadge>
                   ) : null}
-                  {selectedJobDetails.provenance.recipeName ? (
-                    <SwarmBadge tone="success">{selectedJobDetails.provenance.recipeName}</SwarmBadge>
+                  {liveSelectedJobDetails.provenance.recipeName ? (
+                    <SwarmBadge tone="success">{liveSelectedJobDetails.provenance.recipeName}</SwarmBadge>
                   ) : null}
-                  {selectedJobDetails.provenance.projectId ? (
+                  {liveSelectedJobDetails.provenance.projectId ? (
                     <SwarmBadge tone="primary">project</SwarmBadge>
                   ) : null}
-                  {selectedJobDetails.provenance.roleplayCharacterName ? (
-                    <SwarmBadge tone="info">{selectedJobDetails.provenance.roleplayCharacterName}</SwarmBadge>
+                  {liveSelectedJobDetails.provenance.roleplayCharacterName ? (
+                    <SwarmBadge tone="info">{liveSelectedJobDetails.provenance.roleplayCharacterName}</SwarmBadge>
                   ) : null}
-                  {selectedJobDetails.provenance.workflowMode ? (
-                    <SwarmBadge tone="info">{selectedJobDetails.provenance.workflowMode}</SwarmBadge>
+                  {liveSelectedJobDetails.provenance.workflowMode ? (
+                    <SwarmBadge tone="info">{liveSelectedJobDetails.provenance.workflowMode}</SwarmBadge>
                   ) : null}
                 </Group>
-                {selectedJobDetails.provenance.prompt ? (
+                {liveSelectedJobDetails.provenance.prompt ? (
                   <Text size="sm" mt="xs" lineClamp={3}>
-                    {selectedJobDetails.provenance.prompt}
+                    {liveSelectedJobDetails.provenance.prompt}
                   </Text>
                 ) : null}
               </Paper>
             )}
 
-            {selectedJobDetails.scheduledAt && (
+            {liveSelectedJobDetails.scheduledAt && (
               <Paper p="sm" withBorder>
                 <Text size="sm" fw={500}>Scheduled For</Text>
-                <Text>{new Date(selectedJobDetails.scheduledAt).toLocaleString()}</Text>
+                <Text>{new Date(liveSelectedJobDetails.scheduledAt).toLocaleString()}</Text>
               </Paper>
             )}
 
             <Divider label="Parameters" />
             <ScrollArea h={200}>
               <Code block>
-                {JSON.stringify(selectedJobDetails.params, null, 2)}
+                {JSON.stringify(liveSelectedJobDetails.params, null, 2)}
               </Code>
             </ScrollArea>
 
-            {selectedJobDetails.images.length > 0 && (
+            {liveSelectedJobDetails.images.length > 0 && (
               <>
-                <Divider label={`Generated Images (${selectedJobDetails.images.length})`} />
+                <Divider label={`Generated Images (${liveSelectedJobDetails.images.length})`} />
                 <Group gap="sm">
-                  {selectedJobDetails.images.map((img: string, i: number) => (
+                  {liveSelectedJobDetails.images.map((img: string, i: number) => (
                     <img
                       key={i}
                       src={img}
@@ -1054,10 +987,10 @@ export function QueuePage({ routeState }: QueuePageProps) {
               </>
             )}
 
-            {selectedJobDetails.error && (
+            {liveSelectedJobDetails.error && (
               <>
                 <Divider label="Error" />
-                <Text size="sm" style={{ color: 'var(--theme-error)' }}>{selectedJobDetails.error}</Text>
+                <Text size="sm" style={{ color: 'var(--theme-error)' }}>{liveSelectedJobDetails.error}</Text>
               </>
             )}
 
