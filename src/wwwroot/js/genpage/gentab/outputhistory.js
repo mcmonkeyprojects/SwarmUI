@@ -182,6 +182,29 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             can_multi: true
         });
     }
+    if (mediaType == 'image' || mediaType == 'video') {
+        buttons.push({
+            label: 'Compare',
+            title: 'Compare 2 images or 2 videos',
+            onclick: (e) => {
+                // TODO: Give browsers.js a real "run once with the full selection" bulk handler
+                let items = imageHistoryBrowser.getMultiSelectedFiles().map(f => ({ src: f.data.src, mediaType: getMediaType(f.data.src) }));
+                let valid = imageCompareHelper.evaluateSelection(items);
+                if (valid.state != 'ready') {
+                    showError(valid.reason || 'Cannot compare current selection.');
+                    return;
+                }
+                if (imageCompareHelper.isShowingPair(items[0], items[1])) {
+                    return;
+                }
+                imageCompareHelper.reset();
+                imageCompareHelper.showComparison(items[0], items[1]);
+            },
+            can_multi: true,
+            multi_only: true,
+            max_selected: 2
+        });
+    }
     for (let reg of registeredMediaButtons) {
         if ((isCurrentImage || reg.showInHistory) && (!reg.mediaTypes || reg.mediaTypes.includes(mediaType))) {
             buttons.push({
@@ -192,6 +215,7 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
                 can_multi: reg.can_multi,
                 multi_only: reg.multi_only,
                 max_selected: reg.max_selected,
+                media_types: reg.mediaTypes,
                 onclick: () => reg.action(src)
             });
         }

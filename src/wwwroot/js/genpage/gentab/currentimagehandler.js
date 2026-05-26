@@ -942,8 +942,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         return normalized;
     }
-    function includeButton(name, action, extraClass = '', title = '', mediaTypes = null, can_multi = false, multi_only = false) {
-        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title, mediaTypes, can_multi, multi_only };
+    function includeButton(name, action, extraClass = '', title = '', mediaTypes = null) {
+        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title, mediaTypes };
     }
     function includeLinkButton(name, href, isDownload = false, title = '', mediaTypes = null) {
         buttonDefs[normalizeButtonKey(name)] = { name, href, is_download: isDownload, title, mediaTypes };
@@ -973,9 +973,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
         }
         for (let def of Object.values(buttonDefs)) {
-            if (def.multi_only) {
-                continue;
-            }
             if (def.mediaTypes && !def.mediaTypes.includes(mediaType)) {
                 continue;
             }
@@ -1160,14 +1157,14 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }, '', 'Jumps the History browser to where this file is at.');
     }
     for (let added of buttonsForImage(imagePathClean, src, metadata, true)) {
-        if (added.label == 'Star' || added.label == 'Unstar') {
+        if (added.label == 'Star' || added.label == 'Unstar' || added.multi_only) {
             continue;
         }
         if (added.href) {
             includeLinkButton(added.label, added.href, added.is_download, added.title);
         }
         else {
-            includeButton(added.label, added.onclick, '', added.title);
+            includeButton(added.label, added.onclick, '', added.title, added.media_types);
         }
     }
     renderButtonsFromDefs();
@@ -1390,3 +1387,690 @@ function imageInputHandler() {
     });
 }
 imageInputHandler();
+
+class ImageCompareHelper {
+    static modeDefinitions = {
+        side: { layout: 'side' },
+        slide_horizontal: { layout: 'slide', axis: 'x' },
+        slide_vertical: { layout: 'slide', axis: 'y' },
+        transparency: { layout: 'transparency' },
+        single: { layout: 'single' }
+    };
+
+    constructor() {
+        this.zoomRate = 1.1;
+        this.modal = getRequiredElementById('image_compare_modal');
+        this.modalJq = $(this.modal);
+        this.stage = getRequiredElementById('image_compare_stage');
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName == 'BODY') {
+                return;
+            }
+            if (!this.noClose && this.isOpen() && !findParentOfClass(e.target, 'imageview_popup_modal_undertext')) {
+                this.close();
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            this.noClose = false;
+        }, true);
+        this.modalJq.on('hidden.bs.modal', () => {
+            this.close();
+        });
+        this.modalJq.on('shown.bs.modal', () => {
+            if (this.hasSelection()) {
+                this.applyView();
+            }
+        });
+        this.stage.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+        this.stage.addEventListener('mousedown', this.onMouseDown.bind(this));
+        document.addEventListener('mouseup', this.onGlobalMouseUp.bind(this));
+        document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
+        window.addEventListener('resize', this.onWindowResize.bind(this));
+        this.mode = 'side';
+        this.left = null;
+        this.right = null;
+        this.resetViewportState();
+        this.modeButtonMap = {};
+        for (let button of this.modal.querySelectorAll('[data-compare-mode]')) {
+            let mode = button.dataset.compareMode;
+            button.addEventListener('click', () => this.setMode(mode));
+            this.modeButtonMap[mode] = button;
+        }
+        this.swapButton = getRequiredElementById('image_compare_swap_button');
+        this.swapButton.addEventListener('click', () => this.swapImages());
+        this.transparencyRow = getRequiredElementById('image_compare_transparency_row');
+        this.transparencySlider = getRequiredElementById('image_compare_transparency_slider');
+        this.transparencyValue = getRequiredElementById('image_compare_transparency_value');
+        this.transparencySlider.addEventListener('input', () => {
+            this.transparencyPercent = parseFloat(this.transparencySlider.value);
+            this.transparencyValue.innerText = `${Math.round(this.transparencyPercent)}%`;
+            this.getOverlay()?.style.setProperty('--image-compare-transparency', `${this.transparencyPercent / 100}`);
+        });
+        this.updateModeControls();
+    }
+
+    getImgOrContainer() {
+        if (this.isOverlayMode()) {
+            let overlay = this.getOverlay();
+            return overlay ? [overlay] : [];
+        }
+        return [...this.stage.querySelectorAll('.image_compare_slot')];
+    }
+
+    getImg() {
+        return [...this.stage.querySelectorAll('.image_compare_media')];
+    }
+
+    getContainerAlignment(container) {
+        if (ImageCompareHelper.modeDefinitions[this.mode].layout != 'side' || window.matchMedia('(max-width: 900px)').matches) {
+            return 'center';
+        }
+        if (this.getImgOrContainer()[0] == container) {
+            return 'right';
+        }
+        return 'left';
+    }
+
+    getHeightPercent() {
+        let img = this.getImg()[0];
+        if (img && img.style.height) {
+            return parseFloat((img.style.height || '100%').replaceAll('%', ''));
+        }
+        let layout = this.getStateLayout();
+        if (!layout || !layout.rect.height) {
+            return this.zoom * 100;
+        }
+        return (layout.mediaHeight * this.zoom / layout.rect.height) * 100;
+    }
+
+    getImgLeft() {
+        let img = this.getImg()[0];
+        let layout = this.getStateLayout();
+        if (!img || !layout) {
+            return this.panX;
+        }
+        let left = parseFloat((img.style.left || `${layout.baseLeft}px`).replaceAll('px', ''));
+        if (isNaN(left)) {
+            return this.panX;
+        }
+        return left - layout.baseLeft;
+    }
+
+    getImgTop() {
+        let img = this.getImg()[0];
+        let layout = this.getStateLayout();
+        if (!img || !layout) {
+            return this.panY;
+        }
+        let top = parseFloat((img.style.top || `${layout.baseTop}px`).replaceAll('px', ''));
+        if (isNaN(top)) {
+            return this.panY;
+        }
+        return top - layout.baseTop;
+    }
+
+    onMouseDown(e) {
+        if (!this.hasSelection()) {
+            return;
+        }
+        if (e.button == 2) { // right-click
+            return;
+        }
+        let viewport = this.getViewportFromTarget(e.target);
+        if (!viewport || e.ctrlKey || e.shiftKey) {
+            return;
+        }
+        let divider = this.getOverlayDividerFromTarget(e.target);
+        if (divider) {
+            this.updateOverlaySplitFromClientPosition(viewport, e.clientX, e.clientY);
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+            this.isAdjustingOverlaySplit = true;
+            this.setViewportCursor(this.getSlideAxis() == 'y' ? 'ns-resize' : 'ew-resize');
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
+        this.isDragging = true;
+        this.setViewportCursor('grabbing');
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    onGlobalMouseUp(e) {
+        if (!this.isDragging && !this.isAdjustingOverlaySplit) {
+            return;
+        }
+        this.setViewportCursor('grab');
+        this.isDragging = false;
+        this.isAdjustingOverlaySplit = false;
+        this.noClose = this.didDrag;
+        this.didDrag = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+    }
+
+    moveImg(xDiff, yDiff) {
+        if (this.getImgOrContainer().length == 0) {
+            return;
+        }
+        let newLeft = this.getImgLeft() + xDiff;
+        let newTop = this.getImgTop() + yDiff;
+        this.clampPan(newLeft, newTop);
+    }
+
+    onGlobalMouseMove(e) {
+        if (this.isAdjustingOverlaySplit) {
+            let xDiff = e.clientX - this.lastMouseX;
+            let yDiff = e.clientY - this.lastMouseY;
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+            let overlay = this.getOverlay();
+            if (overlay) {
+                this.updateOverlaySplitFromClientPosition(overlay, e.clientX, e.clientY);
+            }
+            if (Math.abs(xDiff) > 1 || Math.abs(yDiff) > 1) {
+                this.didDrag = true;
+            }
+            e.preventDefault();
+            return;
+        }
+        if (!this.isDragging) {
+            return;
+        }
+        let xDiff = e.clientX - this.lastMouseX;
+        let yDiff = e.clientY - this.lastMouseY;
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
+        this.moveImg(xDiff, yDiff);
+        if (Math.abs(xDiff) > 1 || Math.abs(yDiff) > 1) {
+            this.didDrag = true;
+        }
+        this.applyView();
+        e.preventDefault();
+    }
+
+    onWheel(e) {
+        if (!this.hasSelection() || e.ctrlKey || e.shiftKey) {
+            return;
+        }
+        let viewport = this.getViewportFromTarget(e.target);
+        let layout = this.getViewportLayout(viewport);
+        if (!viewport || !e.deltaY) {
+            return;
+        }
+        if (!layout) {
+            return;
+        }
+        let rect = layout.rect;
+        if (!rect.width || !rect.height) {
+            return;
+        }
+        let origHeight = this.getHeightPercent();
+        let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
+        let minHeight = 10;
+        let maxHeight = this.getMaxHeight();
+        if (maxHeight <= 0) {
+            maxHeight = Math.max(minHeight, origHeight * 4);
+        }
+        let newHeight = Math.max(minHeight, Math.min(origHeight * zoom, maxHeight));
+        if (Math.abs(newHeight - origHeight) < 0.0001) {
+            e.preventDefault();
+            return;
+        }
+        this.updateImageRendering(newHeight);
+        this.setViewportCursor('grab');
+        let localX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+        let localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+        let zoomRatio = newHeight / origHeight;
+        let imgLeft = this.getImgLeft();
+        let imgTop = this.getImgTop();
+        let newPanX = localX - layout.baseLeft - (localX - layout.baseLeft - imgLeft) * zoomRatio;
+        let newPanY = localY - layout.baseTop - (localY - layout.baseTop - imgTop) * zoomRatio;
+        this.panX = newPanX;
+        this.panY = newPanY;
+        this.setHeightPercent(newHeight);
+        this.clampPan(newPanX, newPanY);
+        this.applyView();
+        e.preventDefault();
+    }
+
+    onImgLoad() {
+        this.applyView();
+    }
+
+    renderMediaElement(src, mediaClass, imageAttrs = '', videoAttrs = '', audioAttrs = '', allowAudio = true) {
+        let encodedSrc = escapeHtmlForUrl(src);
+        let videoType = isVideoExt(src);
+        if (videoType) {
+            return `<video class="${mediaClass}" ${videoAttrs}><source src="${encodedSrc}" type="${videoType}"></video>`;
+        }
+        if (allowAudio && isAudioExt(src)) {
+            return `<audio class="${mediaClass}" src="${encodedSrc}" ${audioAttrs}></audio>`;
+        }
+        return `<img class="${mediaClass}" src="${encodedSrc}" ${imageAttrs}>`;
+    }
+
+    showComparison(left, right) {
+        this.left = left;
+        this.right = right;
+        let wasAlreadyOpen = this.isOpen();
+        this.render();
+        if (wasAlreadyOpen) {
+            this.applyView();
+        }
+        else {
+            this.modalJq.modal('show');
+        }
+    }
+
+    close() {
+        if (this.isOpen()) {
+            if (this.modal.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+            this.modalJq.modal('hide');
+        }
+        this.reset();
+    }
+
+    isOpen() {
+        return this.modalJq.is(':visible');
+    }
+
+    isShowingPair(a, b) {
+        return this.isOpen() && this.left?.src == a?.src && this.right?.src == b?.src;
+    }
+
+    getMediaLayout(container, media) {
+        if (!container || !media) {
+            return null;
+        }
+        let rect = container.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+            return null;
+        }
+        let width = media.naturalWidth ?? media.videoWidth;
+        let height = media.naturalHeight ?? media.videoHeight;
+        if (!width || !height) {
+            return null;
+        }
+        let imgAspectRatio = width / height;
+        let targetWidth = rect.height * imgAspectRatio;
+        let mediaWidth = targetWidth;
+        let mediaHeight = rect.height;
+        if (targetWidth > rect.width) {
+            mediaWidth = rect.width;
+            mediaHeight = rect.width / imgAspectRatio;
+        }
+        let baseLeft = 0;
+        let alignment = this.getContainerAlignment(container);
+        if (alignment == 'center') {
+            baseLeft = (rect.width - mediaWidth) / 2;
+        }
+        else if (alignment == 'right') {
+            baseLeft = rect.width - mediaWidth;
+        }
+        return {
+            viewport: container,
+            media: media,
+            rect: rect,
+            mediaWidth: mediaWidth,
+            mediaHeight: mediaHeight,
+            baseLeft: baseLeft,
+            baseTop: (rect.height - mediaHeight) / 2
+        };
+    }
+
+    getStateLayout() {
+        return this.getViewportLayout(this.getImgOrContainer()[0]);
+    }
+
+    getMediaMaxHeight(img) {
+        if (!img) {
+            return 0;
+        }
+        let width = img.naturalWidth ?? img.videoWidth;
+        let height = img.naturalHeight ?? img.videoHeight;
+        if (!width || !height) {
+            return 0;
+        }
+        return Math.sqrt(width * height) * 2;
+    }
+
+    getMaxHeight() {
+        let maxHeight = 0;
+        for (let img of this.getImg()) {
+            maxHeight = Math.max(maxHeight, this.getMediaMaxHeight(img));
+        }
+        return maxHeight;
+    }
+
+    updateImageRendering(heightPercent = this.getHeightPercent()) {
+        for (let img of this.getImg()) {
+            let maxHeight = this.getMediaMaxHeight(img);
+            if (maxHeight > 0 && heightPercent > maxHeight / 5) {
+                img.style.imageRendering = 'pixelated';
+            }
+            else {
+                img.style.imageRendering = '';
+            }
+        }
+    }
+
+    setHeightPercent(heightPercent) {
+        let layout = this.getStateLayout();
+        if (!layout || !layout.rect.height || !layout.mediaHeight) {
+            this.zoom = Math.max(0.1, heightPercent / 100);
+            return;
+        }
+        let baseHeightPercent = (layout.mediaHeight / layout.rect.height) * 100;
+        if (baseHeightPercent <= 0) {
+            return;
+        }
+        this.zoom = Math.max(0.1, heightPercent / baseHeightPercent);
+    }
+
+    resetViewportState() {
+        this.overlaySplitPercent = 50;
+        this.transparencyPercent = 50;
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+        this.isDragging = false;
+        this.isAdjustingOverlaySplit = false;
+        this.didDrag = false;
+        this.noClose = false;
+    }
+
+    reset() {
+        this.stopPanning(true);
+        this.left = null;
+        this.right = null;
+        this.mode = 'side';
+        this.resetViewportState();
+        this.setStageContent('side', '');
+        this.updateModeControls();
+    }
+
+    isOverlayMode() {
+        return this.isSlideMode() || ImageCompareHelper.modeDefinitions[this.mode].layout == 'transparency';
+    }
+
+    isSlideMode() {
+        return ImageCompareHelper.modeDefinitions[this.mode].layout == 'slide';
+    }
+
+    getSlideAxis() {
+        return ImageCompareHelper.modeDefinitions[this.mode].axis || 'x';
+    }
+
+    swapImages() {
+        if (!this.hasSelection()) {
+            return;
+        }
+        [this.left, this.right] = [this.right, this.left];
+        this.render();
+    }
+
+    setMode(mode) {
+        if (mode == this.mode) {
+            this.updateModeControls();
+            return;
+        }
+        this.mode = mode;
+        if (this.hasSelection()) {
+            this.render();
+        }
+        else {
+            this.updateModeControls();
+        }
+    }
+
+    updateModeControls() {
+        for (let [mode, button] of Object.entries(this.modeButtonMap)) {
+            button.setAttribute('aria-pressed', this.mode == mode ? 'true' : 'false');
+        }
+        this.transparencyRow.style.display = ImageCompareHelper.modeDefinitions[this.mode].layout == 'transparency' ? '' : 'none';
+        this.transparencySlider.value = this.transparencyPercent;
+        updateRangeStyle(this.transparencySlider);
+        this.transparencyValue.innerText = `${Math.round(this.transparencyPercent)}%`;
+    }
+
+    setStageContent(layout, html) {
+        for (let media of this.stage.querySelectorAll('video, audio')) {
+            media.pause();
+        }
+        this.stage.classList.toggle('image_compare_stage_overlay', layout == 'overlay');
+        this.stage.classList.toggle('image_compare_stage_side', layout == 'side');
+        this.stage.classList.toggle('image_compare_stage_single', layout == 'single');
+        this.stage.innerHTML = html;
+    }
+
+    render() {
+        this.stopPanning(true);
+        this.updateModeControls();
+        if (!this.hasSelection()) {
+            this.setStageContent('side', '');
+            this.updateModeControls();
+            return;
+        }
+        if (this.isOverlayMode()) {
+            this.renderOverlay();
+        }
+        else if (ImageCompareHelper.modeDefinitions[this.mode].layout == 'single') {
+            this.setStageContent('single', `<div class="image_compare_slot">${this.renderMedia(this.left)}</div>`);
+        }
+        else {
+            this.setStageContent('side', `
+                <div class="image_compare_slot">${this.renderMedia(this.left)}</div>
+                <div class="image_compare_slot">${this.renderMedia(this.right)}</div>`
+            );
+        }
+        this.applyView();
+    }
+
+    renderOverlay() {
+        let overlayClasses = ['image_compare_overlay'];
+        if (this.isSlideMode()) {
+            if (this.getSlideAxis() == 'y') {
+                overlayClasses.push('image_compare_overlay_slide_vertical');
+            }
+        }
+        else {
+            overlayClasses.push('image_compare_overlay_transparency');
+        }
+        this.setStageContent('overlay', `
+            <div class="image_compare_slot">
+                <div class="${overlayClasses.join(' ')}" style="--image-compare-split:${this.overlaySplitPercent}%;--image-compare-transparency:${this.transparencyPercent / 100};">
+                    <div class="image_compare_overlay_layer image_compare_overlay_layer_left">${this.renderMedia(this.left)}</div>
+                    <div class="image_compare_overlay_layer image_compare_overlay_layer_right">${this.renderMedia(this.right)}</div>
+                    ${this.isSlideMode() ? '<div class="image_compare_overlay_divider"></div>' : ''}
+                </div>
+            </div>`
+        );
+    }
+
+    updateOverlaySplitFromClientPosition(stage, clientX, clientY) {
+        let rect = stage.getBoundingClientRect();
+        let split;
+        if (this.getSlideAxis() == 'y') {
+            if (!rect.height) {
+                return;
+            }
+            split = ((clientY - rect.top) / rect.height) * 100;
+        }
+        else {
+            if (!rect.width) {
+                return;
+            }
+            split = ((clientX - rect.left) / rect.width) * 100;
+        }
+        this.overlaySplitPercent = Math.max(2, Math.min(98, split));
+        stage.style.setProperty('--image-compare-split', `${this.overlaySplitPercent}%`);
+    }
+
+    stopPanning(ignoreDragClose = false) {
+        this.setViewportCursor('grab');
+        this.isDragging = false;
+        this.isAdjustingOverlaySplit = false;
+        this.noClose = ignoreDragClose ? false : this.didDrag;
+        this.didDrag = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+    }
+
+    getViewportLayout(viewport) {
+        if (!viewport) {
+            return;
+        }
+        let media = viewport.querySelector('.image_compare_media');
+        if (!media) {
+            return;
+        }
+        return this.getMediaLayout(media.parentElement, media);
+    }
+
+    clampPan(panX = this.getImgLeft(), panY = this.getImgTop()) {
+        let imgs = this.getImg();
+        if (imgs.length == 0) {
+            return;
+        }
+        let minPanX = -Infinity;
+        let maxPanX = Infinity;
+        let minPanY = -Infinity;
+        let maxPanY = Infinity;
+        for (let img of imgs) {
+            let layout = this.getMediaLayout(img.parentElement, img);
+            if (!layout) {
+                continue;
+            }
+            let zoomedWidth = layout.mediaWidth * this.zoom;
+            let zoomedHeight = layout.mediaHeight * this.zoom;
+            let overWidth = layout.rect.width / 2;
+            let overHeight = layout.rect.height / 2;
+            minPanX = Math.max(minPanX, layout.rect.width - zoomedWidth - overWidth - layout.baseLeft);
+            maxPanX = Math.min(maxPanX, overWidth - layout.baseLeft);
+            minPanY = Math.max(minPanY, layout.rect.height - zoomedHeight - overHeight - layout.baseTop);
+            maxPanY = Math.min(maxPanY, overHeight - layout.baseTop);
+        }
+        if (minPanX > maxPanX) {
+            this.panX = (minPanX + maxPanX) / 2;
+        }
+        else {
+            this.panX = Math.min(maxPanX, Math.max(minPanX, panX));
+        }
+        if (minPanY > maxPanY) {
+            this.panY = (minPanY + maxPanY) / 2;
+        }
+        else {
+            this.panY = Math.min(maxPanY, Math.max(minPanY, panY));
+        }
+    }
+
+    getViewportFromTarget(target) {
+        if (!target || !target.closest) {
+            return null;
+        }
+        if (this.isOverlayMode()) {
+            return target.closest('.image_compare_overlay');
+        }
+        return target.closest('.image_compare_slot');
+    }
+
+    getOverlayDividerFromTarget(target) {
+        if (!this.isSlideMode() || !target || !target.closest) {
+            return null;
+        }
+        return target.closest('.image_compare_overlay_divider');
+    }
+
+    setViewportCursor(cursor) {
+        for (let viewport of this.getImgOrContainer()) {
+            viewport.style.cursor = cursor;
+        }
+        let divider = this.stage.querySelector('.image_compare_overlay_divider');
+        if (divider) {
+            let idleCursor = this.getSlideAxis() == 'y' ? 'ns-resize' : 'ew-resize';
+            divider.style.cursor = cursor == 'grab' ? idleCursor : cursor;
+        }
+    }
+
+    getOverlay() {
+        return this.stage.querySelector('.image_compare_overlay');
+    }
+
+    applyView() {
+        let imgs = this.getImg();
+        if (imgs.length == 0) {
+            return;
+        }
+        this.clampPan(this.panX, this.panY);
+        for (let img of imgs) {
+            let container = img.parentElement;
+            let layout = this.getMediaLayout(container, img);
+            if (!layout) {
+                continue;
+            }
+            img.style.left = `${layout.baseLeft + this.panX}px`;
+            img.style.top = `${layout.baseTop + this.panY}px`;
+            img.style.height = `${(layout.mediaHeight * this.zoom / layout.rect.height) * 100}%`;
+            img.style.maxWidth = 'none';
+            img.style.maxHeight = 'none';
+            img.style.objectFit = 'unset';
+            img.style.margin = '0';
+        }
+        let overlay = this.getOverlay();
+        overlay?.style.setProperty('--image-compare-split', `${this.overlaySplitPercent}%`);
+        overlay?.style.setProperty('--image-compare-transparency', `${this.transparencyPercent / 100}`);
+        this.updateImageRendering();
+    }
+
+    onWindowResize() {
+        if (!this.hasSelection() || !this.isOpen()) {
+            return;
+        }
+        this.applyView();
+    }
+
+    renderMedia(media) {
+        return this.renderMediaElement(
+            media.src,
+            'image_compare_media',
+            'alt="Compared media" onload="imageCompareHelper.onImgLoad()"',
+            'autoplay loop muted playsinline onloadedmetadata="imageCompareHelper.onImgLoad()"',
+            '',
+            false,
+        );
+    }
+
+    hasSelection() {
+        return this.left && this.right;
+    }
+
+    evaluateSelection(items) {
+        if (items.length == 0) {
+            return { state: 'partial', reason: 'Select 2 images or 2 videos to compare.' };
+        }
+        if (items.length == 1) {
+            return { state: 'partial', reason: 'Select 1 more image or video to compare.' };
+        }
+        if (items.length > 2) {
+            return { state: 'invalid', reason: 'Compare only supports exactly 2 selected items.' };
+        }
+        if (items[0].mediaType == 'audio' || items[1].mediaType == 'audio') {
+            return { state: 'invalid', reason: 'Compare only supports images and videos.' };
+        }
+        if (items[0].mediaType != items[1].mediaType) {
+            return { state: 'invalid', reason: 'Compare requires 2 items of the same media type.' };
+        }
+        return { state: 'ready', reason: 'Compare the selected items.' };
+    }
+}
+
+let imageCompareHelper = new ImageCompareHelper();
