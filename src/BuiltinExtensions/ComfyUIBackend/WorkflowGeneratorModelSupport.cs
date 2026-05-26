@@ -603,7 +603,7 @@ public partial class WorkflowGenerator
 
         public string GetGptOss_20bModel()
         {
-            return RequireClipModel("gpt_oss_20b_mxfp4.safetensors", "https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/text_encoders/gpt_oss_20b_mxfp4.safetensors", "f279cf3e73c494f78e0c5e4d35cf665068ae69672f7066813dbb75c021286856", T2IParamTypes.GptOssModel);
+            return RequireClipModel("gpt_oss_20b_nvfp4.safetensors", "https://huggingface.co/Comfy-Org/Lens/resolve/main/text_encoders/gpt_oss_20b_nvfp4.safetensors?download=true", "267fb63224796cc3af378abb0ba6b95130c0e53ac642ab7a734034f0cfa2e753", T2IParamTypes.GptOssModel);
         }
 
         public string GetClipLModel()

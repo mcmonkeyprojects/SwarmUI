@@ -623,8 +623,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 - Microsoft's [Lens](<https://huggingface.co/microsoft/Lens>) is supported in SwarmUI!
 - It is a 3.8B model, with a base model and an official turbo distill designed to run fast.
-    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/Lens - turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_turbo_bf16.safetensors?download=true>)
-    - Or the base version (in fat BF16) [Comfy-Org/Lens - base](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_bf16.safetensors?download=true>)
+    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/Lens - turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_bf16.safetensors?download=true>)
+        - An MXFP8 variant can be downloaded here [Comfy-Org/Lens - turb mxfp8](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_mxfp8.safetensors?download=true>)
+    - Or the base version (in fat BF16) [Comfy-Org/Lens - base](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_bf16.safetensors?download=true>)
+        - An MXFP8 variant can be downloaded here [Comfy-Org/Lens - base mxfp8](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_mxfp8.safetensors?download=true>)
     - Save in `diffusion_models`
 - Uses the Flux.2 VAE, will be downloaded and handled automatically
 - Uses the GPT-OSS 20B text encoder, will be downloaded and handled automatically
