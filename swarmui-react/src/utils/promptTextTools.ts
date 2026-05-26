@@ -130,56 +130,66 @@ function parsePresetLibraryBlock(inner: string): PresetPromptSection[] {
     return sections;
 }
 
-function renderManagedPresetLibraryBlock(sections: PresetPromptSection[]): string {
-    const sectionByCategory = new Map<PresetCategory, string[]>();
+function normalizePromptSpacing(text: string): string {
+    return text
+        .split('\n')
+        .map((line) => line.trim())
+        .join('\n')
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
 
-    for (const section of sections) {
-        const existingWords = sectionByCategory.get(section.category) ?? [];
-        sectionByCategory.set(
-            section.category,
-            dedupePromptWords([...existingWords, ...section.words])
-        );
+export function stripPresetLibraryBlocksForGeneration(prompt: string | undefined): string {
+    let nextPrompt = prompt?.trim() ?? '';
+    if (!nextPrompt) {
+        return '';
     }
 
-    const lines = [PRESET_LIBRARY_BLOCK_START];
-    for (const category of PRESET_PROMPT_SECTION_ORDER) {
-        const words = sectionByCategory.get(category) ?? [];
-        if (words.length === 0) {
-            continue;
-        }
-
-        lines.push(`${PRESET_SECTION_COMMENT_PREFIX}${category}${PRESET_SECTION_COMMENT_SUFFIX}`);
-        lines.push(sectionText(words));
+    let block = extractPresetLibraryBlock(nextPrompt);
+    while (block) {
+        const sections = parsePresetLibraryBlock(block.inner);
+        const renderedSections = formatPresetSectionsForPrompt(sections);
+        nextPrompt = [
+            nextPrompt.slice(0, block.start).trim(),
+            renderedSections,
+            nextPrompt.slice(block.end).trim(),
+        ].filter(Boolean).join('\n\n');
+        block = extractPresetLibraryBlock(nextPrompt);
     }
-    lines.push(PRESET_LIBRARY_BLOCK_END);
 
-    return lines.join('\n');
+    return normalizePromptSpacing(nextPrompt);
+}
+
+export function normalizePromptForGeneration(prompt: string | undefined): string {
+    const strippedPrompt = stripPresetLibraryBlocksForGeneration(prompt);
+    if (!strippedPrompt) {
+        return '';
+    }
+
+    return normalizePromptSpacing(
+        strippedPrompt.replace(/<embedding:([^>]+)>/gi, (_match, embeddingName: string) => (
+            `<embed:${embeddingName.trim()}>`
+        ))
+    );
 }
 
 export function appendPresetSectionsToPrompt(
     currentValue: string | undefined,
     sections: PresetPromptSection[]
 ): string {
-    const trimmedCurrent = currentValue?.trim() ?? '';
+    const trimmedCurrent = stripPresetLibraryBlocksForGeneration(currentValue);
     if (sections.length === 0) {
         return trimmedCurrent;
     }
 
-    const existingBlock = extractPresetLibraryBlock(trimmedCurrent);
-    const existingSections = existingBlock ? parsePresetLibraryBlock(existingBlock.inner) : [];
-    const managedBlock = renderManagedPresetLibraryBlock([...existingSections, ...sections]);
+    const presetText = formatPresetSectionsForPrompt(sections);
 
     if (!trimmedCurrent) {
-        return managedBlock;
+        return presetText;
     }
 
-    if (existingBlock) {
-        const before = trimmedCurrent.slice(0, existingBlock.start).trim();
-        const after = trimmedCurrent.slice(existingBlock.end).trim();
-        return [before, managedBlock, after].filter(Boolean).join('\n\n');
-    }
-
-    return `${managedBlock}\n\n${trimmedCurrent}`;
+    return normalizePromptSpacing(`${presetText}\n\n${trimmedCurrent}`);
 }
 
 /**

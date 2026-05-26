@@ -188,7 +188,7 @@ export function buildRegionTag(rule: BuilderRegionRule): string {
 }
 
 export function buildSegmentModelText(rule: BuilderSegmentRule): string {
-  if (rule.modelType === 'clip-seg') {
+  if (rule.modelType === 'auto' || rule.modelType === 'grounded-sam2' || rule.modelType === 'clip-seg') {
     return rule.textMatch.trim();
   }
 

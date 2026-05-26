@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Textarea, TextInput, Text, Group, Tooltip, Popover, Stack, Switch, Select, Loader, Chip, Badge, Modal, Paper, Divider } from '@mantine/core';
+import { Textarea, TextInput, Text, Group, Popover, Stack, Select, Loader, Chip, Badge, Modal, Paper, Divider } from '@mantine/core';
 import { IconSparkles, IconWand, IconClearAll, IconClipboard, IconTextCaption, IconArrowsUpDown, IconLanguage, IconSettings, IconBrain } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { getTokenWarning } from '../utils/tokenCounter';
@@ -16,7 +16,7 @@ import { ContextMenu, useContextMenu, type ContextMenuItem } from './ContextMenu
 import { usePromptEnhanceStore, PROMPT_STYLE_PRESETS, type PromptEnhanceCreativeStrength, type PromptPresetKey } from '../stores/promptEnhanceStore';
 import { enhancePrompt as enhancePromptApi, inferPromptFormatPreset, probeAssistantConnection, unloadMagicPromptModel, type PromptEnhancementDraft } from '../services/magicPromptService';
 import { useAssistantStore } from '../stores/assistantStore';
-import { SwarmActionIcon as ActionIcon, SwarmButton } from './ui';
+import { SwarmActionIcon as ActionIcon, SwarmButton, SwarmSwitch, SwarmTooltip } from './ui';
 import '../styles/autocomplete.css';
 
 interface PromptInputProps {
@@ -39,6 +39,30 @@ export interface PromptInputHandle {
     /** Insert text at the current cursor position */
     insertTextAtCursor: (text: string) => void;
 }
+
+type PromptInsightChip = {
+    type: 'lora' | 'embedding' | 'wildcard' | 'weighted' | 'terms';
+    label: string;
+    tone: string;
+};
+
+const collectUniqueMatches = (text: string, pattern: RegExp, limit: number): string[] => {
+    const matches: string[] = [];
+    const seen = new Set<string>();
+    for (const match of text.matchAll(pattern)) {
+        const value = (match[1] || '').trim();
+        const key = value.toLowerCase();
+        if (!value || seen.has(key)) {
+            continue;
+        }
+        seen.add(key);
+        matches.push(value);
+        if (matches.length >= limit) {
+            break;
+        }
+    }
+    return matches;
+};
 
 export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputProps>(({
     label,
@@ -707,6 +731,41 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
     const { tokenCount, isEstimate } = useTokenCount(localValue, { debounceMs: 500, skipPromptSyntax: true });
     const tokenWarning = useMemo(() => getTokenWarning(tokenCount, 'sdxl'), [tokenCount]);
 
+    const promptInsightChips = useMemo<PromptInsightChip[]>(() => {
+        const trimmed = localValue.trim();
+        if (!trimmed) {
+            return [];
+        }
+
+        const chips: PromptInsightChip[] = [];
+        const loras = collectUniqueMatches(trimmed, /<lora:([^>:]+)(?::[^>]+)?>/gi, 2);
+        const embeddings = collectUniqueMatches(trimmed, /<embed(?:ding)?:([^>]+)>/gi, 2);
+        const wildcards = collectUniqueMatches(trimmed, /__([^_]{2,80})__/g, 2);
+        const weighted = collectUniqueMatches(trimmed, /\(([^():]{2,48}):([0-9.]+)\)/g, 2);
+        const terms = trimmed
+            .split(',')
+            .map((part) => part.trim())
+            .filter((part) => part.length > 0);
+
+        for (const item of loras) {
+            chips.push({ type: 'lora', label: `LoRA: ${item.split(/[\\/]/).pop()}`, tone: 'violet' });
+        }
+        for (const item of embeddings) {
+            chips.push({ type: 'embedding', label: `Embed: ${item.split(/[\\/]/).pop()}`, tone: 'blue' });
+        }
+        for (const item of wildcards) {
+            chips.push({ type: 'wildcard', label: `Wildcard: ${item}`, tone: 'teal' });
+        }
+        for (const item of weighted) {
+            chips.push({ type: 'weighted', label: `Weighted: ${item}`, tone: 'orange' });
+        }
+        if (terms.length > 1) {
+            chips.push({ type: 'terms', label: `${terms.length} prompt parts`, tone: resolvedPromptRole === 'negative' ? 'orange' : 'gray' });
+        }
+
+        return chips.slice(0, 6);
+    }, [localValue, resolvedPromptRole]);
+
     const connectionTone = connectionStatus === 'connected'
         ? 'teal'
         : connectionStatus === 'reachable_no_models'
@@ -730,9 +789,14 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                         : 'Not checked';
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
+        <div
+            className="swarm-prompt-input"
+            data-prompt-role={resolvedPromptRole}
+            style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}
+        >
             <Textarea
                 ref={textareaRef}
+                className="swarm-prompt-input__textarea"
                 spellCheck={true}
                 onFocus={handleFocus}
                 label={
@@ -746,7 +810,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                     onOpenModal={handleOpenModal}
                                 />
                             )}
-                            <Tooltip label={
+                            <SwarmTooltip label={
                                 autocompleteEnabled
                                     ? `Disable autocomplete${autocompleteRef.current?.isLoaded ? '' : ' (loading...)'}`
                                     : 'Enable autocomplete'
@@ -768,10 +832,10 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                 >
                                     <IconSparkles size={12} />
                                 </ActionIcon>
-                            </Tooltip>
+                            </SwarmTooltip>
                             {/* Prompt Enhancement */}
                             {enhanceEnabled && (
-                                <Tooltip label={isEnhancing ? 'Enhancing...' : (!enhanceModelId ? 'Select a model in settings' : 'Enhance prompt with AI')}>
+                                <SwarmTooltip label={isEnhancing ? 'Enhancing...' : (!enhanceModelId ? 'Select a model in settings' : 'Enhance prompt with AI')}>
                                     <ActionIcon
                                         size="xs"
                                         tone="primary"
@@ -782,7 +846,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                     >
                                         <IconBrain size={12} />
                                     </ActionIcon>
-                                </Tooltip>
+                                </SwarmTooltip>
                             )}
                             <Popover
                                 opened={enhanceSettingsOpen}
@@ -792,7 +856,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                 shadow="md"
                             >
                                 <Popover.Target>
-                                    <Tooltip label="Prompt enhancement settings">
+                                    <SwarmTooltip label="Prompt enhancement settings">
                                         <ActionIcon
                                             size="xs"
                                             tone={enhanceEnabled ? 'primary' : 'secondary'}
@@ -806,12 +870,12 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                         >
                                             <IconSettings size={12} />
                                         </ActionIcon>
-                                    </Tooltip>
+                                    </SwarmTooltip>
                                 </Popover.Target>
                                 <Popover.Dropdown>
                                     <Stack gap="sm">
                                         <Text size="sm" fw={600}>Prompt Enhancement</Text>
-                                        <Switch
+                                        <SwarmSwitch
                                             label="Enable"
                                             checked={enhanceEnabled}
                                             onChange={(e) => setEnhanceEnabled(e.currentTarget.checked)}
@@ -838,11 +902,11 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                             onChange={(e) => setEnhanceEndpointUrl(e.currentTarget.value)}
                                             size="xs"
                                             rightSection={
-                                                <Tooltip label="Refresh models">
+                                                <SwarmTooltip label="Refresh models">
                                                     <ActionIcon size="xs" tone="secondary" emphasis="ghost" onClick={() => void loadModels()} loading={loadingModels}>
                                                         <IconSparkles size={12} />
                                                     </ActionIcon>
-                                                </Tooltip>
+                                                </SwarmTooltip>
                                             }
                                         />
                                         <Select
@@ -867,7 +931,7 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                                             searchable
                                             clearable
                                         />
-                                        <Switch
+                                        <SwarmSwitch
                                             label="Unload enhancement model after draft"
                                             description={detectedServerMode === 'legacy-lmstudio'
                                                 ? 'Releases the LM Studio LLM after enhancement so image generation has more free VRAM.'
@@ -967,6 +1031,22 @@ export const PromptInput = React.memo(forwardRef<PromptInputHandle, PromptInputP
                 required={required}
                 autosize={autosize}
             />
+
+            {promptInsightChips.length > 0 && (
+                <Group gap={6} wrap="wrap" className="swarm-prompt-input__chips">
+                    {promptInsightChips.map((chip) => (
+                        <Badge
+                            key={`${chip.type}-${chip.label}`}
+                            size="xs"
+                            variant="light"
+                            color={chip.tone}
+                            className="swarm-prompt-input__chip"
+                        >
+                            {chip.label}
+                        </Badge>
+                    ))}
+                </Group>
+            )}
 
             {/* Headless Autocomplete Dropdown */}
             <HeadlessAutocomplete

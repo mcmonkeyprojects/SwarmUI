@@ -192,7 +192,7 @@ describe('magicPromptService', () => {
         expect(body.messages[0].content).toContain('subject, anatomy/identity, pose/action');
         expect(body.messages[0].content).toContain('Do not overload the prompt');
         expect(body.messages[0].content).toContain('Negative prompt targeting');
-        expect(body.messages[0].content).toContain('Choose a clear framing');
+        expect(body.messages[0].content).toContain('choose a clear framing');
         expect(body.messages[0].content).toContain('Keep medium, style, lighting, and rendering language compatible');
         expect(body.messages[0].content).toContain('choose one coherent interpretation');
         expect(body.messages[0].content).toContain('60-140 words');
@@ -202,7 +202,7 @@ describe('magicPromptService', () => {
         expect(body.messages[0].content).toContain('clearly adults');
         expect(body.messages[0].content).toContain('Do not add NSFW details');
         expect(body.messages[0].content).toContain('Evaluate the entire prompt');
-        expect(body.messages[0].content).toContain('do not summarize only the beginning');
+        expect(body.messages[0].content).toContain('Do not summarize only the beginning');
         expect(body.messages[0].content).toContain('Do not include chain-of-thought');
         expect(body.messages[0].content).toContain('no <think> blocks');
         expect(body.messages[0].content).toContain('Do not repeat the original prompt');

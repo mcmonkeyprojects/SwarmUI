@@ -38,7 +38,7 @@ function createDefaultRegion(partial?: Partial<BuilderRegionRule>): BuilderRegio
 function createDefaultSegment(partial?: Partial<BuilderSegmentRule>): BuilderSegmentRule {
   return {
     id: partial?.id ?? createId('segment'),
-    modelType: partial?.modelType ?? 'clip-seg',
+    modelType: partial?.modelType ?? 'auto',
     textMatch: partial?.textMatch ?? 'face',
     yoloModel: partial?.yoloModel ?? '',
     yoloId: partial?.yoloId ?? 0,

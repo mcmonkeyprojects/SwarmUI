@@ -22,7 +22,7 @@ export interface BuilderRegionRule {
   enabled: boolean;
 }
 
-export type BuilderSegmentModelType = 'clip-seg' | 'yolo';
+export type BuilderSegmentModelType = 'auto' | 'grounded-sam2' | 'clip-seg' | 'yolo';
 
 export interface BuilderSegmentRule {
   id: string;
@@ -64,6 +64,7 @@ export interface CanvasApplyPayload {
   mode: 'inpaint' | 'outpaint' | 'regional';
   sessionId?: string;
   workflowStep?: string;
+  editPrompt?: string;
   sourceImageUrl: string;
   sourceImageWidth: number;
   sourceImageHeight: number;

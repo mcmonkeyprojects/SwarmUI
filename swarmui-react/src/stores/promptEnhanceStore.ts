@@ -5,7 +5,9 @@ import type { AssistantConnectionStatus, AssistantServerMode } from '../types/as
 const DEFAULT_SYSTEM_PROMPT =
   'You are an expert prompt editor for AI image generation. Preserve the user\'s core subject and intent, ' +
   'then improve visual specificity, composition, lighting, materials, mood, style, and quality details. ' +
-  'When the subject includes a person, character, or creature, define anatomy details such as eyes, hair, face, hands, pose, body shape, clothing, and visible body parts. ' +
+  'When the subject includes a person or character, define vivid anatomical details for the face, hands, ' +
+  'and visible body parts (including breasts, cleavage, vulva, pussy, penis, cock, or butt if the scene is intimate, explicit, or sensual) ' +
+  'so they can be automatically high-resolution detailed. ' +
   'Fill in missing visual details with plausible, coherent choices that support the user\'s idea. ' +
   'Do not invent major new subjects unless the user asks for them. Keep formatting clean and directly usable.';
 
@@ -14,7 +16,7 @@ const DEFAULT_ASSISTANT_SYSTEM_PROMPT =
   'Help the user refine their idea, write stronger positive and negative prompts, and suggest safe generation settings. ' +
   'Keep suggestions grounded in the current model and prompt context.';
 
-export type PromptPresetKey = 'sd' | 'illustrious' | 'pony' | 'flux' | 'zimage';
+export type PromptPresetKey = 'sd' | 'illustrious' | 'pony' | 'flux' | 'zimage' | 'pixeldit';
 export type PromptEnhanceFormatMode = 'auto' | PromptPresetKey;
 export type PromptEnhanceCreativeStrength = 'balanced' | 'conservative' | 'rich';
 
@@ -43,6 +45,13 @@ export function inferPromptPresetKey(modelName: string | null | undefined): Prom
     normalized.includes('z image')
   ) {
     return 'zimage';
+  }
+  if (
+    normalized.includes('pixeldit') ||
+    normalized.includes('pixel dit') ||
+    normalized.includes('pixdit')
+  ) {
+    return 'pixeldit';
   }
 
   return 'sd';
@@ -112,6 +121,16 @@ export const PROMPT_STYLE_PRESETS: PromptStylePreset[] = [
       'Enhance the prompt with detailed natural language descriptions combined with quality tags. ' +
       'Include subject details, environment, lighting, mood, artistic style, and camera perspective. ' +
       'Use a mix of descriptive prose and comma-separated quality modifiers. ' +
+      'Return ONLY the enhanced prompt text, nothing else.',
+  },
+  {
+    key: 'pixeldit',
+    label: 'PixelDiT',
+    systemPrompt:
+      'You are an expert at writing prompts for NVIDIA PixelDiT image generation models. ' +
+      'PixelDiT works best with direct, visually specific natural language. ' +
+      'Write a clear scene description covering the subject, materials, colors, composition, lighting, mood, and camera or art direction. ' +
+      'Avoid Booru tag dumps and avoid adding a separate instruction preamble; the backend text encoder handles the PixelDiT enhancement preamble. ' +
       'Return ONLY the enhanced prompt text, nothing else.',
   },
 ];

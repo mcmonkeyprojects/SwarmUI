@@ -22,9 +22,11 @@ interface PromptSyntaxButtonProps {
     /** Callback when a modal-based syntax is selected */
     onOpenModal?: (syntaxId: string) => void;
     /** Size of the button */
-    size?: 'xs' | 'sm' | 'md';
+    size?: 'xs' | 'sm' | 'md' | 'lg';
     /** Whether the button is disabled */
     disabled?: boolean;
+    /** Custom style overrides for the button */
+    style?: React.CSSProperties;
 }
 
 /**
@@ -36,6 +38,7 @@ export const PromptSyntaxButton = React.memo(function PromptSyntaxButton({
     onOpenModal,
     size = 'sm',
     disabled = false,
+    style,
 }: PromptSyntaxButtonProps) {
     const [opened, setOpened] = useState(false);
 
@@ -69,8 +72,9 @@ export const PromptSyntaxButton = React.memo(function PromptSyntaxButton({
                         size={size}
                         disabled={disabled}
                         aria-label="Insert prompt syntax"
+                        style={style}
                     >
-                        <IconPlus size={size === 'xs' ? 12 : size === 'sm' ? 14 : 16} />
+                        <IconPlus size={size === 'xs' ? 12 : size === 'sm' ? 14 : size === 'lg' ? 18 : 16} />
                     </ActionIcon>
                 </Tooltip>
             </Menu.Target>

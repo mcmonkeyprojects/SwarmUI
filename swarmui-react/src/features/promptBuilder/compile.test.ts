@@ -134,7 +134,23 @@ describe('promptBuilder compile utilities', () => {
     });
   });
 
-  it('builds CLIP and YOLO segment syntax lines correctly', () => {
+  it('builds text-detector and YOLO segment syntax lines correctly', () => {
+    const auto = buildSegmentTag(
+      makeSegment({
+        modelType: 'auto',
+        textMatch: 'hands',
+        creativity: 0.65,
+        threshold: 0.35,
+      }),
+    );
+    const grounded = buildSegmentTag(
+      makeSegment({
+        modelType: 'grounded-sam2',
+        textMatch: 'breasts',
+        creativity: 0.65,
+        threshold: 0.3,
+      }),
+    );
     const clip = buildSegmentTag(
       makeSegment({
         modelType: 'clip-seg',
@@ -159,6 +175,8 @@ describe('promptBuilder compile utilities', () => {
       }),
     );
 
+    expect(auto).toBe('<segment:hands,0.65,0.35>');
+    expect(grounded).toBe('<segment:breasts,0.65,0.30>');
     expect(clip).toBe('<segment:face,0.65,0.40> more detail');
     expect(yolo).toBe('<segment:yolov8n-2:0,1:,0.70,-0.50><param[sampler]:euler><param[scheduler]:karras> restore');
   });

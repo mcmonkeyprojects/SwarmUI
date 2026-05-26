@@ -78,7 +78,7 @@ export const PromptWizardSuggestionStrip = memo(function PromptWizardSuggestionS
       </UnstyledButton>
 
       {/* Body — collapsible */}
-      <Collapse in={!collapsed}>
+      <Collapse expanded={!collapsed}>
         <Box px={12} pb={12}>
           <Tabs defaultValue={suggestions[0]?.title} variant="pills" radius="xl">
             <Tabs.List mb="xs">

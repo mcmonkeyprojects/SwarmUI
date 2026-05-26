@@ -37,6 +37,7 @@ interface PromptWizardProps {
   onApplyToPrompt?: (text: string, mode?: 'replace' | 'append') => void;
   onApplyToNegative?: (text: string, mode?: 'replace' | 'append') => void;
   compact?: boolean;
+  triggerVariant?: 'card' | 'button';
 }
 
 // Lazy-loaded data
@@ -65,6 +66,7 @@ export const PromptWizard = memo(function PromptWizard({
   onApplyToPrompt,
   onApplyToNegative,
   compact = false,
+  triggerVariant = 'card',
 }: PromptWizardProps) {
   const [opened, { open, close }] = useDisclosure(false);
   const [sidebarOpened, sidebarHandlers] = useDisclosure(false);
@@ -381,55 +383,67 @@ export const PromptWizard = memo(function PromptWizard({
 
   return (
     <>
-      {/* Trigger button */}
-      <UnstyledButton
-        onClick={handleOpen}
-        className="swarm-control-no-select"
-        style={{ width: '100%', textAlign: 'left' }}
-        aria-label="Open prompt wizard"
-      >
-        <ElevatedCard
-          elevation="paper"
-          withBorder
-          interactive
-          className={compact ? 'generate-studio__prompt-library-card--compact' : undefined}
-          style={{ padding: compact ? 10 : 14 }}
+      {triggerVariant === 'button' ? (
+        <SwarmButton
+          size="xs"
+          tone="primary"
+          emphasis="soft"
+          leftSection={<IconSparkles size={14} />}
+          onClick={handleOpen}
+          className="generate-studio__prompt-tool-button"
         >
-          <Group justify="space-between" align="center" wrap="nowrap">
-            <Group gap="sm" wrap="nowrap">
-              <ThemeIcon
-                size={compact ? 32 : 38}
-                radius="md"
-                variant="light"
-                color="gray"
-                style={{ backgroundColor: 'var(--elevation-raised)' }}
-              >
-                <IconSparkles size={20} />
-              </ThemeIcon>
-              <Stack gap={2}>
-                <Group gap="xs">
-                  <Text fw={600} size="sm">
-                    Prompt Wizard
+          Prompt Wizard{totalSelected > 0 ? ` (${totalSelected})` : ''}
+        </SwarmButton>
+      ) : (
+        <UnstyledButton
+          onClick={handleOpen}
+          className="swarm-control-no-select"
+          style={{ width: '100%', textAlign: 'left' }}
+          aria-label="Open prompt wizard"
+        >
+          <ElevatedCard
+            elevation="paper"
+            withBorder
+            interactive
+            className={compact ? 'generate-studio__prompt-library-card--compact' : undefined}
+            style={{ padding: compact ? 10 : 14 }}
+          >
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <Group gap="sm" wrap="nowrap">
+                <ThemeIcon
+                  size={compact ? 32 : 38}
+                  radius="md"
+                  variant="light"
+                  color="gray"
+                  style={{ backgroundColor: 'var(--elevation-raised)' }}
+                >
+                  <IconSparkles size={20} />
+                </ThemeIcon>
+                <Stack gap={2}>
+                  <Group gap="xs">
+                    <Text fw={600} size="sm">
+                      Prompt Wizard
+                    </Text>
+                    <SwarmBadge tone={totalSelected > 0 ? 'primary' : 'secondary'} emphasis="soft">
+                      {totalSelected > 0 ? `${totalSelected} tags` : 'Ready'}
+                    </SwarmBadge>
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    {compact
+                      ? 'Build prompts step by step.'
+                      : totalSelected > 0
+                        ? `${totalSelected} tags selected`
+                        : 'Build prompts step by step with guided tag selection'}
                   </Text>
-                  <SwarmBadge tone={totalSelected > 0 ? 'primary' : 'secondary'} emphasis="soft">
-                    {totalSelected > 0 ? `${totalSelected} tags` : 'Ready'}
-                  </SwarmBadge>
-                </Group>
-                <Text size="xs" c="dimmed">
-                  {compact
-                    ? 'Build prompts step by step.'
-                    : totalSelected > 0
-                      ? `${totalSelected} tags selected`
-                      : 'Build prompts step by step with guided tag selection'}
-                </Text>
-              </Stack>
+                </Stack>
+              </Group>
+              <ThemeIcon size={compact ? 28 : 32} radius="xl" variant="light" color="gray">
+                <IconChevronRight size={18} />
+              </ThemeIcon>
             </Group>
-            <ThemeIcon size={compact ? 28 : 32} radius="xl" variant="light" color="gray">
-              <IconChevronRight size={18} />
-            </ThemeIcon>
-          </Group>
-        </ElevatedCard>
-      </UnstyledButton>
+          </ElevatedCard>
+        </UnstyledButton>
+      )}
 
       {/* Sidebar drawer */}
       <PromptWizardSidebar
