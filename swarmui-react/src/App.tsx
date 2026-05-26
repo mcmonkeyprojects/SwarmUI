@@ -1,5 +1,5 @@
 import { useEffect, Suspense, lazy, useRef, useState, type ReactNode } from 'react';
-import { MantineProvider, AppShell, Loader, Center } from '@mantine/core';
+import { MantineProvider, AppShell, Center } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { notifications } from '@mantine/notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -34,10 +34,13 @@ import { initializeAnimationSettings } from './store/animationStore';
 import { useViewTransition } from './hooks/useViewTransition';
 import { useNavigationStore, type AppPage, type AppRoute } from './stores/navigationStore';
 import { AppHeader } from './components/layout/AppHeader';
+import { SwarmLoader } from './components/ui';
 import { useCanvasWorkflowStore } from './stores/canvasWorkflowStore';
 import { usePromptCacheStore } from './stores/promptCacheStore';
 import { usePerformanceSessionStore } from './stores/performanceSessionStore';
 import { isWebRuntimeTarget } from './config/runtimeTarget';
+import { initClientLogStore } from './stores/clientLogStore';
+import { useClientLogging } from './hooks/useClientLogging';
 import { featureFlags } from './config/featureFlags';
 import type { BackendBootstrapSnapshot } from './api/types';
 
@@ -45,6 +48,8 @@ import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import './styles/animations.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+initClientLogStore();
 
 type ElectronAPI = {
   version: string;
@@ -114,7 +119,7 @@ function PageFrame({
 function PageLoader() {
   return (
     <Center h="100%">
-      <Loader size="lg" />
+      <SwarmLoader variant="trace" size={38} label="Loading workspace" />
     </Center>
   );
 }
@@ -209,6 +214,7 @@ function AppRouteOutlet({
 }
 
 function AppContent() {
+  useClientLogging();
   const { route, currentPage, setCurrentPage, syncFromLocation } = useNavigationStore(useShallow((state) => ({
     route: state.route,
     currentPage: state.currentPage,
@@ -578,7 +584,7 @@ function AppContent() {
             <AppRouteOutlet currentPage={currentPage} route={route} />
           ) : (
             <Center h="100%">
-              <Loader size="lg" />
+              <SwarmLoader variant="material" size={36} />
               {!isSessionInitializing && (
                 <span style={{ marginLeft: 12 }}>Connecting to SwarmUI...</span>
               )}
@@ -647,6 +653,7 @@ function App() {
       >
         <Notifications
           position="bottom-right"
+          pauseResetOnHover="notification"
           styles={() => ({
             root: {
               backgroundColor: 'var(--theme-gray-8)',

@@ -4,15 +4,29 @@ import './index.css'
 import App from './App.tsx'
 
 import { logger } from './utils/logger';
+import { clientLogger } from './utils/clientLogger';
 
 // Global error handlers
 window.onerror = (message, source, lineno, colno, error) => {
   logger.error('Global Error Detected:', { message, source, lineno, colno, error });
+  clientLogger.error('system', `Global error: ${message}`, {
+      metadata: { source, lineno, colno, errorMessage: error?.message, errorStack: error?.stack },
+  });
   return false;
 };
 
 window.onunhandledrejection = (event) => {
   logger.error('Unhandled Promise Rejection:', event.reason);
+  clientLogger.error('system', 'Unhandled promise rejection', {
+      metadata: { reason: event.reason instanceof Error ? event.reason.message : String(event.reason) },
+  });
+};
+
+window.onunhandledrejection = (event) => {
+  logger.error('Unhandled Promise Rejection:', event.reason);
+  clientLogger.error('system', 'Unhandled promise rejection', {
+      metadata: { reason: event.reason instanceof Error ? event.reason.message : String(event.reason) },
+  });
 };
 
 // Fade out and remove the native loading spinner

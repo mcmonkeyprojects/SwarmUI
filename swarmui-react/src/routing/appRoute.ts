@@ -1,6 +1,6 @@
 export type AppPage = 'generate' | 'history' | 'queue' | 'workflows' | 'server' | 'roleplay';
 
-export type GenerateWorkspaceMode = 'quick' | 'guided' | 'advanced' | 'video';
+export type GenerateWorkspaceMode = 'quick' | 'guided' | 'advanced' | 'video' | 'pipeline';
 
 export interface GenerateRouteState {
     mode?: GenerateWorkspaceMode;
@@ -32,7 +32,7 @@ export interface WorkflowRouteState {
 }
 
 export interface ServerRouteState {
-    tab?: 'backends' | 'updates' | 'logs' | 'resources' | 'account' | 'admin-tools' | 'trainer';
+    tab?: 'backends' | 'updates' | 'logs' | 'client-logs' | 'resources' | 'account' | 'admin-tools' | 'trainer';
 }
 
 export interface RoleplayRouteState {

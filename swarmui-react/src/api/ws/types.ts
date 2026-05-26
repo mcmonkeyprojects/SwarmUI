@@ -71,15 +71,25 @@ export interface WSEvent<T = unknown> {
 export interface GenerationProgressData {
     currentStep: number;      // Current stage step, when backend provides sampler-stage detail
     totalSteps: number;       // Total steps for the active stage
+    stepSource?: 'backend' | 'node_percent' | 'unknown';
     overallPercent: number;   // overall_percent * 100 (as percentage)
     batch: number;
     batchTotal: number;
     requestId?: string;
     generationId?: string;    // Client-side nonce for request scoping
+    eventSequence?: number;
+    serverElapsedMs?: number;
+    managerReceivedAtMs?: number;
     previewImage?: string;
-    stageId?: string;
-    stageLabel?: string;
-    stageDetail?: string;
+    previewFrameSequence?: number;
+    backendProgressSequence?: number;
+    nodeIndex?: number;
+    nodeCount?: number;
+    currentNode?: string;
+    currentPercentSource?: string;
+    stageId?: string | null;
+    stageLabel?: string | null;
+    stageDetail?: string | null;
     stageIndex?: number;
     stageCount?: number;
     stagesRemaining?: number;
@@ -104,6 +114,36 @@ export interface GenerationProgressData {
     };
 }
 
+export interface GenerationPreviewData {
+    image: string;
+    requestId?: string;
+    generationId?: string;
+    eventSequence?: number;
+    serverElapsedMs?: number;
+    managerReceivedAtMs?: number;
+    previewFrameSequence?: number;
+    backendProgressSequence?: number;
+    currentStep?: number;
+    totalSteps?: number;
+    stepSource?: 'backend' | 'node_percent' | 'unknown';
+    overallPercent?: number;
+    batch?: number;
+    batchTotal?: number;
+    nodeIndex?: number;
+    nodeCount?: number;
+    currentNode?: string;
+    currentPercentSource?: string;
+    stageId?: string | null;
+    stageLabel?: string | null;
+    stageDetail?: string | null;
+    stageIndex?: number;
+    stageCount?: number;
+    stagesRemaining?: number;
+    stageTaskIndex?: number;
+    stageTaskCount?: number;
+    stageTasksRemaining?: number;
+}
+
 export interface GenerationImageData {
     image: string;
     comfyViewUrl?: string;
@@ -111,6 +151,9 @@ export interface GenerationImageData {
     genNumber: number;
     requestId?: string;
     generationId?: string;
+    eventSequence?: number;
+    serverElapsedMs?: number;
+    managerReceivedAtMs?: number;
 }
 
 export interface GenerationCompleteData {
@@ -119,6 +162,9 @@ export interface GenerationCompleteData {
     requestId?: string;
     generationId?: string;
     success?: boolean;
+    eventSequence?: number;
+    serverElapsedMs?: number;
+    managerReceivedAtMs?: number;
 }
 
 export interface GenerationErrorData {
@@ -218,6 +264,9 @@ export interface Subscription {
 // ============================================================================
 
 export interface BackendWSMessage {
+    // Control messages
+    type?: string;
+
     // Status updates
     status?: {
         loading_models?: number;
@@ -229,11 +278,20 @@ export interface BackendWSMessage {
         batch_index: string;       // Backend sends as string
         request_id: string;
         overall_percent: number;   // (nodesDone + curPercent) / expectedNodes
-        current_percent: number;   // current step / max steps within node
+        current_percent: number;   // progress within current backend node
+        event_sequence?: number;
+        server_time_ms?: number;
+        backend_progress_sequence?: number;
+        preview_frame_sequence?: number;
+        node_index?: number;
+        node_count?: number;
+        current_node?: string;
+        current_percent_source?: string;
+        current_percent_is_step?: boolean;
         metadata?: string;
         preview?: string;
-        stage_id?: string;
-        stage_label?: string;
+        stage_id?: string | null;
+        stage_label?: string | null;
         backend_preview?: {
             preview_mode?: string;
             preview_method?: string;
@@ -250,22 +308,25 @@ export interface BackendWSMessage {
             final_image_bytes?: number;
             is_final?: boolean;
         };
-        stage_detail?: string;
-        stage_index?: number;
-        stage_count?: number;
-        stages_remaining?: number;
-        stage_task_index?: number;
-        stage_task_count?: number;
-        stage_tasks_remaining?: number;
-        stage_current_step?: number;
-        stage_total_steps?: number;
+        stage_detail?: string | null;
+        stage_index?: number | string | null;
+        stage_count?: number | string | null;
+        stages_remaining?: number | string | null;
+        stage_task_index?: number | string | null;
+        stage_task_count?: number | string | null;
+        stage_tasks_remaining?: number | string | null;
+        stage_current_step?: number | string | null;
+        stage_total_steps?: number | string | null;
     };
 
     // Generated image
     image?: string;
+    comfy_view_url?: string;
     batch_index?: number;
     gen_number?: number;
     request_id?: string;
+    sui_event_sequence?: number;
+    sui_event_ms?: number;
 
     // Errors
     error?: string;
@@ -277,6 +338,7 @@ export interface BackendWSMessage {
 
     // Success indicator
     success?: boolean;
+    load_progress?: number;
 
     // Download progress
     overall_percent?: number;

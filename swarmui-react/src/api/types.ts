@@ -45,6 +45,7 @@ export interface GenerateParams {
 
   // Model Addons
   vae?: string;
+  automaticvae?: boolean;
   loras?: string;
   loraweights?: string;
 
@@ -132,19 +133,28 @@ export interface GenerationProgress {
   batch_index: string;
   overall_percent: number;
   current_percent: number;
+  event_sequence?: number;
+  server_time_ms?: number;
+  backend_progress_sequence?: number;
+  preview_frame_sequence?: number;
+  node_index?: number;
+  node_count?: number;
+  current_node?: string;
   preview?: string;
   request_id?: string;
-  stage_id?: string;
-  stage_label?: string;
-  stage_detail?: string;
-  stage_index?: number;
-  stage_count?: number;
-  stages_remaining?: number;
-  stage_task_index?: number;
-  stage_task_count?: number;
-  stage_tasks_remaining?: number;
-  stage_current_step?: number;
-  stage_total_steps?: number;
+  current_percent_source?: string;
+  current_percent_is_step?: boolean;
+  stage_id?: string | null;
+  stage_label?: string | null;
+  stage_detail?: string | null;
+  stage_index?: number | string | null;
+  stage_count?: number | string | null;
+  stages_remaining?: number | string | null;
+  stage_task_index?: number | string | null;
+  stage_task_count?: number | string | null;
+  stage_tasks_remaining?: number | string | null;
+  stage_current_step?: number | string | null;
+  stage_total_steps?: number | string | null;
   backend_preview?: {
     preview_mode?: string;
     preview_method?: string;
@@ -165,18 +175,24 @@ export interface GenerationProgress {
 
 export interface GeneratedImage {
   image: string;
+  comfy_view_url?: string;
   batch_index: string;
   metadata: string;
   request_id?: string;
+  sui_event_sequence?: number;
+  sui_event_ms?: number;
 }
 
 export interface WebSocketMessage {
   status?: GenerationStatus;
   gen_progress?: GenerationProgress;
   image?: string;
+  comfy_view_url?: string;
   batch_index?: string;
   metadata?: string;
   request_id?: string;
+  sui_event_sequence?: number;
+  sui_event_ms?: number;
   socket_intention?: 'close';
   success?: boolean;  // Model load completion indicator
   error?: string;
@@ -243,18 +259,6 @@ export interface HistoryFolderResponseV2 {
   has_more: boolean;
   truncated: boolean;
   total_count: number;
-}
-
-export interface ExportHistoryZipParams extends Omit<ListImagesV2Params, 'cursor' | 'limit'> {
-  paths?: string[];
-}
-
-export interface ExportHistoryZipResponse {
-  success?: boolean;
-  filename?: string;
-  url?: string;
-  count?: number;
-  error?: string;
 }
 
 export interface Model {

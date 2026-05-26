@@ -19,6 +19,7 @@ import {
     getWSManager,
     updateWSManagerSession,
     type GenerationProgressData,
+    type GenerationPreviewData,
     type GenerationImageData,
     type ModelProgressData,
     type DownloadProgressData,
@@ -37,6 +38,7 @@ export interface GenerationState {
     progress: number;
     currentStep: number;
     totalSteps: number;
+    stepSource: 'backend' | 'node_percent' | 'unknown';
     stageId: string | null;
     stageLabel: string | null;
     stageDetail: string | null;
@@ -50,6 +52,8 @@ export interface GenerationState {
     totalBatches: number;
     previewImage: string | null;
     previewRevision: number;
+    previewEventSequence: number | null;
+    imageEventSequence: number | null;
     images: string[];
     error: string | null;
     errorId: string | null;
@@ -57,6 +61,10 @@ export interface GenerationState {
     phase: 'idle' | 'starting' | 'connected' | 'waiting' | 'progress' | 'image' | 'complete' | 'error';
     lastEventAt: number | null;
     startTime: number | null;
+}
+
+interface StartGenerationOptions {
+    preservePreviewImage?: boolean;
 }
 
 export interface ModelLoadingState {
@@ -121,7 +129,7 @@ export interface WebSocketStoreActions {
     updateSession: (sessionId: string, reason?: string) => void;
 
     // Generation actions
-    startGeneration: (params: GenerateParams, generationId?: string) => string;
+    startGeneration: (params: GenerateParams, generationId?: string, options?: StartGenerationOptions) => string;
     stopGeneration: () => void;
     clearGeneration: () => void;
 
@@ -150,6 +158,7 @@ const initialGenerationState: GenerationState = {
     progress: 0,
     currentStep: 0,
     totalSteps: 0,
+    stepSource: 'unknown',
     stageId: null,
     stageLabel: null,
     stageDetail: null,
@@ -163,6 +172,8 @@ const initialGenerationState: GenerationState = {
     totalBatches: 1,
     previewImage: null,
     previewRevision: 0,
+    previewEventSequence: null,
+    imageEventSequence: null,
     images: [],
     error: null,
     errorId: null,
@@ -206,6 +217,34 @@ const PROGRESS_UPDATE_MIN_INTERVAL_MS = 50;
 const PREVIEW_QUEUE_DELAY_WARNING_MS = 50;
 const PREVIEW_DATA_URL_PREFIX = 'data:';
 const IS_TEST_ENV = import.meta.env.MODE === 'test';
+const GENERATION_IDLE_WATCHDOG_INTERVAL_MS = 30000;
+const GENERATION_IDLE_WATCHDOG_STALE_MS = 90000;
+
+type BackendStatusCounts = {
+    waiting_gens?: unknown;
+    loading_models?: unknown;
+    waiting_backends?: unknown;
+    live_gens?: unknown;
+};
+
+function readStatusCount(value: unknown): number {
+    const parsed = Number(value ?? 0);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+function readActiveBackendGenerationCount(response: unknown): number | null {
+    if (!response || typeof response !== 'object') {
+        return null;
+    }
+    const record = response as { status?: BackendStatusCounts };
+    if (!record.status || typeof record.status !== 'object') {
+        return null;
+    }
+    return readStatusCount(record.status.waiting_gens)
+        + readStatusCount(record.status.loading_models)
+        + readStatusCount(record.status.waiting_backends)
+        + readStatusCount(record.status.live_gens);
+}
 
 /**
  * Returns true if the event should be dropped because it belongs to a different
@@ -250,15 +289,23 @@ function isMissingModelGenerationError(error: string | undefined, errorId: strin
 
 function buildPreviewEventSignature(data: GenerationProgressData): string {
     return [
+        data.generationId || '',
+        data.requestId || '',
+        data.eventSequence ?? '',
+        data.previewFrameSequence ?? '',
+        data.stageId ?? '',
+        data.stageLabel ?? '',
+        data.stageTaskIndex ?? '',
         data.previewImage || '',
-        data.batch,
-        data.batchTotal,
-        data.stageId || '',
-        data.stageTaskIndex ?? -1,
-        data.currentStep,
-        data.totalSteps,
-        Math.round(data.overallPercent * 100) / 100,
     ].join('|');
+}
+
+function readEventSequence(value: number | undefined): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function previewBatchKey(data: { requestId?: string; batch?: number }): string {
+    return `${data.requestId ?? ''}|${data.batch ?? 0}`;
 }
 
 // ============================================================================
@@ -281,8 +328,109 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             let previewDedupedCount = 0;
             let previewSupersededCount = 0;
             let previewDataUrlEventCount = 0;
+            let previewOutOfOrderDroppedCount = 0;
+            let previewAfterImageDroppedCount = 0;
+            let progressOutOfOrderDroppedCount = 0;
+            let progressRegressionCount = 0;
+            let lastProgressEventSequence = 0;
+            let lastPreviewEventSequence = 0;
+            const finalImageSequenceByBatch = new Map<string, number>();
             let firstPreviewEventRecorded = false;
             let firstPreviewCommitRecorded = false;
+            let generationWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
+
+            const clearGenerationWatchdog = () => {
+                if (generationWatchdogTimer) {
+                    clearTimeout(generationWatchdogTimer);
+                    generationWatchdogTimer = null;
+                }
+            };
+
+            const failLostGeneration = (
+                generation: GenerationState,
+                error: string,
+                errorData: Record<string, unknown>
+            ) => {
+                const generationId = generation.generationId;
+                if (generationId) {
+                    useGenerationDiagnosticsStore.getState().markError(generationId, {
+                        error,
+                        errorId: 'backend_generation_lost',
+                        errorData,
+                        requestId: generation.requestId,
+                    });
+                }
+                set((state) => {
+                    if (state.generation.generationId !== generationId || !state.generation.isGenerating) {
+                        return {};
+                    }
+                    return {
+                        generation: {
+                            ...state.generation,
+                            isGenerating: false,
+                            error,
+                            errorId: 'backend_generation_lost',
+                            errorData,
+                            phase: 'error',
+                            lastEventAt: Date.now(),
+                        },
+                    };
+                });
+                try {
+                    getWSManager().stopGeneration();
+                } catch (stopError) {
+                    logger.warn('[WebSocketStore] Failed to close lost generation websocket', stopError);
+                }
+                emitPreviewSummary('error');
+                resetPreviewTelemetry();
+            };
+
+            const scheduleGenerationWatchdog = () => {
+                if (IS_TEST_ENV) {
+                    return;
+                }
+                clearGenerationWatchdog();
+                generationWatchdogTimer = setTimeout(async () => {
+                    generationWatchdogTimer = null;
+                    const generation = get().generation;
+                    if (!generation.isGenerating) {
+                        return;
+                    }
+
+                    const lastEventAt = generation.lastEventAt ?? generation.startTime ?? Date.now();
+                    const idleMs = Date.now() - lastEventAt;
+                    if (idleMs < GENERATION_IDLE_WATCHDOG_STALE_MS) {
+                        scheduleGenerationWatchdog();
+                        return;
+                    }
+
+                    try {
+                        const statusResponse = await swarmClient.getCurrentStatus();
+                        const activeGenerationCount = readActiveBackendGenerationCount(statusResponse);
+                        if (activeGenerationCount === null || activeGenerationCount > 0) {
+                            scheduleGenerationWatchdog();
+                            return;
+                        }
+
+                        const error = 'Backend stopped reporting this generation before returning a final image. The upscale likely stalled during the backend decode/upscale stage.';
+                        const errorData = {
+                            requestId: generation.requestId,
+                            progress: generation.progress,
+                            currentStep: generation.currentStep,
+                            totalSteps: generation.totalSteps,
+                            stageId: generation.stageId,
+                            stageLabel: generation.stageLabel,
+                            idleMs,
+                            backendStatus: statusResponse,
+                        };
+                        logger.error('[WebSocketStore] Generation lost while backend is idle', errorData);
+                        failLostGeneration(generation, error, errorData);
+                    } catch (error) {
+                        logger.warn('[WebSocketStore] Generation watchdog status check failed', error);
+                        scheduleGenerationWatchdog();
+                    }
+                }, GENERATION_IDLE_WATCHDOG_INTERVAL_MS);
+            };
 
             const resetPreviewTelemetry = () => {
                 pendingPreviewQueuedAt = 0;
@@ -291,6 +439,13 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 previewDedupedCount = 0;
                 previewSupersededCount = 0;
                 previewDataUrlEventCount = 0;
+                previewOutOfOrderDroppedCount = 0;
+                previewAfterImageDroppedCount = 0;
+                progressOutOfOrderDroppedCount = 0;
+                progressRegressionCount = 0;
+                lastProgressEventSequence = 0;
+                lastPreviewEventSequence = 0;
+                finalImageSequenceByBatch.clear();
                 firstPreviewEventRecorded = false;
                 firstPreviewCommitRecorded = false;
             };
@@ -312,6 +467,12 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         previewCommitCount,
                         previewDedupedCount,
                         previewSupersededCount,
+                        previewOutOfOrderDroppedCount,
+                        previewAfterImageDroppedCount,
+                        progressOutOfOrderDroppedCount,
+                        progressRegressionCount,
+                        lastProgressEventSequence,
+                        lastPreviewEventSequence,
                         previewRevision: generation.previewRevision,
                         commitStrategy: 'animation_frame_coalesced',
                     }
@@ -329,6 +490,12 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                             previewCommitCount,
                             previewDedupedCount,
                             previewSupersededCount,
+                            previewOutOfOrderDroppedCount,
+                            previewAfterImageDroppedCount,
+                            progressOutOfOrderDroppedCount,
+                            progressRegressionCount,
+                            lastProgressEventSequence,
+                            lastPreviewEventSequence,
                             previewRevision: generation.previewRevision,
                             commitStrategy: 'animation_frame_coalesced',
                         },
@@ -355,10 +522,51 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 const data = pendingPreviewData;
                 const nextPreview = data.previewImage ?? null;
                 const nextPreviewSignature = pendingPreviewSignature;
+                const eventSequence = readEventSequence(data.eventSequence);
+                const batchKey = previewBatchKey(data);
                 const queueDelay = pendingPreviewQueuedAt > 0 ? performance.now() - pendingPreviewQueuedAt : 0;
                 pendingPreviewData = null;
                 pendingPreviewSignature = null;
                 pendingPreviewQueuedAt = 0;
+
+                if (eventSequence !== null && eventSequence < lastPreviewEventSequence) {
+                    previewOutOfOrderDroppedCount += 1;
+                    if (data.generationId) {
+                        useGenerationDiagnosticsStore.getState().appendEvent(data.generationId, {
+                            type: 'preview_out_of_order_drop',
+                            level: 'warn',
+                            message: 'Dropped an older preview frame that arrived after a newer preview.',
+                            details: {
+                                eventSequence,
+                                lastPreviewEventSequence,
+                                requestId: data.requestId ?? '',
+                                batch: data.batch,
+                                previewFrameSequence: data.previewFrameSequence,
+                            },
+                        });
+                    }
+                    return;
+                }
+
+                const finalImageSequence = finalImageSequenceByBatch.get(batchKey) ?? 0;
+                if (finalImageSequence > 0 && (eventSequence === null || eventSequence <= finalImageSequence)) {
+                    previewAfterImageDroppedCount += 1;
+                    if (data.generationId) {
+                        useGenerationDiagnosticsStore.getState().appendEvent(data.generationId, {
+                            type: 'preview_after_image_drop',
+                            level: 'warn',
+                            message: 'Dropped a preview frame that was older than the final image for this batch.',
+                            details: {
+                                eventSequence,
+                                finalImageSequence,
+                                requestId: data.requestId ?? '',
+                                batch: data.batch,
+                                previewFrameSequence: data.previewFrameSequence,
+                            },
+                        });
+                    }
+                    return;
+                }
 
                 set((state) => {
                     if (isStaleGenerationEvent(state.generation.generationId, data.generationId)) {
@@ -367,11 +575,47 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     if (state.generation.requestId && data.requestId && state.generation.requestId !== data.requestId) {
                         return {};
                     }
+                    const stageWasExplicitlyCleared = data.stageLabel === null;
+                    const nextStageId = stageWasExplicitlyCleared
+                        ? null
+                        : data.stageId !== undefined
+                            ? data.stageId ?? null
+                            : state.generation.stageId;
+                    const nextStageLabel = stageWasExplicitlyCleared
+                        ? null
+                        : data.stageLabel !== undefined
+                            ? data.stageLabel ?? null
+                            : state.generation.stageLabel;
+                    const nextStageDetail = stageWasExplicitlyCleared
+                        ? null
+                        : data.stageDetail !== undefined
+                            ? data.stageDetail ?? null
+                            : state.generation.stageDetail;
+                    const incomingProgress = Math.min(100, Math.max(0, data.overallPercent));
                     return {
                         generation: {
                             ...state.generation,
+                            hasProgressEvent: true,
+                            requestId: state.generation.requestId || data.requestId || null,
+                            progress: Math.max(state.generation.progress, incomingProgress),
+                            currentStep: data.currentStep,
+                            totalSteps: data.totalSteps,
+                            stepSource: data.stepSource ?? state.generation.stepSource,
+                            stageId: nextStageId,
+                            stageLabel: nextStageLabel,
+                            stageDetail: nextStageDetail,
+                            stageIndex: stageWasExplicitlyCleared ? 0 : data.stageIndex ?? state.generation.stageIndex,
+                            stageCount: stageWasExplicitlyCleared ? 0 : data.stageCount ?? state.generation.stageCount,
+                            stagesRemaining: stageWasExplicitlyCleared ? 0 : data.stagesRemaining ?? state.generation.stagesRemaining,
+                            stageTaskIndex: stageWasExplicitlyCleared ? 0 : data.stageTaskIndex ?? state.generation.stageTaskIndex,
+                            stageTaskCount: stageWasExplicitlyCleared ? 0 : data.stageTaskCount ?? state.generation.stageTaskCount,
+                            stageTasksRemaining: stageWasExplicitlyCleared ? 0 : data.stageTasksRemaining ?? state.generation.stageTasksRemaining,
+                            currentBatch: data.batch + 1,
+                            totalBatches: Math.max(1, data.batchTotal),
                             previewImage: nextPreview,
                             previewRevision: state.generation.previewRevision + 1,
+                            previewEventSequence: eventSequence ?? state.generation.previewEventSequence,
+                            phase: 'progress',
                             lastEventAt: Date.now(),
                         },
                     };
@@ -379,12 +623,18 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
 
                 previewCommitCount += 1;
                 lastPreviewSignature = nextPreviewSignature;
+                if (eventSequence !== null) {
+                    lastPreviewEventSequence = Math.max(lastPreviewEventSequence, eventSequence);
+                }
                 usePerformanceSessionStore.getState().recordTiming(
                     'ws:preview-queue-delay',
                     queueDelay,
                     {
                         generationId: data.generationId ?? '',
                         requestId: data.requestId ?? '',
+                        eventSequence: eventSequence ?? undefined,
+                        previewFrameSequence: data.previewFrameSequence,
+                        batch: data.batch,
                         stageId: data.stageId ?? '',
                         stageLabel: data.stageLabel ?? '',
                     },
@@ -414,6 +664,27 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 }
 
                 previewEventCount += 1;
+                const eventSequence = readEventSequence(data.eventSequence);
+                const batchKey = previewBatchKey(data);
+                const finalImageSequence = finalImageSequenceByBatch.get(batchKey) ?? 0;
+                if (finalImageSequence > 0 && (eventSequence === null || eventSequence <= finalImageSequence)) {
+                    previewAfterImageDroppedCount += 1;
+                    if (data.generationId) {
+                        useGenerationDiagnosticsStore.getState().appendEvent(data.generationId, {
+                            type: 'preview_after_image_drop',
+                            level: 'warn',
+                            message: 'Dropped a preview event because the final image for this batch is already newer.',
+                            details: {
+                                eventSequence,
+                                finalImageSequence,
+                                requestId: data.requestId ?? '',
+                                batch: data.batch,
+                                previewFrameSequence: data.previewFrameSequence,
+                            },
+                        });
+                    }
+                    return;
+                }
                 if (data.previewImage.startsWith(PREVIEW_DATA_URL_PREFIX)) {
                     previewDataUrlEventCount += 1;
                 }
@@ -426,6 +697,8 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         {
                             generationId: data.generationId ?? '',
                             requestId: data.requestId ?? '',
+                            eventSequence: eventSequence ?? undefined,
+                            previewFrameSequence: data.previewFrameSequence,
                             stageId: data.stageId ?? '',
                             stageLabel: data.stageLabel ?? '',
                         }
@@ -433,8 +706,20 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 }
 
                 const nextPreviewSignature = buildPreviewEventSignature(data);
-                if (nextPreviewSignature === lastPreviewSignature || nextPreviewSignature === pendingPreviewSignature) {
+                if (nextPreviewSignature === lastPreviewSignature) {
                     previewDedupedCount += 1;
+                    return;
+                }
+                if (nextPreviewSignature === pendingPreviewSignature) {
+                    if (force) {
+                        if (previewRafId !== null) {
+                            cancelAnimationFrame(previewRafId);
+                            previewRafId = null;
+                        }
+                        flushPreviewUpdate();
+                    } else {
+                        previewDedupedCount += 1;
+                    }
                     return;
                 }
 
@@ -468,11 +753,71 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             const flushProgressUpdate = () => {
                 if (pendingProgressData) {
                     const data = pendingProgressData;
+                    const eventSequence = readEventSequence(data.eventSequence);
                     pendingProgressData = null;
+                    if (eventSequence !== null && eventSequence < lastProgressEventSequence) {
+                        progressOutOfOrderDroppedCount += 1;
+                        if (data.generationId) {
+                            useGenerationDiagnosticsStore.getState().appendEvent(data.generationId, {
+                                type: 'progress_out_of_order_drop',
+                                level: 'warn',
+                                message: 'Dropped an older progress event that arrived after newer progress.',
+                                details: {
+                                    eventSequence,
+                                    lastProgressEventSequence,
+                                    progress: data.overallPercent,
+                                    currentStep: data.currentStep,
+                                    totalSteps: data.totalSteps,
+                                    requestId: data.requestId ?? '',
+                                },
+                            });
+                        }
+                        rafId = null;
+                        return;
+                    }
                     set((state) => {
                         if (isStaleGenerationEvent(state.generation.generationId, data.generationId)) {
                             return {};
                         }
+                        const incomingProgress = Math.min(100, Math.max(0, data.overallPercent));
+                        const nextProgress = Math.max(state.generation.progress, incomingProgress);
+                        if (incomingProgress + 0.5 < state.generation.progress) {
+                            progressRegressionCount += 1;
+                            if (state.generation.generationId) {
+                                useGenerationDiagnosticsStore.getState().appendEvent(state.generation.generationId, {
+                                    type: 'progress_regression_clamped',
+                                    level: 'warn',
+                                    message: 'Backend progress regressed; frontend kept the newer visible progress.',
+                                    details: {
+                                        eventSequence,
+                                        previousProgress: state.generation.progress,
+                                        incomingProgress,
+                                        requestId: data.requestId ?? '',
+                                        nodeIndex: data.nodeIndex,
+                                        nodeCount: data.nodeCount,
+                                        currentNode: data.currentNode,
+                                        currentPercentSource: data.currentPercentSource,
+                                    },
+                                });
+                            }
+                        }
+
+                        const stageWasExplicitlyCleared = data.stageLabel === null;
+                        const nextStageId = stageWasExplicitlyCleared
+                            ? null
+                            : data.stageId !== undefined
+                                ? data.stageId ?? null
+                                : state.generation.stageId;
+                        const nextStageLabel = stageWasExplicitlyCleared
+                            ? null
+                            : data.stageLabel !== undefined
+                                ? data.stageLabel ?? null
+                                : state.generation.stageLabel;
+                        const nextStageDetail = stageWasExplicitlyCleared
+                            ? null
+                            : data.stageDetail !== undefined
+                                ? data.stageDetail ?? null
+                                : state.generation.stageDetail;
                         return {
                             generation:
                                 state.generation.requestId &&
@@ -483,18 +828,19 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                                         ...state.generation,
                                         hasProgressEvent: true,
                                         requestId: state.generation.requestId || data.requestId || null,
-                                        progress: Math.min(100, Math.max(0, data.overallPercent)),
+                                        progress: nextProgress,
                                         currentStep: data.currentStep,
                                         totalSteps: data.totalSteps,
-                                        stageId: data.stageId || state.generation.stageId,
-                                        stageLabel: data.stageLabel || state.generation.stageLabel,
-                                        stageDetail: data.stageDetail || null,
-                                        stageIndex: data.stageIndex ?? state.generation.stageIndex,
-                                        stageCount: data.stageCount ?? state.generation.stageCount,
-                                        stagesRemaining: data.stagesRemaining ?? state.generation.stagesRemaining,
-                                        stageTaskIndex: data.stageTaskIndex ?? 0,
-                                        stageTaskCount: data.stageTaskCount ?? 0,
-                                        stageTasksRemaining: data.stageTasksRemaining ?? 0,
+                                        stepSource: data.stepSource ?? state.generation.stepSource,
+                                        stageId: nextStageId,
+                                        stageLabel: nextStageLabel,
+                                        stageDetail: nextStageDetail,
+                                        stageIndex: stageWasExplicitlyCleared ? 0 : data.stageIndex ?? state.generation.stageIndex,
+                                        stageCount: stageWasExplicitlyCleared ? 0 : data.stageCount ?? state.generation.stageCount,
+                                        stagesRemaining: stageWasExplicitlyCleared ? 0 : data.stagesRemaining ?? state.generation.stagesRemaining,
+                                        stageTaskIndex: stageWasExplicitlyCleared ? 0 : data.stageTaskIndex ?? 0,
+                                        stageTaskCount: stageWasExplicitlyCleared ? 0 : data.stageTaskCount ?? 0,
+                                        stageTasksRemaining: stageWasExplicitlyCleared ? 0 : data.stageTasksRemaining ?? 0,
                                         currentBatch: data.batch + 1,
                                         totalBatches: Math.max(1, data.batchTotal),
                                         phase: 'progress',
@@ -502,6 +848,9 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                                     },
                         };
                     });
+                    if (eventSequence !== null) {
+                        lastProgressEventSequence = Math.max(lastProgressEventSequence, eventSequence);
+                    }
                 }
                 rafId = null;
             };
@@ -585,12 +934,20 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     const data = event.data as GenerationProgressData;
                     const now = performance.now();
                     const currentGeneration = get().generation;
+
                     const diagnosticGenerationId = data.generationId ?? currentGeneration.generationId;
                     if (diagnosticGenerationId) {
                         diagnostics.recordProgress(diagnosticGenerationId, {
                             requestId: data.requestId,
                             progress: data.overallPercent,
                             previewImage: data.previewImage,
+                            eventSequence: data.eventSequence,
+                            serverElapsedMs: data.serverElapsedMs,
+                            stepSource: data.stepSource,
+                            nodeIndex: data.nodeIndex,
+                            nodeCount: data.nodeCount,
+                            currentNode: data.currentNode,
+                            currentPercentSource: data.currentPercentSource,
                             stageId: data.stageId,
                             stageLabel: data.stageLabel,
                             currentStep: data.currentStep,
@@ -620,8 +977,11 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
 
                     // Always update on significant changes or first update
                     const significantChange =
-                        data.stageId !== currentGeneration.stageId ||
-                        data.stageTaskIndex !== currentGeneration.stageTaskIndex ||
+                        (data.stageId !== undefined && data.stageId !== currentGeneration.stageId) ||
+                        (data.stageLabel !== undefined && data.stageLabel !== currentGeneration.stageLabel) ||
+                        (data.stageIndex !== undefined && data.stageIndex !== currentGeneration.stageIndex) ||
+                        (data.stageCount !== undefined && data.stageCount !== currentGeneration.stageCount) ||
+                        (data.stageTaskIndex !== undefined && data.stageTaskIndex !== currentGeneration.stageTaskIndex) ||
                         data.currentStep !== currentGeneration.currentStep ||
                         Math.abs(data.overallPercent - currentGeneration.progress) >= 2;
 
@@ -653,21 +1013,120 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     if (data.previewImage) {
                         const previewBoundaryChanged =
                             data.batch + 1 !== currentGeneration.currentBatch ||
-                            data.stageId !== currentGeneration.stageId ||
-                            data.stageTaskIndex !== currentGeneration.stageTaskIndex;
+                            (data.stageId !== undefined && data.stageId !== currentGeneration.stageId) ||
+                            (data.stageLabel !== undefined && data.stageLabel !== currentGeneration.stageLabel) ||
+                            (data.stageTaskIndex !== undefined && data.stageTaskIndex !== currentGeneration.stageTaskIndex);
                         schedulePreviewUpdate(data, previewBoundaryChanged);
                     }
+                });
+
+                manager.on('generation:preview', (event) => {
+                    const data = event.data as GenerationPreviewData;
+                    const currentGeneration = get().generation;
+                    if (!data.image || !currentGeneration.isGenerating) {
+                        return;
+                    }
+
+                    const previewData: GenerationProgressData = {
+                        currentStep: data.currentStep ?? currentGeneration.currentStep,
+                        totalSteps: data.totalSteps ?? currentGeneration.totalSteps,
+                        stepSource: data.stepSource ?? currentGeneration.stepSource,
+                        overallPercent: data.overallPercent ?? currentGeneration.progress,
+                        batch: data.batch ?? Math.max(0, currentGeneration.currentBatch - 1),
+                        batchTotal: data.batchTotal ?? Math.max(1, currentGeneration.totalBatches),
+                        requestId: data.requestId ?? currentGeneration.requestId ?? undefined,
+                        generationId: data.generationId ?? currentGeneration.generationId ?? undefined,
+                        eventSequence: data.eventSequence,
+                        serverElapsedMs: data.serverElapsedMs,
+                        managerReceivedAtMs: data.managerReceivedAtMs,
+                        previewImage: data.image,
+                        previewFrameSequence: data.previewFrameSequence,
+                        backendProgressSequence: data.backendProgressSequence,
+                        nodeIndex: data.nodeIndex,
+                        nodeCount: data.nodeCount,
+                        currentNode: data.currentNode,
+                        currentPercentSource: data.currentPercentSource,
+                        stageId: data.stageId !== undefined ? data.stageId : currentGeneration.stageId ?? undefined,
+                        stageLabel: data.stageLabel !== undefined ? data.stageLabel : currentGeneration.stageLabel ?? undefined,
+                        stageDetail: data.stageDetail !== undefined ? data.stageDetail : currentGeneration.stageDetail ?? undefined,
+                        stageIndex: data.stageLabel === null ? 0 : data.stageIndex ?? currentGeneration.stageIndex,
+                        stageCount: data.stageLabel === null ? 0 : data.stageCount ?? currentGeneration.stageCount,
+                        stagesRemaining: data.stageLabel === null ? 0 : data.stagesRemaining ?? currentGeneration.stagesRemaining,
+                        stageTaskIndex: data.stageLabel === null ? 0 : data.stageTaskIndex ?? currentGeneration.stageTaskIndex,
+                        stageTaskCount: data.stageLabel === null ? 0 : data.stageTaskCount ?? currentGeneration.stageTaskCount,
+                        stageTasksRemaining: data.stageLabel === null ? 0 : data.stageTasksRemaining ?? currentGeneration.stageTasksRemaining,
+                    };
+                    if (data.overallPercent !== undefined) {
+                        if (rafId !== null) {
+                            cancelAnimationFrame(rafId);
+                            rafId = null;
+                        }
+                        pendingProgressData = previewData;
+                        flushProgressUpdate();
+                    }
+                    schedulePreviewUpdate(previewData, true);
                 });
 
                 manager.on('generation:image', (event) => {
                     const data = event.data as GenerationImageData;
                     const imageUrl = data.comfyViewUrl || data.image;
+                    const eventSequence = readEventSequence(data.eventSequence);
+                    const batchKey = previewBatchKey({ requestId: data.requestId, batch: data.batch });
+                    if (eventSequence !== null) {
+                        finalImageSequenceByBatch.set(batchKey, eventSequence);
+                    } else {
+                        finalImageSequenceByBatch.set(batchKey, Number.MAX_SAFE_INTEGER);
+                    }
+                    if (
+                        pendingPreviewData &&
+                        previewBatchKey(pendingPreviewData) === batchKey &&
+                        (
+                            eventSequence === null ||
+                            readEventSequence(pendingPreviewData.eventSequence) === null ||
+                            (readEventSequence(pendingPreviewData.eventSequence) ?? 0) <= eventSequence
+                        )
+                    ) {
+                        previewAfterImageDroppedCount += 1;
+                        pendingPreviewData = null;
+                        pendingPreviewSignature = null;
+                        pendingPreviewQueuedAt = 0;
+                        if (previewRafId !== null) {
+                            cancelAnimationFrame(previewRafId);
+                            previewRafId = null;
+                        }
+                    }
                     const diagnosticGenerationId = data.generationId ?? get().generation.generationId;
                     if (diagnosticGenerationId) {
                         diagnostics.recordImage(diagnosticGenerationId, {
                             requestId: data.requestId,
                             image: imageUrl,
                         });
+                        diagnostics.appendEvent(diagnosticGenerationId, {
+                            type: 'image_event_sequence',
+                            level: 'debug',
+                            message: 'Received final image event ordering data.',
+                            details: {
+                                eventSequence,
+                                serverElapsedMs: data.serverElapsedMs,
+                                managerReceivedAtMs: data.managerReceivedAtMs,
+                                batch: data.batch,
+                                requestId: data.requestId ?? '',
+                            },
+                        });
+                    }
+                    const generationStartTime = get().generation.startTime;
+                    if (generationStartTime) {
+                        usePerformanceSessionStore.getState().recordTiming(
+                            'generate:image-event',
+                            Date.now() - generationStartTime,
+                            {
+                                generationId: diagnosticGenerationId ?? '',
+                                requestId: data.requestId ?? '',
+                                eventSequence: eventSequence ?? undefined,
+                                serverElapsedMs: data.serverElapsedMs,
+                                batch: data.batch,
+                            }
+                        );
                     }
                     set((state) => {
                         if (isStaleGenerationEvent(state.generation.generationId, data.generationId)) {
@@ -697,6 +1156,12 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                                             ...state.generation,
                                             images: nextImages,
                                             requestId: state.generation.requestId || data.requestId || null,
+                                            previewImage: imageUrl,
+                                            previewRevision: state.generation.previewImage === imageUrl
+                                                ? state.generation.previewRevision
+                                                : state.generation.previewRevision + 1,
+                                            imageEventSequence: eventSequence ?? state.generation.imageEventSequence,
+                                            previewEventSequence: eventSequence ?? state.generation.previewEventSequence,
                                             // Some backend paths emit image events but sparse/no progress.
                                             hasProgressEvent: state.generation.hasProgressEvent || state.generation.isGenerating,
                                             phase: 'image',
@@ -712,7 +1177,8 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 });
 
                 manager.on('generation:complete', (event) => {
-                    const data = event.data as { requestId?: string; generationId?: string };
+                    const data = event.data as { requestId?: string; generationId?: string; eventSequence?: number; serverElapsedMs?: number; managerReceivedAtMs?: number };
+                    clearGenerationWatchdog();
                     resetPreviewBuffer();
                     logger.info('[WebSocketStore] Generation complete event', data);
                     const diagnosticGenerationId = data.generationId ?? get().generation.generationId;
@@ -720,6 +1186,30 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         diagnostics.markComplete(diagnosticGenerationId, {
                             requestId: data.requestId,
                         });
+                        diagnostics.appendEvent(diagnosticGenerationId, {
+                            type: 'complete_event_sequence',
+                            level: 'debug',
+                            message: 'Received generation completion ordering data.',
+                            details: {
+                                eventSequence: data.eventSequence,
+                                serverElapsedMs: data.serverElapsedMs,
+                                managerReceivedAtMs: data.managerReceivedAtMs,
+                                requestId: data.requestId ?? '',
+                            },
+                        });
+                    }
+                    const generationStartTime = get().generation.startTime;
+                    if (generationStartTime) {
+                        usePerformanceSessionStore.getState().recordTiming(
+                            'generate:complete-event',
+                            Date.now() - generationStartTime,
+                            {
+                                generationId: diagnosticGenerationId ?? '',
+                                requestId: data.requestId ?? '',
+                                eventSequence: data.eventSequence,
+                                serverElapsedMs: data.serverElapsedMs,
+                            }
+                        );
                     }
                     set((state) => {
                         if (isStaleGenerationEvent(state.generation.generationId, data.generationId)) {
@@ -761,6 +1251,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
 
                 manager.on('generation:error', (event) => {
                     const data = event.data as { error: string; requestId?: string; errorId?: string; errorData?: unknown; generationId?: string };
+                    clearGenerationWatchdog();
                     resetPreviewBuffer();
                     set((state) => {
                         const diagnosticGenerationId = data.generationId ?? state.generation.generationId;
@@ -1166,7 +1657,8 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             // Generation Actions
             // ========================================================================
 
-            startGeneration: (params: GenerateParams, providedGenerationId?: string) => {
+            startGeneration: (params: GenerateParams, providedGenerationId?: string, options?: StartGenerationOptions) => {
+                clearGenerationWatchdog();
                 resetPreviewBuffer();
                 resetPreviewTelemetry();
                 const parsedSteps = Number(params.steps);
@@ -1177,6 +1669,8 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 const paramKeys = Object.keys(params || {}).sort();
                 const diagnostics = useGenerationDiagnosticsStore.getState();
                 const generationId = providedGenerationId || `gen_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                const previousPreviewImage = options?.preservePreviewImage ? get().generation.previewImage : null;
+                const previousPreviewRevision = options?.preservePreviewImage ? get().generation.previewRevision : 0;
 
                 logger.info('[WebSocketStore] startGeneration called', {
                     generationId,
@@ -1212,6 +1706,8 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         isGenerating: true,
                         generationId,
                         phase: 'starting',
+                        previewImage: previousPreviewImage,
+                        previewRevision: previousPreviewRevision,
                         lastEventAt: Date.now(),
                         startTime: Date.now(),
                         totalSteps,
@@ -1252,12 +1748,14 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 try {
                     const manager = getWSManager();
                     manager.startGeneration(params as Record<string, unknown>, generationId);
+                    scheduleGenerationWatchdog();
                     diagnostics.appendEvent(generationId, {
                         type: 'manager_start',
                         level: 'info',
                         message: 'WebSocket manager accepted generation request.',
                     });
                 } catch (error) {
+                    clearGenerationWatchdog();
                     console.error('[WebSocketStore] Failed to start generation:', error);
                     set((state) => ({
                         generation: {
@@ -1280,6 +1778,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             },
 
             stopGeneration: () => {
+                clearGenerationWatchdog();
                 resetPreviewBuffer();
                 const activeGenerationId = get().generation.generationId;
                 try {
@@ -1305,6 +1804,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             },
 
             clearGeneration: () => {
+                clearGenerationWatchdog();
                 resetPreviewBuffer();
                 emitPreviewSummary('clear');
                 resetPreviewTelemetry();
@@ -1414,6 +1914,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             // ========================================================================
 
             reset: () => {
+                clearGenerationWatchdog();
                 try {
                     const manager = getWSManager();
                     manager.disconnectAll();

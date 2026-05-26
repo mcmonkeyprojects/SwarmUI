@@ -20,7 +20,8 @@ class RequestDeduplicator {
      */
     private getKey(endpoint: string, params: Record<string, unknown>): string {
         // Exclude session_id from key (it's always the same per session)
-        const { session_id, ...keyParams } = params;
+        const keyParams = { ...params };
+        delete keyParams.session_id;
         return `${endpoint}:${JSON.stringify(keyParams)}`;
     }
 

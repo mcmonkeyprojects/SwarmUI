@@ -113,6 +113,7 @@ export const queryKeys = {
     // Comfy
     comfy: {
         workflows: () => ['comfy', 'workflows'] as const,
+        nodeTypes: () => ['comfy', 'node-types'] as const,
     },
 
     // Wildcards

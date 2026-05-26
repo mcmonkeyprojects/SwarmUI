@@ -12,7 +12,6 @@ import type {
     WSManagerConfig,
     ConnectionState,
     BackendWSMessage,
-    GenerationProgressData,
     GenerationImageData,
     ModelProgressData,
     DownloadProgressData,
@@ -21,6 +20,11 @@ import type {
 } from './types';
 import { EventEmitter } from './EventEmitter';
 import { recordWSReconnect, recordWSSessionRecovery } from '../../utils/perfDiagnostics';
+import { clientLogger } from '../../utils/clientLogger';
+import {
+    generationPreviewFromProgress,
+    normalizeGenerationProgress,
+} from '../../utils/generationProgress';
 
 // ============================================================================
 // Constants
@@ -42,17 +46,23 @@ const DEFAULT_CONFIG: Omit<WSManagerResolvedConfig, 'baseUrl' | 'sessionId'> = {
     maxSessionRecoveryAttempts: 1,
 };
 
-// Heartbeat is attempted on generation sockets. If backend doesn't support app-level
-// ping/pong, WebSocketManager will auto-disable heartbeat for that live connection.
-const HEARTBEAT_SUPPORTED_ENDPOINTS = new Set(['GenerateText2ImageWS']);
+// Swarm generation sockets treat every message as request input, so app-level
+// heartbeat payloads must not be sent on GenerateText2ImageWS.
+const HEARTBEAT_SUPPORTED_ENDPOINTS = new Set<string>();
 const HIDDEN_HEARTBEAT_INTERVAL_MULTIPLIER = 4;
 const HIDDEN_RECONNECT_DELAY_MULTIPLIER = 2;
+
+function readFiniteNumber(value: unknown): number | undefined {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+}
 
 interface GenerationConnectionState {
     hasProgress: boolean;
     hasImage: boolean;
     requestId: string | null;
     generationId: string | null;
+    messageSequence: number;
 }
 
 interface PendingReconnect {
@@ -174,6 +184,7 @@ export class WebSocketManager {
                 hasImage: false,
                 requestId: null,
                 generationId: null,
+                messageSequence: 0,
             });
         }
 
@@ -395,6 +406,10 @@ export class WebSocketManager {
             }
         }
         this.emitEvent('generation:start', 'GenerateText2ImageWS', { params: normalizedParams, generationId });
+        clientLogger.info('ws', 'Generation WebSocket connected', {
+            metadata: { connectionId, generationId },
+            correlationId: generationId,
+        });
         return connectionId;
     }
 
@@ -402,6 +417,7 @@ export class WebSocketManager {
      * Stop current generation
      */
     stopGeneration(): void {
+        clientLogger.info('ws', 'Generation WebSocket disconnected');
         this.disconnect('generation');
     }
 
@@ -409,6 +425,11 @@ export class WebSocketManager {
      * Load model with progress
      */
     loadModel(modelName: string): string {
+        for (const id of Array.from(this.connections.keys())) {
+            if (id.startsWith('model_') && id !== `model_${modelName}`) {
+                this.disconnect(id);
+            }
+        }
         return this.connect('SelectModelWS', { model: modelName }, `model_${modelName}`);
     }
 
@@ -604,12 +625,29 @@ export class WebSocketManager {
         data: BackendWSMessage,
         params: Record<string, unknown>
     ): void {
+        const managerReceivedAtMs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        let managerEventSequence: number | undefined;
+        if (endpoint === 'GenerateText2ImageWS') {
+            const generationState = this.generationStates.get(connectionId);
+            const nextSequence = (generationState?.messageSequence ?? 0) + 1;
+            managerEventSequence = nextSequence;
+            this.generationStates.set(connectionId, {
+                hasProgress: generationState?.hasProgress ?? false,
+                hasImage: generationState?.hasImage ?? false,
+                requestId: generationState?.requestId ?? null,
+                generationId: generationState?.generationId ?? null,
+                messageSequence: nextSequence,
+            });
+        }
+        const eventSequence = readFiniteNumber(data.sui_event_sequence ?? data.gen_progress?.event_sequence) ?? managerEventSequence;
+        const serverElapsedMs = readFiniteNumber(data.sui_event_ms ?? data.gen_progress?.server_time_ms);
+
         if (this.config.debug) {
             this.log('debug', `Message: ${connectionId}`, data);
         }
 
         // Handle pong response for heartbeat
-        if ((data as any).type === 'pong') {
+        if (data.type === 'pong') {
             this.handlePong(connectionId);
             return;
         }
@@ -659,84 +697,15 @@ export class WebSocketManager {
 
         // Handle generation progress
         if (data.gen_progress) {
-            // Get total steps from generation params (default to 20) for older backends
-            const parsedSteps =
-                typeof params.steps === 'number'
-                    ? params.steps
-                    : typeof params.steps === 'string'
-                        ? parseInt(params.steps, 10)
-                        : NaN;
-            const fallbackTotalSteps = Number.isFinite(parsedSteps) && parsedSteps > 0 ? parsedSteps : 20;
-            const hasStageMetadata = typeof data.gen_progress.stage_id === 'string'
-                || typeof data.gen_progress.stage_label === 'string';
-            const stageTotalStepsRaw = Number(data.gen_progress.stage_total_steps);
-            const totalSteps = Number.isFinite(stageTotalStepsRaw) && stageTotalStepsRaw > 0
-                ? Math.round(stageTotalStepsRaw)
-                : hasStageMetadata
-                    ? 0
-                    : fallbackTotalSteps;
-            const stageCurrentStepRaw = Number(data.gen_progress.stage_current_step);
-            const currentStep = Number.isFinite(stageCurrentStepRaw) && stageCurrentStepRaw >= 0
-                ? Math.min(totalSteps, Math.max(0, Math.round(stageCurrentStepRaw)))
-                : totalSteps > 0
-                    ? Math.min(
-                        totalSteps,
-                        Math.max(0, Math.round(Math.min(1, Math.max(0, Number(data.gen_progress.current_percent ?? 0))) * totalSteps))
-                    )
-                    : 0;
-
-            // Get total requested images to compute an overall request-level percentage.
-            const parsedImages =
-                typeof params.images === 'number'
-                    ? params.images
-                    : typeof params.images === 'string'
-                        ? parseInt(params.images, 10)
-                        : NaN;
-            const batchTotal = Number.isFinite(parsedImages) && parsedImages > 0 ? parsedImages : 1;
-
-            // Backend reports per-batch overall_percent in [0..1].
-            const batchIndexRaw = parseInt(data.gen_progress.batch_index, 10);
-            const batchIndex = Number.isFinite(batchIndexRaw) ? Math.max(batchIndexRaw, 0) : 0;
-            const batchPercentRaw = Number(data.gen_progress.overall_percent ?? 0);
-            const batchPercentClamped = Math.min(1, Math.max(0, Number.isFinite(batchPercentRaw) ? batchPercentRaw : 0));
-            const requestOverallPercent = ((batchIndex + batchPercentClamped) / batchTotal) * 100;
-
             const progressState = this.generationStates.get(connectionId);
-            const progress: GenerationProgressData = {
-                currentStep,
-                totalSteps,
-                overallPercent: Math.min(100, Math.max(0, requestOverallPercent)),
-                batch: batchIndex,
-                batchTotal,
-                requestId: data.gen_progress.request_id,
+            const progress = normalizeGenerationProgress({
+                progress: data.gen_progress,
+                params,
                 generationId: progressState?.generationId ?? undefined,
-                previewImage: data.gen_progress.preview,
-                stageId: data.gen_progress.stage_id,
-                stageLabel: data.gen_progress.stage_label,
-                stageDetail: data.gen_progress.stage_detail,
-                stageIndex: typeof data.gen_progress.stage_index === 'number' ? data.gen_progress.stage_index : undefined,
-                stageCount: typeof data.gen_progress.stage_count === 'number' ? data.gen_progress.stage_count : undefined,
-                stagesRemaining: typeof data.gen_progress.stages_remaining === 'number' ? data.gen_progress.stages_remaining : undefined,
-                stageTaskIndex: typeof data.gen_progress.stage_task_index === 'number' ? data.gen_progress.stage_task_index : undefined,
-                stageTaskCount: typeof data.gen_progress.stage_task_count === 'number' ? data.gen_progress.stage_task_count : undefined,
-                stageTasksRemaining: typeof data.gen_progress.stage_tasks_remaining === 'number' ? data.gen_progress.stage_tasks_remaining : undefined,
-                backendPreview: data.gen_progress.backend_preview ? {
-                    previewMode: data.gen_progress.backend_preview.preview_mode,
-                    previewMethod: data.gen_progress.backend_preview.preview_method,
-                    warning: data.gen_progress.backend_preview.warning ?? null,
-                    promptQueuedMs: typeof data.gen_progress.backend_preview.prompt_queued_ms === 'number' ? data.gen_progress.backend_preview.prompt_queued_ms : undefined,
-                    executionStartMs: typeof data.gen_progress.backend_preview.execution_start_ms === 'number' ? data.gen_progress.backend_preview.execution_start_ms : undefined,
-                    firstProgressMs: typeof data.gen_progress.backend_preview.first_progress_ms === 'number' ? data.gen_progress.backend_preview.first_progress_ms : undefined,
-                    firstPreviewMs: typeof data.gen_progress.backend_preview.first_preview_ms === 'number' ? data.gen_progress.backend_preview.first_preview_ms : undefined,
-                    firstImageMs: typeof data.gen_progress.backend_preview.first_image_ms === 'number' ? data.gen_progress.backend_preview.first_image_ms : undefined,
-                    completeMs: typeof data.gen_progress.backend_preview.complete_ms === 'number' ? data.gen_progress.backend_preview.complete_ms : undefined,
-                    previewEventCount: typeof data.gen_progress.backend_preview.preview_event_count === 'number' ? data.gen_progress.backend_preview.preview_event_count : undefined,
-                    firstPreviewBytes: typeof data.gen_progress.backend_preview.first_preview_bytes === 'number' ? data.gen_progress.backend_preview.first_preview_bytes : undefined,
-                    averagePreviewBytes: typeof data.gen_progress.backend_preview.average_preview_bytes === 'number' ? data.gen_progress.backend_preview.average_preview_bytes : undefined,
-                    finalImageBytes: typeof data.gen_progress.backend_preview.final_image_bytes === 'number' ? data.gen_progress.backend_preview.final_image_bytes : undefined,
-                    isFinal: data.gen_progress.backend_preview.is_final === true,
-                } : undefined,
-            };
+                eventSequence,
+                serverElapsedMs,
+                managerReceivedAtMs,
+            });
             if (progressState) {
                 this.generationStates.set(connectionId, {
                     ...progressState,
@@ -746,11 +715,9 @@ export class WebSocketManager {
             }
             this.emitEvent('generation:progress', endpoint, progress);
 
-            if (data.gen_progress.preview) {
-                this.emitEvent('generation:preview', endpoint, {
-                    image: data.gen_progress.preview,
-                    generationId: progressState?.generationId,
-                });
+            const preview = generationPreviewFromProgress(progress);
+            if (preview) {
+                this.emitEvent('generation:preview', endpoint, preview);
             }
         }
 
@@ -759,11 +726,14 @@ export class WebSocketManager {
             const imgGenState = this.generationStates.get(connectionId);
             const imageData: GenerationImageData = {
                 image: data.image,
-                comfyViewUrl: (data as any).comfy_view_url,
+                comfyViewUrl: data.comfy_view_url,
                 batch: data.batch_index || 0,
                 genNumber: data.gen_number || 0,
                 requestId: data.request_id,
                 generationId: imgGenState?.generationId ?? undefined,
+                eventSequence,
+                serverElapsedMs,
+                managerReceivedAtMs,
             };
             const state = imgGenState;
             if (state) {
@@ -782,7 +752,7 @@ export class WebSocketManager {
             const loadingCount = Number.isFinite(loadingCountRaw) ? Math.max(loadingCountRaw, 0) : 0;
 
             // Some backends may provide load_progress (0..1 or 0..100). Use it when available.
-            const rawLoadProgress = Number((data as any).load_progress);
+            const rawLoadProgress = Number(data.load_progress);
             const hasDeterministicProgress = Number.isFinite(rawLoadProgress);
             const normalizedProgress = hasDeterministicProgress
                 ? (rawLoadProgress <= 1 ? rawLoadProgress * 100 : rawLoadProgress)
@@ -816,7 +786,14 @@ export class WebSocketManager {
             const requestId = data.request_id || data.gen_progress?.request_id;
             if (endpoint === 'GenerateText2ImageWS') {
                 const successGenState = this.generationStates.get(connectionId);
-                this.emitEvent('generation:complete', endpoint, { success: true, requestId, generationId: successGenState?.generationId });
+                this.emitEvent('generation:complete', endpoint, {
+                    success: true,
+                    requestId,
+                    generationId: successGenState?.generationId,
+                    eventSequence,
+                    serverElapsedMs,
+                    managerReceivedAtMs,
+                });
             } else if (endpoint === 'SelectModelWS') {
                 this.emitEvent('model:loaded', endpoint, {
                     modelName: connectionId.replace('model_', ''),
@@ -836,7 +813,14 @@ export class WebSocketManager {
             // For generation, this means the generation is complete
             if (endpoint === 'GenerateText2ImageWS') {
                 const closeGenState = this.generationStates.get(connectionId);
-                this.emitEvent('generation:complete', endpoint, { success: true, requestId, generationId: closeGenState?.generationId });
+                this.emitEvent('generation:complete', endpoint, {
+                    success: true,
+                    requestId,
+                    generationId: closeGenState?.generationId,
+                    eventSequence,
+                    serverElapsedMs,
+                    managerReceivedAtMs,
+                });
             } else if (endpoint === 'SelectModelWS') {
                 // Model selection sockets can close without explicit success payload.
                 this.emitEvent('model:loaded', endpoint, {
@@ -941,6 +925,9 @@ export class WebSocketManager {
             this.log('error', `Max reconnect attempts reached: ${connectionId}`);
             this.updateConnectionState(connectionId, { status: 'error' });
             this.emitEvent('error', endpoint, { error: 'Max reconnect attempts reached' });
+            clientLogger.error('ws', `Max reconnect attempts reached: ${connectionId}`, {
+                metadata: { endpoint, attempts: state.reconnectAttempts },
+            });
             return;
         }
 
@@ -960,6 +947,9 @@ export class WebSocketManager {
 
         this.log('info', `Reconnecting: ${connectionId} (attempt ${attempt}, delay ${delay}ms)`);
         recordWSReconnect(endpoint);
+        clientLogger.warn('ws', `WebSocket reconnecting (attempt ${attempt})`, {
+            metadata: { endpoint, attempt, delay },
+        });
 
         this.updateConnectionState(connectionId, {
             status: 'reconnecting',
@@ -1124,9 +1114,9 @@ export class WebSocketManager {
         }
     }
 
-    private emitEvent<T>(type: string, endpoint: string, data: T): void {
+    private emitEvent<T>(type: WSEventType, endpoint: string, data: T): void {
         this.eventEmitter.emit({
-            type: type as any,
+            type,
             endpoint,
             timestamp: Date.now(),
             data,

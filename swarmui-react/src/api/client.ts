@@ -13,8 +13,6 @@ import type {
   ImageFolderResponse,
   HistoryFolderResponseV2,
   ListImagesV2Params,
-  ExportHistoryZipParams,
-  ExportHistoryZipResponse,
   ComfyWorkflowInfo,
   ComfyWorkflowData,
   T2IParamsResponse,
@@ -42,6 +40,9 @@ import type {
   LoraTrainableProject,
   LoraTrainingJob,
   LoraTrainingStatus,
+  GeneratedImage,
+  GenerationProgress,
+  GenerationStatus,
 } from './types';
 import { requestDeduplicator } from './requestDeduplicator';
 import { profiler } from '../utils/performanceProfiler';
@@ -51,9 +52,77 @@ import {
   type RuntimeEndpoints,
 } from '../config/runtimeEndpoints';
 import { recordApiCall } from '../utils/perfDiagnostics';
+import { clientLogger } from '../utils/clientLogger';
 import { featureFlags } from '../config/featureFlags';
+import { applyLegacyVaeSelection } from '../utils/upscalePayload';
+import {
+  generationPreviewFromProgress,
+  normalizeGenerationProgress,
+} from '../utils/generationProgress';
+import type { GenerationPreviewData, GenerationProgressData } from './ws/types';
 
 const ENABLE_VERBOSE_LOGS = import.meta.env.DEV;
+const GENERATION_IDLE_WATCHDOG_INTERVAL_MS = 30000;
+const GENERATION_IDLE_WATCHDOG_STALE_MS = 90000;
+
+type BackendStatusCounts = {
+  waiting_gens?: unknown;
+  loading_models?: unknown;
+  waiting_backends?: unknown;
+  live_gens?: unknown;
+};
+
+type ApiParams = Record<string, unknown>;
+
+type TriggerRefreshParam = {
+  id: string;
+  values?: unknown[] | null;
+};
+
+type TriggerRefreshResponse = {
+  list?: TriggerRefreshParam[];
+  models?: Record<string, unknown[]>;
+};
+
+type RawLoRA = {
+  name?: string;
+  title?: string;
+  description?: string;
+  preview_image?: string;
+  preview?: string;
+  trigger_phrase?: string;
+  trained_words?: string[];
+  tags?: string[];
+  base_model?: string;
+  author?: string;
+  resolution?: string;
+  time_created?: string;
+  date?: string;
+};
+
+type ListModelsResponse<TFile = Model> = {
+  files: TFile[];
+  folders: string[];
+};
+
+function readStatusCount(value: unknown): number {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+function readActiveBackendGenerationCount(response: unknown): number | null {
+  if (!response || typeof response !== 'object') {
+    return null;
+  }
+  const record = response as { status?: BackendStatusCounts };
+  if (!record.status || typeof record.status !== 'object') {
+    return null;
+  }
+  return readStatusCount(record.status.waiting_gens)
+    + readStatusCount(record.status.loading_models)
+    + readStatusCount(record.status.waiting_backends)
+    + readStatusCount(record.status.live_gens);
+}
 
 export type SessionChangeReason = 'init' | 'refresh' | 'auth' | 'logout';
 export type SessionChangedListener = (
@@ -226,9 +295,9 @@ function normalizeUpdateCheckResponse(response: unknown): UpdateCheckResponse {
   };
 }
 
-function sanitizeApiParams(params: any): any {
+function sanitizeApiParams(params: unknown): ApiParams {
   if (!params || typeof params !== 'object' || Array.isArray(params)) {
-    return params;
+    return {};
   }
 
   const cleaned: Record<string, unknown> = {};
@@ -435,8 +504,8 @@ export class SwarmUIClient {
   private sessionInitPromise: Promise<void> | null = null;
 
   // Cache for TriggerRefresh results (shared by listVAEs, listControlNets, etc.)
-  private triggerRefreshCache: { data: any; timestamp: number } | null = null;
-  private triggerRefreshPromise: Promise<any> | null = null;
+  private triggerRefreshCache: { data: TriggerRefreshResponse; timestamp: number } | null = null;
+  private triggerRefreshPromise: Promise<TriggerRefreshResponse> | null = null;
 
   constructor(baseUrl?: string) {
     this.runtimeEndpoints = resolveRuntimeEndpoints(baseUrl);
@@ -473,7 +542,7 @@ export class SwarmUIClient {
   }
 
   // Centralized logger
-  private log(level: 'info' | 'error' | 'debug', message: string, ...args: any[]) {
+  private log(level: 'info' | 'error' | 'debug', message: string, ...args: unknown[]) {
     if ((level === 'debug' || level === 'info') && !ENABLE_VERBOSE_LOGS) {
       return;
     }
@@ -493,7 +562,7 @@ export class SwarmUIClient {
    * Multiple methods (listVAEs, listControlNets, etc.) share this cached result
    * to avoid redundant API calls during initialization.
    */
-  private async getCachedTriggerRefresh(): Promise<any> {
+  private async getCachedTriggerRefresh(): Promise<TriggerRefreshResponse> {
     const now = Date.now();
     const cacheTtlMs = featureFlags.generateTriggerRefreshCacheMs;
 
@@ -513,8 +582,11 @@ export class SwarmUIClient {
     }
 
     // Make new request
-    this.triggerRefreshPromise = this.post<any>('TriggerRefresh', { strong: false })
+    this.triggerRefreshPromise = this.post<TriggerRefreshResponse>('TriggerRefresh', { strong: false })
       .then((response) => {
+        if ('error' in response) {
+          throw new Error(response.error || 'TriggerRefresh failed');
+        }
         this.triggerRefreshCache = { data: response, timestamp: Date.now() };
         return response;
       })
@@ -612,7 +684,7 @@ export class SwarmUIClient {
   }
 
   // Generic POST request with optional deduplication
-  async post<T>(endpoint: string, params: any = {}, options?: { timeout?: number }): Promise<T | APIError> {
+  async post<T>(endpoint: string, params: ApiParams = {}, options?: { timeout?: number }): Promise<T | APIError> {
     const cleanedParams = sanitizeApiParams(params);
 
     // Deduplicate read-only list endpoints
@@ -626,7 +698,7 @@ export class SwarmUIClient {
   }
 
   // Execute the actual POST request
-  private async executePost<T>(endpoint: string, params: any = {}, options?: { timeout?: number }): Promise<T | APIError> {
+  private async executePost<T>(endpoint: string, params: ApiParams = {}, options?: { timeout?: number }): Promise<T | APIError> {
     const url = `${this.baseUrl}/API/${endpoint}`;
     this.log('debug', `POST ${endpoint}`, params);
     recordApiCall(endpoint);
@@ -638,6 +710,9 @@ export class SwarmUIClient {
     const body = this.sessionId ? { session_id: this.sessionId, ...cleanedParams } : cleanedParams;
 
     const timer = profiler.startTimer(`api:${endpoint}`);
+    clientLogger.debug('api', `POST ${endpoint}`, {
+        metadata: { paramCount: Object.keys(cleanedParams).length },
+    });
 
     const timeoutMs = options?.timeout ?? 15000;
     const controller = new AbortController();
@@ -658,7 +733,7 @@ export class SwarmUIClient {
       // Clone response for diagnostic if JSON parsing fails
       const responseClone = response.clone();
 
-      let data: any;
+      let data: T | APIError;
       try {
         data = await response.json();
       } catch (jsonError) {
@@ -685,6 +760,10 @@ export class SwarmUIClient {
         endpoint,
       });
 
+      clientLogger.debug('api', `POST ${endpoint} response`, {
+          metadata: { status: response.status, ok: response.ok },
+      });
+
       // Handle session expiration
       const sessionMissing =
         response.status === 400
@@ -703,14 +782,16 @@ export class SwarmUIClient {
       }
 
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
       timer.end({ error: true, endpoint });
       this.log('error', `POST ${endpoint} failed:`, error);
-
       const errorMessage = error instanceof Error ? error.message : 'Network error';
+      clientLogger.error('api', `POST ${endpoint} failed`, {
+          metadata: { error: errorMessage, endpoint },
+      });
 
-      if (error.name === 'AbortError') {
+      if (error instanceof DOMException && error.name === 'AbortError') {
         return {
           error: `Request timed out after ${Math.round(timeoutMs / 1000)} seconds. The backend might be overloaded.`,
           error_id: 'api_timeout',
@@ -736,7 +817,7 @@ export class SwarmUIClient {
   // Create WebSocket connection
   createWebSocket(
     endpoint: string,
-    params: any,
+    params: ApiParams,
     onMessage: (data: WebSocketMessage) => void,
     onError?: (error: Event) => void,
     onClose?: () => void
@@ -836,9 +917,11 @@ export class SwarmUIClient {
   generateImage(
     params: GenerateParams,
     callbacks: {
-      onStatus?: (status: any) => void;
-      onProgress?: (progress: any) => void;
-      onImage?: (image: any) => void;
+      onStatus?: (status: GenerationStatus) => void;
+      onProgress?: (progress: GenerationProgress) => void;
+      onNormalizedProgress?: (progress: GenerationProgressData) => void;
+      onPreview?: (preview: GenerationPreviewData) => void;
+      onImage?: (image: GeneratedImage) => void;
       onError?: (error: Event) => void;
       onDataError?: (errorMessage: string, errorId?: string) => void;
       onComplete?: () => void;
@@ -848,6 +931,60 @@ export class SwarmUIClient {
       let hasProgress = false;
       let hasImage = false;
       let activeRequestId: string | undefined;
+      let lastGenerationEventAt = Date.now();
+      let finalized = false;
+      let socket: WebSocket | null = null;
+      let watchdogTimer: ReturnType<typeof setInterval> | null = null;
+
+      const cleanupWatchdog = () => {
+        if (watchdogTimer) {
+          clearInterval(watchdogTimer);
+          watchdogTimer = null;
+        }
+      };
+
+      const failLostGeneration = (backendStatus: unknown, idleMs: number) => {
+        if (finalized) {
+          return;
+        }
+        finalized = true;
+        cleanupWatchdog();
+        const message = 'Backend stopped reporting this generation before returning a final image. The upscale likely stalled during the backend decode/upscale stage.';
+        callbacks.onDataError?.(message, 'backend_generation_lost');
+        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+          socket.close();
+        }
+        clientLogger.error('generation', message, {
+          metadata: {
+            requestId: activeRequestId,
+            idleMs,
+            backendStatus,
+          },
+        });
+      };
+
+      const startWatchdog = () => {
+        watchdogTimer = setInterval(async () => {
+          if (finalized || hasImage) {
+            return;
+          }
+          const idleMs = Date.now() - lastGenerationEventAt;
+          if (idleMs < GENERATION_IDLE_WATCHDOG_STALE_MS) {
+            return;
+          }
+          try {
+            const statusResponse = await this.getCurrentStatus();
+            const activeGenerationCount = readActiveBackendGenerationCount(statusResponse);
+            if (activeGenerationCount === null || activeGenerationCount > 0) {
+              return;
+            }
+            failLostGeneration(statusResponse, idleMs);
+          } catch (error) {
+            this.log('debug', 'Generation idle watchdog status check failed', error);
+          }
+        }, GENERATION_IDLE_WATCHDOG_INTERVAL_MS);
+      };
+
       if (
         backendParams.refinercontrolpercentage === undefined &&
         backendParams.refinercontrol !== undefined &&
@@ -856,11 +993,29 @@ export class SwarmUIClient {
       backendParams.refinercontrolpercentage = backendParams.refinercontrol;
     }
     delete (backendParams as Record<string, unknown>).refinercontrol;
+    const vaeSelection = applyLegacyVaeSelection(backendParams);
+    if (vaeSelection.appliedAutomaticVae) {
+      this.log('debug', 'Applied backend-compatible Automatic VAE selection');
+      clientLogger.info('generation', 'Applied backend-compatible Automatic VAE selection');
+    }
 
-      return this.createWebSocket(
+      startWatchdog();
+      const createdSocket = this.createWebSocket(
         'GenerateText2ImageWS',
         backendParams,
         (data) => {
+          lastGenerationEventAt = Date.now();
+          const managerReceivedAtMs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+          const eventSequence = typeof data.sui_event_sequence === 'number'
+            ? data.sui_event_sequence
+            : typeof data.gen_progress?.event_sequence === 'number'
+              ? data.gen_progress.event_sequence
+              : undefined;
+          const serverElapsedMs = typeof data.sui_event_ms === 'number'
+            ? data.sui_event_ms
+            : typeof data.gen_progress?.server_time_ms === 'number'
+              ? data.gen_progress.server_time_ms
+              : undefined;
           const requestId = data.request_id || data.gen_progress?.request_id;
           const isMissingModelGenerationError =
             data.error_id === 'missing_model_input'
@@ -885,6 +1040,18 @@ export class SwarmUIClient {
             hasProgress = true;
             activeRequestId = data.gen_progress.request_id || activeRequestId;
             callbacks.onProgress?.(data.gen_progress);
+            const normalizedProgress = normalizeGenerationProgress({
+              progress: data.gen_progress,
+              params: backendParams,
+              eventSequence,
+              serverElapsedMs,
+              managerReceivedAtMs,
+            });
+            callbacks.onNormalizedProgress?.(normalizedProgress);
+            const preview = generationPreviewFromProgress(normalizedProgress);
+            if (preview) {
+              callbacks.onPreview?.(preview);
+            }
           }
           if (data.image) {
             hasImage = true;
@@ -892,9 +1059,19 @@ export class SwarmUIClient {
             callbacks.onImage?.(data);
           }
         },
-        callbacks.onError,
-        callbacks.onComplete
+        (error) => {
+          finalized = true;
+          cleanupWatchdog();
+          callbacks.onError?.(error);
+        },
+        () => {
+          finalized = true;
+          cleanupWatchdog();
+          callbacks.onComplete?.();
+        }
       );
+      socket = createdSocket;
+      return createdSocket;
     }
 
   async listImages(path: string = '', depth: number = 1): Promise<ImageFolderResponse> {
@@ -1012,30 +1189,6 @@ export class SwarmUIClient {
     throw new Error(err.error || err.error_id || 'Failed to list history images');
   }
 
-  async exportHistoryZip(params: ExportHistoryZipParams = {}): Promise<ExportHistoryZipResponse> {
-    const normalizedDepth = normalizeHistoryDepth(params.depth);
-    const response = await this.post<ExportHistoryZipResponse>('ExportHistoryZip', {
-      paths: params.paths,
-      path: params.path ?? '',
-      recursive: params.recursive ?? true,
-      ...(normalizedDepth !== null ? { depth: normalizedDepth } : {}),
-      query: params.query ?? null,
-      sortBy: params.sortBy ?? 'Date',
-      sortReverse: params.sortReverse ?? false,
-      starredOnly: params.starredOnly ?? false,
-      mediaType: params.mediaType ?? 'all',
-    }, { timeout: 60000 });
-
-    if ('error' in response && response.error) {
-      if (isUnknownRouteError(response)) {
-        throw new Error('History ZIP export is not available on this backend yet.');
-      }
-      throw new Error(response.error);
-    }
-
-    return response;
-  }
-
   async toggleImageStar(imagePath: string): Promise<void> {
     this.log('info', `Toggling star for: ${imagePath}`);
     const response = await this.post<{ new_state?: boolean; error?: string }>(
@@ -1112,21 +1265,7 @@ export class SwarmUIClient {
       'latent-bilinear///Latent: Bilinear',
       'latent-nearest-exact///Latent: Nearest Exact',
     ];
-    const response = await this.getCachedTriggerRefresh();
-    const responseObject = response && typeof response === 'object'
-      ? response as { list?: unknown }
-      : {};
-    const list = Array.isArray(responseObject.list) ? responseObject.list : [];
-    const param = list.find((entry) => (
-      Boolean(entry)
-      && typeof entry === 'object'
-      && (entry as { id?: unknown }).id === 'refinerupscalemethod'
-    )) as { values?: unknown; value_names?: unknown } | undefined;
-    const values = Array.isArray(param?.values) ? param.values : [];
-    const valueNames = Array.isArray(param?.value_names) ? param.value_names : [];
-    const seen = new Set<string>();
-
-    const parseUpscaler = (value: unknown, index: number): Model | null => {
+    const parseUpscaler = (value: unknown, index: number, valueNames: unknown[], seen: Set<string>): Model | null => {
       const valueObject = value && typeof value === 'object'
         ? value as { name?: unknown; value?: unknown; title?: unknown }
         : {};
@@ -1160,9 +1299,36 @@ export class SwarmUIClient {
       } as Model;
     };
 
-    return [...values, ...fallbackValues]
-      .map(parseUpscaler)
-      .filter((item): item is Model => item !== null);
+    const parseResponse = (response: unknown): Model[] => {
+      const responseObject = response && typeof response === 'object'
+        ? response as { list?: unknown }
+        : {};
+      const list = Array.isArray(responseObject.list) ? responseObject.list : [];
+      const param = list.find((entry) => (
+        Boolean(entry)
+        && typeof entry === 'object'
+        && (entry as { id?: unknown }).id === 'refinerupscalemethod'
+      )) as { values?: unknown; value_names?: unknown } | undefined;
+      const values = Array.isArray(param?.values) ? param.values : [];
+      const valueNames = Array.isArray(param?.value_names) ? param.value_names : [];
+      const seen = new Set<string>();
+
+      return [...values, ...fallbackValues]
+        .map((value, index) => parseUpscaler(value, index, valueNames, seen))
+        .filter((item): item is Model => item !== null);
+    };
+
+    const cachedModels = parseResponse(await this.getCachedTriggerRefresh());
+    const hasModelUpscaler = cachedModels.some((model) => (
+      model.name.startsWith('model-') || model.name.startsWith('latentmodel-')
+    ));
+    if (hasModelUpscaler) {
+      return cachedModels;
+    }
+
+    const freshResponse = await this.post<unknown>('TriggerRefresh', { strong: false });
+    this.triggerRefreshCache = { data: freshResponse, timestamp: Date.now() };
+    return parseResponse(freshResponse);
   }
 
   async listWildcards(): Promise<Model[]> {
@@ -1189,10 +1355,10 @@ export class SwarmUIClient {
   }
 
   // Helper to get values from TriggerRefresh list (uses cached result)
-  async listParameterValues(paramId: string): Promise<any[]> {
+  async listParameterValues(paramId: string): Promise<unknown[]> {
     const response = await this.getCachedTriggerRefresh();
     if ('list' in response && response.list) {
-      const param = response.list.find((p: any) => p.id === paramId);
+      const param = response.list.find((p) => p.id === paramId);
       if (param && param.values) return param.values;
     }
     return [];
@@ -1296,9 +1462,9 @@ export class SwarmUIClient {
 
     // SwarmUI TriggerRefresh returns a 'list' object with all parameter types
     if ('list' in response && response.list) {
-      const vaeParam = response.list.find((param: any) => param.id === 'vae');
+      const vaeParam = response.list.find((param) => param.id === 'vae');
       if (vaeParam && vaeParam.values) {
-        return vaeParam.values.map((vae: any) => ({
+        return vaeParam.values.filter((vae): vae is string => typeof vae === 'string').map((vae) => ({
           name: vae,
           title: vae,
           description: '',
@@ -1312,9 +1478,9 @@ export class SwarmUIClient {
 
   // === LORA ENDPOINTS ===
 
-  async listLoRAs(): Promise<any[]> {
+  async listLoRAs(): Promise<RawLoRA[]> {
     // Use ListModels API with LoRA subtype to get full data including previews
-    const response = await this.post<{ files: any[]; folders: string[] }>('ListModels', {
+    const response = await this.post<ListModelsResponse<RawLoRA>>('ListModels', {
       path: '',
       depth: 10,
       subtype: 'LoRA',
@@ -1331,7 +1497,7 @@ export class SwarmUIClient {
         });
       }
 
-      return response.files.map((lora: any) => {
+      return response.files.map((lora) => {
         const loraName = lora.name || '';
 
         // Get trigger phrase (may contain training captions)
@@ -1368,7 +1534,7 @@ export class SwarmUIClient {
 
   // === CONTROLNET ENDPOINTS ===
 
-  async listControlNets(): Promise<any[]> {
+  async listControlNets(): Promise<Model[]> {
     const response = await this.getCachedTriggerRefresh();
 
     // SwarmUI TriggerRefresh returns models in response.models['ControlNet'] as [name, path] pairs.
@@ -1376,8 +1542,8 @@ export class SwarmUIClient {
     // the actual installed models live under response.models.
     if ('models' in response && response.models && Array.isArray(response.models['ControlNet'])) {
       return response.models['ControlNet']
-        .filter((entry: any) => Array.isArray(entry) && entry[0] && entry[0] !== '(None)')
-        .map((entry: any) => {
+        .filter((entry): entry is [string, string | null] => Array.isArray(entry) && typeof entry[0] === 'string' && entry[0] !== '(None)')
+        .map((entry) => {
           const name = entry[0] as string;
           // Strip extension for a cleaner display label
           const label = name.replace(/\.[^/.]+$/, '');
@@ -1487,7 +1653,7 @@ export class SwarmUIClient {
     return this.post('GetUserSettings', {});
   }
 
-  async changeUserSettings(settings: any) {
+  async changeUserSettings(settings: Record<string, unknown>) {
     return this.post('ChangeUserSettings', { settings });
   }
 
@@ -1569,12 +1735,12 @@ export class SwarmUIClient {
           callbacks.onError?.(data.error);
           return;
         }
-        const info = (data as any).info;
+        const info = (data as { info?: unknown }).info;
         if (typeof info === 'string') {
           callbacks.onInfo?.(info);
         }
-        const progress = (data as any).progress;
-        const total = (data as any).total;
+        const progress = (data as { progress?: unknown }).progress;
+        const total = (data as { total?: unknown }).total;
         if (progress !== undefined || total !== undefined) {
           callbacks.onProgress?.({ progress, total });
         }
@@ -1598,7 +1764,7 @@ export class SwarmUIClient {
     imageDataUrl: string,
     params: Record<string, unknown> = {}
   ): Promise<{ images?: Array<{ image: string; batch_index: string; metadata: string }> }> {
-    const response = await this.post<any>('AddImageToHistory', {
+    const response = await this.post<{ images?: Array<{ image: string; batch_index: string; metadata: string }> }>('AddImageToHistory', {
       image: imageDataUrl,
       ...params,
     });
@@ -2440,8 +2606,8 @@ export class SwarmUIClient {
    * Forward a metadata request to external APIs (e.g., CivitAI API)
    * Used to fetch model info from CivitAI URLs
    */
-  async forwardMetadataRequest(url: string): Promise<any | null> {
-    const response = await this.post<{ response: any; error?: string } | APIError>('ForwardMetadataRequest', {
+  async forwardMetadataRequest(url: string): Promise<unknown | null> {
+    const response = await this.post<{ response: unknown; error?: string } | APIError>('ForwardMetadataRequest', {
       url,
     }, { timeout: 30000 });
     if ('response' in response) {
@@ -2490,7 +2656,7 @@ export class SwarmUIClient {
   }
 
   async listModelNamesFromRefresh(subtype: string): Promise<string[]> {
-    const response = await this.post<any>('TriggerRefresh', { strong: false });
+    const response = await this.post<TriggerRefreshResponse>('TriggerRefresh', { strong: false });
     if (!response || !('models' in response) || !response.models) {
       return [];
     }
@@ -2564,7 +2730,7 @@ export class SwarmUIClient {
    * Get list of available model folders for save location
    */
   async listModelFolders(subtype: string = 'Stable-Diffusion'): Promise<string[]> {
-    const response = await this.post<{ files: any[]; folders: string[] }>('ListModels', {
+    const response = await this.post<ListModelsResponse>('ListModels', {
       path: '',
       depth: 10,
       subtype: subtype,
@@ -2596,7 +2762,7 @@ export class SwarmUIClient {
   }
 
   async listModelFolderCandidates(subtype: string = 'Stable-Diffusion'): Promise<string[]> {
-    const response = await this.post<{ files: any[]; folders: string[] }>('ListModels', {
+    const response = await this.post<ListModelsResponse>('ListModels', {
       path: '',
       depth: 20,
       subtype,
@@ -2633,7 +2799,7 @@ export class SwarmUIClient {
     path: string = '',
     depth: number = 20
   ): Promise<string[]> {
-    const response = await this.post<{ files: any[]; folders: string[] }>('ListModels', {
+    const response = await this.post<ListModelsResponse>('ListModels', {
       path,
       depth,
       subtype,
@@ -2735,7 +2901,11 @@ export class SwarmUIClient {
     init_image_cache: { count: number; max_entries: number; total_hits: number };
     model_cache: { loaded_models: number };
   }> {
-    const response = await this.post<any>('GetCacheStatus', {});
+    const response = await this.post<{
+      prompt_cache: { count: number; max_entries: number; total_hits: number };
+      init_image_cache: { count: number; max_entries: number; total_hits: number };
+      model_cache: { loaded_models: number };
+    }>('GetCacheStatus', {});
     return response;
   }
 
@@ -2748,7 +2918,11 @@ export class SwarmUIClient {
     cleared_count: number;
     cache_type: string;
   }> {
-    const response = await this.post<any>('ClearCache', { cache_type: cacheType });
+    const response = await this.post<{
+      success: boolean;
+      cleared_count: number;
+      cache_type: string;
+    }>('ClearCache', { cache_type: cacheType });
     return response;
   }
 
@@ -2765,7 +2939,16 @@ export class SwarmUIClient {
       last_accessed: number;
     }>;
   }> {
-    const response = await this.post<any>('GetPromptCacheStats', { limit });
+    const response = await this.post<{
+      total_entries: number;
+      top_entries: Array<{
+        hash: string;
+        prompt_preview: string;
+        model: string;
+        hit_count: number;
+        last_accessed: number;
+      }>;
+    }>('GetPromptCacheStats', { limit });
     return response;
   }
 
@@ -2782,7 +2965,12 @@ export class SwarmUIClient {
     cached: boolean;
     hit_count: number;
   }> {
-    const response = await this.post<any>('AddPromptToCache', {
+    const response = await this.post<{
+      success: boolean;
+      hash: string;
+      cached: boolean;
+      hit_count: number;
+    }>('AddPromptToCache', {
       prompt,
       model,
       negative_prompt: negativePrompt || '',
@@ -2807,7 +2995,17 @@ export class SwarmUIClient {
     similar_count?: number;
     can_quick_generate?: boolean;
   }> {
-    const response = await this.post<any>('CheckPromptCache', { prompt, model });
+    const response = await this.post<{
+      found: boolean;
+      exact_match?: boolean;
+      hash?: string;
+      hit_count?: number;
+      best_similarity?: number;
+      best_match_hash?: string;
+      best_match_preview?: string;
+      similar_count?: number;
+      can_quick_generate?: boolean;
+    }>('CheckPromptCache', { prompt, model });
     return response;
   }
 
@@ -2821,7 +3019,12 @@ export class SwarmUIClient {
     remaining_prompts: number;
     remaining_images: number;
   }> {
-    const response = await this.post<any>('PruneCaches', { max_age_ms: maxAgeMs });
+    const response = await this.post<{
+      pruned_prompts: number;
+      pruned_images: number;
+      remaining_prompts: number;
+      remaining_images: number;
+    }>('PruneCaches', { max_age_ms: maxAgeMs });
     return response;
   }
 }
