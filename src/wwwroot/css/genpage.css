@@ -835,7 +835,6 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-family: var(--bs-body-font-family);
 }
 #image_compare_transparency_row .auto-slider-range-wrapper {
     width: 14rem;
