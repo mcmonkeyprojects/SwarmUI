@@ -461,6 +461,7 @@ public partial class WorkflowGenerator
             else
             {
                 WGNodeData attachedAudio = null;
+                JToken fpsRef = null;
                 if (img.Type.MetaType == MediaMetaType.Video)
                 {
                     result = CreateNode("SwarmLoadVideoB64", new JObject()
@@ -473,6 +474,7 @@ public partial class WorkflowGenerator
                     });
                     result = splitNode;
                     attachedAudio = new([splitNode, 1], this, WGNodeData.DT_AUDIO, CurrentCompat());
+                    fpsRef = NodePath(splitNode, 2);
                 }
                 else
                 {
@@ -496,7 +498,7 @@ public partial class WorkflowGenerator
                         ["crop"] = "disabled"
                     }, nodeId);
                 }
-                return new([result, 0], this, WGNodeData.DT_VIDEO, CurrentCompat()) { AttachedAudio = attachedAudio, Width = imgWidth, Height = imgHeight };
+                return new([result, 0], this, WGNodeData.DT_VIDEO, CurrentCompat()) { AttachedAudio = attachedAudio, Width = imgWidth, Height = imgHeight, FPS = fpsRef };
             }
         }
         else
@@ -2063,6 +2065,12 @@ public partial class WorkflowGenerator
         {
             endStep = (int)Math.Round(genInfo.Steps * (1 - genInfo.VideoSwapPercent));
             returnLeftoverNoise = true;
+        }
+        if (genInfo.StartStep > 0)
+        {
+            CurrentMedia = srcImage;
+            genInfo.HasFixedMediaLen = false;
+            CurrentMedia = genInfo.FixMediaLen();
         }
         string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: genInfo.ContextID, includeBase: false);
         string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: genInfo.ContextID, includeBase: false);

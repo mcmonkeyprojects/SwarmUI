@@ -197,6 +197,32 @@
                 <span class="text_button translate" onclick="imageFullView.close()">[Close]</span><br>
             </div>
         </div>
+        <div class="modal modal-fullscreen image_compare_modal" id="image_compare_modal">
+            <div class="modal-dialog"></div>
+            <div class="imageview_modal_inner_div">
+                <div class="imageview_modal_imagewrap">
+                    <div class="image_compare_stage image_compare_stage_side" id="image_compare_stage"></div>
+                </div>
+                <div class="imageview_popup_modal_undertext">
+                    <div id="image_compare_transparency_row" style="display: none;">
+                        <label class="translate" for="image_compare_transparency_slider">Overlay Opacity</label>
+                        <div class="auto-slider-range-wrapper" style="--range-value: 50%;">
+                            <input class="auto-slider-range" type="range" min="0" max="100" value="50" step="1" id="image_compare_transparency_slider" data-ispot="false" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                        </div>
+                        <span id="image_compare_transparency_value">50%</span>
+                    </div>
+                    <div class="image_fullview_extra_buttons">
+                        <button class="basic-button translate" data-compare-mode="side" type="button">Side by Side</button>
+                        <button class="basic-button translate" data-compare-mode="slide_horizontal" type="button">Horizontal Slide</button>
+                        <button class="basic-button translate" data-compare-mode="slide_vertical" type="button">Vertical Slide</button>
+                        <button class="basic-button translate" data-compare-mode="transparency" type="button">Transparency Overlay</button>
+                        <button class="basic-button translate" data-compare-mode="single" type="button">Single View</button>
+                        <button class="basic-button translate" id="image_compare_swap_button" type="button">Switch Image</button>
+                        <button class="basic-button translate" id="image_compare_metadata_toggle_button" type="button">Toggle Metadata</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="tab-pane genpage-bottom-tab" id="Presets-Tab" role="tabpanel">
             <div class="browser_container preset_list_container" id="preset_list"></div>
             <div class="sui-popover sui_popover_model" id="popover_presetmenu">

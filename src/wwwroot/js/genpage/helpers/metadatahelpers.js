@@ -232,24 +232,28 @@ function parseMetadata(data, callback) {
 let metadataKeyFormatCleaners = [];
 let promptCidMatcher = new RegExp('\<(.*?)//cid=\\d+>', 'g');
 
-function formatMetadata(metadata) {
+function formatMetadataEntry(entry) {
+    return `<span class="param_view_block tag-text tag-type-${entry.hash}${entry.added}"><span class="param_view_name" title="${escapeHtmlNoBr(entry.keyTitle)}">${escapeHtml(entry.key)}</span>: ${entry.valueHtml}${entry.extras}</span>`;
+}
+
+function getFormattedMetadataEntries(metadata) {
     if (!metadata) {
-        return '';
+        return { entries: [], error: '' };
     }
     let data;
     try {
         let readable = interpretMetadata(metadata);
         if (!readable) {
-            return '';
+            return { entries: [], error: '' };
         }
         data = JSON.parse(readable);
     }
     catch (e) {
         console.log(`Error parsing metadata '${metadata}': ${e}`);
-        return `Broken metadata: ${escapeHtml(metadata)}`;
+        return { entries: [], error: `Broken metadata: ${escapeHtml(metadata)}` };
     }
-    let result = '';
     function appendObject(obj) {
+        let result = [];
         if (obj) {
             for (let key of Object.keys(obj)) {
                 let val = obj[key];
@@ -257,6 +261,7 @@ function formatMetadata(metadata) {
                     for (let cleaner of metadataKeyFormatCleaners) {
                         key = cleaner(key);
                     }
+                    let id = key;
                     let hash = Math.abs(hashCode(key.toLowerCase().replaceAll(' ', '').replaceAll('_', ''))) % 10;
                     let title = '';
                     let keyTitle = '';
@@ -283,18 +288,31 @@ function formatMetadata(metadata) {
                             }
                         }
                     }
-                    result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name" title="${escapeHtmlNoBr(keyTitle)}">${escapeHtml(key)}</span>: `;
+                    let valueHtml, compareValue;
                     if (typeof val == 'object') {
-                        appendObject(val);
+                        valueHtml = appendObject(val).map(entry => formatMetadataEntry(entry)).join(', ');
+                        compareValue = JSON.stringify(val);
                     }
                     else {
-                        result += `<span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtmlNoBr(title)}">${escapeHtml(`${val}`)}</span>`;
+                        valueHtml = `<span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtmlNoBr(title)}">${escapeHtml(`${val}`)}</span>`;
+                        compareValue = `${val}`;
                     }
-                    result += `${extras}</span>, `;
+                    result.push({ id: id, key: key, keyTitle: keyTitle, hash: hash, added: added, extras: extras, valueHtml: valueHtml, compareValue: compareValue });
                 }
             }
         }
+        return result;
     };
+    let entries = [];
+    function appendEntries(newEntries, breakAfter = false) {
+        if (newEntries.length == 0) {
+            return;
+        }
+        if (breakAfter) {
+            newEntries[newEntries.length - 1].breakAfter = true;
+        }
+        entries.push(...newEntries);
+    }
     if ('swarm_version' in data.sui_image_params && 'sui_extra_data' in data) {
         data.sui_extra_data['Swarm Version'] = data.sui_image_params.swarm_version;
         delete data.sui_image_params.swarm_version;
@@ -308,13 +326,11 @@ function formatMetadata(metadata) {
                 delete data.sui_extra_data.original_prompt;
             }
         }
-        appendObject({ 'prompt': prompt });
-        result += '\n<br>';
+        appendEntries(appendObject({ 'prompt': prompt }), true);
         delete data.sui_image_params.prompt;
     }
     if ('negativeprompt' in data.sui_image_params && data.sui_image_params.negativeprompt) {
-        appendObject({ 'negativeprompt': data.sui_image_params.negativeprompt });
-        result += '\n<br>';
+        appendEntries(appendObject({ 'negativeprompt': data.sui_image_params.negativeprompt }), true);
         delete data.sui_image_params.negativeprompt;
     }
     if ('loras' in data.sui_image_params && 'loraweights' in data.sui_image_params) {
@@ -362,15 +378,29 @@ function formatMetadata(metadata) {
     for (let key of Object.keys(data.sui_image_params)) {
         paramMap[key] = data.sui_image_params[key];
     }
-    appendObject(paramMap);
-    result += '\n<br>';
+    appendEntries(appendObject(paramMap), true);
     if ('sui_extra_data' in data) {
         if ('prep_time' in data.sui_extra_data && 'generation_time' in data.sui_extra_data) {
             data.sui_extra_data['Generation Time'] = `${data.sui_extra_data.prep_time} prep, ${data.sui_extra_data.generation_time} gen`;
             delete data.sui_extra_data.prep_time;
             delete data.sui_extra_data.generation_time;
         }
-        appendObject(data.sui_extra_data);
+        appendEntries(appendObject(data.sui_extra_data));
+    }
+    return { entries: entries, error: '' };
+}
+
+function formatMetadata(metadata) {
+    let formatted = getFormattedMetadataEntries(metadata);
+    if (formatted.error) {
+        return formatted.error;
+    }
+    let result = '';
+    for (let entry of formatted.entries) {
+        result += `${formatMetadataEntry(entry)}, `;
+        if (entry.breakAfter) {
+            result += '\n<br>';
+        }
     }
     return result;
 }

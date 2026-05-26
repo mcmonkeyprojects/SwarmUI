@@ -79,7 +79,7 @@ class ServerLogsHelper {
     }
 
     htmlMessage(msg, type, bounceId) {
-        return `<div class="log_message log_message_${bounceId}"><span class="log_message_prefix">${msg.time} [<span style="color:${type.color}">${type.name}</span>]</span> ${escapeHtmlNoBr(msg.message)}</div>`;
+        return `<div class="log_message log_message_${bounceId}"><span class="log_message_prefix">${msg.time} [<span style="color:${type.color}">${type.name}</span>]</span> ${ansiHtml(escapeHtmlNoBr(msg.message))}</div>`;
     }
 
     getVisibleTypes() {

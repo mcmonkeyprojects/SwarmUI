@@ -606,7 +606,7 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
             elem.dataset.duration = `${img.duration}`;
         }
         else if (type == 'video') {
-            label.textContent = `${shortName} (${img.duration}s) (${img.videoWidth}x${img.videoHeight}, ${describeAspectRatio(img.videoWidth, img.videoHeight)})`;
+            label.textContent = `${shortName} (${roundTo(img.duration, 0.01)}s) (${img.videoWidth}x${img.videoHeight}, ${describeAspectRatio(img.videoWidth, img.videoHeight)})`;
             elem.dataset.duration = `${img.duration}`;
             elem.dataset.width = img.videoWidth;
             elem.dataset.height = img.videoHeight;
