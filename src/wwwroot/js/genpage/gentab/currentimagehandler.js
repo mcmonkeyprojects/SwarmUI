@@ -1450,6 +1450,7 @@ class ImageCompareHelper {
             this.getOverlay()?.style.setProperty('--image-compare-transparency', `${this.transparencyPercent / 100}`);
         });
         this.updateModeControls();
+        this.supportedTypes = ['image', 'video'];
     }
 
     getImgOrContainer() {
@@ -2065,11 +2066,8 @@ class ImageCompareHelper {
         if (items.length > 2) {
             return { state: 'invalid', reason: 'Compare only supports exactly 2 selected items.' };
         }
-        if (items[0].mediaType == 'audio' || items[1].mediaType == 'audio') {
+        if (!this.supportedTypes.includes(items[0].mediaType) || !this.supportedTypes.includes(items[1].mediaType)) {
             return { state: 'invalid', reason: 'Compare only supports images and videos.' };
-        }
-        if (items[0].mediaType != items[1].mediaType) {
-            return { state: 'invalid', reason: 'Compare requires 2 items of the same media type.' };
         }
         return { state: 'ready', reason: 'Compare the selected items.' };
     }
