@@ -38,8 +38,6 @@ export function useRenderProfiler(
 
     const renderCountRef = useRef<number>(0);
     const startTimeRef = useRef<number>(0);
-    const recordRender = usePerformanceStore((state) => state.recordRender);
-
     // Use useLayoutEffect to capture timing at the start of commit phase
     // This runs synchronously after DOM mutations but before paint
     useLayoutEffect(() => {
@@ -65,7 +63,7 @@ export function useRenderProfiler(
         });
 
         // Record in performance store
-        recordRender(componentName, renderTime);
+        usePerformanceStore.getState().recordRender(componentName, renderTime);
 
         if (verbose) {
             console.debug(

@@ -12,9 +12,9 @@ export interface SamplingOptionDetails {
     notes?: string;
 }
 
-export interface SamplerOption extends SamplingOptionDetails {}
+export type SamplerOption = SamplingOptionDetails;
 
-export interface SchedulerOption extends SamplingOptionDetails {}
+export type SchedulerOption = SamplingOptionDetails;
 
 export interface AspectRatioPreset {
     value: string;

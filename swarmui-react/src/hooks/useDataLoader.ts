@@ -58,7 +58,9 @@ export function useDataLoader<T>(
 
     useEffect(() => {
         if (loadOnMount) {
-            refresh();
+            queueMicrotask(() => {
+                refresh();
+            });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

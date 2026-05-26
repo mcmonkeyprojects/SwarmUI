@@ -13,6 +13,9 @@ const VALID_ICON_MODES = ['plain', 'badge', 'glyph-outline'] as const;
 const VALID_CONTROL_SHAPES = ['rounded', 'pill', 'square'] as const;
 const VALID_ICON_SHAPES = ['rounded', 'circle', 'square'] as const;
 const VALID_OVERLAY_BLENDS = ['normal', 'screen', 'overlay', 'soft-light', 'multiply'] as const;
+const VALID_ATMOSPHERE_BACKGROUNDS = ['mesh', 'aurora', 'spotlight', 'strata', 'grid', 'mist', 'none'] as const;
+const VALID_ATMOSPHERE_TEXTURES = ['none', 'grain', 'paper', 'film', 'terminal'] as const;
+const VALID_ATMOSPHERE_MOTIONS = ['still', 'drift', 'pulse', 'scan'] as const;
 
 /**
  * Validates if a string is a valid hex color
@@ -195,6 +198,43 @@ export function validateTheme(theme: unknown): { valid: boolean; errors: string[
                 !VALID_OVERLAY_BLENDS.includes(effects.overlayBlend as typeof VALID_OVERLAY_BLENDS[number])
             ) {
                 errors.push(`Theme overlay blend must be one of: ${VALID_OVERLAY_BLENDS.join(', ')}`);
+            }
+        }
+    }
+
+    if (candidate.atmosphere !== undefined) {
+        if (typeof candidate.atmosphere !== 'object' || candidate.atmosphere === null) {
+            errors.push('Theme "atmosphere" must be an object when provided');
+        } else {
+            const atmosphere = candidate.atmosphere as Record<string, unknown>;
+            if (
+                atmosphere.background !== undefined &&
+                !VALID_ATMOSPHERE_BACKGROUNDS.includes(atmosphere.background as typeof VALID_ATMOSPHERE_BACKGROUNDS[number])
+            ) {
+                errors.push(`Theme atmosphere background must be one of: ${VALID_ATMOSPHERE_BACKGROUNDS.join(', ')}`);
+            }
+            if (
+                atmosphere.texture !== undefined &&
+                !VALID_ATMOSPHERE_TEXTURES.includes(atmosphere.texture as typeof VALID_ATMOSPHERE_TEXTURES[number])
+            ) {
+                errors.push(`Theme atmosphere texture must be one of: ${VALID_ATMOSPHERE_TEXTURES.join(', ')}`);
+            }
+            if (
+                atmosphere.motion !== undefined &&
+                !VALID_ATMOSPHERE_MOTIONS.includes(atmosphere.motion as typeof VALID_ATMOSPHERE_MOTIONS[number])
+            ) {
+                errors.push(`Theme atmosphere motion must be one of: ${VALID_ATMOSPHERE_MOTIONS.join(', ')}`);
+            }
+            if (
+                atmosphere.intensity !== undefined &&
+                (typeof atmosphere.intensity !== 'number' || Number.isNaN(atmosphere.intensity))
+            ) {
+                errors.push('Theme atmosphere intensity must be a number between 0 and 1');
+            } else if (
+                typeof atmosphere.intensity === 'number' &&
+                (atmosphere.intensity < 0 || atmosphere.intensity > 1)
+            ) {
+                errors.push('Theme atmosphere intensity must be between 0 and 1');
             }
         }
     }

@@ -83,6 +83,7 @@ export function useBatchThumbnails(
     const activeCountRef = useRef(0);
 
     // Process queue with concurrency control
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     const processQueue = useCallback(async () => {
         while (queueRef.current.length > 0 && activeCountRef.current < concurrency) {
             const url = queueRef.current.shift();

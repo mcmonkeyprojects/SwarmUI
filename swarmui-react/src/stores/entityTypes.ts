@@ -5,6 +5,7 @@
  */
 
 import type { GenerateParams } from '../api/types';
+import type { GenerationPreviewSnapshot } from '../utils/generationProgress';
 
 // ============================================================================
 // Core Entity Types
@@ -45,12 +46,12 @@ export interface JobProvenance {
     recipeId?: string;
     /** Legacy Generate recipe provenance. Kept only for persisted queue compatibility. */
     recipeName?: string;
-    workspaceMode?: 'quick' | 'guided' | 'advanced' | 'video';
+    workspaceMode?: 'quick' | 'guided' | 'advanced' | 'video' | 'pipeline';
     historyImagePath?: string;
     workflowMode?: 'wizard' | 'comfy';
 }
 
-export interface JobEntity extends BaseEntity {
+export interface JobEntity extends BaseEntity, GenerationPreviewSnapshot {
     name?: string;
     params: GenerateParams;
     status: JobStatus;

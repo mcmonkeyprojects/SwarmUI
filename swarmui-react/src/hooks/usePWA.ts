@@ -57,7 +57,9 @@ export function usePWA(): UsePWAReturn {
 
         // Check if already installed (standalone mode)
         if (window.matchMedia('(display-mode: standalone)').matches) {
-            setIsInstalled(true);
+            queueMicrotask(() => {
+                setIsInstalled(true);
+            });
         }
 
         return () => {

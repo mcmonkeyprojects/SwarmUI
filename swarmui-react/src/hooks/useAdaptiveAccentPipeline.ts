@@ -265,6 +265,7 @@ export function useAdaptiveAccentPipeline(): void {
     currentTheme,
     resolvedColorScheme,
     customAccent,
+    imageProcessing,
     imageProcessing.isReady,
     clearAdaptiveAccent,
     setAdaptiveAccent,

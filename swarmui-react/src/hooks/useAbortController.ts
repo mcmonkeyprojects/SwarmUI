@@ -50,8 +50,6 @@ export function useAbortController() {
     }, []);
 
     return {
-        controller: controllerRef.current,
-        signal: controllerRef.current?.signal,
         createController,
         getSignal,
         abort,

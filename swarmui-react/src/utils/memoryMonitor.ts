@@ -9,6 +9,10 @@ interface MemoryInfo {
     jsHeapSizeLimit: number;
 }
 
+type PerformanceWithMemory = Performance & {
+    memory: MemoryInfo;
+};
+
 export interface MemorySnapshot {
     timestamp: number;
     heapUsed: number;
@@ -35,7 +39,7 @@ export function getMemoryUsage(): MemoryInfo | null {
     if (!isMemoryApiAvailable()) {
         return null;
     }
-    const memory = (performance as any).memory as MemoryInfo;
+    const memory = (performance as PerformanceWithMemory).memory;
     return {
         usedJSHeapSize: memory.usedJSHeapSize,
         totalJSHeapSize: memory.totalJSHeapSize,

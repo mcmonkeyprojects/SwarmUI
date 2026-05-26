@@ -655,6 +655,10 @@ if (
   (globalThis as Record<string, unknown>)[SESSION_STORE_INIT_KEY] = true;
 
   profiler.addListener((metric) => {
+    if (metric.name.startsWith('render:')) {
+      return;
+    }
+
     usePerformanceSessionStore.getState().recordMetric(metric);
   });
 

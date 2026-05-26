@@ -69,7 +69,7 @@ function fuzzyScore(text: string, query: string): number {
 /**
  * Filter and sort items based on a search query
  */
-function filterItems<T extends Record<string, any>>(options: FilterOptions<T>): T[] {
+function filterItems<T extends Record<string, unknown>>(options: FilterOptions<T>): T[] {
     const { items, query, fields, sortBy, sortOrder = 'asc' } = options;
 
     if (!query.trim()) {
@@ -107,7 +107,7 @@ function filterItems<T extends Record<string, any>>(options: FilterOptions<T>): 
 /**
  * Sort items by a field
  */
-function sortItems<T extends Record<string, any>>(options: SortOptions<T>): T[] {
+function sortItems<T extends Record<string, unknown>>(options: SortOptions<T>): T[] {
     const { items, sortBy, sortOrder = 'asc' } = options;
 
     return [...items].sort((a, b) => {
@@ -130,7 +130,7 @@ function sortItems<T extends Record<string, any>>(options: SortOptions<T>): T[] 
 /**
  * Get unique values from a field across all items
  */
-function getUniqueValues<T extends Record<string, any>>(
+function getUniqueValues<T extends Record<string, unknown>>(
     items: T[],
     field: keyof T
 ): string[] {
@@ -149,7 +149,7 @@ function getUniqueValues<T extends Record<string, any>>(
 /**
  * Group items by a field
  */
-function groupByField<T extends Record<string, any>>(
+function groupByField<T extends Record<string, unknown>>(
     items: T[],
     field: keyof T
 ): Record<string, T[]> {

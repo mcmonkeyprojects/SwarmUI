@@ -83,13 +83,15 @@ export function useImageProcessing(): UseImageProcessingResult {
 
     // Initialize worker on mount
     useEffect(() => {
-        try {
-            const { proxy } = getSharedWorker();
-            proxyRef.current = proxy;
-            setIsReady(true);
-        } catch (err) {
-            setError(err instanceof Error ? err : new Error('Failed to initialize worker'));
-        }
+        queueMicrotask(() => {
+            try {
+                const { proxy } = getSharedWorker();
+                proxyRef.current = proxy;
+                setIsReady(true);
+            } catch (err) {
+                setError(err instanceof Error ? err : new Error('Failed to initialize worker'));
+            }
+        });
 
         return () => {
             releaseSharedWorker();

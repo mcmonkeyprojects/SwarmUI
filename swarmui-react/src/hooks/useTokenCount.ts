@@ -109,19 +109,25 @@ export function useTokenCount(
     requestIdRef.current = requestId;
 
     if (!text.trim() || !isInitialized) {
-      setIsLoading(false);
-      setServerCount(0);
+      queueMicrotask(() => {
+        setIsLoading(false);
+        setServerCount(0);
+      });
       return;
     }
 
     const cachedCount = readCachedTokenCount(cacheKey);
     if (cachedCount !== null) {
-      setIsLoading(false);
-      setServerCount(cachedCount);
+      queueMicrotask(() => {
+        setIsLoading(false);
+        setServerCount(cachedCount);
+      });
       return;
     }
 
-    setServerCount(null);
+    queueMicrotask(() => {
+      setServerCount(null);
+    });
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);

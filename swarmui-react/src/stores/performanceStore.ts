@@ -12,6 +12,8 @@ import { getMemoryUsage, takeSnapshot, type MemorySnapshot } from '../utils/memo
 
 const isDev = import.meta.env.DEV;
 
+const isRenderMetric = (metric: Metric): boolean => metric.name.startsWith('render:');
+
 interface RenderMetric {
     component: string;
     renderCount: number;
@@ -57,6 +59,10 @@ export const usePerformanceStore = create<PerformanceState>()(
             // Subscribe to profiler metrics in development
             if (isDev) {
                 profiler.addListener((metric) => {
+                    if (isRenderMetric(metric)) {
+                        return;
+                    }
+
                     set((state) => ({
                         recentMetrics: [...state.recentMetrics.slice(-99), metric],
                     }));
@@ -78,6 +84,10 @@ export const usePerformanceStore = create<PerformanceState>()(
                     if (!isDev) return;
 
                     set((state) => {
+                        if (!state.isVisible) {
+                            return state;
+                        }
+
                         const renderMetrics = new Map(state.renderMetrics);
                         const existing = renderMetrics.get(component);
 

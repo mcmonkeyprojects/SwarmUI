@@ -94,12 +94,13 @@ export function useImagePreloader(
 
     // Cleanup on unmount
     useEffect(() => {
+        const currentPreloads = currentPreloadsRef.current;
         return () => {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
             }
             // Cancel pending preloads for this component
-            currentPreloadsRef.current.forEach(url => {
+            currentPreloads.forEach(url => {
                 const img = pendingPreloads.get(url);
                 if (img) {
                     img.src = '';

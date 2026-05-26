@@ -1841,7 +1841,16 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
           }),
         setActiveCharacter: (id) =>
           set((state) => {
-            const nextSessionId = getMostRecentSessionId(state.chatSessions, id);
+            let nextChatSessions = state.chatSessions;
+            let nextSessionId = getMostRecentSessionId(state.chatSessions, id);
+            if (id && !nextSessionId) {
+              const character = state.characters.find((entry) => entry.id === id);
+              if (character) {
+                const nextSession = createSessionFromCharacter(character);
+                nextChatSessions = [nextSession, ...state.chatSessions];
+                nextSessionId = nextSession.id;
+              }
+            }
             if (
               state.activeCharacterId === id &&
               state.activeSessionId === nextSessionId &&
@@ -1851,6 +1860,7 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               return {};
             }
             return {
+              chatSessions: nextChatSessions,
               activeCharacterId: id,
               activeSessionId: nextSessionId,
               streamingContent: '',

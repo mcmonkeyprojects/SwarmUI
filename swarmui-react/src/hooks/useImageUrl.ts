@@ -115,8 +115,9 @@ export function useImageUrlCollection(maxUrls: number = 100) {
 
     // Cleanup on unmount
     useEffect(() => {
+        const urlsToRevoke = urlsRef.current;
         return () => {
-            urlsRef.current.forEach((url) => {
+            urlsToRevoke.forEach((url) => {
                 if (url.startsWith('blob:')) {
                     URL.revokeObjectURL(url);
                 }

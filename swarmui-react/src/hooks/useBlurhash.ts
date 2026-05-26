@@ -110,8 +110,10 @@ export function useProgressiveImage(src: string, placeholderColor?: string) {
 
     // Reset states when src changes
     useEffect(() => {
-        setLoading(true);
-        setError(false);
+        queueMicrotask(() => {
+            setLoading(true);
+            setError(false);
+        });
     }, [src]);
 
     return {
