@@ -403,7 +403,7 @@ public class T2IParamTypes
             "-1", Min: -1, Max: long.MaxValue, Step: 1, Examples: ["1", "2", "...", "10"], OrderPriority: -30, ViewType: ParamViewType.SEED, Group: GroupCore, ChangeWeight: -5
             ));
         Steps = Register<int>(new("Steps", "Diffusion works by running a model repeatedly to slowly build and then refine an image.\nThis parameter is how many times to run the model.\nMore steps = better quality, but more time.\n20 is a good baseline for speed, 40 is good for maximizing quality.\nSome models, such as Turbo models, are intended for low step counts like 4 or 8.\nYou can go much higher, but it quickly becomes pointless above 70 or so.\nNote that steps is a core parameter used for defining diffusion schedules and other advanced internals, and merely running the model over top of an existing image is not the same as increasing the steps.\nNote that the number of steps actually ran can be influenced by other parameters such as Init Image Creativity when applied.",
-            "20", Min: 0, Max: 500, ViewMax: 100, Step: 1, Examples: ["10", "15", "20", "30", "40"], OrderPriority: -20, Group: GroupCore, ViewType: ParamViewType.SLIDER, CanSectionalize: true
+            "20", Min: 0, Max: 500, ViewMax: 60, Step: 1, Examples: ["10", "15", "20", "30", "40"], OrderPriority: -20, Group: GroupCore, ViewType: ParamViewType.SLIDER, CanSectionalize: true
             ));
         CFGScale = Register<double>(new("CFG Scale", "How strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
             + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Flux, Hunyuan Video, or any Turbo model, expect CFG to be set to 1.",
@@ -546,7 +546,7 @@ public class T2IParamTypes
             "None", IgnoreIf: "None", GetValues: listVaes, IsAdvanced: true, OrderPriority: -9, Group: GroupRefinerOverrides, FeatureFlag: "refiners", Subtype: "VAE", ChangeWeight: 7, DoNotPreview: true
             ));
         RefinerSteps = Register<int>(new("Refiner Steps", "Alternate Steps value for when calculating the refiner stage.\nThis replaces the 'Steps' total count before calculating the Refiner Control Percentage.\nFor example, with Control=0.2, set RefinerSteps=60 so that 60*0.2=12 steps actually ran in the refiner.",
-            "40", Min: 1, Max: 200, ViewMax: 100, Step: 1, Examples: ["20", "40", "60"], OrderPriority: -5, Toggleable: true, IsAdvanced: true, Group: GroupRefinerOverrides, ViewType: ParamViewType.SLIDER
+            "40", Min: 1, Max: 200, ViewMax: 60, Step: 1, Examples: ["20", "40", "60"], OrderPriority: -5, Toggleable: true, IsAdvanced: true, Group: GroupRefinerOverrides, ViewType: ParamViewType.SLIDER
             ));
         RefinerCFGScale = Register<double>(new("Refiner CFG Scale", "For the refiner model independently of the base model, how strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
             + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Turbo, expect CFG around 1.",
