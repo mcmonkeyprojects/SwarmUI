@@ -942,8 +942,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         return normalized;
     }
-    function includeButton(name, action, extraClass = '', title = '', mediaTypes = null, can_multi = false, multi_only = false) {
-        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title, mediaTypes, can_multi, multi_only };
+    function includeButton(name, action, extraClass = '', title = '', mediaTypes = null) {
+        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title, mediaTypes };
     }
     function includeLinkButton(name, href, isDownload = false, title = '', mediaTypes = null) {
         buttonDefs[normalizeButtonKey(name)] = { name, href, is_download: isDownload, title, mediaTypes };
@@ -973,9 +973,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
         }
         for (let def of Object.values(buttonDefs)) {
-            if (def.multi_only) {
-                continue;
-            }
             if (def.mediaTypes && !def.mediaTypes.includes(mediaType)) {
                 continue;
             }
@@ -1160,14 +1157,14 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }, '', 'Jumps the History browser to where this file is at.');
     }
     for (let added of buttonsForImage(imagePathClean, src, metadata, true)) {
-        if (added.label == 'Star' || added.label == 'Unstar') {
+        if (added.label == 'Star' || added.label == 'Unstar' || added.multi_only) {
             continue;
         }
         if (added.href) {
             includeLinkButton(added.label, added.href, added.is_download, added.title);
         }
         else {
-            includeButton(added.label, added.onclick, '', added.title, null, added.can_multi, added.multi_only);
+            includeButton(added.label, added.onclick, '', added.title, null);
         }
     }
     renderButtonsFromDefs();
@@ -1403,7 +1400,7 @@ class ImageCompareHelper {
     constructor() {
         this.zoomRate = 1.1;
         this.modal = getRequiredElementById('image_compare_modal');
-        this.modalJq = $('#image_compare_modal');
+        this.modalJq = $(this.modal);
         this.stage = getRequiredElementById('image_compare_stage');
         document.addEventListener('click', (e) => {
             if (e.target.tagName == 'BODY') {
