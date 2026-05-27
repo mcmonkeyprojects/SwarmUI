@@ -621,6 +621,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 # Lens
 
+![img](/docs/images/models/lens.jpg)
+
+*(Lens Turbo fp8, Steps=8, CFG=1, SideLength=1440)*
+
 - Microsoft's [Lens](<https://huggingface.co/microsoft/Lens>) is supported in SwarmUI!
 - It is a 3.8B model, with a base model and an official turbo distill designed to run fast.
     - The raw base model (FP8) can be downloaded here: [Comfy-Org/Lens](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_mxfp8.safetensors>)
