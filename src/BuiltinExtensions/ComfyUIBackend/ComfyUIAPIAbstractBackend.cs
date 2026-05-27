@@ -1080,6 +1080,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             copyParam(T2IParamTypes.QwenModel);
             copyParam(T2IParamTypes.MistralModel);
             copyParam(T2IParamTypes.GemmaModel);
+            copyParam(T2IParamTypes.GptOssModel);
         }
         WorkflowGenerator wg = new() { UserInput = input, ModelFolderFormat = ModelFolderFormat, Features = [.. SupportedFeatures] };
         JObject workflow = wg.Generate();
