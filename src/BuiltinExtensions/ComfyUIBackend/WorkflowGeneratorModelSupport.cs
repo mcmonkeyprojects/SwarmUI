@@ -91,6 +91,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is HiDream-O1 Image.</summary>
     public bool IsHiDreamO1() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamO1);
 
+    /// <summary>Returns true if the current model is Lens.</summary>
+    public bool IsLens() => IsModelCompatClass(T2IModelClassSorter.CompatLens);
+
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
@@ -269,7 +272,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id));
         }
-        else if (IsAnyFlux2() || IsErnie())
+        else if (IsAnyFlux2() || IsErnie() || IsLens())
         {
             return resultImage(CreateNode("EmptyFlux2LatentImage", new JObject()
             {
@@ -598,6 +601,11 @@ public partial class WorkflowGenerator
             return RequireClipModel("ministral-3-3b.safetensors", "https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/text_encoders/ministral-3-3b.safetensors", "49a750a128863854eac7d85e1a277a7b44bf6ec3646405b84686dfeeca3708ca", T2IParamTypes.MistralModel);
         }
 
+        public string GetGptOss_20bModel()
+        {
+            return RequireClipModel("gpt_oss_20b_nvfp4.safetensors", "https://huggingface.co/Comfy-Org/Lens/resolve/main/text_encoders/gpt_oss_20b_nvfp4.safetensors", "103d7759c720627e5ffdcb0d885595695085dad4201fa6a522a84d4b86335ca0", T2IParamTypes.GptOssModel);
+        }
+
         public string GetClipLModel()
         {
             if (g.UserInput.TryGet(T2IParamTypes.ClipLModel, out T2IModel model))
@@ -899,7 +907,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsZImage() || IsZetaChroma() || IsAnima()) // Model is small and dense, so trust user preferred download format
+                    else if (IsZImage() || IsZetaChroma() || IsAnima() || IsLens()) // Model is small and dense, so trust user preferred download format
                     {
                         dtype = "default";
                     }
@@ -1056,6 +1064,29 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("flux2", helpers.GetMinistral3_3bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+        }
+        else if (IsLens())
+        {
+            helpers.LoadClip("lens", helpers.GetGptOss_20bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+            // TODO: SamplingFlux is a dirty node, is this really needed? Or can we do a generic shift?
+            string lensSamplingNode = CreateNode("ModelSamplingFlux", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["width"] = UserInput.GetImageWidth(),
+                ["height"] = UserInput.GetImageHeight(),
+                ["max_shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1.15, sectionId: sectionId),
+                ["base_shift"] = 0.5
+            });
+            LoadingModel = [lensSamplingNode, 0];
+            // TODO: Should this CFGNorm be configurable?
+            string lensCfgNormNode = CreateNode("CFGNorm", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["strength"] = 1.0,
+                ["pre_cfg"] = true
+            });
+            LoadingModel = [lensCfgNormNode, 0];
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
