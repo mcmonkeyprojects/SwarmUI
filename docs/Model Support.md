@@ -623,10 +623,9 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 - Microsoft's [Lens](<https://huggingface.co/microsoft/Lens>) is supported in SwarmUI!
 - It is a 3.8B model, with a base model and an official turbo distill designed to run fast.
-    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/Lens - turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_bf16.safetensors?download=true>)
-        - An MXFP8 variant can be downloaded here [Comfy-Org/Lens - turb mxfp8](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_mxfp8.safetensors?download=true>)
-    - Or the base version (in fat BF16) [Comfy-Org/Lens - base](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_bf16.safetensors?download=true>)
-        - An MXFP8 variant can be downloaded here [Comfy-Org/Lens - base mxfp8](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_mxfp8.safetensors?download=true>)
+    - The raw base model (FP8) can be downloaded here: [Comfy-Org/Lens](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_mxfp8.safetensors>)
+    - The Turbo model (FP8) can be downloaded here: [Comfy-Org/Lens - Turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_mxfp8.safetensors>)
+    - Or fat BF16 versions [Comfy-Org/Lens - base bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_bf16.safetensors>) [Comfy-Org/Lens - turbo bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_turbo_bf16.safetensors>)
     - Save in `diffusion_models`
 - Uses the Flux.2 VAE, will be downloaded and handled automatically
 - Uses the GPT-OSS 20B text encoder, will be downloaded and handled automatically
@@ -635,7 +634,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Scheduler:** Default is fine.
     - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
     - **Steps:** For Turbo, `4` is recommended, `8` works well. For Base, `20` as normal.
-    - **Resolution:** Side length `1440` is the standard.
+    - **Resolution:** Side length `1440` is the official default, but 1024 is a reasonable option. It retains coherence down to about 512 and up to about 2048.
 
 # Video Models
 

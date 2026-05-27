@@ -603,7 +603,7 @@ public partial class WorkflowGenerator
 
         public string GetGptOss_20bModel()
         {
-            return RequireClipModel("gpt_oss_20b_nvfp4.safetensors", "https://huggingface.co/Comfy-Org/Lens/resolve/main/text_encoders/gpt_oss_20b_nvfp4.safetensors?download=true", "103d7759c720627e5ffdcb0d885595695085dad4201fa6a522a84d4b86335ca0", T2IParamTypes.GptOssModel);
+            return RequireClipModel("gpt_oss_20b_nvfp4.safetensors", "https://huggingface.co/Comfy-Org/Lens/resolve/main/text_encoders/gpt_oss_20b_nvfp4.safetensors", "103d7759c720627e5ffdcb0d885595695085dad4201fa6a522a84d4b86335ca0", T2IParamTypes.GptOssModel);
         }
 
         public string GetClipLModel()
@@ -1069,6 +1069,7 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("lens", helpers.GetGptOss_20bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+            // TODO: SamplingFlux is a dirty node, is this really needed? Or can we do a generic shift?
             string lensSamplingNode = CreateNode("ModelSamplingFlux", new JObject()
             {
                 ["model"] = LoadingModel,
@@ -1078,6 +1079,7 @@ public partial class WorkflowGenerator
                 ["base_shift"] = 0.5
             });
             LoadingModel = [lensSamplingNode, 0];
+            // TODO: Should this CFGNorm be configurable?
             string lensCfgNormNode = CreateNode("CFGNorm", new JObject()
             {
                 ["model"] = LoadingModel,
