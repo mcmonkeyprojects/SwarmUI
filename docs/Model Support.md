@@ -644,8 +644,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 # PixelDiT
 
 - NVIDIA's [PixelDiT](<https://huggingface.co/Comfy-Org/PixelDiT>) is supported in SwarmUI!
-    - Or the smaller FP8 version: [Comfy-Org/PixelDiT - mxfp8](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_mxfp8.safetensors>)
-    - Download the fat BF16: [Comfy-Org/PixelDiT - bf16](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_bf16.safetensors>)
+    - The smaller FP8 model can be downloaded here: [Comfy-Org/PixelDiT - fp8](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_mxfp8.safetensors>)
+    - Or fat BF16 version: [Comfy-Org/PixelDiT - bf16](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_bf16.safetensors>)
     - Save in `diffusion_models`
 - It does not use a VAE
 - Uses the Gemma 2 2B text encoder, will be downloaded and handled automatically
