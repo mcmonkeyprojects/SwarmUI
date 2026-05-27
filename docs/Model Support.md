@@ -20,7 +20,7 @@
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
 [ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
-[Lens](#lens) | MMDiT | 2026 | Microsoft | 3.8B | Minimal | Modern, lightweight |
+[Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -626,7 +626,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 *(Lens Turbo fp8, Steps=8, CFG=1, SideLength=1440)*
 
 - Microsoft's [Lens](<https://huggingface.co/microsoft/Lens>) is supported in SwarmUI!
-- It is a 3.8B model, with a base model and an official turbo distill designed to run fast.
+- It is a 4B model (Officially listed as 3.8B), with a base model and an official turbo distill designed to run fast.
     - The raw base model (FP8) can be downloaded here: [Comfy-Org/Lens](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_mxfp8.safetensors>)
     - The Turbo model (FP8) can be downloaded here: [Comfy-Org/Lens - Turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_mxfp8.safetensors>)
     - Or fat BF16 versions [Comfy-Org/Lens - base bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_bf16.safetensors>) [Comfy-Org/Lens - turbo bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/split_files/diffusion_models/lens_turbo_bf16.safetensors>)
