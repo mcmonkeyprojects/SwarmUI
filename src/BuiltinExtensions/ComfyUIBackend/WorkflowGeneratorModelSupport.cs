@@ -85,10 +85,10 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Chroma Radiance.</summary>
     public bool IsChromaRadiance() => IsModelCompatClass(T2IModelClassSorter.CompatChromaRadiance);
 
-    /// <summary>Returns true if the current model is NVIDIA PixelDiT.</summary>
+    /// <summary>Returns true if the current model is PixelDiT.</summary>
     public bool IsPixelDiT() => IsModelCompatClass(T2IModelClassSorter.CompatPixelDiT);
 
-    /// <summary>Returns true if the current model is NVIDIA PiD.</summary>
+    /// <summary>Returns true if the current model is PiD.</summary>
     public bool IsPiD() => IsModelCompatClass(T2IModelClassSorter.CompatPiD);
 
     /// <summary>Returns true if the current model is HiDream-i1.</summary>

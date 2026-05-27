@@ -72,8 +72,8 @@ public class T2IModelClassSorter
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false }),
         CompatHiDreamO1 = RegisterCompat(new() { ID = "hidream-o1", ShortCode = "HiDrO1", LorasTargetTextEnc = false }),
         CompatLens = RegisterCompat(new() { ID = "lens", ShortCode = "Lens", LorasTargetTextEnc = false }),
-        CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
         CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
+        CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones
@@ -709,14 +709,14 @@ public class T2IModelClassSorter
         {
             return isChroma(h) && isChromaRadiance(h);
         }});
-        // ====================== NVIDIA PixelDiT / PiD ======================
-        Register(new() { ID = "pixeldit", CompatClass = CompatPixelDiT, Name = "NVIDIA PixelDiT", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isPixelDiT(h);
-        }});
-        Register(new() { ID = "pid", CompatClass = CompatPiD, Name = "NVIDIA PiD", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        // ====================== PixelDiT / PiD ======================
+        Register(new() { ID = "pid", CompatClass = CompatPiD, Name = "PiD", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isPiD(h);
+        }});
+        Register(new() { ID = "pixeldit", CompatClass = CompatPixelDiT, Name = "PixelDiT", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isPixelDiT(h);
         }});
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = CompatAltDiffusion, Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
