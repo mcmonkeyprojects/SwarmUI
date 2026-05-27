@@ -21,6 +21,7 @@
 [ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
 [Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight |
+[PixelDiT](#pixeldit) | Pixel DiT | 2026 | NVIDIA | 1.3B | Minimal | Modern, fast, pixel-space |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -639,6 +640,21 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
     - **Steps:** For Turbo, `4` is recommended, `8` works well. For Base, `20` as normal.
     - **Resolution:** Side length `1440` is the official default, but 1024 is a reasonable option. It retains coherence down to about 512 and up to about 2048.
+
+# PixelDiT
+
+- NVIDIA's [PixelDiT](<https://huggingface.co/Comfy-Org/PixelDiT>) is supported in SwarmUI!
+    - Or the smaller FP8 version: [Comfy-Org/PixelDiT - mxfp8](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_mxfp8.safetensors>)
+    - Download the fat BF16: [Comfy-Org/PixelDiT - bf16](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_bf16.safetensors>)
+    - Save in `diffusion_models`
+- It does not use a VAE
+- Uses the Gemma 2 2B text encoder, will be downloaded and handled automatically
+- **Parameters:**
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** `4` is recommended.
+    - **Steps:** `30` is recommended.
+    - **Resolution:** Side length `1024` is the standard.
 
 # Video Models
 
