@@ -598,6 +598,12 @@ public class T2IPromptHandling
             return $"<refiner//cid={T2IParamInput.SectionID_Refiner}>";
         };
         PromptTagLengthEstimators["refiner"] = estimateAsSectionBreak;
+        PromptTagBasicProcessors["pixeldecoder"] = (data, context) =>
+        {
+            context.SectionID = T2IParamInput.SectionID_PixelDecoder;
+            return $"<pixeldecoder//cid={T2IParamInput.SectionID_PixelDecoder}>";
+        };
+        PromptTagLengthEstimators["pixeldecoder"] = estimateAsSectionBreak;
         PromptTagBasicProcessors["video"] = (data, context) =>
         {
             context.SectionID = T2IParamInput.SectionID_Video;

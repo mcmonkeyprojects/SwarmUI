@@ -13,6 +13,8 @@ public class PromptRegion
 
     public string RefinerPrompt = "";
 
+    public string PixelDecoderPrompt = "";
+
     public string VideoPrompt = "";
 
     public string VideoSwapPrompt = "";
@@ -26,7 +28,7 @@ public class PromptRegion
     public static HashSet<string> CustomPartPrefixes = [];
 
     /// <summary>List of all prefixes for parts. Use <see cref="RegisterCustomPrefix(string)"/> to add to this.</summary>
-    public static List<string> PartPrefixes = ["<region:", "<object:", "<segment:", "<clear:", "<extend:", "<refiner", "<base", "<video"];
+    public static List<string> PartPrefixes = ["<region:", "<object:", "<segment:", "<clear:", "<extend:", "<refiner", "<base", "<video", "<pixeldecoder"];
 
     /// <summary>Custom Extensions can add new prompt part types here.
     /// <para>For example, this will add prompt parsing for &lt;example&gt; or &lt;example:somedata&gt; or etc:
@@ -127,6 +129,12 @@ public class PromptRegion
             {
                 RefinerPrompt += content;
                 addMore = s => RefinerPrompt += s;
+                continue;
+            }
+            else if (prefix == "pixeldecoder")
+            {
+                PixelDecoderPrompt += content;
+                addMore = s => PixelDecoderPrompt += s;
                 continue;
             }
             else if (prefix == "video")

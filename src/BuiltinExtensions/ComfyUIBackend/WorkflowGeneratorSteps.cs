@@ -106,7 +106,11 @@ public class WorkflowGeneratorSteps
             (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(0, g.LoadingModel, g.LoadingClip);
             if (g.IsRefinerStage)
             {
-                (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(1, g.LoadingModel, g.LoadingClip);
+                (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(T2IParamInput.SectionID_Refiner, g.LoadingModel, g.LoadingClip);
+            }
+            else if (g.IsPixelDecoderStage)
+            {
+                (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(T2IParamInput.SectionID_PixelDecoder, g.LoadingModel, g.LoadingClip);
             }
             else if (g.IsImageToVideoSwap)
             {
@@ -1451,53 +1455,11 @@ public class WorkflowGeneratorSteps
                 g.NoVAEOverride = false;
                 prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, true, isRefiner: true);
                 negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, false, isRefiner: true);
-                string explicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
-                string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
-                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
-                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
-                if (g.IsPiD())
-                {
-                    string baseCompatId = baseModel.ModelClass?.CompatClass?.ID ?? "";
-                    string pidLatentFormat =
-                        baseCompatId.StartsWith("flux-2") ? "flux2"
-                        : baseCompatId == "flux-1" ? "flux1"
-                        : baseCompatId.StartsWith("stable-diffusion-v3") ? "sd3"
-                        : (baseCompatId == "z-image" || baseCompatId == "zeta-chroma") ? "flux1"
-                        : null;
-                    if (pidLatentFormat is null)
-                    {
-                        throw new SwarmUserErrorException($"PiD requires a Flux.1, Flux.2, SD3, or Z-Image base model, but the base model class is '{baseCompatId}'.");
-                    }
-                    string pidCond = g.CreateNode("PiDConditioning", new JObject()
-                    {
-                        ["positive"] = prompt,
-                        ["latent"] = g.CurrentMedia.Path,
-                        ["latent_format"] = pidLatentFormat,
-                        ["degrade_sigma"] = 0.0
-                    });
-                    prompt = [pidCond, 0];
-                    int pidWidth = g.UserInput.GetImageWidth() * 4 / 16 * 16;
-                    int pidHeight = g.UserInput.GetImageHeight() * 4 / 16 * 16;
-                    string pidLatent = g.CreateNode("EmptyChromaRadianceLatentImage", new JObject()
-                    {
-                        ["batch_size"] = g.UserInput.Get(T2IParamTypes.BatchSize, 1),
-                        ["width"] = pidWidth,
-                        ["height"] = pidHeight
-                    });
-                    g.CreateKSampler(g.CurrentModel.Path, prompt, negPrompt, [pidLatent, 0], cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
-                        g.UserInput.Get(T2IParamTypes.Seed) + 1, false, true, id: "23",
-                        explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
-                    g.CurrentMedia = g.CurrentMedia.WithPath(["23", 0], WGNodeData.DT_LATENT_IMAGE, refineModel.ModelClass?.CompatClass);
-                    g.CurrentMedia.Width = pidWidth;
-                    g.CurrentMedia.Height = pidHeight;
-                    g.IsRefinerStage = false;
-                    return;
-                }
                 bool doSave = g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false);
-                bool doUspcale = g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1;
+                bool doUpscale = g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1;
                 string upscaleMethod = g.UserInput.Get(ComfyUIBackendExtension.RefinerUpscaleMethod, "None");
                 // TODO: Better same-VAE check
-                bool doPixelUpscale = doUspcale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
+                bool doPixelUpscale = doUpscale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
                 int width = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale);
                 int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
                 width = (width / 16) * 16; // avoid unworkable output sizes
@@ -1559,7 +1521,7 @@ public class WorkflowGeneratorSteps
                         g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
                     }
                 }
-                if (doUspcale && upscaleMethod.StartsWith("latent-"))
+                if (doUpscale && upscaleMethod.StartsWith("latent-"))
                 {
                     g.CurrentMedia = g.CurrentMedia.AsLatentImage(g.CurrentVae);
                     g.CreateNode("LatentUpscaleBy", new JObject()
@@ -1572,7 +1534,7 @@ public class WorkflowGeneratorSteps
                     g.CurrentMedia.Width = width;
                     g.CurrentMedia.Height = height;
                 }
-                else if (doUspcale && upscaleMethod.StartsWith("latentmodel-"))
+                else if (doUpscale && upscaleMethod.StartsWith("latentmodel-"))
                 {
                     g.CreateNode("LatentUpscaleModelLoader", new JObject()
                     {
@@ -1631,11 +1593,69 @@ public class WorkflowGeneratorSteps
                     model = model.WithPath([hyperTileNode, 0]);
                 }
                 g.CurrentMedia = g.CurrentMedia.AsSamplingLatent(g.CurrentVae, g.CurrentAudioVae);
+                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                string explicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
+                string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
                 g.CreateKSampler(model.Path, prompt, negPrompt, g.CurrentMedia.Path, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
                     g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
                     explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
                 g.CurrentMedia = g.CurrentMedia.WithPath(["23", 0]);
                 g.IsRefinerStage = false;
+                if (doUpscale && upscaleMethod.StartsWith("pidmodel-"))
+                {
+                    string pidModelName = upscaleMethod.After("pidmodel-");
+                    T2IModel pidModel = Program.MainSDModels.GetModel(pidModelName);
+                    if (pidModel is null || pidModel.ModelClass?.CompatClass?.ID != "pid")
+                    {
+                        throw new SwarmUserErrorException($"Refiner Upscale Method is set to PiD model '{pidModelName}', but that model could not be found or is not a valid PiD model.");
+                    }
+                    string pidLatentFormat = g.IsSD3() ? "sd3" : (g.IsFlux() || g.IsAnyFlux2() || g.IsZImage() || g.IsZetaChroma()) ? "flux" : null;
+                    if (pidLatentFormat is null)
+                    {
+                        throw new SwarmUserErrorException($"PiD model requires the refiner model's VAE to be Flux.1, Flux.2, or SD3, but model '{refineModel.Name}' is '{refineModel.ModelClass?.CompatClass?.ID ?? "unknown"}'.");
+                    }
+                    JArray refinedLatent = g.CurrentMedia.Path;
+                    int pidWidth = g.UserInput.GetImageWidth() * 4;
+                    int pidHeight = g.UserInput.GetImageHeight() * 4;
+                    pidWidth = (pidWidth / 16) * 16;
+                    pidHeight = (pidHeight / 16) * 16;
+                    T2IModel refinerFinalModel = g.FinalLoadedModel;
+                    List<T2IModel> refinerFinalModelList = g.FinalLoadedModelList;
+                    g.FinalLoadedModel = pidModel;
+                    g.FinalLoadedModelList = [pidModel];
+                    g.NoVAEOverride = true;
+                    g.IsPixelDecoderStage = true;
+                    (g.FinalLoadedModel, g.CurrentModel, g.CurrentTextEnc, g.CurrentVae) = g.CreateModelLoader(pidModel, "PixelDecoder", sectionId: T2IParamInput.SectionID_PixelDecoder);
+                    g.IsPixelDecoderStage = false;
+                    g.NoVAEOverride = false;
+                    JArray pidPos = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, true, isPixelDecoder: true);
+                    JArray pidNeg = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, false, isPixelDecoder: true);
+                    string pidCond = g.CreateNode("PiDConditioning", new JObject()
+                    {
+                        ["positive"] = pidPos,
+                        ["latent"] = refinedLatent,
+                        ["latent_format"] = pidLatentFormat,
+                        ["degrade_sigma"] = 0.0
+                    });
+                    string pidEmptyLatent = g.CreateNode("EmptyChromaRadianceLatentImage", new JObject()
+                    {
+                        ["batch_size"] = g.UserInput.Get(T2IParamTypes.BatchSize, 1),
+                        ["width"] = pidWidth,
+                        ["height"] = pidHeight
+                    });
+                    int pidSteps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_PixelDecoder, false) ?? 4;
+                    double pidCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_PixelDecoder, false) ?? 1.0;
+                    string pidSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_PixelDecoder, includeBase: false);
+                    string pidScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_PixelDecoder, includeBase: false);
+                    string pidSampled = g.CreateKSampler(g.CurrentModel.Path, [pidCond, 0], pidNeg, [pidEmptyLatent, 0], pidCfg, pidSteps, 0, 10000,
+                        g.UserInput.Get(T2IParamTypes.Seed) + 2, false, true, defsampler: "lcm", defscheduler: "simple", explicitSampler: pidSampler, explicitScheduler: pidScheduler, sectionId: T2IParamInput.SectionID_PixelDecoder);
+                    g.CurrentMedia = g.CurrentMedia.WithPath([pidSampled, 0], WGNodeData.DT_LATENT_IMAGE, pidModel.ModelClass?.CompatClass);
+                    g.CurrentMedia.Width = pidWidth;
+                    g.CurrentMedia.Height = pidHeight;
+                    g.FinalLoadedModel = refinerFinalModel;
+                    g.FinalLoadedModelList = refinerFinalModelList;
+                }
             }
         }, -4);
         #endregion

@@ -208,8 +208,8 @@ public class T2IModelClassSorter
         bool isHiDreamO1Lora(JObject h) => hasLoraKey(h, "final_layer2.linear") && hasLoraKey(h, "language_model.layers.0.self_attn.q_proj");
         bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
         bool isChromaRadiance(JObject h) => h.ContainsKey("nerf_image_embedder.embedder.0.bias");
-        bool isPixelDiT(JObject h) => h.ContainsKey("core.pixel_embedder.proj.weight");
         bool isPiD(JObject h) => h.ContainsKey("net.lq_proj.latent_proj.0.weight");
+        bool isPixelDiT(JObject h) => h.ContainsKey("core.pixel_embedder.proj.weight") && !isPiD(h);
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
             || (h.ContainsKey("model.diffusion_model.time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("model.diffusion_model.img_in.bias") && (h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_qkv_proj.bias")));
