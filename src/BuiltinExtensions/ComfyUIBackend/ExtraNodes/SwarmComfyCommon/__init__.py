@@ -1,11 +1,12 @@
 import os, folder_paths
 
-from . import SwarmBlending, SwarmClipSeg, SwarmGroundingDino, SwarmImages, SwarmInternalUtil, SwarmKSampler, SwarmLoadImageB64, SwarmLoraLoader, SwarmMasks, SwarmSaveImageWS, SwarmTiling, SwarmExtractLora, SwarmUnsampler, SwarmLatents, SwarmInputNodes, SwarmTextHandling, SwarmReference, SwarmMath, SwarmSam2, SwarmAudio
+from . import SwarmAnatomySegments, SwarmBlending, SwarmClipSeg, SwarmGroundingDino, SwarmImages, SwarmInternalUtil, SwarmKSampler, SwarmLoadImageB64, SwarmLoraLoader, SwarmMasks, SwarmSaveImageWS, SwarmTiling, SwarmExtractLora, SwarmUnsampler, SwarmLatents, SwarmInputNodes, SwarmTextHandling, SwarmReference, SwarmMath, SwarmSam2, SwarmAudio
 
 WEB_DIRECTORY = "./web"
 
 NODE_CLASS_MAPPINGS = (
     SwarmBlending.NODE_CLASS_MAPPINGS
+    | SwarmAnatomySegments.NODE_CLASS_MAPPINGS
     | SwarmClipSeg.NODE_CLASS_MAPPINGS
     | SwarmGroundingDino.NODE_CLASS_MAPPINGS
     | SwarmImages.NODE_CLASS_MAPPINGS
@@ -35,4 +36,10 @@ def register_model_folder(name):
         folder_paths.folder_names_and_paths[name] = (folder_paths.folder_names_and_paths[name][0], folder_paths.supported_pt_extensions)
 
 register_model_folder("yolov8")
+register_model_folder("anatomy_yolo")
+register_model_folder("sam2")
+register_model_folder("sam3")
+register_model_folder("sapiens2")
+register_model_folder("densepose")
+register_model_folder("dwpose")
 register_model_folder("groundingdino")

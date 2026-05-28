@@ -22,7 +22,7 @@ export interface BuilderRegionRule {
   enabled: boolean;
 }
 
-export type BuilderSegmentModelType = 'auto' | 'grounded-sam2' | 'clip-seg' | 'yolo';
+export type BuilderSegmentModelType = 'auto' | 'anatomy-auto' | 'grounded-sam2' | 'clip-seg' | 'yolo';
 
 export interface BuilderSegmentRule {
   id: string;

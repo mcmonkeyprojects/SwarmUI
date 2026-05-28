@@ -71,7 +71,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     public static bool IsComfyModelFileEmitted = false;
 
     /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards. Can also have ';' separated list of additional paths to forward to the same folder name.</summary>
-    public static List<string> FoldersToForwardInComfyPath = ["unet", "diffusion_models", "gligen", "ipadapter", "yolov8", "groundingdino", "tensorrt", "clipseg", "style_models", "latent_upscale_models"];
+    public static List<string> FoldersToForwardInComfyPath = ["unet", "diffusion_models", "gligen", "ipadapter", "yolov8", "anatomy_yolo", "sam2", "sam3", "sapiens2", "densepose", "dwpose", "groundingdino", "tensorrt", "clipseg", "style_models", "latent_upscale_models"];
 
     /// <summary>List of functions that modify the comfy paths YAML data. The simplest no-op impl is: <c>string MyFunc(string yaml) { return yaml; }</c></summary>
     public static List<Func<string, string>> ModifyComfyYaml = [];

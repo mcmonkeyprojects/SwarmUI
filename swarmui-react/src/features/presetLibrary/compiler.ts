@@ -27,8 +27,30 @@ export interface PresetCompilerTraceToken {
   contributors: string[];
 }
 
+export const PRESET_AUTO_SEGMENT_PARTS = [
+  'face',
+  'hands',
+  'breasts',
+  'vulva',
+  'penis',
+  'butt',
+] as const;
+
+export type PresetAutoSegmentPart = typeof PRESET_AUTO_SEGMENT_PARTS[number];
+
+export const PRESET_AUTO_SEGMENT_LABELS: Record<PresetAutoSegmentPart, string> = {
+  face: 'Face',
+  hands: 'Hands',
+  breasts: 'Breasts',
+  vulva: 'Vulva',
+  penis: 'Penis',
+  butt: 'Butt',
+};
+
+export type PresetAutoSegmentSelections = Partial<Record<PresetAutoSegmentPart, boolean>>;
+
 export interface PresetCompilerTraceSegment {
-  part: string;
+  part: PresetAutoSegmentPart;
   reasonWords: string[];
   prompt: string;
 }
@@ -47,6 +69,7 @@ export interface PresetCompilerTrace {
 
 export interface PresetCompilerOptions {
   autoSegments?: boolean;
+  segmentSelections?: PresetAutoSegmentSelections;
   sfwMode?: boolean;
 }
 
@@ -58,6 +81,12 @@ export interface PresetCompilerResult {
 interface SceneAssemblyResult {
   text: string;
   segments: PresetCompilerTraceSegment[];
+}
+
+interface NormalizedPresetCompilerOptions {
+  autoSegments: boolean;
+  segmentSelections: PresetAutoSegmentSelections;
+  sfwMode: boolean;
 }
 
 /**
@@ -636,7 +665,7 @@ function appendSegmentTag(
   segmentTags: string[],
   segments: PresetCompilerTraceSegment[],
   sourceNodes: TokenNode[],
-  part: string,
+  part: PresetAutoSegmentPart,
   segmentSyntax: string,
   includeKeywords: string[],
   excludeKeywords: string[],
@@ -654,9 +683,25 @@ function appendSegmentTag(
   });
 }
 
+function shouldAppendSegment(
+  options: NormalizedPresetCompilerOptions,
+  part: PresetAutoSegmentPart,
+  detected: boolean
+): boolean {
+  if (!options.autoSegments) {
+    return false;
+  }
+
+  if (options.sfwMode && (part === 'breasts' || part === 'vulva' || part === 'penis' || part === 'butt')) {
+    return false;
+  }
+
+  return options.segmentSelections[part] ?? detected;
+}
+
 function assembleIllustriousTagPrompt(
   categoryNodes: Record<PresetCategory, TokenNode[]>,
-  options: Required<PresetCompilerOptions>
+  options: NormalizedPresetCompilerOptions
 ): SceneAssemblyResult {
   const characterNodes = categoryNodes['characters'] ?? [];
   const explicitNodes = categoryNodes['explicit'] ?? [];
@@ -697,15 +742,18 @@ function assembleIllustriousTagPrompt(
   const segments: PresetCompilerTraceSegment[] = [];
   const segmentTags: string[] = [];
 
-  if (!options.autoSegments) {
-    return { text: basePrompt, segments };
-  }
-
   const segmentSourceNodes = [...qualityNodes, ...characterNodes, ...explicitNodes];
   const mediumTags = findSegmentMediumTags(styleNodes);
   const baseSubject = formatNodeAsTag(subjectNode);
 
-  if (segmentSourceNodes.some((node) => nodeMatchesKeyword(node, FACE_KEYWORDS))) {
+  const hasFaceSegment = segmentSourceNodes.some((node) => nodeMatchesKeyword(node, FACE_KEYWORDS));
+  const hasHandsSegment = segmentSourceNodes.some((node) => nodeMatchesKeyword(node, HANDS_KEYWORDS));
+  const hasBreastsSegment = segmentSourceNodes.some((node) => nodeMatchesKeyword(node, BREASTS_KEYWORDS));
+  const hasVulvaSegment = segmentSourceNodes.some((node) => nodeMatchesKeyword(node, VULVA_KEYWORDS));
+  const hasPenisSegment = segmentSourceNodes.some((node) => nodeMatchesKeyword(node, PENIS_KEYWORDS));
+  const hasButtSegment = segmentSourceNodes.some((node) => nodeMatchesKeyword(node, BUTT_KEYWORDS));
+
+  if (shouldAppendSegment(options, 'face', hasFaceSegment)) {
     appendSegmentTag(
       segmentTags,
       segments,
@@ -727,7 +775,7 @@ function assembleIllustriousTagPrompt(
     );
   }
 
-  if (segmentSourceNodes.some((node) => nodeMatchesKeyword(node, HANDS_KEYWORDS))) {
+  if (shouldAppendSegment(options, 'hands', hasHandsSegment)) {
     appendSegmentTag(
       segmentTags,
       segments,
@@ -749,7 +797,7 @@ function assembleIllustriousTagPrompt(
     );
   }
 
-  if (segmentSourceNodes.some((node) => nodeMatchesKeyword(node, BREASTS_KEYWORDS))) {
+  if (shouldAppendSegment(options, 'breasts', hasBreastsSegment)) {
     appendSegmentTag(
       segmentTags,
       segments,
@@ -771,7 +819,7 @@ function assembleIllustriousTagPrompt(
     );
   }
 
-  if (segmentSourceNodes.some((node) => nodeMatchesKeyword(node, VULVA_KEYWORDS))) {
+  if (shouldAppendSegment(options, 'vulva', hasVulvaSegment)) {
     appendSegmentTag(
       segmentTags,
       segments,
@@ -793,7 +841,7 @@ function assembleIllustriousTagPrompt(
     );
   }
 
-  if (segmentSourceNodes.some((node) => nodeMatchesKeyword(node, PENIS_KEYWORDS))) {
+  if (shouldAppendSegment(options, 'penis', hasPenisSegment)) {
     appendSegmentTag(
       segmentTags,
       segments,
@@ -815,7 +863,7 @@ function assembleIllustriousTagPrompt(
     );
   }
 
-  if (segmentSourceNodes.some((node) => nodeMatchesKeyword(node, BUTT_KEYWORDS))) {
+  if (shouldAppendSegment(options, 'butt', hasButtSegment)) {
     appendSegmentTag(
       segmentTags,
       segments,
@@ -849,7 +897,7 @@ function assembleIllustriousTagPrompt(
  */
 function assembleCoherentScenePrompt(
   categoryNodes: Record<PresetCategory, TokenNode[]>,
-  options: Required<PresetCompilerOptions>
+  options: NormalizedPresetCompilerOptions
 ): SceneAssemblyResult {
   const characterNodes = categoryNodes['characters'] ?? [];
   const explicitNodes = categoryNodes['explicit'] ?? [];
@@ -904,6 +952,13 @@ function assembleCoherentScenePrompt(
     if (nodeMatchesKeyword(n, BUTT_KEYWORDS)) {
       needsButtSegment = true;
     }
+  }
+
+  if (options.sfwMode) {
+    needsBreastsSegment = false;
+    needsVulvaSegment = false;
+    needsPenisSegment = false;
+    needsButtSegment = false;
   }
 
   // --- Technique D: Dynamic Complexity & Weight Balancer ---
@@ -1165,11 +1220,7 @@ function assembleCoherentScenePrompt(
   let segmentTags = '';
   const segments: PresetCompilerTraceSegment[] = [];
 
-  if (!options.autoSegments) {
-    return { text: sentence, segments };
-  }
-
-  if (needsFaceSegment) {
+  if (shouldAppendSegment(options, 'face', needsFaceSegment)) {
     const faceDetailsText = extractSegmentDetails(
       [...characterNodes, ...explicitNodes],
       FACE_KEYWORDS,
@@ -1186,7 +1237,7 @@ function assembleCoherentScenePrompt(
     });
   }
 
-  if (needsHandSegment) {
+  if (shouldAppendSegment(options, 'hands', needsHandSegment)) {
     const handDetailsText = extractSegmentDetails(
       [...characterNodes, ...explicitNodes],
       HANDS_KEYWORDS,
@@ -1203,7 +1254,7 @@ function assembleCoherentScenePrompt(
     });
   }
 
-  if (needsBreastsSegment) {
+  if (shouldAppendSegment(options, 'breasts', needsBreastsSegment)) {
     const breastsDetailsText = extractSegmentDetails(
       [...characterNodes, ...explicitNodes],
       BREASTS_KEYWORDS,
@@ -1220,7 +1271,7 @@ function assembleCoherentScenePrompt(
     });
   }
 
-  if (needsVulvaSegment) {
+  if (shouldAppendSegment(options, 'vulva', needsVulvaSegment)) {
     const vulvaDetailsText = extractSegmentDetails(
       [...characterNodes, ...explicitNodes],
       VULVA_KEYWORDS,
@@ -1237,7 +1288,7 @@ function assembleCoherentScenePrompt(
     });
   }
 
-  if (needsPenisSegment) {
+  if (shouldAppendSegment(options, 'penis', needsPenisSegment)) {
     const penisDetailsText = extractSegmentDetails(
       [...characterNodes, ...explicitNodes],
       PENIS_KEYWORDS,
@@ -1254,7 +1305,7 @@ function assembleCoherentScenePrompt(
     });
   }
 
-  if (needsButtSegment) {
+  if (shouldAppendSegment(options, 'butt', needsButtSegment)) {
     const buttDetailsText = extractSegmentDetails(
       [...characterNodes, ...explicitNodes],
       BUTT_KEYWORDS,
@@ -1285,9 +1336,10 @@ function createEmptyTrace(): PresetCompilerTrace {
   };
 }
 
-function normalizeCompilerOptions(options: PresetCompilerOptions = {}): Required<PresetCompilerOptions> {
+function normalizeCompilerOptions(options: PresetCompilerOptions = {}): NormalizedPresetCompilerOptions {
   return {
     autoSegments: options.autoSegments ?? true,
+    segmentSelections: options.segmentSelections ?? {},
     sfwMode: options.sfwMode ?? false,
   };
 }
@@ -1313,11 +1365,15 @@ function buildTokenNodes(
     const { baseWord, weight: parsedWeight } = parseWeightedWord(resolvedWord);
 
     if (sfwMode) {
+      if (category === 'explicit') {
+        continue;
+      }
       const baseWordLower = baseWord.toLowerCase();
       const nsfwKeywords = [
-        'vulva', 'pussy', 'vagina', 'cunt', 'clitoris', 'pubic', 'areola', 'nipple', 'nipples',
-        'asshole', 'anus', 'penis', 'cock', 'dick', 'nude', 'naked', 'topless', 'bare breasts',
-        'bare vulva', 'bare slit', 'bare pussy', 'shaved pussy', 'nude body', 'naked body'
+        'vulva', 'pussy', 'vagina', 'cunt', 'clitoris', 'clit', 'labia', 'innie', 'outtie',
+        'puckered', 'cloaca', 'pubic', 'areola', 'nipple', 'nipples', 'asshole', 'anus',
+        'penis', 'cock', 'dick', 'nude', 'naked', 'topless', 'bare breasts', 'bare vulva',
+        'bare slit', 'bare pussy', 'shaved pussy', 'nude body', 'naked body'
       ];
       if (nsfwKeywords.some((kw) => baseWordLower.includes(kw))) {
         continue;
@@ -1347,7 +1403,7 @@ function buildTokenNodes(
 function compileTokenNodes(
   tokenNodes: TokenNode[],
   deduplicate: boolean,
-  options: Required<PresetCompilerOptions>,
+  options: NormalizedPresetCompilerOptions,
   trace: PresetCompilerTrace
 ): PresetPromptSection[] {
   trace.tokens = tokenNodes.map(traceToken);

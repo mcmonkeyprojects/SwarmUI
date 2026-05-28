@@ -154,6 +154,8 @@ class SwarmMaskBounds:
     def get_bounds(self, mask, grow, aspect_x=0, aspect_y=0):
         if len(mask.shape) == 3:
             mask = mask[0]
+        if torch.count_nonzero(mask).item() == 0:
+            return (0, 0, 1, 1)
         sum_x = (torch.sum(mask, dim=0) != 0).to(dtype=torch.int)
         sum_y = (torch.sum(mask, dim=1) != 0).to(dtype=torch.int)
         def getval(arr, direction):
@@ -299,6 +301,78 @@ class SwarmMaskFallback:
         return (primary_mask,)
 
 
+class SwarmZeroMaskLike:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "mask": ("MASK",),
+            },
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "zero"
+    CATEGORY = "SwarmUI/masks"
+    DESCRIPTION = "Returns an all-zero mask with the same shape as the input mask."
+
+    def zero(self, mask):
+        return (torch.zeros_like(mask),)
+
+
+def segment_target_area_limits(target, min_area, max_area):
+    if min_area > 0 or max_area > 0:
+        return (min_area if min_area > 0 else 0.00005, max_area if max_area > 0 else 0.85)
+    labels = [label.strip().lower() for label in str(target).replace("|", ",").split(",") if label.strip()]
+    joined = ",".join(labels)
+    if any(label in joined for label in ["vulva", "vagina", "pussy", "penis", "cock", "dick", "anus", "anal", "nipple"]):
+        return (0.00005, 0.22)
+    if any(label in joined for label in ["breast", "boob", "cleavage"]):
+        return (0.0001, 0.32)
+    if any(label in joined for label in ["butt", "buttocks", "ass", "rear"]):
+        return (0.0001, 0.40)
+    if any(label in joined for label in ["face", "head", "eye", "mouth", "lip"]):
+        return (0.0001, 0.35)
+    if any(label in joined for label in ["hand", "finger", "foot", "feet", "toe"]):
+        return (0.0001, 0.45)
+    if any(label in joined for label in ["torso", "chest"]):
+        return (0.0001, 0.65)
+    return (0.00005, 0.85)
+
+
+class SwarmSegmentMaskQuality:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "mask": ("MASK",),
+                "target": ("STRING", {"default": "", "multiline": False}),
+            },
+            "optional": {
+                "min_area": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.0001}),
+                "max_area": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+            }
+        }
+
+    RETURN_TYPES = ("MASK", "BOOLEAN")
+    RETURN_NAMES = ("mask", "valid")
+    FUNCTION = "quality"
+    CATEGORY = "SwarmUI/masks"
+    DESCRIPTION = "Rejects empty or implausibly large segment masks so detector misses become no-ops instead of whole-image edits."
+
+    def quality(self, mask, target, min_area=0.0, max_area=0.0):
+        min_limit, max_limit = segment_target_area_limits(target, min_area, max_area)
+        mask_float = mask.float()
+        active = mask_float > 0.05
+        area = float(active.sum().item()) / max(float(active.numel()), 1.0)
+        if area < min_limit:
+            print(f"[SwarmSegmentMaskQuality] Rejected '{target}' mask: area {area:.6f} below {min_limit:.6f}.")
+            return (torch.zeros_like(mask_float), False)
+        if area > max_limit:
+            print(f"[SwarmSegmentMaskQuality] Rejected '{target}' mask: area {area:.6f} above {max_limit:.6f}.")
+            return (torch.zeros_like(mask_float), False)
+        return (mask, True)
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmSquareMaskFromPercent": SwarmSquareMaskFromPercent,
     "SwarmCleanOverlapMasks": SwarmCleanOverlapMasks,
@@ -310,4 +384,6 @@ NODE_CLASS_MAPPINGS = {
     "SwarmMaskBlur": SwarmMaskBlur,
     "SwarmMaskThreshold": SwarmMaskThreshold,
     "SwarmMaskFallback": SwarmMaskFallback,
+    "SwarmZeroMaskLike": SwarmZeroMaskLike,
+    "SwarmSegmentMaskQuality": SwarmSegmentMaskQuality,
 }

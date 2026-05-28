@@ -54,7 +54,8 @@ const SegmentRuleCard = memo(function SegmentRuleCard({
 }: SegmentRuleCardProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const modelSelectData = useMemo(() => ([
-    { value: 'auto', label: 'Auto (Grounded SAM2)' },
+    { value: 'auto', label: 'Auto (Anatomy-aware)' },
+    { value: 'anatomy-auto', label: 'Anatomy Auto' },
     { value: 'grounded-sam2', label: 'Grounded SAM2' },
     { value: 'clip-seg', label: 'CLIP-Seg (Text Match)' },
     ...yoloOptions,
@@ -117,7 +118,7 @@ const SegmentRuleCard = memo(function SegmentRuleCard({
           data={modelSelectData}
           value={modelValue}
           onChange={(value) => {
-            if (!value || value === 'auto' || value === 'grounded-sam2' || value === 'clip-seg') {
+            if (!value || value === 'auto' || value === 'anatomy-auto' || value === 'grounded-sam2' || value === 'clip-seg') {
               onUpdate({ modelType: (value || 'auto') as BuilderSegmentRule['modelType'] });
               return;
             }
@@ -128,6 +129,11 @@ const SegmentRuleCard = memo(function SegmentRuleCard({
           }}
           comboboxProps={{ withinPortal: false }}
         />
+        {(rule.modelType === 'auto' || rule.modelType === 'anatomy-auto') && (
+          <Text size="xs" c="invokeGray.4">
+            Auto uses the backend detector ladder and emits a mask preview before each segment refinement.
+          </Text>
+        )}
 
         {rule.modelType !== 'yolo' ? (
           <TextInput

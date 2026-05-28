@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   commitCartSections,
+  commitCartWithTrace,
   createEmptyPresetCartState,
   parseWordsFromText,
   stagePresetInCart,
@@ -9,11 +10,17 @@ import {
   unstageWordFromCart,
   normalizeWord,
 } from '../features/presetLibrary/staging';
-import type {
-  LibraryPreset,
-  PresetCategory,
-  PresetPromptSection,
+import {
+  parseWeightedWord,
+  type LibraryPreset,
+  type PresetCategory,
+  type PresetPromptSection,
 } from '../features/presetLibrary/types';
+import type {
+  PresetAutoSegmentPart,
+  PresetAutoSegmentSelections,
+  PresetCompilerTraceSegment,
+} from '../features/presetLibrary/compiler';
 
 export const PRESET_LIBRARY_STORAGE_KEY = 'swarmui:presetLibrary:v1';
 export const PRESET_LIBRARY_MIGRATION_FLAG_KEY = 'swarmui:presetLibrary:migratedFromWizard:v1';
@@ -28,6 +35,8 @@ interface PresetLibraryState {
   stagedWords: string[];
   stagedFromPresetIds: string[];
   stagedSections: PresetPromptSection[];
+  stagedSegments: PresetCompilerTraceSegment[];
+  segmentSelections: PresetAutoSegmentSelections;
   presetMultipliers: Record<string, number>;
   stagedVariations: Record<string, string>;
   stagedVariables: Record<string, Record<string, string>>;
@@ -53,6 +62,7 @@ interface PresetLibraryState {
   setSfwMode: (enabled: boolean) => void;
   setDeduplicatePrompts: (enabled: boolean) => void;
   setSearchQuery: (query: string) => void;
+  setSegmentEnabled: (part: PresetAutoSegmentPart, enabled: boolean) => void;
   adjustWordWeight: (baseWord: string, weight: number) => void;
   adjustPresetMultiplier: (presetId: string, multiplier: number) => void;
   setStagedVariable: (presetId: string, varName: string, value: string) => void;
@@ -63,33 +73,67 @@ let privateCartState = createEmptyPresetCartState();
 
 function syncCartState(
   cartState: ReturnType<typeof createEmptyPresetCartState>,
-  sfwMode: boolean = false
+  sfwMode: boolean = false,
+  segmentSelections?: PresetAutoSegmentSelections
 ): Pick<
   PresetLibraryState,
-  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections' | 'presetMultipliers'
+  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections' | 'stagedSegments' | 'presetMultipliers'
 > {
   privateCartState = cartState;
   let stagedVariables: Record<string, Record<string, string>> = {};
   let deduplicatePrompts = true;
+  let activeSegmentSelections = segmentSelections ?? {};
   try {
     const storeState = usePresetLibraryStore.getState();
     if (storeState) {
       stagedVariables = storeState.stagedVariables ?? {};
       deduplicatePrompts = storeState.deduplicatePrompts ?? true;
+      activeSegmentSelections = segmentSelections ?? storeState.segmentSelections ?? {};
     }
-  } catch {}
+  } catch {
+    // Store access can be unavailable during module initialization.
+  }
+
+  const compiled = commitCartWithTrace(cartState, stagedVariables, deduplicatePrompts, {
+    sfwMode,
+    segmentSelections: activeSegmentSelections,
+  });
+
+  let stagedWords = cartState.stagedWords;
+  if (sfwMode) {
+    const nsfwKeywords = [
+      'vulva', 'pussy', 'vagina', 'cunt', 'clitoris', 'clit', 'labia', 'innie', 'outtie',
+      'puckered', 'cloaca', 'pubic', 'areola', 'nipple', 'nipples', 'asshole', 'anus',
+      'penis', 'cock', 'dick', 'nude', 'naked', 'topless', 'bare breasts', 'bare vulva',
+      'bare slit', 'bare pussy', 'shaved pussy', 'nude body', 'naked body'
+    ];
+    stagedWords = stagedWords.filter((word) => {
+      const key = normalizeWord(word);
+      const category = cartState.categoryByKey[key] ?? 'characters';
+      if (category === 'explicit') {
+        return false;
+      }
+      const { baseWord } = parseWeightedWord(word);
+      const baseWordLower = baseWord.toLowerCase();
+      if (nsfwKeywords.some((kw) => baseWordLower.includes(kw))) {
+        return false;
+      }
+      return true;
+    });
+  }
 
   return {
-    stagedWords: cartState.stagedWords,
+    stagedWords,
     stagedFromPresetIds: cartState.stagedFromPresetIds,
-    stagedSections: commitCartSections(cartState, stagedVariables, deduplicatePrompts, { sfwMode }),
+    stagedSections: compiled.sections,
+    stagedSegments: compiled.trace.segments,
     presetMultipliers: cartState.presetMultipliers,
   };
 }
 
 function clearPrivateCartState(sfwMode: boolean = false): Pick<
   PresetLibraryState,
-  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections' | 'presetMultipliers'
+  'stagedWords' | 'stagedFromPresetIds' | 'stagedSections' | 'stagedSegments' | 'presetMultipliers'
 > {
   return syncCartState(createEmptyPresetCartState(), sfwMode);
 }
@@ -135,6 +179,8 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
       stagedWords: [],
       stagedFromPresetIds: [],
       stagedSections: [],
+      stagedSegments: [],
+      segmentSelections: {},
       presetMultipliers: {},
       stagedVariations: {},
       stagedVariables: {},
@@ -159,22 +205,37 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
       },
 
       clearStaged: () => {
-        set(clearPrivateCartState(get().sfwMode));
+        set({
+          ...clearPrivateCartState(get().sfwMode),
+          segmentSelections: {},
+        });
       },
 
       commitStaged: () => {
         const state = get();
-        const committedText = commitCartSections(privateCartState, state.stagedVariables, state.deduplicatePrompts, { sfwMode: state.sfwMode })
+        const committedText = commitCartSections(privateCartState, state.stagedVariables, state.deduplicatePrompts, {
+          sfwMode: state.sfwMode,
+          segmentSelections: state.segmentSelections,
+        })
           .map((section) => section.text)
           .join('\n');
-        set(clearPrivateCartState(state.sfwMode));
+        set({
+          ...clearPrivateCartState(state.sfwMode),
+          segmentSelections: {},
+        });
         return committedText;
       },
 
       commitStagedSections: () => {
         const state = get();
-        const committedSections = commitCartSections(privateCartState, state.stagedVariables, state.deduplicatePrompts, { sfwMode: state.sfwMode });
-        set(clearPrivateCartState(state.sfwMode));
+        const committedSections = commitCartSections(privateCartState, state.stagedVariables, state.deduplicatePrompts, {
+          sfwMode: state.sfwMode,
+          segmentSelections: state.segmentSelections,
+        });
+        set({
+          ...clearPrivateCartState(state.sfwMode),
+          segmentSelections: {},
+        });
         return committedSections;
       },
 
@@ -328,6 +389,17 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
         set({ searchQuery: query });
       },
 
+      setSegmentEnabled: (part, enabled) => {
+        const nextSegmentSelections = {
+          ...get().segmentSelections,
+          [part]: enabled,
+        };
+        set({
+          segmentSelections: nextSegmentSelections,
+          ...syncCartState(privateCartState, get().sfwMode, nextSegmentSelections),
+        });
+      },
+
       adjustWordWeight: (baseWord, weight) => {
         const key = normalizeWord(baseWord);
         const nextCartState = {
@@ -368,6 +440,7 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
           ...clearPrivateCartState(get().sfwMode),
           stagedVariations: {},
           stagedVariables: {},
+          segmentSelections: {},
           searchQuery: '',
         });
       },

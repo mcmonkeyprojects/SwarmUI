@@ -586,6 +586,7 @@ export const CanvasPanel = memo(function CanvasPanel({
   currentStep,
   stepSource,
   stageLabel,
+  stageDetail,
   stageIndex,
   stageCount,
   stagesRemaining,
@@ -688,6 +689,10 @@ export const CanvasPanel = memo(function CanvasPanel({
     }
   })();
   const activeStageLabel = stageLabel?.trim() || null;
+  const activeStageDetail = stageDetail?.trim() || null;
+  const activeStageDetailPreview = activeStageDetail && activeStageDetail.length > 64
+    ? `${activeStageDetail.slice(0, 61)}...`
+    : activeStageDetail;
   const stepBadge = formatGenerationStepDisplay({
     progress,
     hasProgressEvent,
@@ -743,6 +748,13 @@ export const CanvasPanel = memo(function CanvasPanel({
                     <SwarmBadge tone="secondary" emphasis="soft">
                       {activeStageLabel}
                     </SwarmBadge>
+                  )}
+                  {activeStageDetailPreview && (
+                    <Tooltip label={activeStageDetail} disabled={activeStageDetailPreview === activeStageDetail}>
+                      <SwarmBadge tone="secondary" emphasis="soft">
+                        {activeStageDetailPreview}
+                      </SwarmBadge>
+                    </Tooltip>
                   )}
                   {stepBadge && (
                     <SwarmBadge tone="secondary" emphasis="soft">

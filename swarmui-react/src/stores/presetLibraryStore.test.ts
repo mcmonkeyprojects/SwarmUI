@@ -33,7 +33,6 @@ Object.defineProperty(globalThis, 'window', {
   configurable: true,
   value: globalThis,
 });
-
 import { afterEach, beforeEach, describe, expect, it, vi, beforeAll } from 'vitest';
 import type { LibraryPreset } from '../features/presetLibrary/types';
 import type { usePresetLibraryStore as usePresetLibraryStoreType } from './presetLibraryStore';
@@ -192,6 +191,24 @@ describe('presetLibraryStore', () => {
     expect(committedText).toContain('<segment:butt,0.65,0.3> 1boy, round bubble ass, high detail');
   });
 
+  it('lets staged segment selections remove and add segment prompts', () => {
+    usePresetLibraryStore.getState().stagePreset(
+      createPreset({
+        words: ['1girl', 'blushing face'],
+      })
+    );
+
+    expect(usePresetLibraryStore.getState().stagedSegments.map((segment) => segment.part)).toEqual(['face']);
+
+    usePresetLibraryStore.getState().setSegmentEnabled('face', false);
+    expect(usePresetLibraryStore.getState().stagedSections[0].text).not.toContain('<segment:face');
+    expect(usePresetLibraryStore.getState().stagedSegments).toEqual([]);
+
+    usePresetLibraryStore.getState().setSegmentEnabled('hands', true);
+    expect(usePresetLibraryStore.getState().stagedSections[0].text).toContain('<segment:hand|hands|fingers');
+    expect(usePresetLibraryStore.getState().stagedSegments.map((segment) => segment.part)).toEqual(['hands']);
+  });
+
   it('strictly isolates details across segments to prevent cross-contamination', () => {
     usePresetLibraryStore.getState().stagePreset(
       createPreset({
@@ -276,5 +293,30 @@ describe('presetLibraryStore', () => {
 
     await usePresetLibraryStore.getState().migrateFromWizardStore();
     expect(usePresetLibraryStore.getState().userPresets).toHaveLength(1);
+  });
+
+  it('filters explicit and nsfw tokens from stagedWords when sfwMode is enabled', () => {
+    const store = usePresetLibraryStore.getState();
+    store.stagePreset(
+      createPreset({
+        id: 'pl-explicit-test',
+        category: 'explicit',
+        words: ['1girl', 'blonde hair', 'bare vulva', 'visible clit'],
+      })
+    );
+
+    // Turn SFW mode on
+    store.setSfwMode(true);
+    let state = usePresetLibraryStore.getState();
+    expect(state.stagedWords).not.toContain('bare vulva');
+    expect(state.stagedWords).not.toContain('visible clit');
+    expect(state.stagedWords).not.toContain('1girl');
+
+    // Turn SFW mode off
+    store.setSfwMode(false);
+    state = usePresetLibraryStore.getState();
+    expect(state.stagedWords).toContain('bare vulva');
+    expect(state.stagedWords).toContain('visible clit');
+    expect(state.stagedWords).toContain('1girl');
   });
 });

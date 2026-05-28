@@ -97,6 +97,8 @@ export const PresetLibrary = memo(function PresetLibrary({
     showExplicit,
     stagedWords,
     stagedSections,
+    stagedSegments,
+    segmentSelections,
     stagedFromPresetIds,
     searchQuery,
     unstageWord,
@@ -109,6 +111,7 @@ export const PresetLibrary = memo(function PresetLibrary({
     setActiveCategory,
     setShowExplicit,
     setSearchQuery,
+    setSegmentEnabled,
     resetEphemeral,
   } = usePresetLibraryStore();
 
@@ -503,6 +506,9 @@ export const PresetLibrary = memo(function PresetLibrary({
           <PresetStagingStrip
             words={stagedWords}
             sections={stagedSections}
+            segments={stagedSegments}
+            segmentSelections={segmentSelections}
+            onToggleSegment={setSegmentEnabled}
             onRemoveWord={unstageWord}
             onClear={clearStaged}
             stagedPresets={stagedPresets}

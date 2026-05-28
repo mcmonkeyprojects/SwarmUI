@@ -333,7 +333,7 @@ public class T2IParamTypes
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, VideoExtendModel, VideoExtendSwapModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
-    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData,
+    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, SegmentDiagnosticPreviews, SegmentConservativeFallback, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData,
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
@@ -819,6 +819,12 @@ public class T2IParamTypes
         SaveSegmentMask = Register<bool>(new("Save Segment Mask", "If checked, any usage of '<segment:>' syntax in prompts will save the generated mask in output.",
             "false", IgnoreIf: "false", Group: GroupSegmentRefining, OrderPriority: 3
             ));
+        SegmentDiagnosticPreviews = Register<bool>(new("Segment Diagnostic Previews", "If checked, normal '<segment:>' processing emits a live mask overlay before each segment refinement pass so you can see exactly what area is being changed.",
+            "true", IgnoreIf: "true", Group: GroupSegmentRefining, OrderPriority: 3.2, IsAdvanced: true
+            ));
+        SegmentConservativeFallback = Register<bool>(new("Segment Conservative Fallback", "If checked, missed '<segment:>' detections may fall back to broad estimated body regions.\nLeave this off for stricter anatomy targeting so missed detections become no-ops instead of false edits.",
+            "false", IgnoreIf: "false", Group: GroupSegmentRefining, OrderPriority: 3.4, IsAdvanced: true
+            ));
         SegmentMaskBlur = Register<int>(new("Segment Mask Blur", "Amount of blur to apply to the segment mask before using it.\nThis is for '<segment:>' syntax usage.\nDefaults to 10.",
             "10", Min: 0, Max: 64, Group: GroupSegmentRefining, Examples: ["0", "4", "8", "16"], Toggleable: true, OrderPriority: 4
             ));
@@ -831,16 +837,16 @@ public class T2IParamTypes
         SegmentThresholdMax = Register<double>(new("Segment Threshold Max", "Maximum mask match value of a segment before clamping.\nLower values force more of the mask to be counted as maximum masking.\nToo-low values may include unwanted areas of the image.\nHigher values may soften the mask.",
             "1", Min: 0, Max: 1, Step: 0.05, Toggleable: true, ViewType: ParamViewType.SLIDER, Group: GroupSegmentRefining, OrderPriority: 6
             ));
-        SegmentDetector = Register<string>(new("Segment Detector", "Detector used for normal '<segment:>' prompt syntax.\nAuto prefers GroundingDINO boxes with SAM2 masks when available, then falls back to CLIPSeg.\nExplicit '<segment:yolo-*>' syntax always keeps using YOLO.",
-            "Auto", IgnoreIf: "Auto", GetValues: _ => ["Auto", "Grounded SAM2", "CLIPSeg", "YOLO explicit only"], Group: GroupSegmentRefining, OrderPriority: 6.1, IsAdvanced: true
+        SegmentDetector = Register<string>(new("Segment Detector", "Detector used for normal '<segment:>' prompt syntax.\nAuto and Anatomy Auto try SAM3, Sapiens2 when installed, anatomy YOLO, pose/body boxes, GroundingDINO + SAM2, then CLIPSeg.\nExplicit '<segment:yolo-*>' syntax always keeps using YOLO.",
+            "Auto", IgnoreIf: "Auto", GetValues: _ => ["Auto", "Anatomy Auto", "Grounded SAM2", "CLIPSeg", "YOLO explicit only"], Group: GroupSegmentRefining, OrderPriority: 6.1, IsAdvanced: true
             ));
-        SegmentGroundingThreshold = Register<double>(new("Segment Grounding Threshold", "Confidence threshold for GroundingDINO text box detection used by the Auto and Grounded SAM2 segment detectors.",
+        SegmentGroundingThreshold = Register<double>(new("Segment Grounding Threshold", "Confidence threshold for text and anatomy detection used by the Auto, Anatomy Auto, and Grounded SAM2 segment detectors.",
             "0.25", IgnoreIf: "0.25", Min: 0, Max: 1, Step: 0.01, ViewType: ParamViewType.SLIDER, Group: GroupSegmentRefining, OrderPriority: 6.2, IsAdvanced: true
             ));
-        SegmentMaxBoxes = Register<int>(new("Segment Max Boxes", "Maximum number of GroundingDINO boxes to pass to SAM2 for each segment text query.",
+        SegmentMaxBoxes = Register<int>(new("Segment Max Boxes", "Maximum number of detector boxes to use for each segment text query.",
             "1", IgnoreIf: "1", Min: 1, Max: 16, Step: 1, Group: GroupSegmentRefining, OrderPriority: 6.3, IsAdvanced: true
             ));
-        SegmentSam2ModelSize = Register<string>(new("Segment SAM2 Model Size", "SAM2 model size used by the Auto and Grounded SAM2 segment detectors.",
+        SegmentSam2ModelSize = Register<string>(new("Segment SAM2 Model Size", "SAM2 model size used to refine detector boxes into masks.",
             "base_plus", IgnoreIf: "base_plus", GetValues: _ => ["small", "base_plus", "large"], Group: GroupSegmentRefining, OrderPriority: 6.4, IsAdvanced: true
             ));
         SegmentSortOrder = Register<string>(new("Segment Sort Order", "How to sort segments when using '<segment:yolo->' syntax with indices.\nFor example: <segment:yolo-face_yolov8m-seg_60.pt-2> with largest-smallest, will select the second largest face segment.",

@@ -1613,6 +1613,8 @@ public class WorkflowGeneratorSteps
             return prompt;
         }
 
+        int segmentStageSerial = 0;
+
         void annotateSegmentNode(WorkflowGenerator g, string nodeId, int index, string process, string detail = null)
         {
             string safeDetail = detail?.Replace('\n', ' ').Replace('\r', ' ').Trim();
@@ -1620,7 +1622,8 @@ public class WorkflowGeneratorSteps
             {
                 safeDetail = $"{safeDetail[..93]}...";
             }
-            g.AnnotateNodeStage(nodeId, $"segment_{index + 1}_{process.ToLowerFast()}", $"Segment {index + 1} {process}", safeDetail);
+            segmentStageSerial++;
+            g.AnnotateNodeStage(nodeId, $"segment_{index + 1}_{segmentStageSerial}_{process.ToLowerFast()}", $"Segment {index + 1} {process}", safeDetail);
         }
 
         void addSegmentSection(List<string> sections, HashSet<string> seen, string section)
@@ -1677,9 +1680,13 @@ public class WorkflowGeneratorSteps
                 {
                     addSegmentAliases(sections, seen, "fingers", "hand");
                 }
-                else if (normalized == "breast" || normalized == "breasts" || normalized == "boob" || normalized == "boobs" || normalized == "cleavage" || normalized == "bust" || normalized == "chest")
+                else if (normalized == "breast" || normalized == "breasts" || normalized == "boob" || normalized == "boobs" || normalized == "cleavage" || normalized == "bust")
                 {
-                    addSegmentAliases(sections, seen, "breasts", "breast", "female chest", "chest", "cleavage", "upper torso");
+                    addSegmentAliases(sections, seen, "breasts", "breast", "cleavage", "nipples");
+                }
+                else if (normalized == "chest")
+                {
+                    addSegmentAliases(sections, seen, "chest", "upper torso");
                 }
                 else if (normalized == "nipple" || normalized == "nipples")
                 {
@@ -1687,15 +1694,19 @@ public class WorkflowGeneratorSteps
                 }
                 else if (normalized == "vulva" || normalized == "pussy" || normalized == "vagina" || normalized == "cunt" || normalized == "clitoris" || normalized == "crotch" || normalized == "groin" || normalized == "pubic")
                 {
-                    addSegmentAliases(sections, seen, "vulva", "vagina", "crotch", "groin", "pubic area");
+                    addSegmentAliases(sections, seen, "vulva", "vagina", "pubic area");
                 }
                 else if (normalized == "penis" || normalized == "cock" || normalized == "dick" || normalized == "shaft" || normalized == "phallus" || normalized == "erection")
                 {
-                    addSegmentAliases(sections, seen, "penis", "shaft", "crotch", "groin");
+                    addSegmentAliases(sections, seen, "penis", "shaft");
                 }
-                else if (normalized == "butt" || normalized == "ass" || normalized == "booty" || normalized == "buttocks" || normalized == "anus" || normalized == "glute" || normalized == "asshole")
+                else if (normalized == "anus" || normalized == "anal" || normalized == "asshole")
                 {
-                    addSegmentAliases(sections, seen, "butt", "buttocks", "rear", "hips");
+                    addSegmentAliases(sections, seen, "anus", "anal");
+                }
+                else if (normalized == "butt" || normalized == "ass" || normalized == "booty" || normalized == "buttocks" || normalized == "glute")
+                {
+                    addSegmentAliases(sections, seen, "butt", "buttocks", "rear");
                 }
                 else if (normalized == "foot" || normalized == "feet")
                 {
@@ -1758,35 +1769,129 @@ public class WorkflowGeneratorSteps
             return threshold;
         }
 
-        bool shouldUseGroundedSam2(WorkflowGenerator g, string detector, string dataText)
+        bool autoDetectorFeatureWarningEmitted = false;
+
+        bool isAnatomyAutoDetector(string detector)
         {
-            if (dataText.StartsWith("yolo-", StringComparison.Ordinal))
-            {
-                return false;
-            }
-            if (detector == "CLIPSeg" || detector == "YOLO explicit only")
-            {
-                return false;
-            }
-            bool canUse = g.Features.Contains("groundingdino") && g.Features.Contains("sam2");
-            if (!canUse && detector == "Grounded SAM2")
-            {
-                Logs.Warning("Segment Detector is set to Grounded SAM2, but this backend does not report GroundingDINO and SAM2 support. Falling back to CLIPSeg for this segment.");
-            }
-            return canUse && (detector == "Auto" || detector == "Grounded SAM2");
+            return detector == "Auto" || detector == "Anatomy Auto";
         }
 
-        string createGroundedSam2SegmentNode(WorkflowGenerator g, PromptRegion.Part part, int index, string dataText)
+        bool canUseGroundedSam2(WorkflowGenerator g)
         {
-            string detectorNode = g.CreateNode("SwarmGroundingDinoDetection", new JObject()
+            return g.Features.Contains("groundingdino") && g.Features.Contains("sam2");
+        }
+
+        string segmentFallbackRegionForDetection(WorkflowGenerator g, string dataText)
+        {
+            return g.UserInput.Get(T2IParamTypes.SegmentConservativeFallback, false) ? segmentFallbackRegion(dataText) : "none";
+        }
+
+        string anatomyClassFilter(string dataText)
+        {
+            string normalized = dataText.Trim().ToLowerFast();
+            if (normalized == "breast" || normalized == "breasts" || normalized == "boob" || normalized == "boobs" || normalized == "cleavage" || normalized == "bust" || normalized == "chest" || normalized == "female chest" || normalized == "upper torso" || normalized == "nipple" || normalized == "nipples")
             {
-                ["image"] = g.CurrentMedia.Path,
-                ["text"] = dataText,
-                ["threshold"] = g.UserInput.Get(T2IParamTypes.SegmentGroundingThreshold, 0.25),
-                ["max_detections"] = g.UserInput.Get(T2IParamTypes.SegmentMaxBoxes, 1),
-                ["fallback_region"] = segmentFallbackRegion(dataText)
+                return "breast";
+            }
+            if (normalized == "vulva" || normalized == "pussy" || normalized == "vagina" || normalized == "cunt" || normalized == "clitoris" || normalized == "crotch" || normalized == "groin" || normalized == "pubic" || normalized == "pubic area")
+            {
+                return "vulva,vaginal,vagina";
+            }
+            if (normalized == "penis" || normalized == "cock" || normalized == "dick" || normalized == "shaft" || normalized == "phallus" || normalized == "erection")
+            {
+                return "penis";
+            }
+            if (normalized == "butt" || normalized == "ass" || normalized == "booty" || normalized == "buttocks" || normalized == "glute" || normalized == "rear" || normalized == "hips")
+            {
+                return "butt";
+            }
+            if (normalized == "anus" || normalized == "anal" || normalized == "asshole")
+            {
+                return "anal,anus";
+            }
+            return "";
+        }
+
+        bool canUseSapiens2ForText(string dataText)
+        {
+            string normalized = dataText.Trim().ToLowerFast();
+            return normalized == "face" || normalized == "facial" || normalized == "head" || normalized == "eye" || normalized == "eyes"
+                || normalized == "mouth" || normalized == "lip" || normalized == "lips"
+                || normalized == "hand" || normalized == "hands" || normalized == "finger" || normalized == "fingers"
+                || normalized == "foot" || normalized == "feet" || normalized == "toe" || normalized == "toes"
+                || normalized == "torso" || normalized == "upper torso" || normalized == "chest"
+                || normalized == "arm" || normalized == "arms" || normalized == "leg" || normalized == "legs";
+        }
+
+        bool canUsePoseForText(WorkflowGenerator g, string dataText)
+        {
+            string fallbackRegion = segmentFallbackRegion(dataText);
+            if (fallbackRegion == "face" || fallbackRegion == "hands" || fallbackRegion == "feet")
+            {
+                return true;
+            }
+            if (dataText.Trim().ToLowerFast() == "torso" || dataText.Trim().ToLowerFast() == "upper torso" || dataText.Trim().ToLowerFast() == "chest")
+            {
+                return true;
+            }
+            return g.UserInput.Get(T2IParamTypes.SegmentConservativeFallback, false) && (fallbackRegion == "breasts" || fallbackRegion == "genitals" || fallbackRegion == "butt");
+        }
+
+        string createClipSegSegmentNode(WorkflowGenerator g, PromptRegion.Part part, int index, string dataText, string labelPrefix = "CLIPSeg")
+        {
+            string clipNode = g.CreateNode("SwarmClipSeg", new JObject()
+            {
+                ["images"] = g.CurrentMedia.Path,
+                ["match_text"] = dataText,
+                ["threshold"] = segmentDetectionThreshold(part, dataText),
+                ["fallback_region"] = segmentFallbackRegionForDetection(g, dataText)
             });
-            annotateSegmentNode(g, detectorNode, index, "Detection", $"GroundingDINO: {dataText}");
+            annotateSegmentNode(g, clipNode, index, "Detection", $"{labelPrefix}: {dataText}");
+            return clipNode;
+        }
+
+        string createSam2MaskFromDetectorBoxes(WorkflowGenerator g, string detectorNode, int boxOutput, int maskOutput, int successOutput, int index, string label)
+        {
+            if (!g.Features.Contains("sam2"))
+            {
+                if (g.Features.Contains("sam3") && g.Features.Contains("sam3_segments"))
+                {
+                    string sam3Node = g.CreateNode("SwarmSam3TextSegmentation", new JObject()
+                    {
+                        ["image"] = g.CurrentMedia.Path,
+                        ["text"] = "",
+                        ["threshold"] = g.UserInput.Get(T2IParamTypes.SegmentGroundingThreshold, 0.25),
+                        ["max_detections"] = g.UserInput.Get(T2IParamTypes.SegmentMaxBoxes, 1),
+                        ["bboxes"] = NodePath(detectorNode, boxOutput)
+                    });
+                    annotateSegmentNode(g, sam3Node, index, "Mask", $"{label} SAM3 bbox refinement");
+                    string sam3EmptyNode = g.CreateNode("SwarmZeroMaskLike", new JObject()
+                    {
+                        ["mask"] = NodePath(sam3Node, 0)
+                    });
+                    annotateSegmentNode(g, sam3EmptyNode, index, "Mask", $"{label} empty fallback");
+                    string sam3FallbackNode = g.CreateNode("SwarmMaskFallback", new JObject()
+                    {
+                        ["primary_mask"] = NodePath(sam3Node, 0),
+                        ["fallback_mask"] = maskOutput < 0 ? NodePath(sam3EmptyNode, 0) : NodePath(detectorNode, maskOutput),
+                        ["use_primary"] = NodePath(detectorNode, successOutput)
+                    });
+                    annotateSegmentNode(g, sam3FallbackNode, index, "Mask", $"{label} SAM3 with bbox fallback");
+                    return sam3FallbackNode;
+                }
+                if (maskOutput < 0)
+                {
+                    return detectorNode;
+                }
+                string maskOnlyNode = g.CreateNode("SwarmMaskFallback", new JObject()
+                {
+                    ["primary_mask"] = NodePath(detectorNode, maskOutput),
+                    ["fallback_mask"] = NodePath(detectorNode, maskOutput),
+                    ["use_primary"] = NodePath(detectorNode, successOutput)
+                });
+                annotateSegmentNode(g, maskOnlyNode, index, "Mask", $"{label} bbox mask");
+                return maskOnlyNode;
+            }
             string modelSize = g.UserInput.Get(T2IParamTypes.SegmentSam2ModelSize, "base_plus");
             string sam2ModelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs(modelSize));
             annotateSegmentNode(g, sam2ModelNode, index, "Detection", $"SAM2 model: {modelSize}");
@@ -1795,32 +1900,193 @@ public class WorkflowGeneratorSteps
                 ["sam2_model"] = NodePath(sam2ModelNode, 0),
                 ["image"] = g.CurrentMedia.Path,
                 ["keep_model_loaded"] = true,
-                ["bboxes"] = NodePath(detectorNode, 0)
+                ["bboxes"] = NodePath(detectorNode, boxOutput)
             });
-            annotateSegmentNode(g, sam2Node, index, "Mask", "SAM2 bbox mask");
+            annotateSegmentNode(g, sam2Node, index, "Mask", $"{label} SAM2 bbox mask");
             string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
             {
                 ["mask"] = NodePath(sam2Node, 0),
                 ["fill_holes"] = true,
                 ["hole_kernel_size"] = 5
             });
-            annotateSegmentNode(g, postNode, index, "Mask", "SAM2 mask cleanup");
-            string clipFallbackNode = g.CreateNode("SwarmClipSeg", new JObject()
+            annotateSegmentNode(g, postNode, index, "Mask", $"{label} SAM2 mask cleanup");
+            string emptyNode = g.CreateNode("SwarmZeroMaskLike", new JObject()
             {
-                ["images"] = g.CurrentMedia.Path,
-                ["match_text"] = dataText,
-                ["threshold"] = segmentDetectionThreshold(part, dataText),
-                ["fallback_region"] = segmentFallbackRegion(dataText)
+                ["mask"] = NodePath(postNode, 0)
             });
-            annotateSegmentNode(g, clipFallbackNode, index, "Detection", $"CLIPSeg fallback: {dataText}");
+            annotateSegmentNode(g, emptyNode, index, "Mask", $"{label} empty fallback");
             string fallbackNode = g.CreateNode("SwarmMaskFallback", new JObject()
             {
                 ["primary_mask"] = NodePath(postNode, 0),
-                ["fallback_mask"] = NodePath(clipFallbackNode, 0),
-                ["use_primary"] = NodePath(detectorNode, 1)
+                ["fallback_mask"] = maskOutput < 0 ? NodePath(emptyNode, 0) : NodePath(detectorNode, maskOutput),
+                ["use_primary"] = NodePath(detectorNode, successOutput)
             });
-            annotateSegmentNode(g, fallbackNode, index, "Mask", "Grounded SAM2 with CLIPSeg fallback");
+            annotateSegmentNode(g, fallbackNode, index, "Mask", $"{label} SAM2 with bbox fallback");
             return fallbackNode;
+        }
+
+        string createMaskFallbackNode(WorkflowGenerator g, string primaryMaskNode, JArray primarySuccess, string fallbackMaskNode, int index, string label)
+        {
+            string fallbackNode = g.CreateNode("SwarmMaskFallback", new JObject()
+            {
+                ["primary_mask"] = NodePath(primaryMaskNode, 0),
+                ["fallback_mask"] = NodePath(fallbackMaskNode, 0),
+                ["use_primary"] = primarySuccess
+            });
+            annotateSegmentNode(g, fallbackNode, index, "Mask", label);
+            return fallbackNode;
+        }
+
+        (string MaskNode, JArray SuccessPath) createGroundedSam2MaskNode(WorkflowGenerator g, int index, string dataText)
+        {
+            string detectorNode = g.CreateNode("SwarmGroundingDinoDetection", new JObject()
+            {
+                ["image"] = g.CurrentMedia.Path,
+                ["text"] = dataText,
+                ["threshold"] = g.UserInput.Get(T2IParamTypes.SegmentGroundingThreshold, 0.25),
+                ["max_detections"] = g.UserInput.Get(T2IParamTypes.SegmentMaxBoxes, 1),
+                ["fallback_region"] = segmentFallbackRegionForDetection(g, dataText)
+            });
+            annotateSegmentNode(g, detectorNode, index, "Detection", $"GroundingDINO: {dataText}");
+            return (createSam2MaskFromDetectorBoxes(g, detectorNode, 0, -1, 1, index, "GroundingDINO"), NodePath(detectorNode, 1));
+        }
+
+        (string MaskNode, JArray SuccessPath) createAnatomyYoloMaskNode(WorkflowGenerator g, int index, string dataText, string classFilter)
+        {
+            string detectorNode = g.CreateNode("SwarmAnatomyYoloDetection", new JObject()
+            {
+                ["image"] = g.CurrentMedia.Path,
+                ["text"] = dataText,
+                ["threshold"] = g.UserInput.Get(T2IParamTypes.SegmentGroundingThreshold, 0.25),
+                ["max_detections"] = g.UserInput.Get(T2IParamTypes.SegmentMaxBoxes, 1),
+                ["class_filter"] = classFilter
+            });
+            annotateSegmentNode(g, detectorNode, index, "Detection", $"Anatomy YOLO: {dataText} ({classFilter})");
+            return (createSam2MaskFromDetectorBoxes(g, detectorNode, 0, 1, 2, index, "Anatomy YOLO"), NodePath(detectorNode, 2));
+        }
+
+        (string MaskNode, JArray SuccessPath) createDWPoseMaskNode(WorkflowGenerator g, int index, string dataText)
+        {
+            string detectorNode = g.CreateNode("SwarmDWPoseRegionDetection", new JObject()
+            {
+                ["image"] = g.CurrentMedia.Path,
+                ["text"] = dataText,
+                ["max_detections"] = g.UserInput.Get(T2IParamTypes.SegmentMaxBoxes, 1)
+            });
+            annotateSegmentNode(g, detectorNode, index, "Detection", $"DWPose/body region: {dataText}");
+            return (createSam2MaskFromDetectorBoxes(g, detectorNode, 0, 1, 2, index, "DWPose/body region"), NodePath(detectorNode, 2));
+        }
+
+        (string MaskNode, JArray SuccessPath) createSapiens2MaskNode(WorkflowGenerator g, int index, string dataText)
+        {
+            string sapiensNode = g.CreateNode("SwarmSapiens2Segmentation", new JObject()
+            {
+                ["image"] = g.CurrentMedia.Path,
+                ["text"] = dataText,
+                ["frames_per_batch"] = 1
+            });
+            annotateSegmentNode(g, sapiensNode, index, "Detection", $"Sapiens2 body-part segment: {dataText}");
+            return (sapiensNode, NodePath(sapiensNode, 1));
+        }
+
+        (string MaskNode, JArray SuccessPath) createSam3MaskNode(WorkflowGenerator g, int index, string dataText)
+        {
+            string sam3Node = g.CreateNode("SwarmSam3TextSegmentation", new JObject()
+            {
+                ["image"] = g.CurrentMedia.Path,
+                ["text"] = dataText,
+                ["threshold"] = g.UserInput.Get(T2IParamTypes.SegmentGroundingThreshold, 0.25),
+                ["max_detections"] = g.UserInput.Get(T2IParamTypes.SegmentMaxBoxes, 1)
+            });
+            annotateSegmentNode(g, sam3Node, index, "Detection", $"SAM3 text segment: {dataText}");
+            return (sam3Node, NodePath(sam3Node, 1));
+        }
+
+        void saveSegmentDetectionPreview(WorkflowGenerator g, string maskNode, PromptRegion.Part part, int index)
+        {
+            if (!g.UserInput.Get(T2IParamTypes.SegmentDiagnosticPreviews, true))
+            {
+                return;
+            }
+            string detail = $"Detection mask before blur/grow: {part.DataText}";
+            string imageNode;
+            if (g.Features.Contains("segment_mask_preview"))
+            {
+                imageNode = g.CreateNode("SwarmSegmentMaskPreview", new JObject()
+                {
+                    ["image"] = g.CurrentMedia.Path,
+                    ["mask"] = NodePath(maskNode, 0),
+                    ["label"] = segmentStageLabel(part, index),
+                    ["detail"] = detail
+                });
+            }
+            else
+            {
+                imageNode = g.CreateNode("MaskToImage", new JObject()
+                {
+                    ["mask"] = NodePath(maskNode, 0)
+                });
+            }
+            annotateSegmentNode(g, imageNode, index, "Preview", detail);
+            new WGNodeData([imageNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, g.GetStableDynamicID(50000, 0));
+        }
+
+        string createSegmentMaskQualityNode(WorkflowGenerator g, string maskNode, PromptRegion.Part part, int index)
+        {
+            if (!g.Features.Contains("segment_mask_quality"))
+            {
+                return maskNode;
+            }
+            string qualityNode = g.CreateNode("SwarmSegmentMaskQuality", new JObject()
+            {
+                ["mask"] = NodePath(maskNode, 0),
+                ["target"] = part.DataText
+            });
+            annotateSegmentNode(g, qualityNode, index, "Mask", $"Quality gate: {part.DataText}");
+            return qualityNode;
+        }
+
+        string createAnatomyAutoSegmentNode(WorkflowGenerator g, PromptRegion.Part part, int index, string dataText)
+        {
+            string segmentNode = createClipSegSegmentNode(g, part, index, dataText, "CLIPSeg fallback");
+            bool usedAdvancedDetector = false;
+            if (canUseGroundedSam2(g))
+            {
+                (string MaskNode, JArray SuccessPath) grounded = createGroundedSam2MaskNode(g, index, dataText);
+                segmentNode = createMaskFallbackNode(g, grounded.MaskNode, grounded.SuccessPath, segmentNode, index, "GroundingDINO + SAM2 with fallback");
+                usedAdvancedDetector = true;
+            }
+            if (g.Features.Contains("dwpose_regions") && canUsePoseForText(g, dataText))
+            {
+                (string MaskNode, JArray SuccessPath) pose = createDWPoseMaskNode(g, index, dataText);
+                segmentNode = createMaskFallbackNode(g, pose.MaskNode, pose.SuccessPath, segmentNode, index, "DWPose/body region with fallback");
+                usedAdvancedDetector = true;
+            }
+            string classFilter = anatomyClassFilter(dataText);
+            if (g.Features.Contains("anatomy_yolo") && !string.IsNullOrWhiteSpace(classFilter))
+            {
+                (string MaskNode, JArray SuccessPath) anatomy = createAnatomyYoloMaskNode(g, index, dataText, classFilter);
+                segmentNode = createMaskFallbackNode(g, anatomy.MaskNode, anatomy.SuccessPath, segmentNode, index, "Anatomy YOLO with fallback");
+                usedAdvancedDetector = true;
+            }
+            if (g.Features.Contains("sapiens2") && g.Features.Contains("sapiens2_segments") && canUseSapiens2ForText(dataText))
+            {
+                (string MaskNode, JArray SuccessPath) sapiens = createSapiens2MaskNode(g, index, dataText);
+                segmentNode = createMaskFallbackNode(g, sapiens.MaskNode, sapiens.SuccessPath, segmentNode, index, "Sapiens2 body-part segmentation with fallback");
+                usedAdvancedDetector = true;
+            }
+            if (g.Features.Contains("sam3") && g.Features.Contains("sam3_segments"))
+            {
+                (string MaskNode, JArray SuccessPath) sam3 = createSam3MaskNode(g, index, dataText);
+                segmentNode = createMaskFallbackNode(g, sam3.MaskNode, sam3.SuccessPath, segmentNode, index, "SAM3 text segment with fallback");
+                usedAdvancedDetector = true;
+            }
+            if (!usedAdvancedDetector && !autoDetectorFeatureWarningEmitted)
+            {
+                autoDetectorFeatureWarningEmitted = true;
+                Logs.Warning("Segment Detector Auto could not use SAM3, Sapiens2, anatomy YOLO, DWPose, or GroundingDINO + SAM2 on this backend, so normal '<segment:>' syntax is falling back to CLIPSeg.");
+            }
+            return segmentNode;
         }
 
         void RunSegmentationProcessing(WorkflowGenerator g, bool isBeforeRefiner)
@@ -1891,20 +2157,27 @@ public class WorkflowGeneratorSteps
                         }
                         else
                         {
-                            if (shouldUseGroundedSam2(g, detector, dataText))
+                            if (isAnatomyAutoDetector(detector))
                             {
-                                newSegmentNode = createGroundedSam2SegmentNode(g, part, i, dataText);
+                                newSegmentNode = createAnatomyAutoSegmentNode(g, part, i, dataText);
+                            }
+                            else if (detector == "Grounded SAM2")
+                            {
+                                if (canUseGroundedSam2(g))
+                                {
+                                    (string MaskNode, JArray SuccessPath) grounded = createGroundedSam2MaskNode(g, i, dataText);
+                                    string clipFallbackNode = createClipSegSegmentNode(g, part, i, dataText, "CLIPSeg fallback");
+                                    newSegmentNode = createMaskFallbackNode(g, grounded.MaskNode, grounded.SuccessPath, clipFallbackNode, i, "GroundingDINO + SAM2 with CLIPSeg fallback");
+                                }
+                                else
+                                {
+                                    Logs.Warning("Segment Detector is set to Grounded SAM2, but this backend does not report GroundingDINO and SAM2 support. Falling back to CLIPSeg for this segment.");
+                                    newSegmentNode = createClipSegSegmentNode(g, part, i, dataText);
+                                }
                             }
                             else
                             {
-                                newSegmentNode = g.CreateNode("SwarmClipSeg", new JObject()
-                                {
-                                    ["images"] = g.CurrentMedia.Path,
-                                    ["match_text"] = dataText,
-                                    ["threshold"] = segmentDetectionThreshold(part, dataText),
-                                    ["fallback_region"] = segmentFallbackRegion(dataText)
-                                });
-                                annotateSegmentNode(g, newSegmentNode, i, "Detection", dataText);
+                                newSegmentNode = createClipSegSegmentNode(g, part, i, dataText);
                             }
                         }
                         if (segmentSections.Length > 1 && g.UserInput.Get(T2IParamTypes.SaveSegmentMask, false))
@@ -1933,6 +2206,8 @@ public class WorkflowGeneratorSteps
                             annotateSegmentNode(g, segmentNode, i, "Mask", "Combining segment masks");
                         }
                     }
+                    segmentNode = createSegmentMaskQualityNode(g, segmentNode, part, i);
+                    saveSegmentDetectionPreview(g, segmentNode, part, i);
                     if (part.Strength < 0)
                     {
                         segmentNode = g.CreateNode("InvertMask", new JObject()

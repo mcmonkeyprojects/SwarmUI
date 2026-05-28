@@ -153,7 +153,8 @@ export const SegmentSyntaxModal = React.memo(function SegmentSyntaxModal({
                     label="Segment Mode"
                     description="Auto keeps the normal segment syntax and lets the backend pick the strongest available detector."
                     data={[
-                        { value: 'auto', label: 'Auto (Grounded SAM2)' },
+                        { value: 'auto', label: 'Auto (Anatomy-aware)' },
+                        { value: 'anatomy-auto', label: 'Anatomy Auto' },
                         { value: 'grounded-sam2', label: 'Grounded SAM2' },
                         { value: 'clip-seg', label: 'CLIP-Seg (Match by text)' },
                         { value: 'yolo', label: 'YOLOv8 (Model-based)' },
@@ -204,10 +205,10 @@ export const SegmentSyntaxModal = React.memo(function SegmentSyntaxModal({
                     </Stack>
                 )}
 
-                {modelType === 'auto' ? (
+                {modelType === 'auto' || modelType === 'anatomy-auto' ? (
                     <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
                         <Text size="sm">
-                            Auto uses GroundingDINO + SAM2 when available, then falls back to CLIPSeg.
+                            Auto tries SAM3, Sapiens2 when installed, anatomy YOLO, pose/body boxes, GroundingDINO+SAM2, then CLIPSeg. Segment diagnostic previews show the detected mask before refinement.
                         </Text>
                     </Alert>
                 ) : null}

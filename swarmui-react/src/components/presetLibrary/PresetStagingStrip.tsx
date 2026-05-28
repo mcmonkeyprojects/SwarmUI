@@ -1,8 +1,15 @@
 import { memo, useMemo } from 'react';
-import { Box, Group, ScrollArea, Text, Popover, ActionIcon, Stack } from '@mantine/core';
+import { Box, Checkbox, Group, ScrollArea, Text, Popover, ActionIcon, Stack } from '@mantine/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { IconMinus, IconPlus, IconRotate2 } from '@tabler/icons-react';
 import { SwarmBadge, SwarmButton } from '../ui';
+import {
+  PRESET_AUTO_SEGMENT_LABELS,
+  PRESET_AUTO_SEGMENT_PARTS,
+  type PresetAutoSegmentPart,
+  type PresetAutoSegmentSelections,
+  type PresetCompilerTraceSegment,
+} from '../../features/presetLibrary/compiler';
 import {
   parseWeightedWord,
   type PresetPromptSection,
@@ -18,6 +25,9 @@ interface StagedPresetInfo {
 interface PresetStagingStripProps {
   words: string[];
   sections: PresetPromptSection[];
+  segments: PresetCompilerTraceSegment[];
+  segmentSelections: PresetAutoSegmentSelections;
+  onToggleSegment: (part: PresetAutoSegmentPart, enabled: boolean) => void;
   onRemoveWord: (word: string) => void;
   onClear: () => void;
   stagedPresets: StagedPresetInfo[];
@@ -26,6 +36,9 @@ interface PresetStagingStripProps {
 export const PresetStagingStrip = memo(function PresetStagingStrip({
   words,
   sections,
+  segments,
+  segmentSelections,
+  onToggleSegment,
   onRemoveWord,
   onClear,
   stagedPresets = [],
@@ -34,6 +47,21 @@ export const PresetStagingStrip = memo(function PresetStagingStrip({
   const compiledPromptText = useMemo(
     () => sections.map((section) => section.text.trim()).filter(Boolean).join('\n'),
     [sections]
+  );
+  const segmentByPart = useMemo(
+    () => new Map(segments.map((segment) => [segment.part, segment])),
+    [segments]
+  );
+  const activeSegmentParts = useMemo(
+    () => new Set(segments.map((segment) => segment.part)),
+    [segments]
+  );
+  const selectedSegmentCount = useMemo(
+    () =>
+      PRESET_AUTO_SEGMENT_PARTS.filter(
+        (part) => segmentSelections[part] ?? activeSegmentParts.has(part)
+      ).length,
+    [activeSegmentParts, segmentSelections]
   );
   const adjustWordWeight = usePresetLibraryStore((state) => state.adjustWordWeight);
   const presetMultipliers = usePresetLibraryStore((state) => state.presetMultipliers);
@@ -127,6 +155,45 @@ export const PresetStagingStrip = memo(function PresetStagingStrip({
                   </Group>
                 </Box>
               )}
+
+              <Box className="preset-library__segment-section">
+                <Group justify="space-between" align="center" gap="sm" wrap="nowrap">
+                  <Text size="xs" c="dimmed" fw={700}>
+                    Segments
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {selectedSegmentCount} selected
+                  </Text>
+                </Group>
+                <Group gap="xs" wrap="wrap" className="preset-library__segment-toggle-list">
+                  {PRESET_AUTO_SEGMENT_PARTS.map((part) => {
+                    const checked = segmentSelections[part] ?? activeSegmentParts.has(part);
+                    const segment = segmentByPart.get(part);
+                    const reasonText = segment?.reasonWords.slice(0, 3).join(', ') ?? '';
+                    const segmentState = checked
+                      ? reasonText
+                        ? 'Suggested'
+                        : 'Manual'
+                      : 'Off';
+                    return (
+                      <Checkbox
+                        key={part}
+                        className="preset-library__segment-toggle"
+                        size="xs"
+                        checked={checked}
+                        onChange={(event) => onToggleSegment(part, event.currentTarget.checked)}
+                        title={reasonText ? `Suggested by ${reasonText}` : undefined}
+                        label={
+                          <span className="preset-library__segment-toggle-label">
+                            <span>{PRESET_AUTO_SEGMENT_LABELS[part]}</span>
+                            <span>{segmentState}</span>
+                          </span>
+                        }
+                      />
+                    );
+                  })}
+                </Group>
+              </Box>
 
               {compiledPromptText && (
                 <Box className="preset-library__prompt-preview-section">

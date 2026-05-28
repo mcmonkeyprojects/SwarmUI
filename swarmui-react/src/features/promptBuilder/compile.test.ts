@@ -151,6 +151,14 @@ describe('promptBuilder compile utilities', () => {
         threshold: 0.3,
       }),
     );
+    const anatomyAuto = buildSegmentTag(
+      makeSegment({
+        modelType: 'anatomy-auto',
+        textMatch: 'vulva',
+        creativity: 0.65,
+        threshold: 0.3,
+      }),
+    );
     const clip = buildSegmentTag(
       makeSegment({
         modelType: 'clip-seg',
@@ -177,6 +185,7 @@ describe('promptBuilder compile utilities', () => {
 
     expect(auto).toBe('<segment:hands,0.65,0.35>');
     expect(grounded).toBe('<segment:breasts,0.65,0.30>');
+    expect(anatomyAuto).toBe('<segment:vulva,0.65,0.30>');
     expect(clip).toBe('<segment:face,0.65,0.40> more detail');
     expect(yolo).toBe('<segment:yolov8n-2:0,1:,0.70,-0.50><param[sampler]:euler><param[scheduler]:karras> restore');
   });

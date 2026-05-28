@@ -49,6 +49,32 @@ describe('presetLibrary prompt compiler', () => {
     ]);
   });
 
+  it('lets callers remove suggested auto-segments', () => {
+    const state = stageWords('characters', ['1girl', 'blushing face', 'perfect fingers']);
+    const result = compileStagedPromptWithTrace(state, {}, true, {
+      segmentSelections: { face: false },
+    });
+
+    expect(result.sections[0].text).not.toContain('<segment:face');
+    expect(result.sections[0].text).toContain('<segment:hand|hands|fingers');
+    expect(result.trace.segments.map((segment) => segment.part)).toEqual(['hands']);
+  });
+
+  it('lets callers manually add auto-segments without matching keywords', () => {
+    const state = stageWords('characters', ['1girl']);
+    const result = compileStagedPromptWithTrace(state, {}, true, {
+      segmentSelections: { face: true },
+    });
+
+    expect(result.sections[0].text).toContain('<segment:face,0.65,0.4>');
+    expect(result.trace.segments).toEqual([
+      expect.objectContaining({
+        part: 'face',
+        reasonWords: [],
+      }),
+    ]);
+  });
+
   it('does not match body-part keywords by arbitrary word prefix', () => {
     const state = stageWords('characters', ['1girl', 'wooden handrail']);
     const result = compileStagedPromptWithTrace(state, {}, true);

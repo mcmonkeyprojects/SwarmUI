@@ -31,6 +31,7 @@ public static class InstallableFeatures
         RegisterInstallableFeature(new("GIMM Video Frame Interpolator", "gimm_vfi", "https://github.com/kijai/ComfyUI-GIMM-VFI", "kijai"));
         RegisterInstallableFeature(new("TensorRT", "comfyui_tensorrt", "https://github.com/comfyanonymous/ComfyUI_TensorRT", "comfyanonymous + NVIDIA", "This will install TensorRT support developed by Comfy and NVIDIA.\nDo you wish to install?", true));
         RegisterInstallableFeature(new("Segment Anything 2", "sam2", "https://github.com/kijai/ComfyUI-segment-anything-2", "kijai"));
+        RegisterInstallableFeature(new("Sapiens2 Body Segmentation", "sapiens2", "https://github.com/kijai/ComfyUI-Sapiens2", "kijai", "This will install Sapiens2 body-part segmentation support. Sapiens2 model weights are large and use their own license terms.\nDo you wish to install?"));
         RegisterInstallableFeature(new("Bits-n-Bytes NF4", "bnb_nf4", "https://github.com/silveroxides/ComfyUI_bnb_nf4_fp4_Loaders", "silveroxides", "This will install BnB NF4 support developed by silveroxides, comfyanonymous, and lllyasviel (AGPL License).\nDo you wish to install?"));
         RegisterInstallableFeature(new("GGUF", "gguf", "https://github.com/city96/ComfyUI-GGUF", "city96", "This will install GGUF support developed by city96.\nDo you wish to install?"));
         RegisterInstallableFeature(new("ExtraModels", "extramodels", "https://github.com/city96/ComfyUI_ExtraModels", "city96", "This will install ExtraModels support developed by city96.\nDo you wish to install?"));

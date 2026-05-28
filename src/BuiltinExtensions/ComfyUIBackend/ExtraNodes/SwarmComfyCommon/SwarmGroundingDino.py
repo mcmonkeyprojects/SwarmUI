@@ -19,6 +19,8 @@ def get_path():
 
 
 def make_fallback_boxes(width, height, fallback_region, max_detections):
+    if fallback_region == "none":
+        return [[0.0, 0.0, 1.0, 1.0]]
     regions = {
         "face": [(0.30, 0.03, 0.70, 0.30)],
         "hands": [(0.02, 0.34, 0.33, 0.78), (0.67, 0.34, 0.98, 0.78)],
@@ -27,7 +29,7 @@ def make_fallback_boxes(width, height, fallback_region, max_detections):
         "butt": [(0.25, 0.42, 0.75, 0.72)],
         "feet": [(0.18, 0.76, 0.82, 0.99)],
     }
-    source = regions.get(fallback_region, [(0.15, 0.15, 0.85, 0.85)])
+    source = regions.get(fallback_region, [])
     boxes = []
     for region in source[:max(1, max_detections)]:
         x0 = max(0, min(width - 1, int(width * region[0])))
@@ -35,6 +37,46 @@ def make_fallback_boxes(width, height, fallback_region, max_detections):
         x1 = max(x0 + 1, min(width, int(width * region[2])))
         y1 = max(y0 + 1, min(height, int(height * region[3])))
         boxes.append([float(x0), float(y0), float(x1), float(y1)])
+    return boxes
+
+
+def clamp_box(box, width, height):
+    x0 = max(0, min(width - 1, int(box[0])))
+    y0 = max(0, min(height - 1, int(box[1])))
+    x1 = max(x0 + 1, min(width, int(box[2])))
+    y1 = max(y0 + 1, min(height, int(box[3])))
+    return [float(x0), float(y0), float(x1), float(y1)]
+
+
+def relative_box(parent, width, height, region):
+    px0, py0, px1, py1 = parent
+    parent_width = px1 - px0
+    parent_height = py1 - py0
+    return clamp_box([
+        px0 + parent_width * region[0],
+        py0 + parent_height * region[1],
+        px0 + parent_width * region[2],
+        py0 + parent_height * region[3],
+    ], width, height)
+
+
+def make_person_region_boxes(person_boxes, width, height, fallback_region, max_detections):
+    regions = {
+        "face": [(0.30, 0.00, 0.70, 0.22)],
+        "hands": [(0.00, 0.25, 0.35, 0.70), (0.65, 0.25, 1.00, 0.70)],
+        "breasts": [(0.23, 0.20, 0.77, 0.43)],
+        "genitals": [(0.34, 0.48, 0.66, 0.68)],
+        "butt": [(0.24, 0.42, 0.76, 0.72)],
+        "feet": [(0.18, 0.78, 0.82, 1.00)],
+    }
+    if fallback_region not in regions:
+        return []
+    boxes = []
+    for person_box in person_boxes:
+        for region in regions[fallback_region]:
+            boxes.append(relative_box(person_box, width, height, region))
+            if len(boxes) >= max(1, max_detections):
+                return boxes
     return boxes
 
 
@@ -70,6 +112,40 @@ def load_model():
     return MODEL_CACHE[MODEL_ID]
 
 
+def run_detection(processor, model, device, img, query, threshold, width, height):
+    inputs = processor(images=img, text=query, return_tensors="pt")
+    inputs = inputs.to(device)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    try:
+        results = processor.post_process_grounded_object_detection(
+            outputs,
+            inputs.input_ids,
+            box_threshold=threshold,
+            text_threshold=threshold,
+            target_sizes=[(height, width)],
+        )
+    except TypeError:
+        results = processor.post_process_grounded_object_detection(
+            outputs,
+            inputs.input_ids,
+            threshold=threshold,
+            text_threshold=threshold,
+            target_sizes=[(height, width)],
+        )
+    if not results:
+        return []
+    boxes = results[0].get("boxes", [])
+    scores = results[0].get("scores", [])
+    candidates = []
+    for index in range(len(boxes)):
+        score = float(scores[index]) if len(scores) > index else 0.0
+        box = boxes[index].detach().cpu().tolist()
+        candidates.append((score, clamp_box(box, width, height)))
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return candidates
+
+
 class SwarmGroundingDinoDetection:
     @classmethod
     def INPUT_TYPES(s):
@@ -99,45 +175,27 @@ class SwarmGroundingDinoDetection:
         try:
             processor, model, device = load_model()
             query = make_query(text)
-            inputs = processor(images=img, text=query, return_tensors="pt")
-            inputs = inputs.to(device)
-            with torch.no_grad():
-                outputs = model(**inputs)
-            try:
-                results = processor.post_process_grounded_object_detection(
-                    outputs,
-                    inputs.input_ids,
-                    box_threshold=threshold,
-                    text_threshold=threshold,
-                    target_sizes=[(height, width)],
-                )
-            except TypeError:
-                results = processor.post_process_grounded_object_detection(
-                    outputs,
-                    inputs.input_ids,
-                    threshold=threshold,
-                    text_threshold=threshold,
-                    target_sizes=[(height, width)],
-                )
-            if not results:
-                print(f"[SwarmGroundingDino] No detection result for '{text}', using fallback region '{fallback_region}'.")
-                return (fallback_boxes, False)
-            boxes = results[0].get("boxes", [])
-            scores = results[0].get("scores", [])
-            candidates = []
-            for index in range(len(boxes)):
-                score = float(scores[index]) if len(scores) > index else 0.0
-                box = boxes[index].detach().cpu().tolist()
-                candidates.append((score, [float(box[0]), float(box[1]), float(box[2]), float(box[3])]))
-            candidates.sort(key=lambda item: item[0], reverse=True)
+            candidates = run_detection(processor, model, device, img, query, threshold, width, height)
             selected = [box for _, box in candidates[:max(1, max_detections)]]
-            if not selected:
+            if selected:
+                return (selected, True)
+            if fallback_region != "none":
+                person_candidates = run_detection(processor, model, device, img, "person. human body. woman. man.", min(threshold, 0.20), width, height)
+                person_boxes = [box for _, box in person_candidates[:max(1, max_detections)]]
+                person_region_boxes = make_person_region_boxes(person_boxes, width, height, fallback_region, max_detections)
+                if person_region_boxes:
+                    print(f"[SwarmGroundingDino] No direct boxes for '{text}', using person-based '{fallback_region}' region.")
+                    return (person_region_boxes, True)
+            if fallback_region != "none":
                 print(f"[SwarmGroundingDino] No boxes for '{text}', using fallback region '{fallback_region}'.")
-                selected = fallback_boxes
-                return (selected, False)
-            return (selected, True)
+            else:
+                print(f"[SwarmGroundingDino] No boxes for '{text}', and conservative fallback is disabled.")
+            return (fallback_boxes, False)
         except Exception as ex:
-            print(f"[SwarmGroundingDino] Detection failed for '{text}', using fallback region '{fallback_region}': {ex}")
+            if fallback_region != "none":
+                print(f"[SwarmGroundingDino] Detection failed for '{text}', using fallback region '{fallback_region}': {ex}")
+            else:
+                print(f"[SwarmGroundingDino] Detection failed for '{text}', and conservative fallback is disabled: {ex}")
             return (fallback_boxes, False)
 
 

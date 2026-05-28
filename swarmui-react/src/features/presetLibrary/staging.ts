@@ -3,7 +3,12 @@ import {
   type PresetCategory,
   type PresetPromptSection,
 } from './types';
-import { compileStagedPrompt, type PresetCompilerOptions } from './compiler';
+import {
+  compileStagedPrompt,
+  compileStagedPromptWithTrace,
+  type PresetCompilerOptions,
+  type PresetCompilerResult,
+} from './compiler';
 
 export interface PresetCartState {
   stagedWords: string[];
@@ -209,4 +214,13 @@ export function commitCartSections(
   options: PresetCompilerOptions = {}
 ): PresetPromptSection[] {
   return compileStagedPrompt(state, stagedVariables, deduplicatePrompts, options);
+}
+
+export function commitCartWithTrace(
+  state: PresetCartState,
+  stagedVariables: Record<string, Record<string, string>> = {},
+  deduplicatePrompts: boolean = true,
+  options: PresetCompilerOptions = {}
+): PresetCompilerResult {
+  return compileStagedPromptWithTrace(state, stagedVariables, deduplicatePrompts, options);
 }
