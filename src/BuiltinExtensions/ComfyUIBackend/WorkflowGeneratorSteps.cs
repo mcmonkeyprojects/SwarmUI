@@ -1605,7 +1605,12 @@ public class WorkflowGeneratorSteps
                 if (doUpscale && upscaleMethod.StartsWith("pidmodel-"))
                 {
                     string pidModelName = upscaleMethod.After("pidmodel-");
-                    T2IModel pidModel = Program.MainSDModels.GetModel(pidModelName);
+                    string pidMatched = T2IParamTypes.GetBestModelInList(pidModelName, Program.MainSDModels.ListModelNamesFor(g.UserInput.SourceSession));
+                    if (pidMatched is not null && pidMatched.EndsWith(".safetensors"))
+                    {
+                        pidMatched = pidMatched.BeforeLast('.');
+                    }
+                    T2IModel pidModel = pidMatched is null ? null : Program.MainSDModels.GetModel(pidMatched);
                     if (pidModel is null || pidModel.ModelClass?.CompatClass?.ID != "pid")
                     {
                         throw new SwarmUserErrorException($"Refiner Upscale Method is set to PiD model '{pidModelName}', but that model could not be found or is not a valid PiD model.");
