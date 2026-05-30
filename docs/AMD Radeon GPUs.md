@@ -33,6 +33,9 @@ You can sometimes fix this by telling AMD to target a different HSA GFX version 
 
 This is marked by `Windows fatal exception: access violation`, usually with a stack starting `SwarmUI\dlbackend\comfy\python_embeded\Lib\site-packages\torch\cuda\__init__.py", line 182 in is_available`
 
+This may be solved via the HSA_OVERRIDE flag above?
+(TODO: need an AMD expert to verify what correct guidance here is?)
+
 ### RDNA Nightlies
 
 If you have an integrated AMD GPU, you can try the RDNA nightly builds explained [in the Comfy docs](https://github.com/Comfy-Org/ComfyUI#amd-gpus-experimental-windows-and-linux-rdna-3-35-and-4-only), see also [troubleshooting guide to installing custom pip packages](/docs/Troubleshooting.md#i-need-to-install-something-with-pip)
