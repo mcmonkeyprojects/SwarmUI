@@ -166,6 +166,9 @@ public partial class WorkflowGenerator
     /// <summary>If true, the generator is currently working on the refiner stage.</summary>
     public bool IsRefinerStage = false;
 
+    /// <summary>If true, the generator is currently working on the pixel-decoder stage.</summary>
+    public bool IsPixelDecoderStage = false;
+
     /// <summary>If true, the generator is currently working on Image2Video.</summary>
     public bool IsImageToVideo = false;
 
@@ -959,7 +962,7 @@ public partial class WorkflowGenerator
             }
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsPiD())
         {
             defscheduler ??= "simple";
         }
@@ -2518,7 +2521,7 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
-    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false)
+    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false, bool isPixelDecoder = false)
     {
         PromptRegion regionalizer = new(prompt);
         string globalPromptText = regionalizer.GlobalPrompt;
@@ -2534,7 +2537,11 @@ public partial class WorkflowGenerator
         {
             globalPromptText = $"{globalPromptText} {regionalizer.RefinerPrompt}";
         }
-        else if (!isVideo && !isRefiner && !string.IsNullOrWhiteSpace(regionalizer.BasePrompt))
+        else if (isPixelDecoder && !string.IsNullOrWhiteSpace(regionalizer.PixelDecoderPrompt))
+        {
+            globalPromptText = $"{globalPromptText} {regionalizer.PixelDecoderPrompt}";
+        }
+        else if (!isVideo && !isRefiner && !isPixelDecoder && !string.IsNullOrWhiteSpace(regionalizer.BasePrompt))
         {
             globalPromptText = $"{globalPromptText} {regionalizer.BasePrompt}";
         }

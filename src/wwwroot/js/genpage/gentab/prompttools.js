@@ -137,6 +137,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('refiner', 'Add a section of prompt text that is only used for the Refine/Upscale pass.', (prefix) => {
             return [];
         }, true);
+        this.registerPrefix('pixeldecoder', 'Add a section of prompt text that is only used for the PiD pixel-decoder upscale pass.', (prefix) => {
+            return [];
+        }, true);
         this.registerPrefix('video', 'Add a section of prompt text that replaces the prompt for the image-to-video generation pass.', (prefix) => {
             return [];
         }, true);
