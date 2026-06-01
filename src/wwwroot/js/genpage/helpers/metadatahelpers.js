@@ -342,7 +342,7 @@ function getFormattedMetadataEntries(metadata) {
         for (let i = 0; i < loras.length; i++) {
             let lora = loras[i];
             let weight = `${loraWeights[i]}`;
-            if (loraSectionConfinement && loraSectionConfinement[i] != 0) {
+            if (loraSectionConfinement && loraSectionConfinement[i] > 0) {
                 let name = loraHelper.confinementNames[loraSectionConfinement[i]] || loraSectionConfinement[i];
                 weight = `${weight} (${name})`;
             }
