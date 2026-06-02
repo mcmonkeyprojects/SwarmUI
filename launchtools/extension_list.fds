@@ -297,3 +297,12 @@ AltTriggerPhraseBtn:
     tags:
     - conflicts
     - ui
+
+Epsilon-Scaling:
+    author: jakstein
+    description: Adds the Epsilon Scaling node from ComfyUI to SwarmUI as a parameter in the Advanced Sampling group.
+    url: https://github.com/jakstein/SwarmUI-Epsilon-Scaling
+    license: MIT
+    tags:
+    - parameters
+    - nodes
