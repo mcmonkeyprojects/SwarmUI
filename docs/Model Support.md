@@ -650,7 +650,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - It does not use a VAE
 - Uses the Gemma 2 2B text encoder, will be downloaded and handled automatically
 - **Parameters:**
-    - **Sampler:** Default is fine.
+    - **Sampler:** Default is fine (LCM).
     - **Scheduler:** Default is fine.
     - **CFG Scale:** `4` is recommended.
     - **Steps:** `30` is recommended.
