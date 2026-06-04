@@ -131,6 +131,7 @@ public class Program
         //Utilities.CheckDotNet("8");
         try
         {
+            ParseEnvFile();
             Logs.Init("Parsing command line...");
             ParseCommandLineArgs(args);
             if (GetCommandLineFlagAsBool("help", false))
@@ -716,8 +717,40 @@ public class Program
     }
     #endregion
 
+    #region env file
+    /// <summary>Parse a '.env' file, if any is present.</summary>
+    public static void ParseEnvFile()
+    {
+        if (!File.Exists(".env"))
+        {
+            return;
+        }
+        Logs.Init("Parsing .env file...");
+        string[] lines = File.ReadAllText(".env").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        foreach (string line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+            string cleaned = line.Trim();
+            if (cleaned.StartsWith('#'))
+            {
+                continue;
+            }
+            (string key, string value) = cleaned.BeforeAndAfter('=');
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+            Environment.SetEnvironmentVariable(key.Trim(), value.Trim());
+        }
+    }
+    #endregion
+
     #region command-line pre-apply
     private static readonly int[] CommonlyUsedPorts = [21, 22, 80, 8080, 7860, 8188];
+
     /// <summary>Pre-applies settings choices from command line.</summary>
     public static void ApplyCommandLineSettings()
     {

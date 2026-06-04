@@ -896,26 +896,29 @@ public class ComfyUIBackendExtension : Extension
         }
         await Task.WhenAll(tasks); // Intentional force order for Comfy folders to be before nodes
         tasks = [];
-        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}DLNodes"))
+        if (Directory.Exists($"{FilePath}DLNodes"))
         {
-            tasks.Add(Utilities.RunCheckedTask(async () =>
+            foreach (string folder in Directory.EnumerateDirectories($"{FilePath}DLNodes"))
             {
-                string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
-                JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true, headTarget: headTarget);
-                if (nodeUpdates is null)
+                tasks.Add(Utilities.RunCheckedTask(async () =>
                 {
-                    Logs.Debug($"Check for updates found no updates for ComfyUI node at {folder}");
-                    return;
-                }
-                string nodeName = Path.GetFileName(folder);
-                lock (locker)
-                {
-                    backendsData[$"Comfy Node: {nodeName}"] = nodeUpdates;
-                }
-                Logs.Debug($"Check for updates found {nodeUpdates["count"]} updates for ComfyUI node at {folder}");
-            }));
+                    string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
+                    JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true, headTarget: headTarget);
+                    if (nodeUpdates is null)
+                    {
+                        Logs.Debug($"Check for updates found no updates for ComfyUI node at {folder}");
+                        return;
+                    }
+                    string nodeName = Path.GetFileName(folder);
+                    lock (locker)
+                    {
+                        backendsData[$"Comfy Node: {nodeName}"] = nodeUpdates;
+                    }
+                    Logs.Debug($"Check for updates found {nodeUpdates["count"]} updates for ComfyUI node at {folder}");
+                }));
+            }
+            await Task.WhenAll(tasks);
         }
-        await Task.WhenAll(tasks);
     }
 
     public async Task DoBackendUpdates(Action didWork, Action<string> didFail, bool aggressive, string[] toUpdate)

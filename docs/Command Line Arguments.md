@@ -38,6 +38,16 @@ Argument | Default | Description
 
 Swarm itself does not use any environment variables for almost anything.
 
-If you need to set environment variables for the Comfy backend - just set them before launching Swarm. Any envvars set for Swarm will be automatically transferred down to the backend process when it's launched.
+If you need to set environment variables for the Comfy backend - just set them as normal. Any envvars set for Swarm will be automatically transferred down to the backend process when it's launched.
 
-On Linux, `export SWARM_NO_VENV=true` to tell Swarm when installing the comfy backend to not add a venv. By default, a venv will be used. This is only normally intended for certain containerized install setups, such as Google Colab.
+You can set environment variables that will be applied to both Swarm and all subprocesses by just creating a `.env` file in the repo root. This file just needs key=value pairs, and allows for `#` comments.
+
+```env
+SWARM_EXAMPLE_VAR=42
+# Some thing needs this value for some reason
+SOME_THING=Some value
+```
+
+Some known env var usages:
+- On Linux, use `SWARM_NO_VENV=true` to tell Swarm when installing the comfy backend to not add a venv. By default, a venv will be used. This is only normally intended for certain containerized install setups, such as Google Colab.
+- Some AMD Radeon GPU users need `HSA_OVERRIDE_GFX_VERSION=10.3.0` which patches a ROCm bug.

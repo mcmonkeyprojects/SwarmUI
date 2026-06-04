@@ -613,9 +613,6 @@ public class WebServer
             }
             return;
         }
-        context.Response.ContentType = contentType;
-        context.Response.StatusCode = 200;
-        context.Response.ContentLength = data.Length;
         if (contentType.StartsWith("application/") || contentType.StartsWith("text/"))
         {
             context.Response.Headers.CacheControl = "private, max-age=2";
@@ -624,8 +621,7 @@ public class WebServer
         {
             context.Response.Headers.CacheControl = $"private, max-age={Program.ServerSettings.Network.OutputCacheSeconds}";
         }
-        await context.Response.Body.WriteAsync(data, Program.GlobalProgramCancel);
-        await context.Response.CompleteAsync();
+        await Results.Bytes(data, contentType, enableRangeProcessing: true).ExecuteAsync(context);
     }
 
     /// <summary>Web route for viewing special images (eg model icons).</summary>
