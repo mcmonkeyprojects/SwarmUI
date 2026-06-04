@@ -407,7 +407,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id), frames);
         }
-        else if (IsChromaRadiance() || IsZetaChroma() || IsPixelDiT())
+        else if (IsChromaRadiance() || IsZetaChroma() || IsPixelDiT() || IsPiD())
         {
             return resultImage(CreateNode("EmptyChromaRadianceLatentImage", new JObject()
             {

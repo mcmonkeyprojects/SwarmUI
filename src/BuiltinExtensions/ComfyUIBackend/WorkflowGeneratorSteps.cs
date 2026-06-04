@@ -1360,6 +1360,34 @@ public class WorkflowGeneratorSteps
             {
                 endStep = (int)(steps * (1 - endEarly));
             }
+            if (g.IsPiD())
+            {
+                if (g.BasicInputImage is null)
+                {
+                    throw new SwarmUserErrorException("PiD models are pixel decoders/upscalers, not image generators, an Init Image is required.");
+                }
+                (WGNodeData pidLatent, string pidFormat) = g.CreatePidCompatLatent(g.FinalLoadedModel, g.BasicInputImage, g.CurrentVae);
+                string pidCond = g.CreateNode("PiDConditioning", new JObject()
+                {
+                    ["positive"] = g.FinalPrompt,
+                    ["latent"] = pidLatent.Path,
+                    ["latent_format"] = pidFormat,
+                    ["degrade_sigma"] = 0.0
+                });
+                g.FinalPrompt = [pidCond, 0];
+                int pidWidth = (g.UserInput.GetImageWidth() * 4 / 16) * 16;
+                int pidHeight = (g.UserInput.GetImageHeight() * 4 / 16) * 16;
+                string pidEmptyLatent = g.CreateNode("EmptyChromaRadianceLatentImage", new JObject()
+                {
+                    ["batch_size"] = g.UserInput.Get(T2IParamTypes.BatchSize, 1),
+                    ["width"] = pidWidth,
+                    ["height"] = pidHeight
+                });
+                g.CurrentMedia = new WGNodeData([pidEmptyLatent, 0], g, WGNodeData.DT_LATENT_IMAGE, g.CurrentCompat()) { Width = pidWidth, Height = pidHeight };
+                startStep = 0;
+                endStep = 10000;
+                g.MainSamplerAddNoise = true;
+            }
             double cfg = g.UserInput.Get(T2IParamTypes.CFGScale);
             if (!noSkip && (steps == 0 || endStep <= startStep))
             {
@@ -1444,6 +1472,36 @@ public class WorkflowGeneratorSteps
                     }
                     loaderNodeId = "20";
                 }
+                if (refineModel.ModelClass?.CompatClass?.ID == "pid")
+                {
+                    if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
+                    {
+                        g.CurrentMedia.DecodeLatents(origVae, false, "24").SaveOutput(null, null, id: "29");
+                    }
+                    WGNodeData pidDecoded = g.CreatePixelDecode(refineModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 1, isRefiner: true);
+                    if (g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double pidUpscale) && pidUpscale != 1)
+                    {
+                        int targetWidth = ((int)Math.Round(g.UserInput.GetImageWidth() * pidUpscale) / 16) * 16;
+                        int targetHeight = ((int)Math.Round(g.UserInput.GetImageHeight() * pidUpscale) / 16) * 16;
+                        if (targetWidth != pidDecoded.Width || targetHeight != pidDecoded.Height)
+                        {
+                            g.CreateNode("ImageScale", new JObject()
+                            {
+                                ["image"] = pidDecoded.Path,
+                                ["width"] = targetWidth,
+                                ["height"] = targetHeight,
+                                ["upscale_method"] = "lanczos",
+                                ["crop"] = "disabled"
+                            }, "26");
+                            pidDecoded = pidDecoded.WithPath(["26", 0]);
+                            pidDecoded.Width = targetWidth;
+                            pidDecoded.Height = targetHeight;
+                        }
+                    }
+                    g.CurrentMedia = pidDecoded;
+                    g.IsRefinerStage = false;
+                    return;
+                }
                 if (g.UserInput.TryGet(T2IParamTypes.RefinerVAE, out _))
                 {
                     modelMustReencode = true;
@@ -1460,11 +1518,41 @@ public class WorkflowGeneratorSteps
                 string upscaleMethod = g.UserInput.Get(ComfyUIBackendExtension.RefinerUpscaleMethod, "None");
                 // TODO: Better same-VAE check
                 bool doPixelUpscale = doUpscale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
+                bool doPidUpscale = doUpscale && upscaleMethod.StartsWith("pidmodel-");
                 int width = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale);
                 int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
                 width = (width / 16) * 16; // avoid unworkable output sizes
                 height = (height / 16) * 16;
-                if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
+                if (doPidUpscale)
+                {
+                    T2IModel pidModel = ComfyUIBackendExtension.GetPidModel(upscaleMethod.After("pidmodel-"), g.UserInput.SourceSession);
+                    WGNodeData decoded = g.CreatePixelDecode(pidModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 2);
+                    if (doSave)
+                    {
+                        decoded.SaveOutput(null, null, id: "29");
+                    }
+                    if (decoded.Width != width || decoded.Height != height)
+                    {
+                        g.CreateNode("ImageScale", new JObject()
+                        {
+                            ["image"] = decoded.Path,
+                            ["width"] = width,
+                            ["height"] = height,
+                            ["upscale_method"] = "lanczos",
+                            ["crop"] = "disabled"
+                        }, "26");
+                        decoded = decoded.WithPath(["26", 0]);
+                        decoded.Width = width;
+                        decoded.Height = height;
+                    }
+                    if (refinerControl <= 0)
+                    {
+                        g.CurrentMedia = decoded;
+                        return;
+                    }
+                    g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
+                }
+                else if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
                 {
                     WGNodeData decoded = g.CurrentMedia.DecodeLatents(origVae, false, "24");
                     JArray maskShrunk = doMaskShrinkApply(g, decoded.Path);
@@ -1602,71 +1690,20 @@ public class WorkflowGeneratorSteps
                     explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
                 g.CurrentMedia = g.CurrentMedia.WithPath(["23", 0]);
                 g.IsRefinerStage = false;
-                if (doUpscale && upscaleMethod.StartsWith("pidmodel-"))
-                {
-                    string pidModelName = upscaleMethod.After("pidmodel-");
-                    string pidMatched = T2IParamTypes.GetBestModelInList(pidModelName, Program.MainSDModels.ListModelNamesFor(g.UserInput.SourceSession));
-                    if (pidMatched is not null && pidMatched.EndsWith(".safetensors"))
-                    {
-                        pidMatched = pidMatched.BeforeLast('.');
-                    }
-                    T2IModel pidModel = pidMatched is null ? null : Program.MainSDModels.GetModel(pidMatched);
-                    if (pidModel is null || pidModel.ModelClass?.CompatClass?.ID != "pid")
-                    {
-                        throw new SwarmUserErrorException($"Refiner Upscale Method is set to PiD model '{pidModelName}', but that model could not be found or is not a valid PiD model.");
-                    }
-                    string pidLatentFormat = g.IsSD3() ? "sd3" : (g.IsFlux() || g.IsAnyFlux2() || g.IsZImage() || g.IsZetaChroma()) ? "flux" : null;
-                    if (pidLatentFormat is null)
-                    {
-                        throw new SwarmUserErrorException($"PiD model requires the refiner model's VAE to be Flux.1, Flux.2, or SD3, but model '{refineModel.Name}' is '{refineModel.ModelClass?.CompatClass?.ID ?? "unknown"}'.");
-                    }
-                    JArray refinedLatent = g.CurrentMedia.Path;
-                    int pidWidth = g.UserInput.GetImageWidth() * 4;
-                    int pidHeight = g.UserInput.GetImageHeight() * 4;
-                    pidWidth = (pidWidth / 16) * 16;
-                    pidHeight = (pidHeight / 16) * 16;
-                    T2IModel refinerFinalModel = g.FinalLoadedModel;
-                    List<T2IModel> refinerFinalModelList = g.FinalLoadedModelList;
-                    g.FinalLoadedModel = pidModel;
-                    g.FinalLoadedModelList = [pidModel];
-                    g.NoVAEOverride = true;
-                    g.IsPixelDecoderStage = true;
-                    (g.FinalLoadedModel, g.CurrentModel, g.CurrentTextEnc, g.CurrentVae) = g.CreateModelLoader(pidModel, "PixelDecoder", sectionId: T2IParamInput.SectionID_PixelDecoder);
-                    g.IsPixelDecoderStage = false;
-                    g.NoVAEOverride = false;
-                    JArray pidPos = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, true, isPixelDecoder: true);
-                    JArray pidNeg = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, false, isPixelDecoder: true);
-                    string pidCond = g.CreateNode("PiDConditioning", new JObject()
-                    {
-                        ["positive"] = pidPos,
-                        ["latent"] = refinedLatent,
-                        ["latent_format"] = pidLatentFormat,
-                        ["degrade_sigma"] = 0.0
-                    });
-                    string pidEmptyLatent = g.CreateNode("EmptyChromaRadianceLatentImage", new JObject()
-                    {
-                        ["batch_size"] = g.UserInput.Get(T2IParamTypes.BatchSize, 1),
-                        ["width"] = pidWidth,
-                        ["height"] = pidHeight
-                    });
-                    int pidSteps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_PixelDecoder, false) ?? 4;
-                    double pidCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_PixelDecoder, false) ?? 1.0;
-                    string pidSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_PixelDecoder, includeBase: false);
-                    string pidScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_PixelDecoder, includeBase: false);
-                    string pidSampled = g.CreateKSampler(g.CurrentModel.Path, [pidCond, 0], pidNeg, [pidEmptyLatent, 0], pidCfg, pidSteps, 0, 10000,
-                        g.UserInput.Get(T2IParamTypes.Seed) + 2, false, true, defsampler: "lcm", defscheduler: "simple", explicitSampler: pidSampler, explicitScheduler: pidScheduler, sectionId: T2IParamInput.SectionID_PixelDecoder);
-                    g.CurrentMedia = g.CurrentMedia.WithPath([pidSampled, 0], WGNodeData.DT_LATENT_IMAGE, pidModel.ModelClass?.CompatClass);
-                    g.CurrentMedia.Width = pidWidth;
-                    g.CurrentMedia.Height = pidHeight;
-                    g.FinalLoadedModel = refinerFinalModel;
-                    g.FinalLoadedModelList = refinerFinalModelList;
-                }
             }
         }, -4);
         #endregion
         #region VAEDecode
         AddStep(g =>
         {
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.PixelDecoderModel, out T2IModel pixelDecoder) && g.CurrentMedia.DataType == WGNodeData.DT_LATENT_IMAGE)
+            {
+                if (pixelDecoder.ModelClass?.CompatClass?.ID != "pid")
+                {
+                    throw new SwarmUserErrorException($"Pixel Decoder Model is set to '{pixelDecoder.Name}', but that is not a PiD model.");
+                }
+                g.CurrentMedia = g.CreatePixelDecode(pixelDecoder, g.CurrentMedia, g.CurrentVae, g.UserInput.Get(T2IParamTypes.Seed) + 3);
+            }
             g.CurrentMedia = g.CurrentMedia.DecodeLatents(g.CurrentVae, null, "8");
             JArray maskShrinkApply = doMaskShrinkApply(g, g.CurrentMedia.Path);
             g.CurrentMedia = g.CurrentMedia.WithPath(maskShrinkApply);
