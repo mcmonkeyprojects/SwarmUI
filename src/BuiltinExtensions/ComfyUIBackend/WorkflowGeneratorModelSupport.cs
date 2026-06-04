@@ -94,6 +94,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Lens.</summary>
     public bool IsLens() => IsModelCompatClass(T2IModelClassSorter.CompatLens);
 
+    /// <summary>Returns true if the current model is Ideogram 4.</summary>
+    public bool IsIdeogram4() => IsModelCompatClass(T2IModelClassSorter.CompatIdeogram4);
+
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
@@ -272,7 +275,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id));
         }
-        else if (IsAnyFlux2() || IsErnie() || IsLens())
+        else if (IsAnyFlux2() || IsErnie() || IsLens() || IsIdeogram4())
         {
             return resultImage(CreateNode("EmptyFlux2LatentImage", new JObject()
             {
@@ -1087,6 +1090,22 @@ public partial class WorkflowGenerator
                 ["pre_cfg"] = true
             });
             LoadingModel = [lensCfgNormNode, 0];
+        }
+        else if (IsIdeogram4())
+        {
+            helpers.LoadClip("ideogram4", helpers.GetQwen3_8bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+            string ideogramRescaleNode = CreateNode("RescaleCFG", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["multiplier"] = 0.7
+            });
+            LoadingModel = [ideogramRescaleNode, 0];
+            string ideogramCfgZeroStarNode = CreateNode("CFGZeroStar", new JObject()
+            {
+                ["model"] = LoadingModel
+            });
+            LoadingModel = [ideogramCfgZeroStarNode, 0];
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
