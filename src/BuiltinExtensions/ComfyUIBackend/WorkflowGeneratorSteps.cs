@@ -974,14 +974,6 @@ public class WorkflowGeneratorSteps
         AddStep(g =>
         {
             g.FinalNegativePrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), g.CurrentTextEnc.Path, g.UserInput.Get(T2IParamTypes.Model), false, "7");
-            if (g.IsIdeogram4())
-            {
-                string zeroed = g.CreateNode("ConditioningZeroOut", new JObject()
-                {
-                    ["conditioning"] = g.FinalNegativePrompt
-                });
-                g.FinalNegativePrompt = [zeroed, 0];
-            }
         }, -7);
         #endregion
         #region ControlNet

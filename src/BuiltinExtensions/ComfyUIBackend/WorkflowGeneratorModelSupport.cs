@@ -1095,17 +1095,6 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("ideogram4", helpers.GetQwen3_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
-            string ideogramRescaleNode = CreateNode("RescaleCFG", new JObject()
-            {
-                ["model"] = LoadingModel,
-                ["multiplier"] = 0.7
-            });
-            LoadingModel = [ideogramRescaleNode, 0];
-            string ideogramCfgZeroStarNode = CreateNode("CFGZeroStar", new JObject()
-            {
-                ["model"] = LoadingModel
-            });
-            LoadingModel = [ideogramCfgZeroStarNode, 0];
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
