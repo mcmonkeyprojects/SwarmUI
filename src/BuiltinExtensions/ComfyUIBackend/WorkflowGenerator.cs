@@ -2545,15 +2545,15 @@ public partial class WorkflowGenerator
     /// <summary>Converts media into a latent in the PiD model's native latent space, re-encoding through an auto-loaded matching VAE if needed.</summary>
     public (WGNodeData, string) CreatePidCompatLatent(T2IModel pidModel, WGNodeData media, WGNodeData decodeVae)
     {
-        string mediaFamily = media.IsLatentData ? media.Compat?.VaeFamily : null;
-        string family = PidFamilyOfModel(pidModel) ?? mediaFamily ?? "flux1";
+        T2IVAEFamily mediaFamily = media.IsLatentData ? media.Compat?.VaeFamily : null;
+        string family = PidFamilyOfModel(pidModel) ?? mediaFamily?.ID ?? "flux1";
         string format = PidLatentFormats[family];
-        if (mediaFamily == family)
+        if (mediaFamily?.ID == family)
         {
             return (media, format);
         }
         WGNodeData decoded = media.AsRawImage(decodeVae);
-        (string knownVae, string vaeCompat) = T2IModelClassSorter.VaeFamilies[family];
+        mediaFamily = T2IModelClassSorter.VaeFamilies[family];
         string defaultVae = family switch
         {
             "flux1" => UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE,
@@ -2565,9 +2565,9 @@ public partial class WorkflowGenerator
         ModelLoadHelpers helpers = new(this);
         bool priorNoVae = NoVAEOverride;
         NoVAEOverride = true;
-        helpers.DoVaeLoader(defaultVae, vaeCompat, knownVae);
+        helpers.DoVaeLoader(defaultVae, mediaFamily.CompatClassID, mediaFamily.KnownVaeID);
         NoVAEOverride = priorNoVae;
-        WGNodeData encodeVae = new(LoadingVAE, this, WGNodeData.DT_VAE, T2IModelClassSorter.CompatClasses[vaeCompat]);
+        WGNodeData encodeVae = new(LoadingVAE, this, WGNodeData.DT_VAE, T2IModelClassSorter.CompatClasses[mediaFamily.CompatClassID]);
         return (decoded.EncodeToLatent(encodeVae), format);
     }
 

@@ -32,77 +32,86 @@ public class T2IModelClassSorter
         return clazz;
     }
 
+    /// <summary>Standard shared VAE/latent-space families.</summary>
+    public static Dictionary<string, T2IVAEFamily> VaeFamilies = [];
+
+    /// <summary>Register a new VAE family.</summary>
+    public static T2IVAEFamily RegisterVaeFamily(string id, string knownVaeId, string compatClass)
+    {
+        T2IVAEFamily family = new() { ID = id.ToLowerFast(), KnownVaeID = knownVaeId, CompatClassID = compatClass };
+        VaeFamilies.Add(family.ID, family);
+        return family;
+    }
+
+    /// <summary>Core established VAE latent space families.</summary>
+    public static T2IVAEFamily VaeFlux1 = RegisterVaeFamily("flux1", "flux-ae", "flux-1"),
+        VaeFlux2 = RegisterVaeFamily("flux2", "flux2-vae", "flux-2"),
+        VaeSd3 = RegisterVaeFamily("sd3", "sd35-vae", "stable-diffusion-v3"),
+        VaeSdxl = RegisterVaeFamily("sdxl", "sdxl-vae", "stable-diffusion-xl-v1"),
+        VaeQwenImage = RegisterVaeFamily("qwenimage", "qwen-image-vae", "qwen-image");
+
     /// <summary>Core Compatibility classes.</summary>
     public static T2IModelCompatClass
         // The OG Stability SD models
         CompatSdv1 = RegisterCompat(new() { ID = "stable-diffusion-v1", ShortCode = "SDv1" }),
         CompatSdv2 = RegisterCompat(new() { ID = "stable-diffusion-v2", ShortCode = "SDv2" }),
         CompatSdv2Turbo = RegisterCompat(new() { ID = "stable-diffusion-v2-turbo", ShortCode = "SDv2" }),
-        CompatSdxl = RegisterCompat(new() { ID = "stable-diffusion-xl-v1", ShortCode = "SDXL", VaeFamily = "sdxl" }),
-        CompatSdxlRefiner = RegisterCompat(new() { ID = "stable-diffusion-xl-v1-refiner", ShortCode = "SDXL", VaeFamily = "sdxl" }),
+        CompatSdxl = RegisterCompat(new() { ID = "stable-diffusion-xl-v1", ShortCode = "SDXL", VaeFamily = VaeSdxl }),
+        CompatSdxlRefiner = RegisterCompat(new() { ID = "stable-diffusion-xl-v1-refiner", ShortCode = "SDXL", VaeFamily = VaeSdxl }),
         CompatSvd = RegisterCompat(new() { ID = "stable-video-diffusion-img2vid-v1", ShortCode = "SVD", IsImage2Video = true }),
         CompatCascade = RegisterCompat(new() { ID = "stable-cascade-v1", ShortCode = "Casc" }),
-        CompatSd3Medium = RegisterCompat(new() { ID = "stable-diffusion-v3-medium", ShortCode = "SD3m", VaeFamily = "sd3" }),
-        CompatSd35Large = RegisterCompat(new() { ID = "stable-diffusion-v3.5-large", ShortCode = "SD35L", VaeFamily = "sd3" }),
-        CompatSd35Medium = RegisterCompat(new() { ID = "stable-diffusion-v3.5-medium", ShortCode = "SD35m", VaeFamily = "sd3" }),
-        CompatSd3 = RegisterCompat(new() { ID = "stable-diffusion-v3", ShortCode = "SD3", VaeFamily = "sd3" }),
+        CompatSd3Medium = RegisterCompat(new() { ID = "stable-diffusion-v3-medium", ShortCode = "SD3m", VaeFamily = VaeSd3 }),
+        CompatSd35Large = RegisterCompat(new() { ID = "stable-diffusion-v3.5-large", ShortCode = "SD35L", VaeFamily = VaeSd3 }),
+        CompatSd35Medium = RegisterCompat(new() { ID = "stable-diffusion-v3.5-medium", ShortCode = "SD35m", VaeFamily = VaeSd3 }),
+        CompatSd3 = RegisterCompat(new() { ID = "stable-diffusion-v3", ShortCode = "SD3", VaeFamily = VaeSd3 }),
         // 2024-2025 era models
-        CompatFlux = RegisterCompat(new() { ID = "flux-1", ShortCode = "Flux", LorasTargetTextEnc = false, VaeFamily = "flux1" }),
+        CompatFlux = RegisterCompat(new() { ID = "flux-1", ShortCode = "Flux", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatWan21 = RegisterCompat(new() { ID = "wan-21", ShortCode = "Wan14B", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
         CompatWan21_1_3b = RegisterCompat(new() { ID = "wan-21-1_3b", ShortCode = "Wan1B", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
         CompatWan21_14b = RegisterCompat(new() { ID = "wan-21-14b", ShortCode = "Wan14B", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
         CompatWan22_5b = RegisterCompat(new() { ID = "wan-22-5b", ShortCode = "Wan5B", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
         CompatHunyuanVideo = RegisterCompat(new() { ID = "hunyuan-video", ShortCode = "HyVid", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
-        CompatChroma = RegisterCompat(new() { ID = "chroma", ShortCode = "Chroma", VaeFamily = "flux1" }),
+        CompatChroma = RegisterCompat(new() { ID = "chroma", ShortCode = "Chroma", VaeFamily = VaeFlux1 }),
         CompatChromaRadiance = RegisterCompat(new() { ID = "chroma-radiance", ShortCode = "ChrRad" }),
         CompatLtxv = RegisterCompat(new() { ID = "lightricks-ltx-video", ShortCode = "LTXV", IsText2Video = true, IsImage2Video = true }),
-        CompatLumina2 = RegisterCompat(new() { ID = "lumina-2", ShortCode = "Lumi2", VaeFamily = "flux1" }),
-        CompatQwenImage = RegisterCompat(new() { ID = "qwen-image", ShortCode = "Qwen", LorasTargetTextEnc = false, VaeFamily = "qwenimage" }),
+        CompatLumina2 = RegisterCompat(new() { ID = "lumina-2", ShortCode = "Lumi2", VaeFamily = VaeFlux1 }),
+        CompatQwenImage = RegisterCompat(new() { ID = "qwen-image", ShortCode = "Qwen", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
         CompatHunyuanImage2_1 = RegisterCompat(new() { ID = "hunyuan-image-2_1", ShortCode = "HyImg", LorasTargetTextEnc = false }),
         CompatHunyuanImage2_1Refiner = RegisterCompat(new() { ID = "hunyuan-image-2_1-refiner", ShortCode = "HyImg", LorasTargetTextEnc = false }),
         CompatHunyuanVideo1_5 = RegisterCompat(new() { ID = "hunyuan-video-1_5", ShortCode = "HyVid", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
         // 2025-2026 era models
-        CompatFlux2 = RegisterCompat(new() { ID = "flux-2", ShortCode = "Flux2", LorasTargetTextEnc = false, VaeFamily = "flux2" }),
-        CompatFlux2Klein4B = RegisterCompat(new() { ID = "flux-2-klein-4b", ShortCode = "Fl2K4", LorasTargetTextEnc = false, VaeFamily = "flux2" }),
-        CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false, VaeFamily = "flux2" }),
-        CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false, VaeFamily = "flux2" }),
+        CompatFlux2 = RegisterCompat(new() { ID = "flux-2", ShortCode = "Flux2", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatFlux2Klein4B = RegisterCompat(new() { ID = "flux-2-klein-4b", ShortCode = "Fl2K4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true }),
-        CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = "flux1" }),
+        CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
-        CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false, VaeFamily = "qwenimage" }),
+        CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
         CompatHiDreamO1 = RegisterCompat(new() { ID = "hidream-o1", ShortCode = "HiDrO1", LorasTargetTextEnc = false }),
-        CompatLens = RegisterCompat(new() { ID = "lens", ShortCode = "Lens", LorasTargetTextEnc = false, VaeFamily = "flux2" }),
+        CompatLens = RegisterCompat(new() { ID = "lens", ShortCode = "Lens", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
         CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
+        CompatIdeogram4 = RegisterCompat(new() { ID = "ideogram-4", ShortCode = "Ideo4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones
-        CompatAuraFlow = RegisterCompat(new() { ID = "auraflow-v1", ShortCode = "Aura", VaeFamily = "sdxl" }),
-        CompatHiDreamI1 = RegisterCompat(new() { ID = "hidream-i1", ShortCode = "HiDrm", LorasTargetTextEnc = false, VaeFamily = "flux1" }),
-        CompatOmniGen2 = RegisterCompat(new() { ID = "omnigen-2", ShortCode = "Omni2", VaeFamily = "flux1" }),
-        CompatSegmindStableDiffusion1b = RegisterCompat(new() { ID = "segmind-stable-diffusion-1b", ShortCode = "SSD1B", VaeFamily = "sdxl" }),
+        CompatAuraFlow = RegisterCompat(new() { ID = "auraflow-v1", ShortCode = "Aura", VaeFamily = VaeSdxl }),
+        CompatHiDreamI1 = RegisterCompat(new() { ID = "hidream-i1", ShortCode = "HiDrm", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
+        CompatOmniGen2 = RegisterCompat(new() { ID = "omnigen-2", ShortCode = "Omni2", VaeFamily = VaeFlux1 }),
+        CompatSegmindStableDiffusion1b = RegisterCompat(new() { ID = "segmind-stable-diffusion-1b", ShortCode = "SSD1B", VaeFamily = VaeSdxl }),
         CompatCosmos = RegisterCompat(new() { ID = "nvidia-cosmos-1", ShortCode = "Cosmos", IsText2Video = true, IsImage2Video = true }),
         CompatCosmosPredict2_2b = RegisterCompat(new() { ID = "nvidia-cosmos-predict2-t2i-2b", ShortCode = "Pred2", IsText2Video = true }),
         CompatCosmosPredict2_14b = RegisterCompat(new() { ID = "nvidia-cosmos-predict2-t2i-14b", ShortCode = "Pred2", IsText2Video = true }),
         CompatAltDiffusion = RegisterCompat(new() { ID = "alt_diffusion_v1", ShortCode = "AltD" }),
         CompatSana = RegisterCompat(new() { ID = "nvidia-sana-1600", ShortCode = "Sana" }),
-        CompatPixartMsSigmaXl2 = RegisterCompat(new() { ID = "pixart-ms-sigma-xl-2", ShortCode = "Pix", VaeFamily = "sdxl" }),
-        CompatOvis = RegisterCompat(new() { ID = "ovis", ShortCode = "Ovis", LorasTargetTextEnc = false, VaeFamily = "flux1" }),
-        CompatLongcatImage = RegisterCompat(new() { ID = "longcat-image", ShortCode = "LCat", LorasTargetTextEnc = false, VaeFamily = "flux1" }),
+        CompatPixartMsSigmaXl2 = RegisterCompat(new() { ID = "pixart-ms-sigma-xl-2", ShortCode = "Pix", VaeFamily = VaeSdxl }),
+        CompatOvis = RegisterCompat(new() { ID = "ovis", ShortCode = "Ovis", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
+        CompatLongcatImage = RegisterCompat(new() { ID = "longcat-image", ShortCode = "LCat", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatGenmoMochi = RegisterCompat(new() { ID = "genmo-mochi-1", IsText2Video = true, ShortCode = "Mochi" }),
-        CompatKandinsky5ImgLite = RegisterCompat(new() { ID = "kandinsky5-imglite", ShortCode = "Kan5IL", LorasTargetTextEnc = false, VaeFamily = "flux1" }),
+        CompatKandinsky5ImgLite = RegisterCompat(new() { ID = "kandinsky5-imglite", ShortCode = "Kan5IL", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatKandinsky5VidLite = RegisterCompat(new() { ID = "kandinsky5-vidlite", ShortCode = "Kan5VL", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
         CompatKandinsky5VidPro = RegisterCompat(new() { ID = "kandinsky5-vidpro", ShortCode = "Kan5VP", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true });
-
-    /// <summary>Standard shared VAE/latent-space families.</summary>
-    public static Dictionary<string, (string KnownVae, string VaeCompat)> VaeFamilies = new()
-    {
-        ["flux1"] = ("flux-ae", "flux-1"),
-        ["flux2"] = ("flux2-vae", "flux-2"),
-        ["sd3"] = ("sd35-vae", "stable-diffusion-v3"),
-        ["sdxl"] = ("sdxl-vae", "stable-diffusion-xl-v1"),
-        ["qwenimage"] = ("qwen-image-vae", "qwen-image")
-    };
 
     /// <summary>Initialize the class sorter.</summary>
     public static void Init()
