@@ -71,7 +71,7 @@ public record class T2IModelCompatClass
             ["is_text2video"] = IsText2Video,
             ["is_image2video"] = IsImage2Video,
             ["is_audio_model"] = IsAudioModel,
-            ["vae_family"] = VaeFamily.ID
+            ["vae_family"] = VaeFamily?.ID
         };
     }
 }

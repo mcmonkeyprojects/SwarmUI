@@ -641,6 +641,26 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Steps:** For Turbo, `4` is recommended, `8` works well. For Base, `20` as normal.
     - **Resolution:** Side length `1440` is the official default, but 1024 is a reasonable option. It retains coherence down to about 512 and up to about 2048.
 
+# Ideogram 4
+
+- [Ideogram 4](<https://huggingface.co/ideogram-ai/ideogram-4-fp8>) is supported in SwarmUI!
+- It is a 9B model with an optional split unconditional model
+    - You can download the FP8 here: [Comfy-Org/Ideogram-4 FP8](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_fp8_scaled.safetensors>)
+    - Or the NVFP4 (5 gigs) here: [Comfy-Org/Ideogram-4 nvfp4](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_nvfp4_mixed.safetensors>)
+    - The "unconditional" models are here if you want them: [Comfy-Org/Ideogram](<https://huggingface.co/Comfy-Org/Ideogram-4/tree/main/diffusion_models>)
+        - The idea is you use a separate model for the negative half of CFG from the positive half (this is not required)
+- It has built-in-to-the-model censorship, the model itself will try to reject inappropriate prompts.
+- **Parameters:**
+    - **Prompt:** They have an official prompting guide here [Ideogram-OSS: Docs/Prompting](<https://github.com/ideogram-oss/ideogram4/blob/main/docs/prompting.md>)
+        - They suggest long form JSON prompts, and have trained the model to understand features within such as bounding box coordinates as part of the structure
+        - If you don't use JSON it will just censor you almost every time.
+    - **Steps:** They suggest `12` for Turbo, `48` for quality. Anywhere in between is fine.
+    - **CFG:** Standard range around `7`, they suggest using a refiner stage of 1-3 steps at CFG=3.
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine. They have an official specific custom one, but users have found this to be worse than default.
+    - **Resolution:** Side length `1024` is the default.
+
+
 # Video Models
 
 - Video models are documented in [Video Model Support](/docs/Video%20Model%20Support.md).
