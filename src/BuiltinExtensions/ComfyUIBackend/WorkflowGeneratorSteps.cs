@@ -1362,11 +1362,7 @@ public class WorkflowGeneratorSteps
             }
             if (g.IsPiD())
             {
-                if (g.BasicInputImage is null)
-                {
-                    throw new SwarmUserErrorException("PiD models are pixel decoders/upscalers, not image generators, an Init Image is required.");
-                }
-                (WGNodeData pidLatent, string pidFormat) = g.CreatePidCompatLatent(g.FinalLoadedModel, g.BasicInputImage, g.CurrentVae);
+                (WGNodeData pidLatent, string pidFormat) = g.CreatePidCompatLatent(g.FinalLoadedModel, g.CurrentMedia, g.CurrentVae);
                 string pidCond = g.CreateNode("PiDConditioning", new JObject()
                 {
                     ["positive"] = g.FinalPrompt,
