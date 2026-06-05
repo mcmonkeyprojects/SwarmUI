@@ -13,7 +13,7 @@ namespace SwarmUI.Text2Image;
 public class T2IParamInput
 {
     /// <summary>Core section ID numbers.</summary>
-    public static int SectionID_BaseOnly = 5, SectionID_Refiner = 1, SectionID_Video = 2, SectionID_VideoSwap = 3;
+    public static int SectionID_BaseOnly = 5, SectionID_Refiner = 1, SectionID_Video = 2, SectionID_VideoSwap = 3, SectionID_PixelDecoder = 4;
 
     /// <summary>Parameter IDs that must be loaded early on, eg extracted from presets in prompts early. Primarily things that affect backend selection.</summary>
     public static readonly string[] ParamsMustLoadEarly = ["model", "images", "internalbackendtype", "exactbackendid"];

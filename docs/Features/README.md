@@ -11,3 +11,4 @@ See [The Docs Readme](/docs/README.md) for general listing of documentation and 
 - [Webhooks](/docs/Features/Webhooks.md) for info about custom defined webhooks triggered by your SwarmUI server.
 - [UISounds](/docs/Features/UISounds.md) for info about sound playback in the UI (eg a sound to play after generations complete).
 - [AutoScalingBackend](/docs/Features/AutoScalingBackend.md) for info about the specialty advanced usage "Auto-Scaling" backend (for Slurm/Kubernetes/etc).
+- [Upscaling](/docs/Features/Upscaling.md) for info about upscaling images and videos (ie increasing resolution, especially to improve quality).

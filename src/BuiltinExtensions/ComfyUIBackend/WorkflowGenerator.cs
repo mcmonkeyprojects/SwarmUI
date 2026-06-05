@@ -166,6 +166,9 @@ public partial class WorkflowGenerator
     /// <summary>If true, the generator is currently working on the refiner stage.</summary>
     public bool IsRefinerStage = false;
 
+    /// <summary>If true, the generator is currently working on the pixel-decoder stage.</summary>
+    public bool IsPixelDecoderStage = false;
+
     /// <summary>If true, the generator is currently working on Image2Video.</summary>
     public bool IsImageToVideo = false;
 
@@ -958,8 +961,13 @@ public partial class WorkflowGenerator
                 latent = [srCond, 2];
             }
         }
+        else if (IsPiD())
+        {
+            defsampler ??= "lcm";
+            defscheduler ??= "simple";
+        }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT())
         {
             defscheduler ??= "simple";
         }
@@ -2517,8 +2525,105 @@ public partial class WorkflowGenerator
         return false;
     }
 
+    /// <summary>The PiDConditioning node's latent_format value for each VAE family that PiD models exist for.</summary>
+    public static Dictionary<string, string> PidLatentFormats = new()
+    {
+        ["flux1"] = "flux",
+        ["flux2"] = "flux",
+        ["sd3"] = "sd3",
+        ["sdxl"] = "sdxl",
+        ["qwenimage"] = "qwenimage"
+    };
+
+    /// <summary>Detects which VAE family a PiD model was trained against.</summary>
+    public static string PidFamilyOfModel(T2IModel pidModel)
+    {
+        string name = pidModel.Name.ToLowerFast();
+        return PidLatentFormats.Keys.FirstOrDefault(name.Contains);
+    }
+
+    /// <summary>Converts media into a latent in the PiD model's native latent space, re-encoding through an auto-loaded matching VAE if needed.</summary>
+    public (WGNodeData, string) CreatePidCompatLatent(T2IModel pidModel, WGNodeData media, WGNodeData decodeVae)
+    {
+        string mediaFamily = media.IsLatentData ? media.Compat?.VaeFamily : null;
+        string family = PidFamilyOfModel(pidModel) ?? mediaFamily ?? "flux1";
+        string format = PidLatentFormats[family];
+        if (mediaFamily == family)
+        {
+            return (media, format);
+        }
+        WGNodeData decoded = media.AsRawImage(decodeVae);
+        (string knownVae, string vaeCompat) = T2IModelClassSorter.VaeFamilies[family];
+        string defaultVae = family switch
+        {
+            "flux1" => UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE,
+            "flux2" => UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE,
+            "sd3" => UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE,
+            "sdxl" => UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE,
+            _ => null
+        };
+        ModelLoadHelpers helpers = new(this);
+        bool priorNoVae = NoVAEOverride;
+        NoVAEOverride = true;
+        helpers.DoVaeLoader(defaultVae, vaeCompat, knownVae);
+        NoVAEOverride = priorNoVae;
+        WGNodeData encodeVae = new(LoadingVAE, this, WGNodeData.DT_VAE, T2IModelClassSorter.CompatClasses[vaeCompat]);
+        return (decoded.EncodeToLatent(encodeVae), format);
+    }
+
+    /// <summary>Creates a PiD pixel-decode stage: converts to a PiD-space latent and samples a 4x pixel image from it.</summary>
+    public WGNodeData CreatePixelDecode(T2IModel pidModel, WGNodeData media, WGNodeData decodeVae, long seed, bool isRefiner = false)
+    {
+        (WGNodeData latent, string format) = CreatePidCompatLatent(pidModel, media, decodeVae);
+        T2IModel priorFinalModel = FinalLoadedModel;
+        List<T2IModel> priorFinalModelList = FinalLoadedModelList;
+        WGNodeData priorModel = CurrentModel, priorTextEnc = CurrentTextEnc, priorVae = CurrentVae;
+        bool priorNoVae = NoVAEOverride;
+        int sectionId = isRefiner ? T2IParamInput.SectionID_Refiner : T2IParamInput.SectionID_PixelDecoder;
+        FinalLoadedModel = pidModel;
+        FinalLoadedModelList = [pidModel];
+        NoVAEOverride = true;
+        IsPixelDecoderStage = !isRefiner;
+        (FinalLoadedModel, CurrentModel, CurrentTextEnc, CurrentVae) = CreateModelLoader(pidModel, isRefiner ? "Refiner" : "PixelDecoder", sectionId: sectionId);
+        IsPixelDecoderStage = false;
+        NoVAEOverride = priorNoVae;
+        JArray pos = CreateConditioning(UserInput.Get(T2IParamTypes.Prompt), CurrentTextEnc.Path, pidModel, true, isRefiner: isRefiner, isPixelDecoder: !isRefiner);
+        JArray neg = CreateConditioning(UserInput.Get(T2IParamTypes.NegativePrompt), CurrentTextEnc.Path, pidModel, false, isRefiner: isRefiner, isPixelDecoder: !isRefiner);
+        string cond = CreateNode("PiDConditioning", new JObject()
+        {
+            ["positive"] = pos,
+            ["latent"] = latent.Path,
+            ["latent_format"] = format,
+            ["degrade_sigma"] = 0.0
+        });
+        int width = ((media.Width ?? UserInput.GetImageWidth()) * 4 / 16) * 16;
+        int height = ((media.Height ?? UserInput.GetImageHeight()) * 4 / 16) * 16;
+        string emptyLatent = CreateNode("EmptyChromaRadianceLatentImage", new JObject()
+        {
+            ["batch_size"] = UserInput.Get(T2IParamTypes.BatchSize, 1),
+            ["width"] = width,
+            ["height"] = height
+        });
+        int steps = UserInput.GetNullable(T2IParamTypes.Steps, sectionId, false) ?? (isRefiner ? UserInput.GetNullable(T2IParamTypes.RefinerSteps) : null) ?? 4;
+        double cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, sectionId, false) ?? (isRefiner ? UserInput.GetNullable(T2IParamTypes.RefinerCFGScale) : null) ?? 1;
+        string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null) : null);
+        string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null) : null);
+        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], neg, [emptyLatent, 0], cfg, steps, 0, 10000, seed, false, true,
+            explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: sectionId);
+        WGNodeData result = media.WithPath([sampled, 0], WGNodeData.DT_LATENT_IMAGE, pidModel.ModelClass?.CompatClass);
+        result.Width = width;
+        result.Height = height;
+        result = result.DecodeLatents(CurrentVae, false);
+        FinalLoadedModel = priorFinalModel;
+        FinalLoadedModelList = priorFinalModelList;
+        CurrentModel = priorModel;
+        CurrentTextEnc = priorTextEnc;
+        CurrentVae = priorVae;
+        return result;
+    }
+
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
-    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false)
+    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false, bool isPixelDecoder = false)
     {
         PromptRegion regionalizer = new(prompt);
         string globalPromptText = regionalizer.GlobalPrompt;
@@ -2534,7 +2639,11 @@ public partial class WorkflowGenerator
         {
             globalPromptText = $"{globalPromptText} {regionalizer.RefinerPrompt}";
         }
-        else if (!isVideo && !isRefiner && !string.IsNullOrWhiteSpace(regionalizer.BasePrompt))
+        else if (isPixelDecoder && !string.IsNullOrWhiteSpace(regionalizer.PixelDecoderPrompt))
+        {
+            globalPromptText = $"{globalPromptText} {regionalizer.PixelDecoderPrompt}";
+        }
+        else if (!isVideo && !isRefiner && !isPixelDecoder && !string.IsNullOrWhiteSpace(regionalizer.BasePrompt))
         {
             globalPromptText = $"{globalPromptText} {regionalizer.BasePrompt}";
         }

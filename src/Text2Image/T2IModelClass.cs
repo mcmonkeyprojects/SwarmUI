@@ -57,6 +57,9 @@ public record class T2IModelCompatClass
     /// <summary>If true, this is a model that primarily operates on audio.</summary>
     public bool IsAudioModel = false;
 
+    /// <summary>If this class natively works in a standard shared VAE/latent space, the ID of that family (see <see cref="T2IModelClassSorter.VaeFamilies"/>).</summary>
+    public string VaeFamily = null;
+
     /// <summary>Get a networkable JObject for this compat class.</summary>
     public JObject ToNetData()
     {
@@ -67,7 +70,8 @@ public record class T2IModelCompatClass
             ["loras_target_text_enc"] = LorasTargetTextEnc,
             ["is_text2video"] = IsText2Video,
             ["is_image2video"] = IsImage2Video,
-            ["is_audio_model"] = IsAudioModel
+            ["is_audio_model"] = IsAudioModel,
+            ["vae_family"] = VaeFamily
         };
     }
 }

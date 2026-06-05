@@ -38,6 +38,7 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 [Ovis](/docs/Obscure%20Model%20Support.md#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
 [LongCat-Image](/docs/Obscure%20Model%20Support.md#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
 [Zeta Chroma](/docs/Obscure%20Model%20Support.md#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
+[PixelDiT](/docs/Obscure%20Model%20Support.md#pixeldit) | Pixel DiT | 2026 | NVIDIA | 1.3B | Minimal | Modern, fast, pixel-space, but very bad relative quality on launch |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".

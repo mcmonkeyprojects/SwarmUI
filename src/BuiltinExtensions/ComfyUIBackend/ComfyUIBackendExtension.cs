@@ -614,6 +614,8 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
+    public static T2IRegisteredParam<T2IModel> PixelDecoderModel;
+
     public static T2IRegisteredParam<string>[] ControlNetPreprocessorParams = new T2IRegisteredParam<string>[3], ControlNetUnionTypeParams = new T2IRegisteredParam<string>[3];
 
     public static List<string> UpscalerModels = ["pixel-lanczos///Pixel: Lanczos (cheap + high quality)", "pixel-bicubic///Pixel: Bicubic (Basic)", "pixel-area///Pixel: Area", "pixel-bilinear///Pixel: Bilinear", "pixel-nearest-exact///Pixel: Nearest-Exact (Pixel art)", "latent-bislerp///Latent: Bislerp", "latent-bicubic///Latent: Bicubic", "latent-area///Latent: Area", "latent-bilinear///Latent: Bilinear", "latent-nearest-exact///Latent: Nearest-Exact"],
@@ -634,6 +636,25 @@ public class ComfyUIBackendExtension : Extension
             "euler_cfg_pp///Euler CFG++ (Manifold-constrained CFG)", "euler_ancestral_cfg_pp///Euler Ancestral CFG++", "dpmpp_2m_cfg_pp///DPM++ 2M CFG++", "dpmpp_2s_ancestral_cfg_pp///DPM++ 2S Ancestral CFG++ (2x Slow)", "res_multistep_cfg_pp///Res MultiStep CFG++", "res_multistep_ancestral_cfg_pp///Res MultiStep Ancestral CFG++", "gradient_estimation_cfg_pp///Gradient Estimation CFG++"
         ],
         Schedulers = ["normal///Normal", "karras///Karras", "exponential///Exponential", "simple///Simple", "ddim_uniform///DDIM Uniform", "sgm_uniform///SGM Uniform", "turbo///Turbo (for turbo models, max 10 steps)", "align_your_steps///Align Your Steps (Model-specific behavior)", "beta///Beta", "linear_quadratic///Linear Quadratic (Mochi)", "ltxv///LTX-Video", "ltxv-image///LTXV-Image", "kl_optimal///KL Optimal (Nvidia AYS)", "flux2///Flux.2"];
+
+    /// <summary>Lists PiD decoder models.</summary>
+    public static List<string> PidUpscaleModels(Session session) => [.. Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "pid").OrderBy(m => m.Name).Select(m => $"pidmodel-{m.Name}///PiD Model: {m.Name}")];
+
+    /// <summary>Resolves a PiD model from a model name.</summary>
+    public static T2IModel GetPidModel(string name, Session session)
+    {
+        string matched = T2IParamTypes.GetBestModelInList(name, Program.MainSDModels.ListModelNamesFor(session));
+        if (matched is not null && matched.EndsWith(".safetensors"))
+        {
+            matched = matched.BeforeLast('.');
+        }
+        T2IModel model = matched is null ? null : Program.MainSDModels.GetModel(matched);
+        if (model is null || model.ModelClass?.CompatClass?.ID != "pid")
+        {
+            throw new SwarmUserErrorException($"PiD model '{name}' could not be found, or is not a valid PiD model.");
+        }
+        return model;
+    }
 
     public static List<string> IPAdapterModels = ["None"], IPAdapterWeightTypes = ["standard", "prompt is more important", "style transfer"];
 
@@ -752,7 +773,11 @@ public class ComfyUIBackendExtension : Extension
             ));
         RefinerUpscaleMethod = T2IParamTypes.Register<string>(new("Refiner Upscale Method", "How to upscale the image, if upscaling is used.",
             "pixel-lanczos", Group: T2IParamTypes.GroupRefiners, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,
-            GetValues: (_) => UpscalerModels, DependNonDefault: T2IParamTypes.RefinerUpscale.Type.ID
+            GetValues: (session) => [.. UpscalerModels, .. PidUpscaleModels(session)], DependNonDefault: T2IParamTypes.RefinerUpscale.Type.ID
+            ));
+        PixelDecoderModel = T2IParamTypes.Register<T2IModel>(new("Pixel Decoder Model", "Optionally use a PiD (Pixel Diffusion Decoder) model.",
+            "", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Subtype: "Stable-Diffusion", ChangeWeight: 4, DoNotPreview: true, OrderPriority: 14,
+            GetValues: (session) => T2IParamTypes.CleanModelList(Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "pid").OrderBy(m => m.Name).Select(m => m.Name))
             ));
         RefinerSamplerParam = T2IParamTypes.Register<string>(new("Refiner Sampler", SamplerParam.Type.Description + "\nThis is an override to only affect the Refine/Upscale stage.",
             "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRefinerOverrides, OrderPriority: -2,
