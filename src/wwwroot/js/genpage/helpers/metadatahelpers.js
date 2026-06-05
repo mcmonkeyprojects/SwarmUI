@@ -233,7 +233,7 @@ let metadataKeyFormatCleaners = [];
 let promptCidMatcher = new RegExp('\<(.*?)//cid=\\d+>', 'g');
 
 function formatMetadataEntry(entry) {
-    return `<span class="param_view_block tag-text tag-type-${entry.hash}${entry.added}"><span class="param_view_name" title="${escapeHtmlNoBr(entry.keyTitle)}">${escapeHtml(entry.key)}</span>: ${entry.valueHtml}${entry.extras}</span>`;
+    return `<span class="param_view_block tag-text tag-type-${entry.hash}${entry.added}"><span class="param_view_name" title="${escapeHtmlNoBr(entry.keyTitle)}">${escapeHtml(entry.key)}:</span> ${entry.valueHtml}${entry.extras}</span>`;
 }
 
 function getFormattedMetadataEntries(metadata) {

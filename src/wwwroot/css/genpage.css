@@ -682,6 +682,10 @@ body {
 .param_view_block_model {
     background-color: color-mix(in srgb, transparent 99%, var(--tag-color));
 }
+.extras-wrapper-sideblock span.param_view_block .param_view_name {
+    display: inline-block;
+    min-width: 6rem;
+}
 .param_view {
     border-radius: 0.3rem;
     color: var(--text);
