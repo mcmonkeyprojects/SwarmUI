@@ -371,7 +371,11 @@ class ModelDownloaderUtil {
                         let url = videos[0].url;
                         let video = document.createElement('video');
                         video.crossOrigin = 'Anonymous';
-                        video.onloadeddata = () => {
+                        video.preload = 'auto';
+                        video.onloadedmetadata = () => {
+                            video.currentTime = 0.001;
+                        };
+                        video.onseeked = () => {
                             let canvas = document.createElement('canvas');
                             canvas.width = video.videoWidth;
                             canvas.height = video.videoHeight;
