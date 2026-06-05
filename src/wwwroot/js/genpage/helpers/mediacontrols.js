@@ -181,9 +181,8 @@ class VideoControls extends MediaControlsBase {
         this.createControls();
     }
 
-    /** Creates the controls UI for the video. */
-    createControls() {
-        let container = this.media.parentElement;
+    /** Builds the control bar UI (play, time, progress bar, volume). */
+    buildControlBar(container) {
         let controls = createDiv(null, 'video-controls', `
             <button data-action="play">▶</button>
             <span class="video-time">0:00</span>
@@ -207,10 +206,19 @@ class VideoControls extends MediaControlsBase {
         this.wirePlayAndVolumeHandlers();
         this.media.addEventListener('loadedmetadata', () => this.updateDuration());
         this.wirePlaybackProgressRafListeners();
-        container.addEventListener('mouseenter', () => { controls.style.opacity = 1; });
-        container.addEventListener('mouseleave', () => { controls.style.opacity = 0; });
         this.progressBar.addEventListener('click', (e) => this.seek(e));
         this.progressBar.addEventListener('mousedown', () => { this.isDragging = true; uiImprover.videoControlDragging = this; });
+        if (!this.media.paused) {
+            this.startProgressAnimation();
+        }
+    }
+
+    /** Creates the controls UI for the video. */
+    createControls() {
+        let container = this.media.parentElement;
+        this.buildControlBar(container);
+        container.addEventListener('mouseenter', () => { this.controls.style.opacity = 1; });
+        container.addEventListener('mouseleave', () => { this.controls.style.opacity = 0; });
         this.media.draggable = true;
         this.media.addEventListener('dragstart', (e) => {
             let src = this.media.currentSrc || this.media.src;
@@ -220,9 +228,6 @@ class VideoControls extends MediaControlsBase {
                 e.dataTransfer.setData('text/uri-list', src);
             }
         });
-        if (!this.media.paused) {
-            this.startProgressAnimation();
-        }
     }
 
     /** Whether the progress bar element is still in the document (used by RAF loop in MediaControlsBase). */
@@ -589,5 +594,115 @@ class AudioControls extends MediaControlsBase {
         }
         this.seekToClientX(e.clientX);
         this.redrawWaveform();
+    }
+}
+
+/** Video control bar for the image-compare modal: one bar drives every video in the compare stage, and only the primary (left-most) video emits audio. */
+class CompareVideoControls extends VideoControls {
+    constructor(videos, primary, container, resumeTime = 0, resumePaused = false) {
+        super(primary);
+        this.videos = videos;
+        this.buildControlBar(container);
+        this.controls.classList.add('image_compare_video_controls');
+        for (let video of videos) {
+            video.muted = video != primary;
+            if (resumeTime > 0) {
+                video.currentTime = resumeTime;
+            }
+            if (resumePaused) {
+                video.pause();
+            }
+            video.addEventListener('loadedmetadata', () => {
+                this.updateDuration();
+                this.syncToPrimary();
+            });
+        }
+        this.updateDuration();
+        this.refreshProgressDisplay();
+        this.updateIcons();
+    }
+
+    createControls() {
+    }
+
+    /** Removes the control bar and stops its animation. */
+    destroy() {
+        this.stopProgressAnimation();
+        this.controls.remove();
+    }
+
+    /** Longest duration among the compared videos, ie the time range the scrub bar spans. */
+    spanDuration() {
+        let duration = 0;
+        for (let video of this.videos) {
+            if (isFinite(video.duration)) {
+                duration = Math.max(duration, video.duration);
+            }
+        }
+        return duration;
+    }
+
+    /** Seeks all videos to the given time. */
+    seekAll(time) {
+        for (let video of this.videos) {
+            video.currentTime = time;
+        }
+    }
+
+    /** Aligns secondary videos to the primary video's playback position. */
+    syncToPrimary() {
+        let time = this.media.currentTime;
+        for (let video of this.videos) {
+            if (video != this.media) {
+                video.currentTime = time;
+            }
+        }
+    }
+
+    /** Toggles play/pause for all videos together. */
+    togglePlay() {
+        if (this.media.paused) {
+            for (let video of this.videos) {
+                video.play().catch(() => {});
+            }
+        }
+        else {
+            for (let video of this.videos) {
+                video.pause();
+            }
+        }
+        this.updateIcons();
+    }
+
+    /** Seeks all videos from a click on the progress bar. */
+    seek(e) {
+        let p = MediaControlsBase.scrubFractionFromClientX(e.clientX, this.progressBar);
+        let d = this.spanDuration();
+        if (p == null || d <= 0) {
+            return;
+        }
+        this.seekAll(p * d);
+    }
+
+    /** Document-level mousemove while dragging the progress bar. */
+    drag(e) {
+        if (!this.isDragging) {
+            return;
+        }
+        this.seek(e);
+        this.refreshProgressDisplay();
+    }
+
+    /** Updates the progress bar and current-time label to match the primary video. */
+    refreshProgressDisplay() {
+        let d = this.spanDuration();
+        let percent = d > 0 ? (this.media.currentTime / d) * 100 : 0;
+        this.progressFilled.style.width = `${percent}%`;
+        this.currentTimeEl.textContent = this.formatTime(this.media.currentTime);
+    }
+
+    /** Updates the duration UI text to the spanned duration. */
+    updateDuration() {
+        this.durationEl.textContent = this.formatTime(this.spanDuration());
     }
 }
