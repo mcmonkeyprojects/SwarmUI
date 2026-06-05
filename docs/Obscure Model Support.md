@@ -18,6 +18,7 @@ This doc tracks specifically the old, bad, unpopular, etc. models that are suppo
 [Ovis](#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
 [LongCat-Image](#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
 [Zeta Chroma](#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
+[PixelDiT](#pixeldit) | Pixel DiT | 2026 | NVIDIA | 1.3B | Minimal | Modern, fast, pixel-space, but very bad relative quality on launch |
 
 Obscure video models are tracked at the [Video Models heading](#video-models)
 
@@ -199,6 +200,22 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Sampler:** Default is fine (`Euler`)
     - **Scheduler:** Default is fine
     - **Resolution:** Side length `1024` is the standard, broadly supports the same range as regular Z-Image (roughly 512 to 2048)
+
+# PixelDiT
+
+- NVIDIA's [PixelDiT](<https://huggingface.co/Comfy-Org/PixelDiT>) is supported in SwarmUI!
+    - The smaller FP8 model can be downloaded here: [Comfy-Org/PixelDiT - fp8](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_mxfp8.safetensors>)
+    - Or fat BF16 version: [Comfy-Org/PixelDiT - bf16](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_bf16.safetensors>)
+    - Save in `diffusion_models`
+    - Released as a pair with PiD (Pixel Decoder), which is a separate pixel decode/upscale model. See [Features/Upscaling: PiD](/docs/Features/Upscaling.md#pixel-decoder-pid) for more info.
+- It does not use a VAE
+- Uses the Gemma 2 2B text encoder, will be downloaded and handled automatically
+- **Parameters:**
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** `4` is recommended.
+    - **Steps:** `30` is recommended.
+    - **Resolution:** Side length `1024` is the standard.
 
 --------------------------------------------------------------------------
 
