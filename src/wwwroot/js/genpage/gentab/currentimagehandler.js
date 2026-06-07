@@ -1457,6 +1457,8 @@ class ImageCompareHelper {
         this.updateMetadataVisibility();
         this.updateModeControls();
         this.supportedTypes = ['image', 'video'];
+        this.scrubRow = getRequiredElementById('image_compare_scrub_row');
+        this.videoControls = null;
     }
 
     getImgOrContainer() {
@@ -1716,6 +1718,9 @@ class ImageCompareHelper {
     }
 
     showComparison(left, right) {
+        if (this.left?.src != left?.src || this.right?.src != right?.src) {
+            this.clearVideoControls();
+        }
         this.left = left;
         this.right = right;
         let wasAlreadyOpen = this.isOpen();
@@ -1857,6 +1862,7 @@ class ImageCompareHelper {
         this.showMetadata = false;
         this.resetViewportState();
         this.setStageContent('side', '');
+        this.clearVideoControls();
         this.metadataDiv.innerHTML = '';
         this.updateMetadataVisibility();
         this.updateModeControls();
@@ -1919,8 +1925,11 @@ class ImageCompareHelper {
     render() {
         this.stopPanning(true);
         this.updateModeControls();
+        let resumeTime = this.videoControls ? this.videoControls.media.currentTime : 0;
+        let resumePaused = this.videoControls ? this.videoControls.media.paused : false;
         if (!this.hasSelection()) {
             this.setStageContent('side', '');
+            this.clearVideoControls();
             this.metadataDiv.innerHTML = '';
             this.updateMetadataVisibility();
             this.updateModeControls();
@@ -1930,14 +1939,15 @@ class ImageCompareHelper {
             this.renderOverlay();
         }
         else if (ImageCompareHelper.modeDefinitions[this.mode].layout == 'single') {
-            this.setStageContent('single', `<div class="image_compare_slot">${this.renderMedia(this.left)}</div>`);
+            this.setStageContent('single', `<div class="image_compare_slot">${this.renderMedia(this.left, 'left')}</div>`);
         }
         else {
             this.setStageContent('side', `
-                <div class="image_compare_slot">${this.renderMedia(this.left)}</div>
-                <div class="image_compare_slot">${this.renderMedia(this.right)}</div>`
+                <div class="image_compare_slot">${this.renderMedia(this.left, 'left')}</div>
+                <div class="image_compare_slot">${this.renderMedia(this.right, 'right')}</div>`
             );
         }
+        this.setupVideoControls(resumeTime, resumePaused);
         let metadataHtml = this.renderMetadataTable();
         this.metadataDiv.innerHTML = metadataHtml;
         this.updateMetadataVisibility();
@@ -1957,12 +1967,30 @@ class ImageCompareHelper {
         this.setStageContent('overlay', `
             <div class="image_compare_slot">
                 <div class="${overlayClasses.join(' ')}" style="--image-compare-split:${this.overlaySplitPercent}%;--image-compare-transparency:${this.transparencyPercent / 100};">
-                    <div class="image_compare_overlay_layer image_compare_overlay_layer_left">${this.renderMedia(this.left)}</div>
-                    <div class="image_compare_overlay_layer image_compare_overlay_layer_right">${this.renderMedia(this.right)}</div>
+                    <div class="image_compare_overlay_layer image_compare_overlay_layer_left">${this.renderMedia(this.left, 'left')}</div>
+                    <div class="image_compare_overlay_layer image_compare_overlay_layer_right">${this.renderMedia(this.right, 'right')}</div>
                     ${this.isSlideMode() ? '<div class="image_compare_overlay_divider"></div>' : ''}
                 </div>
             </div>`
         );
+    }
+
+    setupVideoControls(resumeTime, resumePaused) {
+        this.videoControls?.destroy();
+        this.videoControls = null;
+        let videos = [...this.stage.querySelectorAll('video.image_compare_media')];
+        this.scrubRow.classList.toggle('image_compare_scrub_row_active', videos.length > 0);
+        if (videos.length == 0) {
+            return;
+        }
+        let primary = videos.find(video => video.dataset.compareSide == 'left') ?? videos[0];
+        this.videoControls = new CompareVideoControls(videos, primary, this.scrubRow, resumeTime, resumePaused);
+    }
+
+    clearVideoControls() {
+        this.videoControls?.destroy();
+        this.videoControls = null;
+        this.scrubRow.classList.remove('image_compare_scrub_row_active');
     }
 
     updateOverlaySplitFromClientPosition(stage, clientX, clientY) {
@@ -2107,12 +2135,12 @@ class ImageCompareHelper {
         this.applyView();
     }
 
-    renderMedia(media) {
+    renderMedia(media, side) {
         return this.renderMediaElement(
             media.src,
             'image_compare_media',
-            'alt="Compared media" onload="imageCompareHelper.onImgLoad()"',
-            'autoplay loop muted playsinline onloadedmetadata="imageCompareHelper.onImgLoad()"',
+            `alt="Compared media" data-compare-side="${side}" onload="imageCompareHelper.onImgLoad()"`,
+            `autoplay loop muted playsinline data-compare-side="${side}" onloadedmetadata="imageCompareHelper.onImgLoad()"`,
             '',
             false,
         );
