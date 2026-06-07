@@ -837,44 +837,44 @@ body {
     gap: 0.25rem;
     padding: 0.25rem 0;
 }
-#image_compare_transparency_row {
+.image_compare_transparency_row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
-#image_compare_transparency_row .auto-slider-range-wrapper {
+.image_compare_transparency_row .auto-slider-range-wrapper {
     width: 14rem;
     max-width: 60vw;
     margin-top: 0;
     margin-bottom: 0;
     flex-shrink: 0;
 }
-#image_compare_transparency_value {
+.image_compare_transparency_value {
     min-width: 2.75rem;
     text-align: left;
     white-space: nowrap;
 }
-#image_compare_scrub_row {
+.image_compare_scrub_row {
     display: none;
     align-self: stretch;
     padding: 0 1rem;
 }
-#image_compare_scrub_row.image_compare_scrub_row_active {
+.image_compare_scrub_row.image_compare_scrub_row_active {
     display: block;
 }
-#image_compare_scrub_row .image_compare_video_controls {
+.image_compare_scrub_row .image_compare_video_controls {
     position: static;
     opacity: 1;
     background: none;
     padding: 0;
 }
-#image_compare_scrub_row .image_compare_video_controls .video-time {
+.image_compare_scrub_row .image_compare_video_controls .video-time {
     color: var(--text);
 }
-#image_compare_scrub_row .image_compare_video_controls button {
+.image_compare_scrub_row .image_compare_video_controls button {
     color: var(--text);
 }
-#image_compare_scrub_row .image_compare_video_controls .video-progress-inner {
+.image_compare_scrub_row .image_compare_video_controls .video-progress-inner {
     background: var(--range-track-color);
 }
 .image_compare_modal .image_fullview_extra_buttons {
