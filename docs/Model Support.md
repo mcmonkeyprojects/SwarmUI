@@ -648,7 +648,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - You can download the FP8 here: [Comfy-Org/Ideogram-4 FP8](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_fp8_scaled.safetensors>)
     - Or the NVFP4 (5 gigs) here: [Comfy-Org/Ideogram-4 nvfp4](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_nvfp4_mixed.safetensors>)
     - The "unconditional" models are here if you want them: [Comfy-Org/Ideogram](<https://huggingface.co/Comfy-Org/Ideogram-4/tree/main/diffusion_models>)
-        - The idea is you use a separate model for the negative half of CFG from the positive half (this is not required)
+        - The idea is you use a separate model for the negative half of CFG from the positive half (this is not required, and not currently implemented in SwarmUI)
 - It has built-in-to-the-model censorship, the model itself will try to reject inappropriate prompts.
 - **Parameters:**
     - **Prompt:** They have an official prompting guide here [Ideogram-OSS: Docs/Prompting](<https://github.com/ideogram-oss/ideogram4/blob/main/docs/prompting.md>)
