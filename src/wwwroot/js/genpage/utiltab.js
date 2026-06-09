@@ -287,6 +287,9 @@ class ModelDownloaderUtil {
             if (versId) {
                 for (let vers of rawData.modelVersions) {
                     for (let vFile of vers.files) {
+                        if (vFile.type == "Text Encoder" || vFile.type == "VAE") {
+                            continue;
+                        }
                         if ((vFile.name.endsWith(`.safetensors`) || vFile.name.endsWith(`.sft`) || vFile.name.endsWith(`.gguf`)) && splitWithTail(vFile.downloadUrl || '', '?', 2)[0].endsWith(`/${versId}`)) {
                             rawVersion = vers;
                             file = vFile;
@@ -299,6 +302,9 @@ class ModelDownloaderUtil {
                 baseLoop:
                 for (let vers of rawData.modelVersions) {
                     for (let vFile of vers.files) {
+                        if (vFile.type == "Text Encoder" || vFile.type == "VAE") {
+                            continue;
+                        }
                         if (vFile.name.endsWith(`.safetensors`) || vFile.name.endsWith(`.sft`) || vFile.name.endsWith(`.gguf`)) {
                             rawVersion = vers;
                             file = vFile;
