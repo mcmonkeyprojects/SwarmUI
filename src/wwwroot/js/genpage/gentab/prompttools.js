@@ -463,6 +463,7 @@ class PromptPlusButton {
         enableSlidersIn(this.segmentModalOther);
         this.populateDropdownFromSource('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
         this.populateDropdownFromSource('input_scheduler', this.segmentModalScheduler, 'text_prompt_segment_scheduler_toggle');
+        this.regionModalTypeInput = getRequiredElementById('text_prompt_region_type');
         this.regionModalOther = getRequiredElementById('text_prompt_region_other_inputs');
         this.regionModalOther.innerHTML =
             makeGenericPopover('text_prompt_region_x', 'Prompt Syntax: Region Left X', 'Left X', "The left X coordinate of the region's box.", '')
@@ -498,6 +499,11 @@ class PromptPlusButton {
         this.regionModalCanvasCtx = null;
         this.regionModalMain = getRequiredElementById('text_prompt_region_modal');
         this.regionModalMain.addEventListener('mousemove', (e) => this.regionModalMouseMove(e));
+        let regionType = localStorage.getItem('text_prompt_region_type');
+        if (regionType) {
+            this.regionModalTypeInput.value = regionType;
+            this.regionModalTypeChange();
+        }
         document.addEventListener('mouseup', (e) => {
             this.regionModalCanvasMouseDown = false;
             this.regionModalCanvasMouseClick = null;
@@ -649,6 +655,21 @@ class PromptPlusButton {
             }
             destSelect.appendChild(opt);
         }
+    }
+
+    regionModalTypeChange() {
+        let type = this.regionModalTypeInput.value;
+        if (type == 'region') {
+            for (let elem of [this.regionModalX, this.regionModalY, this.regionModalWidth, this.regionModalHeight, this.regionModalStrength, this.regionModalInpaint, this.regionModalInpaintStrength]) {
+                findParentOfClass(elem, 'auto-input').style.display = '';
+            }
+        }
+        else if (type == 'ideogram') {
+            for (let elem of [this.regionModalX, this.regionModalY, this.regionModalWidth, this.regionModalHeight, this.regionModalStrength, this.regionModalInpaint, this.regionModalInpaintStrength]) {
+                findParentOfClass(elem, 'auto-input').style.display = 'none';
+            }
+        }
+        localStorage.setItem('text_prompt_region_type', type);
     }
 
     regionModalClear() {
@@ -809,9 +830,17 @@ class PromptPlusButton {
 
     regionModalSubmit() {
         $('#text_prompt_region_modal').modal('hide');
+        let x = parseFloat(this.regionModalX.value), y = parseFloat(this.regionModalY.value), w = parseFloat(this.regionModalWidth.value), h = parseFloat(this.regionModalHeight.value);
+        x = Math.max(0, Math.min(1, x));
+        y = Math.max(0, Math.min(1, y));
+        w = Math.max(0, Math.min(1, w + x)) - x;
+        h = Math.max(0, Math.min(1, h + y)) - y;
+        if (this.regionModalTypeInput.value == 'ideogram') {
+            this.applyNewSyntax(`{"type": "obj", "bbox": [${Math.round(y * 1000)}, ${Math.round(x * 1000)}, ${Math.round((y + h) * 1000)}, ${Math.round((x + w) * 1000)}], "desc": "${this.regionModalMainText.value.trim()}"}`);
+            return;
+        }
         let key = this.regionModalInpaint.checked ? 'object' : 'region';
         let inpaint = this.regionModalInpaint.checked ? `,${this.regionModalInpaintStrength.value}` : '';
-        let x = parseFloat(this.regionModalX.value), y = parseFloat(this.regionModalY.value), w = parseFloat(this.regionModalWidth.value), h = parseFloat(this.regionModalHeight.value);
         x = Math.max(0, Math.min(1, x));
         y = Math.max(0, Math.min(1, y));
         w = Math.max(0, Math.min(1, w + x)) - x;
