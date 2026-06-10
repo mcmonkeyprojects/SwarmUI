@@ -660,6 +660,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Sampler:** Default is fine.
     - **Scheduler:** Default is fine. They have an official specific custom one, but users have found this to be worse than default.
     - **Resolution:** Side length `1024` is the default.
+    - **Sigma Shift:** Default is `1`, Some users recommend `5`.
 
 
 # Video Models

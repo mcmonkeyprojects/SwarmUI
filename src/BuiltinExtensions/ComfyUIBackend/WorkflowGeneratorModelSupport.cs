@@ -1391,7 +1391,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsZImage() || IsAceStep15() || IsAnima())
+            else if (IsZImage() || IsAceStep15() || IsAnima() || IsIdeogram4())
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {
