@@ -596,6 +596,11 @@ public partial class WorkflowGenerator
             return RequireClipModel("qwen_3_8b.safetensors", "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/text_encoders/qwen_3_8b_fp4mixed.safetensors", "bbf16f981d98e16d080c566134814c4e9f6aadd0d0e1383c60bc44ba939d760d", T2IParamTypes.QwenModel);
         }
 
+        public string GetQwen3Vl8bModel()
+        {
+            return RequireClipModel("qwen3vl_8b_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/text_encoders/qwen3vl_8b_fp8_scaled.safetensors", "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd", T2IParamTypes.QwenModel);
+        }
+
         public string GetOvisQwenModel()
         {
             return RequireClipModel("ovis_2.5.safetensors", "https://huggingface.co/Comfy-Org/Ovis-Image/resolve/main/split_files/text_encoders/ovis_2.5.safetensors", "f453ee5e7a25cb23cf2adf7aae3e5b405f22097cb67f2cfcca029688cb3f740d", T2IParamTypes.QwenModel);
@@ -1105,7 +1110,7 @@ public partial class WorkflowGenerator
         }
         else if (IsIdeogram4())
         {
-            helpers.LoadClip("ideogram4", helpers.GetQwen3_8bModel());
+            helpers.LoadClip("ideogram4", helpers.GetQwen3Vl8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
