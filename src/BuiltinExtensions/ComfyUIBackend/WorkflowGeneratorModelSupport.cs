@@ -598,7 +598,7 @@ public partial class WorkflowGenerator
 
         public string GetQwen3Vl8bModel()
         {
-            return RequireClipModel("qwen3vl_8b_nvfp4.safetensors", "https://huggingface.co/Comfy-Org/Ideogram-4/blob/main/text_encoders/qwen3vl_8b_nvfp4.safetensors", "e462e9e0c3b9313ae17f82040d7c77beb92d7aef3e40692d7803228dab7c3b98", T2IParamTypes.QwenModel);
+            return RequireClipModel("qwen3vl_8b_nvfp4.safetensors", "https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/text_encoders/qwen3vl_8b_nvfp4.safetensors", "e462e9e0c3b9313ae17f82040d7c77beb92d7aef3e40692d7803228dab7c3b98", T2IParamTypes.QwenModel);
         }
 
         public string GetOvisQwenModel()
