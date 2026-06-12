@@ -970,8 +970,8 @@ function monitorPromptChangeForEmbed(promptText, type) {
     if (countNew != countOld || (countNew > 0 && countEndsNew != countEndsOld)) {
         sdEmbedBrowser.rebuildSelectedClasses();
     }
-    let countNewWc = promptText.split(`<wildcard`).length - 1;
-    let countOldWc = last.split(`<wildcard`).length - 1;
+    let countNewWc = (promptText.split(`<wildcard`).length - 1) + (promptText.split(`<wc`).length - 1);
+    let countOldWc = (last.split(`<wildcard`).length - 1) + (last.split(`<wc`).length - 1);
     if (countNewWc != countOldWc || (countNewWc > 0 && countEndsNew != countEndsOld)) {
         wildcardsBrowser.rebuildSelectedClasses();
     }
