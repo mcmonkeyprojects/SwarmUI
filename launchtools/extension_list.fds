@@ -306,3 +306,27 @@ Epsilon-Scaling:
     tags:
     - parameters
     - nodes
+
+SharpSplat:
+    author: Glen Carpenter
+    description: Turns images into 3D Gaussian Splats directly inside the browser.
+    url: https://github.com/GlenCarpenter/SwarmUI-SharpSplat
+    license: MIT
+    tags:
+    - ui
+
+Spectrum:
+    author: Glen Carpenter
+    description: Integrates Spectrum diffusion sampling acceleration into SwarmUI's generation pipeline.
+    url: https://github.com/GlenCarpenter/SwarmUI-Spectrum
+    license: MIT
+    tags:
+    - parameters
+
+WD14Tagger:
+    author: Glen Carpenter
+    description: Adds automatic image tagging using booru-style taggers.
+    url: https://github.com/GlenCarpenter/SwarmUI-WD14Tagger
+    license: MIT
+    tags:
+    - tools
