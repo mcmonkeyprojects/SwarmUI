@@ -323,11 +323,13 @@ SharpSplat:
     url: https://github.com/GlenCarpenter/SwarmUI-SharpSplat
     license: MIT
     tags:
+    - tabs
     - ui
+    - parameters
 
 Spectrum:
     author: Glen Carpenter
-    description: Integrates Spectrum diffusion sampling acceleration into SwarmUI's generation pipeline.
+    description: Adds support for an alternate sampling acceleration technique called 'Spectrum'.
     url: https://github.com/GlenCarpenter/SwarmUI-Spectrum
     license: MIT
     tags:
@@ -340,3 +342,4 @@ WD14Tagger:
     license: MIT
     tags:
     - tools
+    - parameters
