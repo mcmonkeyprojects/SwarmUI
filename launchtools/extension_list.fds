@@ -309,7 +309,7 @@ Epsilon-Scaling:
 
 Quarry:
     author: Juan Treminio
-    description: Wildcards with WHERE clauses. Turn Parquet/CSV/JSON/LanceDB datasets into filterable wildcards and pick exactly the entries you want from your prompt.
+    description: Prompt database engine, like wildcards with much more advanced power-user features, supporting Parquet/CSV/JSON/LanceDB datasets, dynamic filters, and more.
     url: https://github.com/jtreminio/SwarmUI-Quarry
     license: MIT
     tags:
