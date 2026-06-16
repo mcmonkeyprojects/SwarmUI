@@ -270,6 +270,9 @@ function getFormattedMetadataEntries(metadata) {
                     if (key.includes('model') || key.includes('lora') || key.includes('embedding')) {
                         added += ' param_view_block_model';
                     }
+                    if (key == 'parser_warnings') {
+                        added += ' param_view_block_parser_warnings';
+                    }
                     if (key.includes('prompt')) {
                         extras = `<button title="Click to copy" class="basic-button prompt-copy-button" onclick="copyText('${escapeHtmlNoBr(escapeJsString(`${val}`))}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
                     }
