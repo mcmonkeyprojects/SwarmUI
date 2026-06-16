@@ -339,3 +339,4 @@ WD14Tagger:
     url: https://github.com/GlenCarpenter/SwarmUI-WD14Tagger
     license: MIT
     tags:
+    - tools
