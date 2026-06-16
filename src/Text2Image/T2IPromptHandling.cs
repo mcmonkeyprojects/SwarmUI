@@ -447,12 +447,16 @@ public class T2IPromptHandling
         PromptTagProcessors["param"] = (data, context) =>
         {
             string preData = context.PreData;
+            data = context.Parse(data).Trim();
             if (preData is null)
             {
+                if (!string.IsNullOrWhiteSpace(data) && T2IParamTypes.TryGetType(data, out T2IParamType readType, context.Input))
+                {
+                    return $"{context.Input.GetRaw(readType) ?? ""}";
+                }
                 context.TrackWarning("Prompt tag 'param' requires pre-data to specify the parameter name.");
                 return null;
             }
-            data = context.Parse(data).Trim();
             if (T2IParamTypes.TryGetType(preData, out T2IParamType type, context.Input))
             {
                 T2IParamTypes.ApplyParameter(preData, data, context.Input, type.CanSectionalize ? context.SectionID : 0);

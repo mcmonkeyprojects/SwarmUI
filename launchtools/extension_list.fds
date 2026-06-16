@@ -307,6 +307,16 @@ Epsilon-Scaling:
     - parameters
     - nodes
 
+Quarry:
+    author: Juan Treminio
+    description: Prompt database engine, like wildcards with much more advanced power-user features, supporting Parquet/CSV/JSON/LanceDB datasets, dynamic filters, and more.
+    url: https://github.com/jtreminio/SwarmUI-Quarry
+    license: MIT
+    tags:
+    - tabs
+    - ui
+    - tools
+
 SharpSplat:
     author: Glen Carpenter
     description: Turns images into 3D Gaussian Splats directly inside the browser.
@@ -329,4 +339,3 @@ WD14Tagger:
     url: https://github.com/GlenCarpenter/SwarmUI-WD14Tagger
     license: MIT
     tags:
-    - tools

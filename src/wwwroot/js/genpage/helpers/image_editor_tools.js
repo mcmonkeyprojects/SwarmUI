@@ -604,6 +604,7 @@ class ImageEditorToolSelect extends ImageEditorTool {
         </div>`;
         let makeRegionButton = `<div class="image-editor-tool-block">
             <button class="basic-button id-make-region">Make Region</button>
+            <button class="basic-button id-make-ideogram">Make Ideogram JSON</button>
         </div>`;
         this.configDiv.innerHTML = copyDropdown + makeRegionButton;
         this.copyModeSelect = this.configDiv.querySelector('.id-copy-mode');
@@ -618,6 +619,18 @@ class ImageEditorToolSelect extends ImageEditorTool {
                     return Math.round(v * 1000) / 1000;
                 }
                 let regionText = `\n<region:${roundClean(this.editor.selectX / this.editor.realWidth)},${roundClean(this.editor.selectY / this.editor.realHeight)},${roundClean(this.editor.selectWidth / this.editor.realWidth)},${roundClean(this.editor.selectHeight / this.editor.realHeight)}>`;
+                promptBox.value += regionText;
+                triggerChangeFor(promptBox);
+            }
+        });
+        this.configDiv.querySelector('.id-make-ideogram').addEventListener('click', () => {
+            if (this.editor.hasSelection) {
+                // TODO: This should create a new pseudo-layer that highlights a simple box and render the region text inside of it
+                let promptBox = getRequiredElementById('alt_prompt_textbox');
+                function roundClean(v) {
+                    return Math.max(0, Math.min(1000, Math.round(v * 1000)));
+                }
+                let regionText = `\n{"type": "obj", "bbox": [${roundClean(this.editor.selectY / this.editor.realHeight)}, ${roundClean(this.editor.selectX / this.editor.realWidth)}, ${roundClean((this.editor.selectY + this.editor.selectHeight) / this.editor.realHeight)}, ${roundClean((this.editor.selectX + this.editor.selectWidth) / this.editor.realWidth)}], "desc": "My New Element"}`;
                 promptBox.value += regionText;
                 triggerChangeFor(promptBox);
             }

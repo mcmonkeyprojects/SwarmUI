@@ -144,6 +144,7 @@
     - Some parameters can be 'sectionalized' - that is, apply to specific sections, such as `<refiner>` or `<base>` or `<video>` or `<segment:...>` or `<extend:...>` etc.
         - This includes: `CFG Scale`, `Steps`, `Sampler`, `Scheduler`
         - So for example, `<video> <param[cfgscale]:5>` will set the CFG Scale of the video section only to `5`.
+- You can also directly read them thia `<param:paramName>`, for example `<param:CFG Scale>` will fill itself to `1` or whatever your CFG Scale is.
 
 ## Automatic Segmentation and Refining
 

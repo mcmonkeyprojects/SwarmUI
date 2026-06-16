@@ -335,7 +335,7 @@ class WildcardHelpers {
 
     /** Small util to match a wildcard syntax entry in a prompt. */
     matchWildcard(prompt, wildcard) {
-        let matcher = new RegExp(`<(wildcard(?:\\[\\d+(?:-\\d+)?\\])?):${regexEscape(wildcard)}>`, 'g');
+        let matcher = new RegExp(`<((?:wildcard|wc)(?:\\[\\d+(?:-\\d+)?\\])?):${regexEscape(wildcard)}>`, 'g');
         return prompt.match(matcher);
     }
 

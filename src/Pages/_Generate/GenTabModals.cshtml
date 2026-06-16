@@ -36,6 +36,12 @@
             <br>Note that there are also advanced options in the parameters menu, under Display Advanced -&gt; Regional Prompting.
         </span>
         <hr>
+        <div id="text_prompt_region_top_inputs">
+            <label for="text_prompt_region_type">Region Type:</label> <select class="auto-dropdown" id="text_prompt_region_type" onchange="promptPlusButton.regionModalTypeChange()">
+                <option value="region">Classic Regions</option>
+                <option value="ideogram">Ideogram JSON Elements</option>
+            </select>
+        </div>
         <div id="text_prompt_region_canvasholder">
         </div>
         <div id="text_prompt_region_other_inputs"></div>
