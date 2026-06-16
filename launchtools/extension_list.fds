@@ -306,3 +306,13 @@ Epsilon-Scaling:
     tags:
     - parameters
     - nodes
+
+Quarry:
+    author: Juan Treminio
+    description: Wildcards with WHERE clauses. Turn Parquet/CSV/JSON/LanceDB datasets into filterable wildcards and pick exactly the entries you want from your prompt.
+    url: https://github.com/jtreminio/SwarmUI-Quarry
+    license: MIT
+    tags:
+    - tabs
+    - ui
+    - tools
