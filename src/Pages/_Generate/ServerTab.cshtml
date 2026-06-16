@@ -255,7 +255,7 @@
                     <tr>
                         <td>@ext.Name</td>
                         <td><code>(Disabled)</code></td>
-                        <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
+                        <td class="@(ext.IsDangerTags ? "ext-danger-license" : "")">@ExtensionsManager.HtmlTags(ext.Tags)</td>
                         <td>@ext.Author</td>
                         <td>@ext.Description</td>
                         <td>@(ext.URL == "" ? "(Missing)" : new HtmlString($"<a target=\"_blank\" href=\"{ext.URL}\">Here</a>"))</td>
@@ -279,11 +279,11 @@
                     <th>License</th>
                     <th>Actions</th>
                 </tr>
-                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !e.FolderNames.Any(fn => Program.Extensions.LoadedExtensionFolders.Contains(fn)) && !e.Tags.Contains("hidden")))
+                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !e.FolderNames.Any(fn => Program.Extensions.LoadedExtensionFolders.Contains(fn)) && !e.Tags.Contains("hidden")).OrderBy(e => e.IsDangerTags ? 1 : 0))
                 {
                     <tr>
                         <td>@ext.Name</td>
-                        <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
+                        <td class="@(ext.IsDangerTags ? "ext-danger-license" : "")">@ExtensionsManager.HtmlTags(ext.Tags)</td>
                         <td>@ext.Author</td>
                         <td>@ext.Description</td>
                         <td><a target="_blank" href="@ext.URL">Here</a></td>

@@ -23,6 +23,7 @@
 #   'paid': requires a paid account
 #   'beta': treat as an alpha or beta, not ready for general use
 #   'conflicts': may conflict with core systems or with other extensions (eg overrides core features)
+#   'lowquality': This extension has known quality issues, such as improper implementation methods or a fully vibecoded development approach, adding significant changes outside of the intended scope, or simply is a feature that does not work as well as one might hope
 #   'none': no tags of relevance to add
 
 FaceTools:
@@ -104,6 +105,8 @@ WildcardImporter:
     tags:
     - tabs
     - ui
+    # Significant features outside of intended scope
+    - lowquality
 
 PostRender:
     author: Juan Treminio, orig. HellerCommaA
@@ -155,7 +158,7 @@ AdaptiveProjectedGuidance:
 
 KohyaDeepShrink:
     author: derrian-distro
-    description: A simple SwarmUI extension that adds parameters for the Kohya Deep Shrink / PatchModelAddDownscale node to the generate tab.
+    description: A simple SwarmUI extension that adds parameters for the Kohya Deep Shrink / PatchModelAddDownscale node to the generate tab (SDXL resolution trick).
     url: https://github.com/derrian-distro/SwarmUI-KohyaDeepShrink
     license: MIT
     tags:
@@ -168,6 +171,8 @@ Mahiro:
     license: MIT
     tags:
     - parameters
+    # Not very useful feature
+    - lowquality
 
 TIPO:
     author: Hugs288
@@ -208,7 +213,7 @@ FrameSaver:
 
 VAEReflection:
     author: Jelosus2
-    description: Adds support for using reflect padding mode in VAEs, fixing artifacts in the edges of images generated using a VAE trained with reflect padding.
+    description: Adds support for using reflect padding mode in VAEs, fixing artifacts in the edges of images generated using a VAE trained with reflect padding, notably EQVAE.
     url: https://github.com/Jelosus2/comfyui-vae-reflection
     license: MIT
     ci-test: true
@@ -279,6 +284,7 @@ VideoStages:
     ci-test: true
     tags:
     - tools
+    - parameters
 
 AceStepFun:
     author: Juan Treminio
@@ -288,6 +294,7 @@ AceStepFun:
     ci-test: true
     tags:
     - tools
+    - parameters
 
 AltTriggerPhraseBtn:
     author: Blomblo
@@ -306,6 +313,8 @@ Epsilon-Scaling:
     tags:
     - parameters
     - nodes
+    # Not very useful feature
+    - lowquality
 
 Quarry:
     author: Juan Treminio
@@ -326,6 +335,8 @@ SharpSplat:
     - tabs
     - ui
     - parameters
+    # Vibecoded, highly complex, inappropriate implementations
+    - lowquality
 
 Spectrum:
     author: Glen Carpenter
@@ -334,6 +345,8 @@ Spectrum:
     license: MIT
     tags:
     - parameters
+    # Not very useful feature, very overcomplicated to use
+    - lowquality
 
 WD14Tagger:
     author: Glen Carpenter
@@ -343,3 +356,5 @@ WD14Tagger:
     tags:
     - tools
     - parameters
+    # Vibecoded, very strange implementation
+    - lowquality

@@ -2115,7 +2115,7 @@ body {
     font-size: 80%;
 }
 .ext-danger-license {
-    background-color: rgba(255, 0, 0, 0.03);
+    background-color: rgba(255, 0, 0, 0.2);
 }
 .input_filter_container {
     display: flex;

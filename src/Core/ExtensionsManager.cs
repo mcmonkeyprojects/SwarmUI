@@ -22,6 +22,7 @@ public class ExtensionsManager
     /// <summary>Simple holder of information about extensions available online.</summary>
     public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string OldURL, string[] Tags, string[] FolderNames)
     {
+        public bool IsDangerTags => Tags.Contains("lowquality") || Tags.Contains("conflicts") || Tags.Contains("beta");
     }
 
     private class SwarmExtensionLoadContext(ExtensionsManager manager, string name, string extensionDir) : AssemblyLoadContext(name, isCollectible: false)
@@ -66,6 +67,7 @@ public class ExtensionsManager
                 "paid" => "<span class=\"tag paid-tag\" title=\"Requires a paid account\">Paid</span>",
                 "beta" => "<span class=\"tag beta-tag\" title=\"Not ready for general use\">Beta</span>",
                 "conflicts" => "<span class=\"tag beta-tag\" title=\"may conflict with core systems or with other extensions (eg overrides core features)\">Conflicts</span>",
+                "lowquality" => "<span class=\"tag lowquality-tag\" title=\"This extension has known quality issues, such as improper implementation methods or a fully vibecoded development approach, adding significant changes outside of the intended scope, or simply is a feature that does not work as well as one might hope\">Low-Quality</span>",
                 "none" => "<span class=\"tag\" title=\"No tags\">None</span>",
                 _ => $"<abbr class=\"tag\" title=\"Unrecognized tag\">{t}</abbr>"
             };
