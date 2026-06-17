@@ -971,7 +971,7 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsBoogu() )
         {
             defscheduler ??= "simple";
         }
@@ -2405,6 +2405,32 @@ public partial class WorkflowGenerator
                     ["image"] = qwenImage
                 }, id);
             }
+        }
+        else if (IsBoogu() && id is null && (qwenImage = GetPromptImage(true, true)) is not null)
+        {
+            if (!NodeHelpers.TryGetValue("__boogu_edit_cond__", out string booguNode))
+            {
+                JObject booguInputs = new()
+                {
+                    ["clip"] = clip,
+                    ["prompt"] = prompt,
+                    ["negative_prompt"] = UserInput.Get(T2IParamTypes.NegativePrompt, ""),
+                    ["vae"] = CurrentVae.Path,
+                    ["image_1"] = qwenImage
+                };
+                for (int i = 1; i < 16; i++)
+                {
+                    JArray extraImg = GetPromptImage(true, true, i);
+                    if (extraImg is null)
+                    {
+                        break;
+                    }
+                    booguInputs[$"image_{i + 1}"] = extraImg;
+                }
+                booguNode = CreateNode("TextEncodeBooguEdit", booguInputs);
+                NodeHelpers["__boogu_edit_cond__"] = booguNode;
+            }
+            return [booguNode, isPositive ? 0 : 1];
         }
         else if (IsHunyuanVideoI2V() && prompt.StartsWith("<image:"))
         {

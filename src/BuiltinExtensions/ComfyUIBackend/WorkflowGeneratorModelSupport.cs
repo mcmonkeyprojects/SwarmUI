@@ -154,6 +154,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Ideogram 4.</summary>
     public bool IsIdeogram4() => IsModelCompatClass(T2IModelClassSorter.CompatIdeogram4);
 
+    /// <summary>Returns true if the current model is Boogu.</summary>
+    public bool IsBoogu() => IsModelCompatClass(T2IModelClassSorter.CompatBoogu);
+
     /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
     public bool IsHunyuanVideo() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo);
 
@@ -1113,6 +1116,21 @@ public partial class WorkflowGenerator
             helpers.LoadClip("ideogram4", helpers.GetQwen3vl_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
             double shift = UserInput.Get(T2IParamTypes.SigmaShift, 5, sectionId: sectionId);
+            if (shift > 0)
+            {
+                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = shift
+                });
+                LoadingModel = [samplingNode, 0];
+            }
+        }
+        else if (IsBoogu())
+        {
+            helpers.LoadClip("boogu", helpers.GetQwen3vl_8bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+            double shift = UserInput.Get(T2IParamTypes.SigmaShift, 3, sectionId: sectionId);
             if (shift > 0)
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
