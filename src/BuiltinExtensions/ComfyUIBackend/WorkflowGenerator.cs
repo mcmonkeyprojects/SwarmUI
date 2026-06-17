@@ -987,7 +987,7 @@ public partial class WorkflowGenerator
         {
             defscheduler ??= "ideogram4";
         }
-            bool willCascadeFix = false;
+        bool willCascadeFix = false;
         WGNodeData cascadeModel = null;
         if (!rawSampler && IsCascade() && FinalLoadedModel.Name.Contains("stage_c") && Program.MainSDModels.Models.TryGetValue(FinalLoadedModel.Name.Replace("stage_c", "stage_b"), out T2IModel bModel))
         {

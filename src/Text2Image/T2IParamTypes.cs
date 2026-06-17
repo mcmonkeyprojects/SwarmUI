@@ -730,7 +730,7 @@ public class T2IParamTypes
             return low.Contains("negative") || low.Contains("uncond");
         }
         NegativeModel = Register<T2IModel>(new("Negative Model", "What main checkpoint model should be used for the negative (Unconditional) portion of generation.",
-            "", IgnoreIf: "",  Permission: Permissions.ModelParams, GetValues: s => [.. CleanModelList(Program.MainSDModels.ListModelsFor(s).Select(m => m.Name)).OrderBy(m => isUncondName(m) ? 0 : 1)], Subtype: "Stable-Diffusion", ChangeWeight: 10, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedModelAddons, OrderPriority: 80, CanSectionalize: true
+            "", IgnoreIf: "", Permission: Permissions.ModelParams, GetValues: s => [.. CleanModelList(Program.MainSDModels.ListModelsFor(s).Select(m => m.Name)).OrderBy(m => isUncondName(m) ? 0 : 1)], Subtype: "Stable-Diffusion", ChangeWeight: 10, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedModelAddons, OrderPriority: 80, CanSectionalize: true
             ));
         NegativeModelIncludeLoras = Register<bool>(new("Negative Model Include LoRAs", "Whether the Negative Model should include LoRAs.\nDefaults to on.\nThis should probably never be turned off.",
             "true", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons, ChangeWeight: 7, OrderPriority: 81, CanSectionalize: true
