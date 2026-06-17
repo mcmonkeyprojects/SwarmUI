@@ -1112,6 +1112,16 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("ideogram4", helpers.GetQwen3vl_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+            double shift = UserInput.Get(T2IParamTypes.SigmaShift, 5, sectionId: sectionId);
+            if (shift > 0)
+            {
+                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = shift
+                });
+                LoadingModel = [samplingNode, 0];
+            }
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
@@ -1396,7 +1406,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsZImage() || IsAceStep15() || IsAnima() || IsIdeogram4())
+            else if (IsZImage() || IsAceStep15() || IsAnima())
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {

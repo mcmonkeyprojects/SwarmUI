@@ -9,6 +9,8 @@ from math import ceil
 from latent_preview import TAESDPreviewerImpl
 from comfy_execution.utils import get_executing_context
 from comfy_extras.nodes_flux import Flux2Scheduler
+from comfy_extras.nodes_ideogram4 import ideogram4_sigmas
+from comfy_extras.nodes_custom_sampler import Guider_DualModel
 
 def slerp(val, low, high):
     low_norm = low / torch.norm(low, dim=1, keepdim=True)
@@ -258,6 +260,48 @@ def stitch_latent_tensors(original_size, tiles, scale_factor=8):
 
     return result
 
+#comfy/ComfyUI/comfy/samplers.py - sample
+def samplers_sample(model, noise, positive, negative, cfg, device, sampler, sigmas, model_options={}, latent_image=None, denoise_mask=None, callback=None, disable_pbar=False, seed=None, model_negative=None):
+    # Guider_DualModel(model, model_negative) if model_negative is not None else comfy.samplers.CFGGuider(model)
+    cfg_guider = Guider_DualModel(model, model_negative) if model_negative is not None else comfy.samplers.CFGGuider(model)
+    cfg_guider.set_conds(positive, negative)
+    cfg_guider.set_cfg(cfg)
+    return cfg_guider.sample(noise, latent_image, sampler, sigmas, denoise_mask, callback, disable_pbar, seed)
+
+
+#comfy/ComfyUI/comfy/samplers.py - KSampler
+class PatchedKSampler(comfy.samplers.KSampler):
+    def sample(self, noise, positive, negative, cfg, latent_image=None, start_step=None, last_step=None, force_full_denoise=False, denoise_mask=None, sigmas=None, callback=None, disable_pbar=False, seed=None, model_negative=None):
+        if sigmas is None:
+            sigmas = self.sigmas
+
+        if last_step is not None and last_step < (len(sigmas) - 1):
+            sigmas = sigmas[:last_step + 1]
+            if force_full_denoise:
+                sigmas[-1] = 0
+
+        if start_step is not None:
+            if start_step < (len(sigmas) - 1):
+                sigmas = sigmas[start_step:]
+            else:
+                if latent_image is not None:
+                    return latent_image
+                else:
+                    return torch.zeros_like(noise)
+
+        sampler = comfy.samplers.sampler_object(self.sampler)
+
+        return samplers_sample(self.model, noise, positive, negative, cfg, self.device, sampler, sigmas, self.model_options, latent_image=latent_image, denoise_mask=denoise_mask, callback=callback, disable_pbar=disable_pbar, seed=seed, model_negative=model_negative)
+
+
+#comfy/ComfyUI/comfy/sample.py - sample
+def sample_sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, denoise=1.0, disable_noise=False, start_step=None, last_step=None, force_full_denoise=False, noise_mask=None, sigmas=None, callback=None, disable_pbar=False, seed=None, model_negative=None):
+    sampler = PatchedKSampler(model, steps=steps, device=model.load_device, sampler=sampler_name, scheduler=scheduler, denoise=denoise, model_options=model.model_options)
+
+    samples = sampler.sample(noise, positive, negative, cfg=cfg, latent_image=latent_image, start_step=start_step, last_step=last_step, force_full_denoise=force_full_denoise, denoise_mask=noise_mask, sigmas=sigmas, callback=callback, disable_pbar=disable_pbar, seed=seed, model_negative=model_negative)
+    samples = samples.to(device=comfy.model_management.intermediate_device(), dtype=comfy.model_management.intermediate_dtype())
+    return samples
+
 
 class SwarmKSampler:
     @classmethod
@@ -269,7 +313,7 @@ class SwarmKSampler:
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step": 0.5, "round": 0.001}),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
-                "scheduler": (["turbo", "align_your_steps", "ltxv", "ltxv-image", "flux2"] + comfy.samplers.KSampler.SCHEDULERS, ),
+                "scheduler": (["turbo", "align_your_steps", "ltxv", "ltxv-image", "flux2", "ideogram4", "ideogram4turbo"] + comfy.samplers.KSampler.SCHEDULERS, ),
                 "positive": ("CONDITIONING", ),
                 "negative": ("CONDITIONING", ),
                 "latent_image": ("LATENT", ),
@@ -285,6 +329,9 @@ class SwarmKSampler:
                 "previews": (["default", "none", "one", "second", "iterate", "animate"], ),
                 "tile_sample": ("BOOLEAN", {"default": False}),
                 "tile_size": ("INT", {"default": 1024, "min": 256, "max": 4096}),
+            },
+            "optional": {
+                "model_negative": ("MODEL", ),
             }
         }
 
@@ -293,7 +340,7 @@ class SwarmKSampler:
     FUNCTION = "run_sampling"
     DESCRIPTION = "Works like a vanilla Comfy KSamplerAdvanced, but with extra inputs for advanced features such as sigma scale, tiling, previews, etc."
 
-    def sample(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews):
+    def sample(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, model_negative=None):
         device = comfy.model_management.get_torch_device()
         latent_samples = latent_image["samples"]
         latent_samples = comfy.sample.fix_empty_latent_channels(model, latent_samples)
@@ -308,6 +355,8 @@ class SwarmKSampler:
         if "noise_mask" in latent_image:
             noise_mask = latent_image["noise_mask"]
 
+        width = latent_image["samples"].shape[-1]
+        height = latent_image["samples"].shape[-2]
         sigmas = None
         if scheduler == "turbo":
             timesteps = torch.flip(torch.arange(1, 11) * 100 - 1, (0,))[:steps]
@@ -317,8 +366,6 @@ class SwarmKSampler:
             from comfy_extras.nodes_lt import LTXVScheduler
             sigmas = LTXVScheduler.execute(steps, 2.05, 0.95, True, 0.1, latent_image if scheduler == "ltxv-image" else None).result[0]
         elif scheduler == "flux2":
-            width = latent_image["samples"].shape[-1]
-            height = latent_image["samples"].shape[-2]
             sigmas = Flux2Scheduler.execute(steps, width * 16, height * 16).result[0]
         elif scheduler == "align_your_steps":
             if isinstance(model.model, SDXL):
@@ -341,6 +388,10 @@ class SwarmKSampler:
                 sigmas = loglinear_interp(sigmas, steps + 1)
             sigmas[-1] = 0
             sigmas = torch.FloatTensor(sigmas)
+        elif scheduler == "ideogram4":
+            sigmas = ideogram4_sigmas(steps, width * 16, height * 16, 0, 1.75)
+        elif scheduler == "ideogram4turbo":
+            sigmas = ideogram4_sigmas(steps, width * 16, height * 16, 0.5, 1.75)
         elif sigma_min >= 0 and sigma_max >= 0 and scheduler in ["karras", "exponential"]:
             if sampler_name in ['dpm_2', 'dpm_2_ancestral']:
                 sigmas = calculate_sigmas_scheduler(model, scheduler, steps + 1, sigma_min, sigma_max, rho)
@@ -353,14 +404,14 @@ class SwarmKSampler:
         if steps > 0:
             callback = make_swarm_sampler_callback(steps, device, model, previews)
 
-            samples = comfy.sample.sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_samples,
+            samples = sample_sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_samples,
                                     denoise=1.0, disable_noise=disable_noise, start_step=start_at_step, last_step=end_at_step,
-                                    force_full_denoise=return_with_leftover_noise == "disable", noise_mask=noise_mask, sigmas=sigmas, callback=callback, seed=noise_seed)
+                                    force_full_denoise=return_with_leftover_noise == "disable", noise_mask=noise_mask, sigmas=sigmas, callback=callback, seed=noise_seed, model_negative=model_negative)
             out["samples"] = samples
         return (out, )
 
     # tiled sample version of sample function
-    def tiled_sample(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, tile_size):
+    def tiled_sample(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, tile_size, model_negative=None):
         out = latent_image.copy()
         # split image into tiles
         latent_samples = latent_image["samples"]
@@ -368,18 +419,18 @@ class SwarmKSampler:
         # resample each tile using self.sample
         resampled_tiles = []
         for coords, tile in tiles:
-            resampled_tile = self.sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, {"samples": tile}, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews)
+            resampled_tile = self.sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, {"samples": tile}, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, model_negative)
             resampled_tiles.append((coords, resampled_tile[0]["samples"]))
         # stitch the tiles to get the final upscaled image
         result = stitch_latent_tensors(latent_samples.shape, resampled_tiles)
         out["samples"] = result
         return (out,)
 
-    def run_sampling(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, tile_sample,  tile_size):
+    def run_sampling(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, tile_sample,  tile_size, model_negative=None):
         if tile_sample:
-            return self.tiled_sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, tile_size)
+            return self.tiled_sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, tile_size, model_negative=model_negative)
         else:
-            return self.sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews)
+            return self.sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, model_negative=model_negative)
 
 
 NODE_CLASS_MAPPINGS = {

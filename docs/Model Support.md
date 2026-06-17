@@ -647,20 +647,22 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - [Ideogram 4](<https://huggingface.co/ideogram-ai/ideogram-4-fp8>) is supported in SwarmUI!
 - It is a 9B model with an optional split unconditional model
     - You can download the FP8 here: [Comfy-Org/Ideogram-4 FP8](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_fp8_scaled.safetensors>)
-    - Or the NVFP4 (5 gigs) here: [Comfy-Org/Ideogram-4 nvfp4](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_nvfp4_mixed.safetensors>)
-    - The "unconditional" models are here if you want them: [Comfy-Org/Ideogram](<https://huggingface.co/Comfy-Org/Ideogram-4/tree/main/diffusion_models>)
-        - The idea is you use a separate model for the negative half of CFG from the positive half (this is not required, and not currently implemented in SwarmUI)
+        - Or the NVFP4 (5 gigs) here: [Comfy-Org/Ideogram-4 nvfp4](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_nvfp4_mixed.safetensors>)
+    - You will also want the "Unconditional" model [Comfy-Org/Ideogram-4 uncond FP8](<https://huggingface.co/Comfy-Org/Ideogram-4/blob/main/diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors>)
+        - Or the NVFP4 [Comfy-Org/Ideogram-4 uncond nvfp4](<https://huggingface.co/Comfy-Org/Ideogram-4/blob/main/diffusion_models/ideogram4_unconditional_nvfp4_mixed.safetensors>)
+        - The idea is you use a separate model for the negative half of CFG from the positive half - this is not required, but it improves quality
+        - Select it under Advanced Model Addons -> Negative Model
 - It has built-in-to-the-model censorship, the model itself will try to reject inappropriate prompts.
 - **Parameters:**
     - **Prompt:** They have an official prompting guide here [Ideogram-OSS: Docs/Prompting](<https://github.com/ideogram-oss/ideogram4/blob/main/docs/prompting.md>)
         - They suggest long form JSON prompts, and have trained the model to understand features within such as bounding box coordinates as part of the structure
         - If you don't use JSON it will just censor you almost every time.
     - **Steps:** They suggest `12` for Turbo, `48` for quality. Anywhere in between is fine.
-    - **CFG:** Standard range around `7`, they suggest using a refiner stage of 1-3 steps at CFG=3.
+    - **CFG:** Standard range around `7`, they suggest using Refiner with RefinerMethod=StepSwap, Control Percentage low (1-3 steps), and RefinerCFG=3.
     - **Sampler:** Default is fine.
-    - **Scheduler:** Default is fine. They have an official specific custom one, but users have found this to be worse than default.
+    - **Scheduler:** Default is `Ideogram4 Default`, an official custom/unique scheduler. There is also a `Turbo` variant which may work better for low step count gens. Some users have been user other schedulers (eg `Normal`, `Flux.2`, etc.) with better results than the official scheduler.
     - **Resolution:** Side length `1024` is the default.
-    - **Sigma Shift:** Default is `1`, Some users recommend `5`.
+    - **Sigma Shift:** Default is `5`, but `1` is the legacy default. Sigma shift does nothing on the 
 
 
 # Video Models

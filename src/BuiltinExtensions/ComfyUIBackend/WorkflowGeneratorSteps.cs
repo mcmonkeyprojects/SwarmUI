@@ -102,6 +102,10 @@ public class WorkflowGeneratorSteps
         }, -14);
         AddModelGenStep(g =>
         {
+            if (g.LoadingModelType == "negative" && !g.UserInput.Get(T2IParamTypes.NegativeModelIncludeLoras, true))
+            {
+                return;
+            }
             (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(-1, g.LoadingModel, g.LoadingClip);
             (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(0, g.LoadingModel, g.LoadingClip);
             if (g.IsRefinerStage)

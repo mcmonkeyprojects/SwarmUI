@@ -330,10 +330,10 @@ public class T2IParamTypes
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale, Text2AudioDuration;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
     public static T2IRegisteredParam<AudioFile> VideoAudioInput, VideoAudioReference;
-    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, GptOssModel, VideoExtendModel, VideoExtendSwapModel;
+    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, GptOssModel, VideoExtendModel, VideoExtendSwapModel, NegativeModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
-    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData,
+    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData, NegativeModelIncludeLoras,
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
@@ -723,6 +723,17 @@ public class T2IParamTypes
             ));
         OverridePredictionType = Register<string>(new("Override Prediction Type", "Override the prediction type set in the model.\nThis is almost never a good idea to touch.",
             "epsilon", Toggleable: true, GetValues: _ => ["v///V Prediction", "v-zsnr///V Prediction (ZSNR)", "epsilon///Epsilon-Pred", "x0", "lcm", "sd3///SD3 (Rectified Flow)"], OrderPriority: 50, Group: GroupAdvancedModelAddons
+            ));
+        static bool isUncondName(string str)
+        {
+            string low = str.ToLowerFast();
+            return low.Contains("negative") || low.Contains("uncond");
+        }
+        NegativeModel = Register<T2IModel>(new("Negative Model", "What main checkpoint model should be used for the negative (Unconditional) portion of generation.",
+            "", IgnoreIf: "",  Permission: Permissions.ModelParams, GetValues: s => [.. CleanModelList(Program.MainSDModels.ListModelsFor(s).Select(m => m.Name)).OrderBy(m => isUncondName(m) ? 0 : 1)], Subtype: "Stable-Diffusion", ChangeWeight: 10, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedModelAddons, OrderPriority: 80, CanSectionalize: true
+            ));
+        NegativeModelIncludeLoras = Register<bool>(new("Negative Model Include LoRAs", "Whether the Negative Model should include LoRAs.",
+            "true", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons, ChangeWeight: 7, OrderPriority: 81, CanSectionalize: true
             ));
         // ================================================ Swarm Internal ================================================
         GroupSwarmInternal = new("Swarm Internal", Open: false, OrderPriority: 0, IsAdvanced: true);
