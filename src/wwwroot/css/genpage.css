@@ -791,6 +791,9 @@ body {
     position: relative;
     margin: auto;
 }
+.imageview_popup_modal_img video {
+    max-width: unset !important;
+}
 .imageview_popup_modal_undertext {
     background-color: var(--background);
     overflow-wrap: break-word;
