@@ -660,7 +660,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Steps:** They suggest `12` for Turbo, `48` for quality. Anywhere in between is fine.
     - **CFG:** Standard range around `7`, they suggest using Refiner with RefinerMethod=StepSwap, Control Percentage low (1-3 steps), and RefinerCFG=3.
     - **Sampler:** Default is fine.
-    - **Scheduler:** Default is `Ideogram4 Default`, an official custom/unique scheduler. There is also a `Turbo` variant which may work better for low step count gens. Some users have been user other schedulers (eg `Normal`, `Flux.2`, etc.) with better results than the official scheduler.
+    - **Scheduler:** Default is `Ideogram4 Default`, an official custom/unique scheduler. There is also a `Turbo` variant which may work better for low step count gens. Some users have been using other schedulers (eg `Normal`, `Flux.2`, etc.) with better results than the official scheduler.
     - **Resolution:** Side length `1024` is the default.
     - **Sigma Shift:** Default is `5`, but `1` is the legacy default. Sigma shift does nothing on the 
 
