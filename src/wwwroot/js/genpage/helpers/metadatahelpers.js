@@ -93,11 +93,17 @@ function interpretMetadata(metadata) {
     if (metadata) {
         metadata = metadata.trim();
         if (metadata.startsWith('{')) {
-            let json = JSON.parse(metadata);
-            if ('sui_image_params' in json) {
+            let json = null;
+            try {
+                json = JSON.parse(metadata);
+            }
+            catch (e) {
+                console.error(`Error parsing metadata '${metadata}': ${e}`);
+            }
+            if (json && 'sui_image_params' in json) {
                 // It's swarm, we're good
             }
-            else if ("Prompt" in json) {
+            else if (json && "Prompt" in json) {
                 // Fooocus
                 json = remapMetadataKeys(json, fooocusMetadataMap);
                 metadata = JSON.stringify({ 'sui_image_params': json });
