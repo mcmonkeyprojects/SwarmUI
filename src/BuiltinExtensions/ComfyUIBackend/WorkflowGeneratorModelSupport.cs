@@ -1134,7 +1134,7 @@ public partial class WorkflowGenerator
             helpers.LoadClip("boogu", helpers.GetQwen3vl_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
             double shift = UserInput.Get(T2IParamTypes.SigmaShift, 3.16, sectionId: sectionId);
-            if (shift > 0)
+            if (IsBooguEdit() && shift > 0)
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {
