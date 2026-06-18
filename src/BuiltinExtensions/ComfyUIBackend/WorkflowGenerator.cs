@@ -769,9 +769,9 @@ public partial class WorkflowGenerator
     public (JArray, JArray, JArray, JArray) BuildInputImageHandling(List<JArray> images, JArray pos, JArray neg, JArray latent)
     {
         JArray imgNeg = null;
-        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2())
+        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2() || IsBoogu())
         {
-            if (IsOmniGen() || IsQwenImageEditPlus())
+            if (IsOmniGen() || IsQwenImageEditPlus() || IsBoogu())
             {
                 imgNeg = neg;
             }
@@ -803,7 +803,7 @@ public partial class WorkflowGenerator
             }
             if (img is not null)
             {
-                if (IsQwenImageEditPlus())
+                if (IsQwenImageEditPlus() || IsBoogu())
                 {
                     neg = imgNeg;
                 }
@@ -2525,28 +2525,6 @@ public partial class WorkflowGenerator
         return first;
     }
 
-    /// <summary>Creates a "TextEncodeBooguEdit" node, which outputs both positive and negative conditioning.</summary>
-    public string CreateBooguEditConditioning(JArray clip, string id = null)
-    {
-        JObject inputs = new()
-        {
-            ["clip"] = clip,
-            ["prompt"] = UserInput.Get(T2IParamTypes.Prompt, ""),
-            ["negative_prompt"] = UserInput.Get(T2IParamTypes.NegativePrompt, ""),
-            ["vae"] = CurrentVae.Path
-        };
-        for (int i = 0; i < 16; i++)
-        {
-            JArray img = GetPromptImage(true, true, i);
-            if (img is null)
-            {
-                break;
-            }
-            inputs[$"images.image_{i + 1}"] = img;
-        }
-        return CreateNode("TextEncodeBooguEdit", inputs, id);
-    }
-
     public record struct RegionHelper(JArray PartCond, JArray Mask);
 
     public bool ShouldZeroNegative()
@@ -2664,6 +2642,26 @@ public partial class WorkflowGenerator
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
     public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false, bool isPixelDecoder = false)
     {
+        if (IsBooguEdit() && isPositive)
+        {
+            JObject booguInputs = new()
+            {
+                ["clip"] = clip,
+                ["prompt"] = UserInput.Get(T2IParamTypes.Prompt, ""),
+                ["negative_prompt"] = "",
+                ["vae"] = null
+            };
+            for (int i = 0; i < 16; i++)
+            {
+                JArray img = GetPromptImage(true, true, i);
+                if (img is null)
+                {
+                    break;
+                }
+                booguInputs[$"images.image_{i + 1}"] = img;
+            }
+            return [CreateNode("TextEncodeBooguEdit", booguInputs, firstId), 0];
+        }
         PromptRegion regionalizer = new(prompt);
         string globalPromptText = regionalizer.GlobalPrompt;
         if (isVideoSwap && !string.IsNullOrWhiteSpace(regionalizer.VideoSwapPrompt))
