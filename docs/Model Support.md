@@ -677,7 +677,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - Uses the Flux.1 VAE and a Qwen3-VL text encoder, both downloaded and handled automatically.
 - For editing, use the `Edit` model and give it a prompt image - SwarmUI automatically wires it in as the reference.
 - **Parameters:**
-    - **Sampler**: For Turbo, use LCM, otherwise default is fine.
+    - **Sampler**: For Turbo, use LCM, otherwise DPM++ 2M is fine.
     - **Scheduler:** For Turbo, use SGM Uniform, otherwise default is fine.
     - **CFG Scale:** For Turbo, `1`, otherwise normal CFG ranges (around `5`).
     - **Steps:** For Turbo, `4` is recommended, otherwise `20` as normal.
