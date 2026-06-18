@@ -675,7 +675,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - Turbo: [Comfy-Org/Boogu-Image - Turbo FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_turbo_fp8_scaled.safetensors>)
         - Or the NVFP4 (6 gigs) here: [Comfy-Org/Boogu-Image - Turbo nvfp4](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_turbo_nvfp4.safetensors>)
 - Uses the Flux.1 VAE and a Qwen3-VL text encoder, both downloaded and handled automatically.
-- For editing, use the `Edit` model and give it an init image - SwarmUI automatically wires it in as the reference.
+- For editing, use the `Edit` model and give it a prompt image - SwarmUI automatically wires it in as the reference.
 - **Parameters:**
     - **Sampler**: For Turbo, use LCM, otherwise default is fine.
     - **Scheduler:** For Turbo, use SGM Uniform, otherwise default is fine.
