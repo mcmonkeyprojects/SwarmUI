@@ -22,6 +22,7 @@
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
 [Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
 [Ideogram 4](#ideogram-4) | DiT | 2026 | Ideogram AI | 9B | Yes | Modern, advanced on input understanding |
+[Boogu](#boogu) | MLLM | 2026 | Boogu | 10B | No | Modern, fast |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -664,6 +665,24 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Resolution:** Side length `1024` is the default.
     - **Sigma Shift:** Default is `5`, but `1` is the legacy default. Sigma shift does nothing on the 
 
+# Boogu
+
+- [Boogu](<https://huggingface.co/Boogu>) is supported in SwarmUI!
+- It is a 10B model, with a base model and an official turbo distill designed to run fast, and edit model.
+    - Base: [Comfy-Org/Boogu-Image - Base FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_base_fp8_scaled.safetensors>)
+    - Edit: [Comfy-Org/Boogu-Image - Edit FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_edit_fp8_scaled.safetensors>)
+        - Or the NVFP4 (6 gigs) here: [Comfy-Org/Boogu-Image - Edit nvfp4](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_edit_nvfp4.safetensors>)
+    - Turbo: [Comfy-Org/Boogu-Image - Turbo FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_turbo_fp8_scaled.safetensors>)
+        - Or the NVFP4 (6 gigs) here: [Comfy-Org/Boogu-Image - Turbo nvfp4](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_turbo_nvfp4.safetensors>)
+- Uses the Flux.1 VAE and a Qwen3-VL text encoder, both downloaded and handled automatically.
+- For editing, use the `Edit` model and give it an init image - SwarmUI automatically wires it in as the reference.
+- **Parameters:**
+    - **Sampler**: For Turbo, use LCM, otherwise default is fine.
+    - **Scheduler:** For Turbo, use SGM Uniform, otherwise default is fine.
+    - **CFG Scale:** For Turbo, `1`, otherwise normal CFG ranges (around `5`).
+    - **Steps:** For Turbo, `4` is recommended, otherwise `20` as normal.
+    - **Resolution:** Side length `1024` is the default.
+    - **Sigma Shift:** For Edit default is `3.16`, handled automatically.
 
 # Video Models
 
