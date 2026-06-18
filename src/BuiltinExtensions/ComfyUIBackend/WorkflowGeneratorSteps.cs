@@ -579,7 +579,16 @@ public class WorkflowGeneratorSteps
         #region Positive Prompt
         AddStep(g =>
         {
-            g.FinalPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.CurrentTextEnc.Path, g.UserInput.Get(T2IParamTypes.Model), true, "6");
+            if (g.IsBooguEdit())
+            {
+                string booguEdit = g.CreateBooguEditConditioning(g.CurrentTextEnc.Path, "6");
+                g.FinalPrompt = [booguEdit, 0];
+                g.FinalNegativePrompt = [booguEdit, 1];
+            }
+            else
+            {
+                g.FinalPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.CurrentTextEnc.Path, g.UserInput.Get(T2IParamTypes.Model), true, "6");
+            }
         }, -8);
         #endregion
         #region ReVision/UnCLIP/IPAdapter
@@ -981,7 +990,10 @@ public class WorkflowGeneratorSteps
         #region Negative Prompt
         AddStep(g =>
         {
-            g.FinalNegativePrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), g.CurrentTextEnc.Path, g.UserInput.Get(T2IParamTypes.Model), false, "7");
+            if (!g.IsBooguEdit())
+            {
+                g.FinalNegativePrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), g.CurrentTextEnc.Path, g.UserInput.Get(T2IParamTypes.Model), false, "7");
+            }
         }, -7);
         #endregion
         #region ControlNet

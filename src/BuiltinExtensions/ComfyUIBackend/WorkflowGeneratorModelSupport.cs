@@ -157,6 +157,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Boogu.</summary>
     public bool IsBoogu() => IsModelCompatClass(T2IModelClassSorter.CompatBoogu);
 
+    /// <summary>Returns true if the current model is Boogu and has a prompt image (consider it edit model).</summary>
+    public bool IsBooguEdit() => IsBoogu() && UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0;
+
     /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
     public bool IsHunyuanVideo() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo);
 
@@ -1130,15 +1133,18 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("boogu", helpers.GetQwen3vl_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
-            double shift = UserInput.Get(T2IParamTypes.SigmaShift, 3, sectionId: sectionId);
-            if (shift > 0)
+            if (IsBooguEdit())
             {
-                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                double shift = UserInput.Get(T2IParamTypes.SigmaShift, 3.16, sectionId: sectionId);
+                if (shift > 0)
                 {
-                    ["model"] = LoadingModel,
-                    ["shift"] = shift
-                });
-                LoadingModel = [samplingNode, 0];
+                    string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                    {
+                        ["model"] = LoadingModel,
+                        ["shift"] = shift
+                    });
+                    LoadingModel = [samplingNode, 0];
+                }
             }
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))

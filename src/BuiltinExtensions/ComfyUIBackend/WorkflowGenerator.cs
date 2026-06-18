@@ -970,8 +970,16 @@ public partial class WorkflowGenerator
             defsampler ??= "lcm";
             defscheduler ??= "simple";
         }
+        else if (IsBoogu())
+        {
+            if (IsBooguEdit())
+            {
+                defsampler ??= "dpmpp_2m";
+            }
+            defscheduler ??= "simple";
+        }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsBoogu())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT())
         {
             defscheduler ??= "simple";
         }
@@ -2406,32 +2414,6 @@ public partial class WorkflowGenerator
                 }, id);
             }
         }
-        else if (IsBoogu() && id is null && (qwenImage = GetPromptImage(true, true)) is not null)
-        {
-            if (!NodeHelpers.TryGetValue("__boogu_edit_cond__", out string booguNode))
-            {
-                JObject booguInputs = new()
-                {
-                    ["clip"] = clip,
-                    ["prompt"] = prompt,
-                    ["negative_prompt"] = UserInput.Get(T2IParamTypes.NegativePrompt, ""),
-                    ["vae"] = CurrentVae.Path,
-                    ["image_1"] = qwenImage
-                };
-                for (int i = 1; i < 16; i++)
-                {
-                    JArray extraImg = GetPromptImage(true, true, i);
-                    if (extraImg is null)
-                    {
-                        break;
-                    }
-                    booguInputs[$"image_{i + 1}"] = extraImg;
-                }
-                booguNode = CreateNode("TextEncodeBooguEdit", booguInputs);
-                NodeHelpers["__boogu_edit_cond__"] = booguNode;
-            }
-            return [booguNode, isPositive ? 0 : 1];
-        }
         else if (IsHunyuanVideoI2V() && prompt.StartsWith("<image:"))
         {
             (string prefix, string content) = prompt.BeforeAndAfter('>');
@@ -2541,6 +2523,28 @@ public partial class WorkflowGenerator
             first = [concatted, 0];
         }
         return first;
+    }
+
+    /// <summary>Creates a "TextEncodeBooguEdit" node, which outputs both positive and negative conditioning.</summary>
+    public string CreateBooguEditConditioning(JArray clip, string id = null)
+    {
+        JObject inputs = new()
+        {
+            ["clip"] = clip,
+            ["prompt"] = UserInput.Get(T2IParamTypes.Prompt, ""),
+            ["negative_prompt"] = UserInput.Get(T2IParamTypes.NegativePrompt, ""),
+            ["vae"] = CurrentVae.Path
+        };
+        for (int i = 0; i < 16; i++)
+        {
+            JArray img = GetPromptImage(true, true, i);
+            if (img is null)
+            {
+                break;
+            }
+            inputs[$"images.image_{i + 1}"] = img;
+        }
+        return CreateNode("TextEncodeBooguEdit", inputs, id);
     }
 
     public record struct RegionHelper(JArray PartCond, JArray Mask);
