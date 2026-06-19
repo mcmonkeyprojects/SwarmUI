@@ -31,6 +31,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(Logout, true, Permissions.Fundamental);
         API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
         API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
+        API.RegisterAPICall(ExportUserPresets, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(SetStarredModels, true, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(SetPresetLinks, true, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(AddNewPreset, true, Permissions.ManagePresets);
@@ -355,7 +356,7 @@ public static class BasicAPIFeatures
                     "param_map": {
                         "key": "value"
                     },
-                    "preview_image": "data:base64 img",
+                    "preview_image": "/ViewSpecial/Preset/Preset Title",
                     "is_starred": false
                 }
             ],
@@ -380,12 +381,52 @@ public static class BasicAPIFeatures
         return new JObject()
         {
             ["user_name"] = session.User.UserID,
-            ["presets"] = new JArray(session.User.GetAllPresets().Select(p => p.NetData()).ToArray()),
+            ["presets"] = new JArray(session.User.GetAllPresets().Select(p =>
+            {
+                JObject netData = p.NetData();
+                if (netData["preview_image"]?.ToString().StartsWithFast("data:") ?? false)
+                {
+                    netData["preview_image"] = $"/ViewSpecial/Preset/{p.Title}";
+                }
+                return netData;
+            }).ToArray()),
             ["language"] = session.User.Settings.Language,
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
             ["model_preset_links"] = JObject.Parse(session.User.GetGenericData("modelpresetlinks", "full") ?? "{}"),
             ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode))
+        };
+    }
+
+    [API.APIDescription("Gets the user's presets with full base64 preview images embedded.",
+        """
+            "presets": [
+                {
+                    "author": "username",
+                    "title": "Preset Title",
+                    "description": "Preset Description",
+                    "param_map": { "key": "value" },
+                    "preview_image": "data:image/jpeg;base64,...",
+                    "is_starred": false
+                }
+            ]
+        """)]
+    public static async Task<JObject> ExportUserPresets(Session session,
+        [API.APIParameter("Optional 'titles' key holding a JSON array of preset titles to include.")] JObject raw)
+    {
+        HashSet<string> wanted = null;
+        if (raw is not null && raw.TryGetValue("titles", out JToken titlesTok) && titlesTok is JArray titlesArr)
+        {
+            wanted = [.. titlesArr.Select(t => t.ToString())];
+        }
+        IEnumerable<T2IPreset> presets = session.User.GetAllPresets();
+        if (wanted is not null)
+        {
+            presets = presets.Where(p => wanted.Contains(p.Title));
+        }
+        return new JObject()
+        {
+            ["presets"] = new JArray(presets.Select(p => p.NetData()).ToArray())
         };
     }
 
@@ -439,7 +480,12 @@ public static class BasicAPIFeatures
         {
             return new JObject() { ["preset_fail"] = "A preset with that title already exists." };
         }
-        if (!string.IsNullOrWhiteSpace(preview_image) && preview_image != "imgs/model_placeholder.jpg")
+        if (is_edit && existingPreset is not null && !string.IsNullOrWhiteSpace(preview_image)
+            && !preview_image.StartsWith("data:") && !preview_image.StartsWith("/Output") && preview_image != "imgs/model_placeholder.jpg")
+        {
+            preview_image = existingPreset.PreviewImage;
+        }
+        else if (!string.IsNullOrWhiteSpace(preview_image) && preview_image != "imgs/model_placeholder.jpg")
         {
             if ((!preview_image.StartsWith("data:image/jpeg;base64,") && !preview_image.StartsWith("/Output")) || preview_image.Contains('?'))
             {

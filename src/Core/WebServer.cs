@@ -650,6 +650,17 @@ public class WebServer
             await context.Response.Body.WriteAsync(img.RawData, Program.GlobalProgramCancel);
             await context.Response.CompleteAsync();
         }
+        if (subtype == "Preset")
+        {
+            T2IPreset preset = user.GetPreset(name);
+            if (preset is not null && (preset.PreviewImage?.StartsWithFast("data:") ?? false))
+            {
+                await yieldResult(preset.PreviewImage);
+                return;
+            }
+            await context.YieldJsonOutput(null, 404, Utilities.ErrorObj("404, file not found.", "file_not_found"));
+            return;
+        }
         if (!user.IsAllowedModel(name))
         {
             Logs.Verbose($"Not showing user '{user.UserID}' sub-type '{subtype}' model image '{name}': user restriction");
