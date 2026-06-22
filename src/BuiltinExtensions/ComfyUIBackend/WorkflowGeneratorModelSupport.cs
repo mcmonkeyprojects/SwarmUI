@@ -1133,16 +1133,6 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("boogu", helpers.GetQwen3vl_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
-            double shift = UserInput.Get(T2IParamTypes.SigmaShift, 3.16, sectionId: sectionId);
-            if (IsBooguEdit() && shift > 0)
-            {
-                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
-                {
-                    ["model"] = LoadingModel,
-                    ["shift"] = shift
-                });
-                LoadingModel = [samplingNode, 0];
-            }
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
@@ -1427,7 +1417,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsZImage() || IsAceStep15() || IsAnima())
+            else if (IsZImage() || IsAceStep15() || IsAnima() || IsBoogu())
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {
