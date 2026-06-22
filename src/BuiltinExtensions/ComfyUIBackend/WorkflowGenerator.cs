@@ -2414,6 +2414,26 @@ public partial class WorkflowGenerator
                 }, id);
             }
         }
+        else if (IsBooguEdit() && isPositive && !wantsSwarmCustom)
+        {
+            JObject booguInputs = new()
+            {
+                ["clip"] = clip,
+                ["prompt"] = prompt,
+                ["negative_prompt"] = "",
+                ["vae"] = null
+            };
+            for (int i = 0; i < 16; i++)
+            {
+                JArray img = GetPromptImage(true, true, i);
+                if (img is null)
+                {
+                    break;
+                }
+                booguInputs[$"images.image_{i + 1}"] = img;
+            }
+            node = CreateNode("TextEncodeBooguEdit", booguInputs, id);
+        }
         else if (IsHunyuanVideoI2V() && prompt.StartsWith("<image:"))
         {
             (string prefix, string content) = prompt.BeforeAndAfter('>');
@@ -2642,26 +2662,6 @@ public partial class WorkflowGenerator
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
     public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false, bool isPixelDecoder = false)
     {
-        if (IsBooguEdit() && isPositive)
-        {
-            JObject booguInputs = new()
-            {
-                ["clip"] = clip,
-                ["prompt"] = UserInput.Get(T2IParamTypes.Prompt, ""),
-                ["negative_prompt"] = "",
-                ["vae"] = null
-            };
-            for (int i = 0; i < 16; i++)
-            {
-                JArray img = GetPromptImage(true, true, i);
-                if (img is null)
-                {
-                    break;
-                }
-                booguInputs[$"images.image_{i + 1}"] = img;
-            }
-            return [CreateNode("TextEncodeBooguEdit", booguInputs, firstId), 0];
-        }
         PromptRegion regionalizer = new(prompt);
         string globalPromptText = regionalizer.GlobalPrompt;
         if (isVideoSwap && !string.IsNullOrWhiteSpace(regionalizer.VideoSwapPrompt))
