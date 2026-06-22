@@ -1134,7 +1134,7 @@ public partial class WorkflowGenerator
         else if (IsKrea2())
         {
             helpers.LoadClip("krea2", helpers.GetQwen3vl_4bModel());
-            helpers.DoVaeLoader(null, "wan-21", "wan21-vae");
+            helpers.DoVaeLoader(null, "qwen-image", "qwen-image-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
