@@ -154,6 +154,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Ideogram 4.</summary>
     public bool IsIdeogram4() => IsModelCompatClass(T2IModelClassSorter.CompatIdeogram4);
 
+    /// <summary>Returns true if the current model is Krea 2.</summary>
+    public bool IsKrea2() => IsModelCompatClass(T2IModelClassSorter.CompatKrea2);
+
     /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
     public bool IsHunyuanVideo() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo);
 
@@ -291,7 +294,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id));
         }
-        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis() || IsKandinsky5ImgLite() || IsAnima() || IsLongcatImage())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis() || IsKandinsky5ImgLite() || IsAnima() || IsLongcatImage() || IsKrea2())
         {
             return resultImage(CreateNode("EmptySD3LatentImage", new JObject()
             {
@@ -599,6 +602,11 @@ public partial class WorkflowGenerator
         public string GetQwen3vl_8bModel()
         {
             return RequireClipModel("qwen3vl_8b.safetensors", "https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/text_encoders/qwen3vl_8b_fp8_scaled.safetensors", "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd", T2IParamTypes.QwenModel);
+        }
+
+        public string GetQwen3vl_4bModel()
+        {
+            return RequireClipModel("qwen3vl_4b.safetensors", "https://huggingface.co/Comfy-Org/Qwen3-VL/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors", "54bd5144df0bbc25dd6ccadfcb826b521445a1b06ae5a42570bdd2974ca87094", T2IParamTypes.QwenModel);
         }
 
         public string GetOvisQwenModel()
@@ -1123,6 +1131,11 @@ public partial class WorkflowGenerator
                 LoadingModel = [samplingNode, 0];
             }
         }
+        else if (IsKrea2())
+        {
+            helpers.LoadClip("krea2", helpers.GetQwen3vl_4bModel());
+            helpers.DoVaeLoader(null, "qwen-image", "qwen-image-vae");
+        }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
             helpers.LoadClip2("flux", helpers.GetT5XXLModel(), helpers.GetClipLModel());
@@ -1406,7 +1419,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsZImage() || IsAceStep15() || IsAnima())
+            else if (IsZImage() || IsAceStep15() || IsAnima() || IsKrea2())
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {
