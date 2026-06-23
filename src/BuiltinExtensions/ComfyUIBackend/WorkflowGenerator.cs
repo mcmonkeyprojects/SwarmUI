@@ -971,7 +971,7 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2())
         {
             defscheduler ??= "simple";
         }
@@ -2343,6 +2343,37 @@ public partial class WorkflowGenerator
             {
                 ["GEMMA"] = clip,
                 ["text"] = prompt
+            }, id);
+        }
+        else if (IsIdeogram4() || IsKrea2())
+        {
+            JArray imageNode = GetPromptImage(true, true, 0);
+            for (int i = 1; i < 10; i++)
+            {
+                JArray image2 = GetPromptImage(true, true, i);
+                if (image2 is null)
+                {
+                    break;
+                }
+                string batched = CreateNode("ImageBatch", new JObject()
+                {
+                    ["image1"] = imageNode,
+                    ["image2"] = image2
+                });
+                imageNode = [batched, 0];
+            }
+            node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+            {
+                ["clip"] = clip,
+                ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                ["prompt"] = prompt,
+                ["width"] = width,
+                ["height"] = height,
+                ["target_width"] = width,
+                ["target_height"] = height,
+                ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
+                ["images"] = imageNode,
+                ["llama_template"] = "krea2" // TODO: Ideogram preferred template?
             }, id);
         }
         else if (IsQwenImageEdit() && (isPositive || IsQwenImageEditPlus()) && (qwenImage = GetPromptImage(true, true)) is not null)
