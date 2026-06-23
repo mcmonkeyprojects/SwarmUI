@@ -22,6 +22,7 @@
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
 [Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
 [Ideogram 4](#ideogram-4) | DiT | 2026 | Ideogram AI | 9B | Yes | Modern, advanced on input understanding |
+[Krea 2](#krea-2) | DiT | 2026 | Krea AI | 13B | Yes | Modern, extremely smart and great quality |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -663,6 +664,18 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Scheduler:** Default is `Ideogram4 Default`, an official custom/unique scheduler. There is also a `Turbo` variant which may work better for low step count gens. Some users have been using other schedulers (eg `Normal`, `Flux.2`, etc.) with better results than the official scheduler.
     - **Resolution:** Side length `1024` is the default.
     - **Sigma Shift:** Default is `5`, but `1` is the legacy default. Sigma shift does nothing on the Ideogram official scheduler but does do things on normal schedulers.
+
+# Krea 2
+
+- Krea 2 is supported in SwarmUI!
+- It is a 13B model with a Base and Turbo variant.
+- Links Pending
+- It has built-in censorship, the model will not generate risque things with common prompts (but can be tricked).
+- Uses Qwen 3 4B VL as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
+- **Parameters:**
+    - Parameter guidance pending
+    - **Resolution:** Side length `1024` is the default, but it work anywhere from `128` to `4096`.
+    - **Sigma Shift:** Defaults to `1.15`
 
 
 # Video Models
