@@ -669,7 +669,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 - Krea 2 is supported in SwarmUI!
 - It is a 13B model with a Base and Turbo variant.
-- Links Pending
+    - Links Pending
+    - Temporary FP8 Turbo link <https://huggingface.co/AlperKTS/Krea2_FP8/blob/main/krea2_turbo_fp8.safetensors>
 - It has built-in censorship, the model will not generate risque things with common prompts (but can be tricked).
 - Uses Qwen 3 4B VL as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
 - **Parameters:**
