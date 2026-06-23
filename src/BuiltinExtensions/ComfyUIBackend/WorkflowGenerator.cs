@@ -2345,9 +2345,40 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if ((IsKrea2() || IsQwenImageEdit()) && (isPositive || IsQwenImageEditPlus()) && (qwenImage = GetPromptImage(true, true)) is not null)
+        else if (IsIdeogram4() || IsKrea2())
         {
-            if (wantsSwarmCustom || IsKrea2())
+            JArray imageNode = GetPromptImage(true, true, 0);
+            for (int i = 1; i < 10; i++)
+            {
+                JArray image2 = GetPromptImage(true, true, i);
+                if (image2 is null)
+                {
+                    break;
+                }
+                string batched = CreateNode("ImageBatch", new JObject()
+                {
+                    ["image1"] = imageNode,
+                    ["image2"] = image2
+                });
+                imageNode = [batched, 0];
+            }
+            node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+            {
+                ["clip"] = clip,
+                ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                ["prompt"] = prompt,
+                ["width"] = width,
+                ["height"] = height,
+                ["target_width"] = width,
+                ["target_height"] = height,
+                ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
+                ["images"] = imageNode,
+                ["llama_template"] = "krea2" // TODO: Ideogram preferred template?
+            }, id);
+        }
+        else if (IsQwenImageEdit() && (isPositive || IsQwenImageEditPlus()) && (qwenImage = GetPromptImage(true, true)) is not null)
+        {
+            if (wantsSwarmCustom)
             {
                 JArray image2 = GetPromptImage(true, true, 1);
                 if (IsQwenImageEditPlus() && image2 is not null)
@@ -2380,7 +2411,7 @@ public partial class WorkflowGenerator
                     ["target_height"] = height,
                     ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
                     ["images"] = qwenImage,
-                    ["llama_template"] = IsKrea2() ? "krea2" : "qwen_image_edit_plus"
+                    ["llama_template"] = "qwen_image_edit_plus"
                 }, id);
             }
             else if (IsQwenImageEditPlus())
