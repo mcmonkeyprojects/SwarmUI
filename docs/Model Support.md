@@ -676,6 +676,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - Uses Qwen 3 VL 4B as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
 - **Parameters:**
     - **Prompt:** Normal general model prompting works as expected, but NSFW terms will be stripped by the models internal text-refiner.
+    - **Prompt Images:** Krea 2 is not an editing model per se, but it can take in a reference image in the prompt. Be warned it will overpower the prompt. Improvements to this are TBD?
     - **Resolution:** Side length `1024` is the default, but it work anywhere from `128` to `4096`.
     - **Steps:** For Turbo, `8` recommended, `4` minimum. For Base normal step counts (20+).
     - **CFG:** For Turbo, `1`. For Base normal CFG ranges (4+? 7? idk, tbd)

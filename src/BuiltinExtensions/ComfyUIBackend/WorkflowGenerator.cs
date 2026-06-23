@@ -2345,9 +2345,9 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (IsQwenImageEdit() && (isPositive || IsQwenImageEditPlus()) && (qwenImage = GetPromptImage(true, true)) is not null)
+        else if ((IsKrea2() || IsQwenImageEdit()) && (isPositive || IsQwenImageEditPlus()) && (qwenImage = GetPromptImage(true, true)) is not null)
         {
-            if (wantsSwarmCustom)
+            if (wantsSwarmCustom || IsKrea2())
             {
                 JArray image2 = GetPromptImage(true, true, 1);
                 if (IsQwenImageEditPlus() && image2 is not null)
@@ -2380,7 +2380,7 @@ public partial class WorkflowGenerator
                     ["target_height"] = height,
                     ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
                     ["images"] = qwenImage,
-                    ["llama_template"] = "qwen_image_edit_plus"
+                    ["llama_template"] = IsKrea2() ? "krea2" : "qwen_image_edit_plus"
                 }, id);
             }
             else if (IsQwenImageEditPlus())
