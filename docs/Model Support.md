@@ -22,7 +22,7 @@
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
 [Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
 [Ideogram 4](#ideogram-4) | DiT | 2026 | Ideogram AI | 9B | Yes | Modern, advanced on input understanding |
-[Krea 2](#krea-2) | DiT | 2026 | Krea AI | 13B | Yes | Modern, extremely smart and great quality |
+[Krea 2](#krea-2) | DiT | 2026 | Krea AI | 12B | Yes | Modern, extremely smart and great quality |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -669,11 +669,13 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 # Krea 2
 
 - Krea 2 is supported in SwarmUI!
-- It is a 13B model with a Base ('Raw') and Turbo variant.
-    - Links Pending
-    - Temporary Base link <https://huggingface.co/Lumatrix/Krea-2/blob/main/raw.safetensors>
-    - Temporary FP8 Turbo link <https://huggingface.co/AlperKTS/Krea2_FP8/blob/main/krea2_turbo_fp8.safetensors>
-- It has built-in censorship, the model will not generate risque things with common prompts (but can be tricked).
+- It is a 13B model (reported officially as 12B) with a Base ('Raw') and Turbo variant.
+    - Downloads of the model are available at [Comfy-Org/Krea-2](<https://huggingface.co/Comfy-Org/Krea-2/tree/main/diffusion_models>)
+    - Pick 'raw' (base) to run slower but potentially have more complex usages, or 'turbo' for fast easy generation
+    - Pick your preferred size (fp8 recommended, nv4 for weaker computers, bf16 for research usage)
+    - Save your choice(s) in `diffusion_models`
+    - There is also an official raw-to-turbo Lora available [Comfy-Org/Krea-2/Loras](<https://huggingface.co/Comfy-Org/Krea-2/blob/main/loras/krea2_turbo_lora_rank_64_bf16.safetensors>)
+- It has built-in censorship, the model will not generate risque things with common prompts (but can be tricked or bypassed).
 - Uses Qwen 3 VL 4B as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
 - **Parameters:**
     - **Prompt:** Normal general model prompting works as expected, but NSFW terms will be stripped by the models internal text-refiner.
