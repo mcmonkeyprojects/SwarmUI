@@ -93,7 +93,7 @@ public class T2IModelClassSorter
         CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
         CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
         CompatIdeogram4 = RegisterCompat(new() { ID = "ideogram-4", ShortCode = "Ideo4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
-        CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", LorasTargetTextEnc = false }),
+        CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones
