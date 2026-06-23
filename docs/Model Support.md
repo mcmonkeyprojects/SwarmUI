@@ -668,16 +668,17 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 # Krea 2
 
 - Krea 2 is supported in SwarmUI!
-- It is a 13B model with a Base and Turbo variant.
+- It is a 13B model with a Base ('Raw') and Turbo variant.
     - Links Pending
+    - Temporary Base link <https://huggingface.co/Lumatrix/Krea-2/blob/main/raw.safetensors>
     - Temporary FP8 Turbo link <https://huggingface.co/AlperKTS/Krea2_FP8/blob/main/krea2_turbo_fp8.safetensors>
 - It has built-in censorship, the model will not generate risque things with common prompts (but can be tricked).
-- Uses Qwen 3 4B VL as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
+- Uses Qwen 3 VL 4B as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
 - **Parameters:**
-    - Parameter guidance pending
+    - **Prompt:** Normal general model prompting works as expected, but NSFW terms will be stripped by the models internal text-refiner.
     - **Resolution:** Side length `1024` is the default, but it work anywhere from `128` to `4096`.
-    - **Steps:** For Turbo, `8`. For Base (? TODO)
-    - **CFG:** For Turbo, `1`. For Base (? TODO)
+    - **Steps:** For Turbo, `8` recommended, `4` minimum. For Base normal step counts (20+).
+    - **CFG:** For Turbo, `1`. For Base normal CFG ranges (4+? 7? idk, tbd)
     - **Sampler:** Default is fine.
     - **Scheduler:** Default is fine.
     - **Sigma Shift:** Defaults to `1.15`
