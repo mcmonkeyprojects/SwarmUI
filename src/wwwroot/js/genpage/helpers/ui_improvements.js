@@ -523,9 +523,7 @@ class UIImprovementHandler {
         }
         let popId = `uiimprover_${elem.id}`;
         let rect = elem.getBoundingClientRect();
-        let buttons = [...elem.options].filter(o => o.style.display != 'none').map(o => { return { key_html: o.dataset.cleanname, title: o.title, key: o.innerText, searchable: `${o.dataset.cleanname} ${o.innerText} ${o.value}`, action: () => { elem.value = o.value; triggerChangeFor(elem); } }; });
-        /* TEMP Firefox v152 bugfix: de-duplicate by key */
-        buttons = buttons.filter((o, i, a) => a.findIndex(o2 => o2.key == o.key) == i);
+        let buttons = [...elem.options].filter(o => o.style.display != 'none').map(o => { return { key_html: o.dataset.cleanname, title: o.title, key: o.innerText, searchable: `${o.dataset.cleanname} ${o.innerText} ${o.value}`, action: () => { o.selected = true; triggerChangeFor(elem); } }; });
         this.lastPopover = new AdvancedPopover(popId, buttons, true, rect.x, rect.y, elem.parentElement, elem.selectedIndex < 0 ? null : elem.selectedOptions[0].innerText, 0);
         e.preventDefault();
         e.stopPropagation();
