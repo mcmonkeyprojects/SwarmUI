@@ -675,6 +675,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - **Parameters:**
     - Parameter guidance pending
     - **Resolution:** Side length `1024` is the default, but it work anywhere from `128` to `4096`.
+    - **Steps:** For Turbo, `8`. For Base (? TODO)
+    - **CFG:** For Turbo, `1`. For Base (? TODO)
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
     - **Sigma Shift:** Defaults to `1.15`
 
 
