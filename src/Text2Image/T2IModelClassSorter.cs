@@ -231,8 +231,8 @@ public class T2IModelClassSorter
         bool isHiDreamLora(JObject h) => hasKey(h, "double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
         bool isHiDreamO1(JObject h) => (h.ContainsKey("model.t_embedder1.mlp.0.weight") && h.ContainsKey("model.t_embedder1.mlp.0.bias"));
         bool isHiDreamO1Lora(JObject h) => hasLoraKey(h, "final_layer2.linear") && hasLoraKey(h, "language_model.layers.0.self_attn.q_proj");
-        bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
-        bool isChromaRadiance(JObject h) => h.ContainsKey("nerf_image_embedder.embedder.0.bias");
+        bool isChroma(JObject h) => hasKey(h, "distilled_guidance_layer.in_proj.bias") && hasKey(h, "double_blocks.0.img_attn.proj.bias");
+        bool isChromaRadiance(JObject h) => hasKey(h, "nerf_image_embedder.embedder.0.bias");
         bool isPiD(JObject h) => h.ContainsKey("net.lq_proj.latent_proj.0.weight") && h.ContainsKey("net.pixel_blocks.0.attn.q_norm.weight") && h.ContainsKey("net.pixel_blocks.0.compress_to_attn.weight");
         bool isPixelDiT(JObject h) => h.ContainsKey("core.pixel_embedder.proj.weight") && h.ContainsKey("core.pixel_blocks.0.attn.q_norm.weight") && h.ContainsKey("core.pixel_blocks.0.compress_to_attn.weight") && !isPiD(h);
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
