@@ -262,7 +262,7 @@ public static class T2IAPI
         void setError(string message)
         {
             Logs.Warning($"Refused to generate image for {session.User.UserID}: {message}");
-            if (!continueAfterErrors)
+            if (!continueAfterErrors || claim.ShouldCancel)
             {
                 output(new JObject() { ["error"] = message });
                 claim.LocalClaimInterrupt.Cancel();
