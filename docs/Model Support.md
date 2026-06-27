@@ -681,6 +681,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - Save your choice(s) in `diffusion_models`
     - There is also an official raw-to-turbo Lora available [Comfy-Org/Krea-2/Loras](<https://huggingface.co/Comfy-Org/Krea-2/blob/main/loras/krea2_turbo_lora_rank_64_bf16.safetensors>)
 - It has built-in censorship, the model will not generate risque things with common prompts (but can be tricked or bypassed).
+    - The most common baseline bypass is [Krea2FilterBypass LoRA](<https://civitai.red/models/2728234/krea2filterbypass?modelVersionId=3067151>), but almost any nsfw lora will naturally bypass the filter.
 - Uses Qwen 3 VL 4B as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
 - **Parameters:**
     - **Prompt:** Normal general model prompting works as expected, but NSFW terms will be stripped by the models internal text-refiner.

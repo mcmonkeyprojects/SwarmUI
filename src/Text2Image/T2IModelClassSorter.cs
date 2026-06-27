@@ -186,7 +186,8 @@ public class T2IModelClassSorter
         bool isIdeogram4Lora(JObject h) => hasLoraKey(h, "layers.0.adaln_modulation") && hasLoraKey(h, "layers.0.attention.o") && hasLoraKey(h, "layers.0.feed_forward.w3") && hasLoraKey(h, "layers.33.attention.qkv");
         bool isKrea2(JObject h) => hasKey(h, "txtfusion.projector.weight") && hasKey(h, "blocks.0.attn.gate.weight") && hasKey(h, "blocks.0.mod.lin");
         bool isKrea2Lora(JObject h) => (hasLoraKey(h, "blocks.0.attn.gate") && hasLoraKey(h, "blocks.0.mlp.gate"))
-            || (hasLoraKey(h, "text_fusion.layerwise_blocks.0.attn.to_gate") && hasLoraKey(h, "img_in") && hasLoraKey(h, "final_layer.linear"));
+            || (hasLoraKey(h, "text_fusion.layerwise_blocks.0.attn.to_gate") && hasLoraKey(h, "img_in") && hasLoraKey(h, "final_layer.linear"))
+            || (h.ContainsKey("diffusion_model.txtfusion.projector.diff"));
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && h.ContainsKey("transformer.transformer_blocks.37.attn.to_out.0.lora_B.weight");
         bool isMochi(JObject h) => hasKey(h, "blocks.0.attn.k_norm_x.weight");
         bool isMochiVae(JObject h) => h.ContainsKey("encoder.layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("blocks.2.blocks.3.stack.5.weight") || h.ContainsKey("decoder.blocks.2.blocks.3.stack.5.weight");
@@ -996,7 +997,7 @@ public class T2IModelClassSorter
             return matchedClass;
         }
         matchedClass = null;
-        bool isLora = header.Properties().Any(p => p.Name.StartsWith("lora_") || p.Name.EndsWith(".lora_A.weight") || p.Name.EndsWith(".lora_A.default.weight") || p.Name.EndsWith(".lora_up.weight") || p.Name.EndsWith(".lora.up.weight") || p.Name.EndsWith(".lokr_w1"));
+        bool isLora = header.Properties().Any(p => p.Name.StartsWith("lora_") || p.Name.EndsWith(".lora_A.weight") || p.Name.EndsWith(".lora_A.default.weight") || p.Name.EndsWith(".lora_up.weight") || p.Name.EndsWith(".lora.up.weight") || p.Name.EndsWith(".lokr_w1") || p.Name.EndsWith(".diff"));
         foreach (T2IModelClass modelClass in ModelClasses.Values)
         {
             if (isLora == modelClass.IsLora && modelClass.IsThisModelOfClass(model, header))
