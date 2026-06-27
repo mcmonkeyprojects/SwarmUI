@@ -1134,7 +1134,7 @@ public partial class WorkflowGenerator
         else if (IsKrea2())
         {
             helpers.LoadClip("krea2", helpers.GetQwen3vl_4bModel());
-            helpers.DoVaeLoader(null, "qwen-image", "qwen-image-vae");
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultQwenVAE, "qwen-image", "qwen-image-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
@@ -1156,7 +1156,7 @@ public partial class WorkflowGenerator
         else if (IsAnima())
         {
             helpers.LoadClip("stable_diffusion", helpers.GetQwen3_600mModel());
-            helpers.DoVaeLoader(null, "qwen-image", "qwen-image-vae");
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultQwenVAE, "qwen-image", "qwen-image-vae");
         }
         else if (IsChroma() || IsChromaRadiance())
         {
@@ -1237,7 +1237,7 @@ public partial class WorkflowGenerator
         else if (IsQwenImage())
         {
             helpers.LoadClip("qwen_image", helpers.GetQwenImage25_7b_tenc());
-            helpers.DoVaeLoader(null, "qwen-image", "qwen-image-vae");
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultQwenVAE, "qwen-image", "qwen-image-vae");
             string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
             {
                 ["model"] = LoadingModel,
