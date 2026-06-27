@@ -381,15 +381,7 @@ public static class BasicAPIFeatures
         return new JObject()
         {
             ["user_name"] = session.User.UserID,
-            ["presets"] = new JArray(session.User.GetAllPresets().Select(p =>
-            {
-                JObject netData = p.NetData();
-                if (netData["preview_image"]?.ToString().StartsWithFast("data:") ?? false)
-                {
-                    netData["preview_image"] = $"/ViewSpecial/Preset/{p.Title}";
-                }
-                return netData;
-            }).ToArray()),
+            ["presets"] = new JArray(session.User.GetAllPresets().Select(p => p.NetData(false)).ToArray()),
             ["language"] = session.User.Settings.Language,
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
@@ -426,7 +418,7 @@ public static class BasicAPIFeatures
         }
         return new JObject()
         {
-            ["presets"] = new JArray(presets.Select(p => p.NetData()).ToArray())
+            ["presets"] = new JArray(presets.Select(p => p.NetData(true)).ToArray())
         };
     }
 
@@ -480,12 +472,11 @@ public static class BasicAPIFeatures
         {
             return new JObject() { ["preset_fail"] = "A preset with that title already exists." };
         }
-        if (is_edit && existingPreset is not null && !string.IsNullOrWhiteSpace(preview_image)
-            && !preview_image.StartsWith("data:") && !preview_image.StartsWith("/Output") && preview_image != "imgs/model_placeholder.jpg")
+        if (preview_image is not null && preview_image.StartsWith("/ViewSpecial/"))
         {
-            preview_image = existingPreset.PreviewImage;
+            preview_image = null;
         }
-        else if (!string.IsNullOrWhiteSpace(preview_image) && preview_image != "imgs/model_placeholder.jpg")
+        if (!string.IsNullOrWhiteSpace(preview_image) && preview_image != "imgs/model_placeholder.jpg")
         {
             if ((!preview_image.StartsWith("data:image/jpeg;base64,") && !preview_image.StartsWith("/Output")) || preview_image.Contains('?'))
             {
@@ -494,6 +485,10 @@ public static class BasicAPIFeatures
             }
             ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
             preview_image = img.AsDataString();
+        }
+        if (string.IsNullOrWhiteSpace(preview_image) && existingPreset is not null)
+        {
+            preview_image = existingPreset.PreviewImage;
         }
         T2IPreset preset = new()
         {
@@ -504,6 +499,7 @@ public static class BasicAPIFeatures
             PreviewImage = string.IsNullOrWhiteSpace(preview_image) ? "imgs/model_placeholder.jpg" : preview_image,
             IsStarred = is_starred
         };
+        Interlocked.Increment(ref ModelsAPI.ModelEditID);
         if (is_edit && existingPreset is not null && editing != title)
         {
             session.User.DeletePreset(editing);
