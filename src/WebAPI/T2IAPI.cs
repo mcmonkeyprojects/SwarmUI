@@ -258,17 +258,22 @@ public static class T2IAPI
         {
             output(BasicAPIFeatures.GetCurrentStatusRaw(session));
         }
+        bool continueAfterErrors = false;
         void setError(string message)
         {
-            Logs.Debug($"Refused to generate image for {session.User.UserID}: {message}");
-            output(new JObject() { ["error"] = message });
-            claim.LocalClaimInterrupt.Cancel();
+            Logs.Warning($"Refused to generate image for {session.User.UserID}: {message}");
+            if (!continueAfterErrors || claim.ShouldCancel)
+            {
+                output(new JObject() { ["error"] = message });
+                claim.LocalClaimInterrupt.Cancel();
+            }
         }
         long timeStart = Environment.TickCount64;
         T2IParamInput user_input;
         try
         {
             user_input = RequestToParams(session, rawInput);
+            continueAfterErrors = user_input.Get(T2IParamTypes.ContinueAfterErrors, false);
         }
         catch (SwarmReadableErrorException ex)
         {

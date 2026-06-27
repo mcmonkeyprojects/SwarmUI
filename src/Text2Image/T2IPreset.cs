@@ -1,6 +1,7 @@
 using LiteDB;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Utils;
+using SwarmUI.WebAPI;
 
 namespace SwarmUI.Text2Image;
 
@@ -51,14 +52,14 @@ public class T2IPreset
     }
 
     /// <summary>Gets networkable data about this preset.</summary>
-    public JObject NetData()
+    public JObject NetData(bool includeImage = false)
     {
         return new JObject()
         {
             ["author"] = Author,
             ["title"] = Title,
             ["description"] = Description,
-            ["preview_image"] = PreviewImage,
+            ["preview_image"] = PreviewImage.StartsWith("data:") && !includeImage ? $"/ViewSpecial/Preset/{Title}?editid={ModelsAPI.ModelEditID}" : PreviewImage,
             ["is_starred"] = IsStarred,
             ["param_map"] = JObject.FromObject(ParamMap)
         };

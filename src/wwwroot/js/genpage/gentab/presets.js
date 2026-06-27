@@ -955,24 +955,26 @@ function exportPresetsButton(reuse = false) {
     if (!reuse) {
         exportingPresets = allPresets;
     }
-    let text = '';
     if (getRequiredElementById('export_preset_format_json').checked) {
-        let data = {};
-        for (let preset of exportingPresets) {
-            data[preset.title] = preset;
-        }
-        text = JSON.stringify(data, null, 4);
+        genericRequest('ExportUserPresets', { titles: exportingPresets.map(p => p.title) }, fullData => {
+            let data = {};
+            for (let preset of fullData.presets) {
+                data[preset.title] = preset;
+            }
+            getRequiredElementById('export_presets_textarea').value = JSON.stringify(data, null, 4);
+            $('#export_presets_modal').modal('show');
+        });
     }
     else { // CSV
-        text = 'name,prompt,negative_prompt,\n';
+        let text = 'name,prompt,negative_prompt,\n';
         for (let preset of exportingPresets) {
             if (preset.param_map.prompt || preset.param_map.negativeprompt) {
                 text += `"${preset.title.replace('"', '""')}","${(preset.param_map.prompt || '').replaceAll('"', '""')}","${(preset.param_map.negativeprompt || '').replaceAll('"', '""')}",\n`;
             }
         }
+        getRequiredElementById('export_presets_textarea').value = JSON.stringify(data, null, 4);
+        $('#export_presets_modal').modal('show');
     }
-    getRequiredElementById('export_presets_textarea').value = text;
-    $('#export_presets_modal').modal('show');
 }
 
 function exportPresetsDownload() {

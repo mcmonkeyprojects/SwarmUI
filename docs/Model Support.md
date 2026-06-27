@@ -22,6 +22,7 @@
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
 [Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
 [Ideogram 4](#ideogram-4) | DiT | 2026 | Ideogram AI | 9B | Yes | Modern, advanced on input understanding |
+[Krea 2](#krea-2) | DiT | 2026 | Krea AI | 12B | Yes | Modern, extremely smart and great quality |
 [Boogu](#boogu) | MMDiT | 2026 | Boogu | 10B | Minimal | Modern, fast |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
@@ -77,7 +78,9 @@ Image model(s) most worth using, as of January 2026:
 - Swarm can load other model file formats, see [Alternative Model Formats](#alternative-model-formats)
     - Notably, *quantization* technique formats. "Quantization" means shrinking a model to use lower memory than is normally reasonable.
         - Normal sizes are named like "BF16", "FP16", "FP8", ... ("BF"/"FP" prefixes are standard formats)
+        - There are also special-but-still-normal types, such as "mxfp8", "nvfp4" (these are not proper standard types, but are nonetheless core supported)
         - Quantized sizes have names like "NF4", "Q4_K_M", "Q8", "SVDQ-4", "Int-4", ("Q" means quantized, but there are technique-specific labels)
+    - "int8" format models are natively supported, with some temporary limitations in current versions
     - [BnB NF4](#bits-and-bytes-nf4-format-models) (not recommended, quantization technique)
     - [GGUF](#gguf-quantized-models) (recommended, good quality quantization technique, slower speed)
     - [Nunchaku](#nunchaku-mit-han-lab) (very recommended, great quality high speed quantization technique)
@@ -649,8 +652,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - It is a 9B model with an optional split unconditional model
     - You can download the FP8 here: [Comfy-Org/Ideogram-4 FP8](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_fp8_scaled.safetensors>)
         - Or the NVFP4 (5 gigs) here: [Comfy-Org/Ideogram-4 nvfp4](<https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_nvfp4_mixed.safetensors>)
+        - Or the int8 here [silveroxides/ideogram4-int8](<https://huggingface.co/silveroxides/ideogram4-dequant-and-int8-quant/blob/main/ig4-int8_convrot_simple.safetensors>)
     - You will also want the "Unconditional" model [Comfy-Org/Ideogram-4 uncond FP8](<https://huggingface.co/Comfy-Org/Ideogram-4/blob/main/diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors>)
         - Or the NVFP4 [Comfy-Org/Ideogram-4 uncond nvfp4](<https://huggingface.co/Comfy-Org/Ideogram-4/blob/main/diffusion_models/ideogram4_unconditional_nvfp4_mixed.safetensors>)
+        - Or the int8 here [silveroxides/ideogram4-int8-uncond](<https://huggingface.co/silveroxides/ideogram4-dequant-and-int8-quant/blob/main/ig4_uncond-int8_convrot_simple.safetensors>)
         - The idea is you use a separate model for the negative half of CFG from the positive half - this is not required, but it improves quality
         - Select it under Advanced Model Addons -> Negative Model
 - It has built-in-to-the-model censorship, the model itself will try to reject inappropriate prompts.
@@ -658,12 +663,36 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Prompt:** They have an official prompting guide here [Ideogram-OSS: Docs/Prompting](<https://github.com/ideogram-oss/ideogram4/blob/main/docs/prompting.md>)
         - They suggest long form JSON prompts, and have trained the model to understand features within such as bounding box coordinates as part of the structure
         - If you don't use JSON it will just censor you almost every time.
+    - **Prompt Images:** Ideogram can (sorta) take reference images in the prompt. Improvements seemingly TBD.
     - **Steps:** They suggest `12` for Turbo, `48` for quality. Anywhere in between is fine.
     - **CFG:** Standard range around `7`, they suggest using Refiner with RefinerMethod=StepSwap, Control Percentage low (1-3 steps), and RefinerCFG=3.
     - **Sampler:** Default is fine.
-    - **Scheduler:** Default is `Ideogram4 Default`, an official custom/unique scheduler. There is also a `Turbo` variant which may work better for low step count gens. Some users have been user other schedulers (eg `Normal`, `Flux.2`, etc.) with better results than the official scheduler.
+    - **Scheduler:** Default is `Ideogram4 Default`, an official custom/unique scheduler. There is also a `Turbo` variant which may work better for low step count gens. Some users have been using other schedulers (eg `Normal`, `Flux.2`, etc.) with better results than the official scheduler.
     - **Resolution:** Side length `1024` is the default.
-    - **Sigma Shift:** Default is `5`, but `1` is the legacy default. Sigma shift does nothing on the 
+    - **Sigma Shift:** Default is `5`, but `1` is the legacy default. Sigma shift does nothing on the Ideogram official scheduler but does do things on normal schedulers.
+
+# Krea 2
+
+- Krea 2 is supported in SwarmUI!
+- It is a 13B model (reported officially as 12B) with a Base ('Raw') and Turbo variant.
+    - Downloads of the model are available at [Comfy-Org/Krea-2](<https://huggingface.co/Comfy-Org/Krea-2/tree/main/diffusion_models>)
+        - Or an int8 from [silveroxides/K2Q-turbo-int8](<https://huggingface.co/silveroxides/K2Q/blob/main/turbo-int8-convrot-simple.safetensors>)
+    - Pick one of the 'turbo' for normal generation, or there's also a 'raw' (base) model that's intended for training usage but may be useful for some inference experiments
+    - Pick your preferred size (fp8 recommended, nv4 for memory-limited computers, bf16 for research usage)
+    - Save your choice(s) in `diffusion_models`
+    - There is also an official raw-to-turbo Lora available [Comfy-Org/Krea-2/Loras](<https://huggingface.co/Comfy-Org/Krea-2/blob/main/loras/krea2_turbo_lora_rank_64_bf16.safetensors>)
+- It has built-in censorship, the model will not generate risque things with common prompts (but can be tricked or bypassed).
+    - The most common baseline bypass is [Krea2FilterBypass LoRA](<https://civitai.red/models/2728234/krea2filterbypass?modelVersionId=3067151>), but almost any nsfw lora will naturally bypass the filter.
+- Uses Qwen 3 VL 4B as a text encoder, and the QwenImage VAE, these will be automatically downloaded.
+- **Parameters:**
+    - **Prompt:** Normal general model prompting works as expected, but NSFW terms will be stripped by the models internal text-refiner.
+    - **Prompt Images:** Krea 2 is not an editing model per se, but it can take in reference images in the prompt. Be warned it will overpower the prompt. Improvements to this are TBD?
+    - **Resolution:** Side length `1024` is the default, but it work anywhere from `128` to `4096`.
+    - **Steps:** For Turbo, `8` recommended, `4` minimum. For Base normal step counts (20+).
+    - **CFG:** For Turbo, `1`. For Base normal CFG ranges (4+? 7? idk, tbd)
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **Sigma Shift:** Defaults to `1.15`
 
 # Boogu
 

@@ -258,7 +258,7 @@ User route to get the user's own base data.
             "param_map": {
                 "key": "value"
             },
-            "preview_image": "data:base64 img"
+            "preview_image": "/ViewSpecial/Preset/Preset Title"
         }
     ],
     "language": "en",

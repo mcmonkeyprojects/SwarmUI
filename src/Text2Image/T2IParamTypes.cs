@@ -333,7 +333,7 @@ public class T2IParamTypes
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, GptOssModel, VideoExtendModel, VideoExtendSwapModel, NegativeModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
-    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData, NegativeModelIncludeLoras,
+    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData, NegativeModelIncludeLoras, ContinueAfterErrors,
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
@@ -730,7 +730,7 @@ public class T2IParamTypes
             return low.Contains("negative") || low.Contains("uncond");
         }
         NegativeModel = Register<T2IModel>(new("Negative Model", "What main checkpoint model should be used for the negative (Unconditional) portion of generation.",
-            "", IgnoreIf: "",  Permission: Permissions.ModelParams, GetValues: s => [.. CleanModelList(Program.MainSDModels.ListModelsFor(s).Select(m => m.Name)).OrderBy(m => isUncondName(m) ? 0 : 1)], Subtype: "Stable-Diffusion", ChangeWeight: 10, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedModelAddons, OrderPriority: 80, CanSectionalize: true
+            "", IgnoreIf: "", Permission: Permissions.ModelParams, GetValues: s => [.. CleanModelList(Program.MainSDModels.ListModelsFor(s).Select(m => m.Name)).OrderBy(m => isUncondName(m) ? 0 : 1)], Subtype: "Stable-Diffusion", ChangeWeight: 10, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedModelAddons, OrderPriority: 80, CanSectionalize: true
             ));
         NegativeModelIncludeLoras = Register<bool>(new("Negative Model Include LoRAs", "Whether the Negative Model should include LoRAs.\nDefaults to on.\nThis should probably never be turned off.",
             "true", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons, ChangeWeight: 7, OrderPriority: 81, CanSectionalize: true
@@ -773,6 +773,9 @@ public class T2IParamTypes
             ));
         NoInternalSpecialHandling = Register<bool>(new("No Internal Special Handling", "If checked, tells the server that it should not do any internal special handling in this request.\nA key example is in ComfyUI usage, inputs and outputs stored to comfy dirs will not be removed.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -13, VisibleNormally: false
+            ));
+        ContinueAfterErrors = Register<bool>(new("Continue After Errors", "If an error occurs while generating images, continue (as much as possible) with further actions (such as generating more images within a queue).",
+            "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -12, IntentionalUnused: true
             ));
         ForwardRawBackendData = Register<bool>(new("Forward Raw Backend Data", "If checked, tells the server to forward any raw backend data (eg comfy websocket data) to the caller.\nThis is for advanced usage (eg API calls), not normal users.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, HideFromMetadata: true, VisibleNormally: false

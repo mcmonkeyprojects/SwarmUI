@@ -248,7 +248,7 @@ public class Session : IEquatable<Session>
                 {
                     MediaFile actualFile = image.ActualFileTask is null ? image.File : await image.ActualFileTask;
                     File.WriteAllBytes(fullPath, actualFile.RawData);
-                    if ((User.Settings.FileFormat.SaveTextFileMetadata || !OutputMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
+                    if ((User.Settings.FileFormat.SaveTextFileMetadata || extension == "webp" || !OutputMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
                     {
                         if (extension == "webp" && actualFile is ImageFile imageFile && imageFile.ToIS.Frames.Count == 1)
                         {

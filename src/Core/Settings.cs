@@ -566,6 +566,10 @@ public class Settings : AutoConfiguration
             [ConfigComment("What VAE to use with Mochi Text2Video models by default.")]
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]
             public string DefaultMochiVAE = "None";
+
+            [ConfigComment("What VAE to use with Qwen Image models by default.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["None"])]
+            public string DefaultQwenVAE = "None";
         }
 
         [ConfigComment("Options to override default VAEs with.")]

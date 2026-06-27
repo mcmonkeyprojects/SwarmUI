@@ -523,7 +523,21 @@ class UIImprovementHandler {
         }
         let popId = `uiimprover_${elem.id}`;
         let rect = elem.getBoundingClientRect();
-        let buttons = [...elem.options].filter(o => o.style.display != 'none').map(o => { return { key_html: o.dataset.cleanname, title: o.title, key: o.innerText, searchable: `${o.dataset.cleanname} ${o.innerText} ${o.value}`, action: () => { elem.value = o.value; triggerChangeFor(elem); } }; })
+        let options = [...elem.options].filter(o => o.style.display != 'none');
+        /* TEMP Firefox v152 bugfix: if elem options duplicate, rebuild the options list */
+        let duplicates = options.filter(o => options.findLastIndex(o2 => o2.value == o.value) != options.indexOf(o));
+        if (duplicates.length > 0) {
+            console.log(`Duplicate value found for ${elem.id}: ${duplicates.map(o => o.value).join(', ')}`);
+            options = [... elem.options];
+            let newOptions = options.filter(o => o.style.display == 'none' || options.findIndex(o2 => o2.value == o.value) == options.indexOf(o));
+            let val = elem.value;
+            elem.innerHTML = '';
+            for (let o of newOptions) {
+                elem.appendChild(o);
+            }
+            elem.value = val;
+        }
+        let buttons = [...elem.options].filter(o => o.style.display != 'none').map(o => { return { key_html: o.dataset.cleanname, title: o.title, key: o.innerText, searchable: `${o.dataset.cleanname} ${o.innerText} ${o.value}`, action: () => { o.selected = true; triggerChangeFor(elem); } }; });
         this.lastPopover = new AdvancedPopover(popId, buttons, true, rect.x, rect.y, elem.parentElement, elem.selectedIndex < 0 ? null : elem.selectedOptions[0].innerText, 0);
         e.preventDefault();
         e.stopPropagation();
