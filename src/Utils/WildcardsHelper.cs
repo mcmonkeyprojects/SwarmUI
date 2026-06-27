@@ -93,7 +93,7 @@ public class WildcardsHelper
             wildcard.TimeModified = new DateTimeOffset(File.GetLastWriteTimeUtc(fname)).ToUnixTimeMilliseconds();
             string rawText = StringConversionHelper.UTF8Encoding.GetString(File.ReadAllBytes(fname)).Replace("\r\n", "\n").Replace("\r", "").Replace("\uFEFF", "");
             wildcard.Raw = rawText;
-            wildcard.Options = [.. rawText.Split('\n').Select(card => card.Before('#').Trim()).Where(card => !string.IsNullOrWhiteSpace(card))];
+            wildcard.Options = [.. rawText.Split('\n').Select(card => card.Before('#').Trim().Replace("\\n", "\n")).Where(card => !string.IsNullOrWhiteSpace(card))];
             if (wildcard.Image is null && File.Exists($"{Folder}/{name}.jpg"))
             {
                 wildcard.Image = new Image(File.ReadAllBytes($"{Folder}/{name}.jpg"), MediaType.ImageJpg).AsDataString();
