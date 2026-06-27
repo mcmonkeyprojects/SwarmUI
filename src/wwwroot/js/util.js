@@ -914,6 +914,9 @@ function formatNumberClean(num, maxDigits) {
 
 /** Gets a data image URL from an image src. */
 function imageToData(src, callback, resize256 = false) {
+    if (src.startsWith('inputs/')) {
+        src = `${getImageOutPrefix()}/${src}`;
+    }
     if (resize256) {
         var image = new Image();
         image.crossOrigin = 'Anonymous';
