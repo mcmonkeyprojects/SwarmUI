@@ -150,6 +150,10 @@ public static class OutputMetadataTracker
         file = file.Replace('\\', '/');
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
+        if (file.EndsWith(".swarmpreview.jpg") || file.EndsWith(".swarmpreview.webp"))
+        {
+            return null;
+        }
         MediaType expectedMediaType = MediaType.GetByExtension(ext);
         if (expectedMediaType is not null && expectedMediaType.MetaType == MediaMetaType.Audio)
         {
@@ -321,6 +325,10 @@ public static class OutputMetadataTracker
         file = file.Replace('\\', '/');
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
+        if (file.EndsWith(".swarmpreview.jpg") || file.EndsWith(".swarmpreview.webp"))
+        {
+            return null;
+        }
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             filename = file;
@@ -377,7 +385,11 @@ public static class OutputMetadataTracker
         try
         {
             string altMetaPath = $"{file.BeforeLast('.')}.swarm.json";
-            if (ExtensionsWithMetadata.Contains(ext))
+            if (File.Exists(altMetaPath))
+            {
+                fileData = File.ReadAllText(altMetaPath);
+            }
+            else if (ExtensionsWithMetadata.Contains(ext))
             {
                 byte[] data = File.ReadAllBytes(file);
                 if (data.Length == 0)
@@ -385,10 +397,6 @@ public static class OutputMetadataTracker
                     return null;
                 }
                 fileData = new Image(data, MediaType.GetByExtension(ext)).GetMetadata();
-            }
-            if (string.IsNullOrWhiteSpace(fileData) && File.Exists(altMetaPath))
-            {
-                fileData = File.ReadAllText(altMetaPath);
             }
             string subPath = file.StartsWith(root) ? file[root.Length..] : Path.GetRelativePath(root, file);
             subPath = subPath.Replace('\\', '/').Trim('/');
