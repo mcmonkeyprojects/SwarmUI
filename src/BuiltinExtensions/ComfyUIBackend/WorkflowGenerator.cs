@@ -972,10 +972,6 @@ public partial class WorkflowGenerator
         }
         else if (IsBoogu())
         {
-            if (IsBooguEdit())
-            {
-                defsampler ??= "dpmpp_2m";
-            }
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
@@ -1309,7 +1305,7 @@ public partial class WorkflowGenerator
                     doesFit = false;
                 }
             }
-            else if (IsQwenImageEditPlus() && promptSize)
+            else if ((IsBoogu() || IsQwenImageEditPlus()) && promptSize)
             {
                 target = 384;
                 doesFit = false;
@@ -2353,7 +2349,7 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (IsIdeogram4() || IsKrea2())
+        else if (IsIdeogram4() || IsKrea2() || (IsBoogu() && isPositive))
         {
             JArray imageNode = GetPromptImage(true, true, 0);
             for (int i = 1; i < 10; i++)
@@ -2381,7 +2377,7 @@ public partial class WorkflowGenerator
                 ["target_height"] = height,
                 ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
                 ["images"] = imageNode,
-                ["llama_template"] = "krea2" // TODO: Ideogram preferred template?
+                ["llama_template"] = IsBoogu() ? null : "krea2" // TODO: Ideogram preferred template?
             }, id);
         }
         else if (IsQwenImageEdit() && (isPositive || IsQwenImageEditPlus()) && (qwenImage = GetPromptImage(true, true)) is not null)
@@ -2444,26 +2440,6 @@ public partial class WorkflowGenerator
                     ["image"] = qwenImage
                 }, id);
             }
-        }
-        else if (IsBooguEdit() && isPositive && !wantsSwarmCustom)
-        {
-            JObject booguInputs = new()
-            {
-                ["clip"] = clip,
-                ["prompt"] = prompt,
-                ["negative_prompt"] = "",
-                ["vae"] = null
-            };
-            for (int i = 0; i < 16; i++)
-            {
-                JArray img = GetPromptImage(true, true, i);
-                if (img is null)
-                {
-                    break;
-                }
-                booguInputs[$"images.image_{i + 1}"] = img;
-            }
-            node = CreateNode("TextEncodeBooguEdit", booguInputs, id);
         }
         else if (IsHunyuanVideoI2V() && prompt.StartsWith("<image:"))
         {

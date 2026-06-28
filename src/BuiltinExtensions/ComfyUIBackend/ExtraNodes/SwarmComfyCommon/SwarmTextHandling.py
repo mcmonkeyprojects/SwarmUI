@@ -70,7 +70,7 @@ class SwarmClipTextEncodeAdvanced:
         def tokenize(text: str):
             nonlocal images
             if clip_vision_output is not None:
-                return clip.tokenize(text, llama_template=llama_template, image_embeds=clip_vision_output.mm_projected)
+                return clip.tokenize(text, llama_template=llama_template if llama_template else None, image_embeds=clip_vision_output.mm_projected)
             elif images is not None:
                 if append_images:
                     image_prompt = ""
@@ -83,7 +83,7 @@ class SwarmClipTextEncodeAdvanced:
                         text = image_prompt + text
                     else:
                         text = text + image_prompt
-                return clip.tokenize(text, llama_template=llama_template, images=images)
+                return clip.tokenize(text, llama_template=llama_template if llama_template else None, images=images)
             else:
                 return clip.tokenize(text)
 

@@ -160,9 +160,6 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Boogu.</summary>
     public bool IsBoogu() => IsModelCompatClass(T2IModelClassSorter.CompatBoogu);
 
-    /// <summary>Returns true if the current model is Boogu and has a prompt image (consider it edit model).</summary>
-    public bool IsBooguEdit() => IsBoogu() && UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0;
-
     /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
     public bool IsHunyuanVideo() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo);
 
