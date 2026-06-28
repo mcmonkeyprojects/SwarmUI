@@ -62,6 +62,7 @@ class WildcardHelpers {
             this.modalMayClose = false;
         });
         this.processContents();
+        textPromptAddKeydownHandler(this.contentsElem);
     }
 
     /** Applies a new wildcard list from the server. */
