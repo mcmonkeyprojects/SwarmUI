@@ -516,7 +516,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                     ["comfy_index"] = index
                                 };
                             }
-                            takeOutput(new T2IEngine.ImageOutput() { File = new Image(output[preBytes..], mediaType), IsReal = isReal, GenTimeMS = firstStep == 0 ? -1 : (Environment.TickCount64 - firstStep) });
+                            takeOutput(new T2IEngine.ImageOutput() { File = new Image(output[preBytes..], mediaType), IsReal = isReal, BackendInternalHint = currentNode, GenTimeMS = firstStep == 0 ? -1 : (Environment.TickCount64 - firstStep) });
                         }
                         else
                         {

@@ -29,7 +29,7 @@ namespace SwarmUI.Text2Image
         public static Action<PostGenerationEventParams> PostGenerateEvent;
 
         /// <summary>Paramters for <see cref="PostGenerateEvent"/>.</summary>
-        public record class PostGenerationEventParams(MediaFile File, T2IParamInput UserInput, Action RefuseImage);
+        public record class PostGenerationEventParams(MediaFile File, T2IParamInput UserInput, Action RefuseImage, string BackendInternalHint = null);
 
         /// <summary>Extension event, fired after a batch of images were generated.
         /// Use "RefuseImage" to mark an image as removed. Note that it may have already been shown to a user, when the live result websocket API is in use.</summary>
@@ -66,6 +66,9 @@ namespace SwarmUI.Text2Image
 
             /// <summary>An action that will remove/discard this file as relevant.</summary>
             public Action RefuseImage;
+
+            /// <summary>Optional text identifying some internal hint from the backend, such as a Comfy Node ID. Format or content not guaranteed, use with caution and validation checks.</summary>
+            public string BackendInternalHint;
         }
 
         /// <summary>List of functions that take a pair of userinput and backend, and returns true if they can fit together, or false if the pair is not valid (add to user_input.RefusalReasons if so).</summary>
@@ -221,7 +224,7 @@ namespace SwarmUI.Text2Image
                     copyInput.ExtraMeta["intermediate"] = "intermediate output";
                 }
                 bool refuse = false;
-                PostGenerateEvent?.Invoke(new(img.File, copyInput, () => refuse = true));
+                PostGenerateEvent?.Invoke(new(img.File, copyInput, () => refuse = true, img.BackendInternalHint));
                 if (refuse)
                 {
                     Logs.Info($"Refused an image.");
