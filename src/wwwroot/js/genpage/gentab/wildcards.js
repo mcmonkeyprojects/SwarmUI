@@ -183,7 +183,7 @@ class WildcardHelpers {
                 clazz += ' wc_line_comment';
             }
             charCount += trimLine.length == 0 ? 1 : line.length;
-            html += `<div class="${clazz}">${trimLine.length == 0 ? '\u2009' : line}</div>`;
+            html += `<div class="${clazz}">${trimLine.length == 0 ? '\u2009' : escapeHtmlNoBr(line)}</div>`;
             if (i < lines.length - 1) {
                 charCount++;
                 html += '<div class="wc_line_spacer">\\</div>';
