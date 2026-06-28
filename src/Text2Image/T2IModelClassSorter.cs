@@ -94,6 +94,7 @@ public class T2IModelClassSorter
         CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
         CompatIdeogram4 = RegisterCompat(new() { ID = "ideogram-4", ShortCode = "Ideo4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
+        CompatBoogu = RegisterCompat(new() { ID = "boogu", ShortCode = "Boogu", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones
@@ -236,7 +237,8 @@ public class T2IModelClassSorter
         bool isChromaRadiance(JObject h) => hasKey(h, "nerf_image_embedder.embedder.0.bias");
         bool isPiD(JObject h) => h.ContainsKey("net.lq_proj.latent_proj.0.weight") && h.ContainsKey("net.pixel_blocks.0.attn.q_norm.weight") && h.ContainsKey("net.pixel_blocks.0.compress_to_attn.weight");
         bool isPixelDiT(JObject h) => h.ContainsKey("core.pixel_embedder.proj.weight") && h.ContainsKey("core.pixel_blocks.0.attn.q_norm.weight") && h.ContainsKey("core.pixel_blocks.0.compress_to_attn.weight") && !isPiD(h);
-        bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
+        bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight") && !isBoogu(h);
+        bool isBoogu(JObject h) => hasKey(h, "double_stream_layers.0.img_instruct_attn.processor.img_to_q.weight") && hasKey(h, "double_stream_layers.0.img_instruct_attn.processor.instruct_to_q.weight");
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
             || (h.ContainsKey("model.diffusion_model.time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("model.diffusion_model.img_in.bias") && (h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_qkv_proj.bias")));
         bool isQwenImageEdit2511(JObject h) => h.ContainsKey("__index_timestep_zero__");
@@ -864,6 +866,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "longcat-image", CompatClass = CompatLongcatImage, Name = "Longcat Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isLongcat(h);
+        }});
+        // ====================== Boogu ======================
+        Register(new() { ID = "boogu", CompatClass = CompatBoogu, Name = "Boogu", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isBoogu(h);
         }});
         // ====================== Audio Models ======================
         Register(new() { ID = "ace-step-1_5", CompatClass = CompatAceStep15, Name = "Ace Step 1.5", IsThisModelOfClass = (m, h) =>

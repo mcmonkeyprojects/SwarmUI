@@ -157,6 +157,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Krea 2.</summary>
     public bool IsKrea2() => IsModelCompatClass(T2IModelClassSorter.CompatKrea2);
 
+    /// <summary>Returns true if the current model is Boogu.</summary>
+    public bool IsBoogu() => IsModelCompatClass(T2IModelClassSorter.CompatBoogu);
+
     /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
     public bool IsHunyuanVideo() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo);
 
@@ -1136,6 +1139,11 @@ public partial class WorkflowGenerator
             helpers.LoadClip("krea2", helpers.GetQwen3vl_4bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultQwenVAE, "qwen-image", "qwen-image-vae");
         }
+        else if (IsBoogu())
+        {
+            helpers.LoadClip("boogu", helpers.GetQwen3vl_8bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
             helpers.LoadClip2("flux", helpers.GetT5XXLModel(), helpers.GetClipLModel());
@@ -1419,7 +1427,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsZImage() || IsAceStep15() || IsAnima() || IsKrea2())
+            else if (IsZImage() || IsAceStep15() || IsAnima() || IsKrea2() || IsBoogu())
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {
