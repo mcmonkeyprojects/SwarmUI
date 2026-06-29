@@ -2,7 +2,8 @@ from PIL import Image
 import numpy as np
 import comfy.utils
 from server import PromptServer, BinaryEventTypes
-import time, io, struct
+import time, io, struct, os
+import folder_paths
 
 SPECIAL_ID = 12345 # Tells swarm that the node is going to output final images
 VIDEO_ID = 12346
@@ -38,26 +39,24 @@ class SwarmSaveImageWS:
     DESCRIPTION = "Acts like a special version of 'SaveImage' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the image itself rather than having Comfy's Core save it."
 
     def save_images(self, images, bit_depth = "8bit"):
-        pbar = comfy.utils.ProgressBar(SPECIAL_ID)
+        pbar = comfy.utils.ProgressBar(images.shape[0])
         step = 0
         for image in images:
+            i = 255.0 * image.cpu().numpy()
+            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            pbar.update_absolute(step, images.shape[0], ("PNG", img, None))
             if bit_depth == "raw":
-                i = 255.0 * image.cpu().numpy()
-                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 def do_save(out):
                     img.save(out, format='BMP')
                 send_image_to_server_raw(1, do_save, SPECIAL_ID, event_type=10)
             elif bit_depth == "16bit":
                 i = 65535.0 * image.cpu().numpy()
-                img = self.convert_img_16bit(np.clip(i, 0, 65535).astype(np.uint16))
-                send_image_to_server_raw(2, lambda out: out.write(img), SPECIAL_ID)
+                img16 = self.convert_img_16bit(np.clip(i, 0, 65535).astype(np.uint16))
+                send_image_to_server_raw(2, lambda out: out.write(img16), SPECIAL_ID)
             else:
-                i = 255.0 * image.cpu().numpy()
-                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 def do_save(out):
                     img.save(out, format='PNG')
                 send_image_to_server_raw(2, do_save, SPECIAL_ID)
-                #pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
             step += 1
 
         return {}
@@ -104,17 +103,28 @@ class SwarmSaveAnimatedWebpWS:
 
     def save_images(self, images, fps, lossless, quality, method):
         method = self.methods.get(method)
+        if images.shape[0] == 0:
+            return { }
         pil_images = []
         for image in images:
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             pil_images.append(img)
 
+        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path("swarm_preview_", folder_paths.get_temp_directory(), images[0].shape[1], images[0].shape[0])
+        file = f"{filename}_{counter:05}_.webp"
+        file_path = os.path.join(full_output_folder, file)
+        pil_images[0].save(file_path, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')
+
         def do_save(out):
-            pil_images[0].save(out, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')
+            with open(file_path, "rb") as f:
+                out.write(f.read())
         send_image_to_server_raw(3, do_save, VIDEO_ID)
 
-        return { }
+        ui = { "images": [{ "filename": file, "subfolder": subfolder, "type": "temp" }] }
+        if len(pil_images) > 1:
+            ui["animated"] = (True,)
+        return { "ui": ui }
 
     @classmethod
     def IS_CHANGED(s, images, fps, lossless, quality, method):

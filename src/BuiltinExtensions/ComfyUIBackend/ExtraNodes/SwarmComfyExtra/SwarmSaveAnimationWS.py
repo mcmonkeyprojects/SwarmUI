@@ -1,4 +1,4 @@
-import comfy, folder_paths, io, struct, subprocess, os, random, sys, time, wave
+import comfy, folder_paths, io, struct, subprocess, os, sys, time, wave
 from PIL import Image
 import numpy as np
 from server import PromptServer, BinaryEventTypes
@@ -49,16 +49,18 @@ class SwarmSaveAnimationWS:
         if images.shape[0] == 0:
             return { }
         if images.shape[0] == 1:
-            pbar = comfy.utils.ProgressBar(SPECIAL_ID)
+            pbar = comfy.utils.ProgressBar(images.shape[0])
             i = 255.0 * images[0].cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            pbar.update_absolute(0, images.shape[0], ("PNG", img, None))
             def do_save(out):
                 img.save(out, format='PNG')
             send_image_to_server_raw(2, do_save, SPECIAL_ID)
-            #pbar.update_absolute(0, SPECIAL_ID, ("PNG", img, None))
             return { }
 
+        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path("swarm_preview_", folder_paths.get_temp_directory(), images[0].shape[1], images[0].shape[0])
         out_img = io.BytesIO()
+        file = None
         if format in ["webp", "gif"]:
             if format == "webp":
                 type_num = 3
@@ -69,7 +71,11 @@ class SwarmSaveAnimationWS:
                 i = 255. * image.cpu().numpy()
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 pil_images.append(img)
-            pil_images[0].save(out_img, save_all=True, duration=int(1000.0 / fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format=format.upper(), loop=0)
+            file = f"{filename}_{counter:05}_.{format}"
+            file_path = os.path.join(full_output_folder, file)
+            pil_images[0].save(file_path, save_all=True, duration=int(1000.0 / fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format=format.upper(), loop=0)
+            with open(file_path, "rb") as f:
+                out_img.write(f.read())
         else:
             i = 255. * images.cpu().numpy()
             raw_images = np.clip(i, 0, 255).astype(np.uint8)
@@ -101,9 +107,8 @@ class SwarmSaveAnimationWS:
                 video_args = ["-filter_complex", "split=2 [a][b]; [a] palettegen [pal]; [b] [pal] paletteuse"]
                 ext = "gif"
                 type_num = 4
-            path = folder_paths.get_save_image_path("swarm_tmp_", folder_paths.get_temp_directory())[0]
-            rand = '%016x' % random.getrandbits(64)
-            file = os.path.join(path, f"swarm_tmp_{rand}.{ext}")
+            file = f"{filename}_{counter:05}_.{ext}"
+            file_path = os.path.join(full_output_folder, file)
             file_2 = None
             audio_input = []
             if audio is not None and audio_args is not None:
@@ -123,7 +128,7 @@ class SwarmSaveAnimationWS:
                     audio_np = np.concatenate([audio_np, padding], axis=1)
                 audio_np = audio_np.T
                 audio_int16 = (np.clip(audio_np, -1.0, 1.0) * 32767).astype(np.int16)
-                file_2 = os.path.join(path, f"swarm_tmp_{rand}_audio.wav")
+                file_2 = os.path.join(full_output_folder, f"{filename}_{counter:05}_audio.wav")
                 with wave.open(file_2, 'wb') as wav_file:
                     wav_file.setnchannels(channels)
                     wav_file.setsampwidth(2)
@@ -132,7 +137,7 @@ class SwarmSaveAnimationWS:
                 audio_input = ["-i", file_2]
             else:
                 audio_args = []
-            result = subprocess.run(args + audio_input + video_args + audio_args + [file], input=raw_images.tobytes(), capture_output=True)
+            result = subprocess.run(args + audio_input + video_args + audio_args + [file_path], input=raw_images.tobytes(), capture_output=True)
             if result.returncode != 0:
                 print(f"ffmpeg failed with return code {result.returncode}", file=sys.stderr)
                 f_out = result.stdout.decode("utf-8").strip()
@@ -143,9 +148,8 @@ class SwarmSaveAnimationWS:
                     print("ffmpeg error: " + f_err, file=sys.stderr)
                 raise Exception(f"ffmpeg failed: {f_err}")
             # TODO: Is there a way to get ffmpeg to operate entirely in memory?
-            with open(file, "rb") as f:
+            with open(file_path, "rb") as f:
                 out_img.write(f.read())
-            os.remove(file)
             if file_2 is not None:
                 os.remove(file_2)
 
@@ -159,7 +163,7 @@ class SwarmSaveAnimationWS:
         server.send_sync("progress", {"value": 12346, "max": 12346}, sid=server.client_id)
         server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, preview_bytes, sid=server.client_id)
 
-        return { }
+        return { "ui": { "images": [{ "filename": file, "subfolder": subfolder, "type": "temp" }], "animated": (True,) } }
 
     @classmethod
     def IS_CHANGED(s, images, fps, lossless, quality, method, format, audio=None):
