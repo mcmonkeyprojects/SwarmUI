@@ -27,6 +27,8 @@ chmod +x dotnet-install.sh
 cd ..
 
 # Note: manual installers that want to avoid home dir, add to both of the below lines: --install-dir "$PWD/.dotnet"
+./launchtools/dotnet-install.sh --channel 10.0 --runtime aspnetcore
+./launchtools/dotnet-install.sh --channel 10.0
 ./launchtools/dotnet-install.sh --channel 8.0 --runtime aspnetcore
 ./launchtools/dotnet-install.sh --channel 8.0
 

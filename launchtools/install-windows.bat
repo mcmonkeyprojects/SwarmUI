@@ -19,6 +19,7 @@ dotnet --list-sdks > "%tempfile%"
 findstr "8.0." "%tempfile%" > nul
 if %ERRORLEVEL% neq 0 (
     echo DotNet SDK 8 is not installed, will install from WinGet...
+    winget install Microsoft.DotNet.SDK.10 --accept-source-agreements --accept-package-agreements
     winget install Microsoft.DotNet.SDK.8 --accept-source-agreements --accept-package-agreements
 )
 del "%tempfile%"

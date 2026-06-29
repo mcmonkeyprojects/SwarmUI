@@ -70,7 +70,9 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 # Alternate Manual Windows Install
 
 - Install git from https://git-scm.com/download/win
+- Current version targets .NET 8, but a future version will target .NET 10, so install both:
 - Install DotNET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0 (Make sure to get the SDK x64 for Windows)
+- Install DotNET 10 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/10.0 (Make sure to get the SDK x64 for Windows)
 - open a terminal to the folder you want swarm in and run `git clone https://github.com/mcmonkeyprojects/SwarmUI`
 - open the folder and run `launch-windows.bat`
 
@@ -95,7 +97,9 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 
 ### Linux Manual Install
 
+- Current version targets .NET 8, but a future version will target .NET 10, so install both:
 - Install DotNET 8 using the instructions at https://dotnet.microsoft.com/en-us/download/dotnet/8.0 (you need `dotnet-sdk-8.0`, as that includes all relevant sub-packages)
+- Install DotNET 8 using the instructions at https://dotnet.microsoft.com/en-us/download/dotnet/10.0 (you need `dotnet-sdk-10.0`, as that includes all relevant sub-packages)
 - Open a shell terminal and `cd` to a directory you want to install into
 - Run shell commands:
     - `git clone https://github.com/mcmonkeyprojects/SwarmUI`

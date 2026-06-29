@@ -128,7 +128,7 @@ public class Program
             Logs.Debug($"Unhandled exception: {e.ExceptionObject}");
         };
         List<Task> waitFor = [];
-        //Utilities.CheckDotNet("8");
+        Utilities.CheckDotNet("10");
         try
         {
             ParseEnvFile();
