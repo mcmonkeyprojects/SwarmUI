@@ -84,7 +84,6 @@ class SwarmVideoResampleFPS(io.ComfyNode):
         upper_frames = source_frames[upper_idx]
         return ((1.0 - blend_weight) * lower_frames + blend_weight * upper_frames).contiguous()
 
-
 NODE_CLASS_MAPPINGS = {
     "SwarmVideoResampleFPS": SwarmVideoResampleFPS,
 }
