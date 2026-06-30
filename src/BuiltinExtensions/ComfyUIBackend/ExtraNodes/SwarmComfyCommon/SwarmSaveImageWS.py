@@ -2,8 +2,7 @@ from PIL import Image
 import numpy as np
 import comfy.utils
 from server import PromptServer, BinaryEventTypes
-import time, io, struct, os
-import folder_paths
+import time, io, struct
 
 SPECIAL_ID = 12345 # Tells swarm that the node is going to output final images
 VIDEO_ID = 12346
@@ -111,20 +110,13 @@ class SwarmSaveAnimatedWebpWS:
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             pil_images.append(img)
 
-        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path("swarm_preview_", folder_paths.get_temp_directory(), images[0].shape[1], images[0].shape[0])
-        file = f"{filename}_{counter:05}_.webp"
-        file_path = os.path.join(full_output_folder, file)
-        pil_images[0].save(file_path, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')
+        comfy.utils.ProgressBar(1).update_absolute(0, 1, ("PNG", pil_images[0], None))
 
         def do_save(out):
-            with open(file_path, "rb") as f:
-                out.write(f.read())
+            pil_images[0].save(out, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')
         send_image_to_server_raw(3, do_save, VIDEO_ID)
 
-        ui = { "images": [{ "filename": file, "subfolder": subfolder, "type": "temp" }] }
-        if len(pil_images) > 1:
-            ui["animated"] = (True,)
-        return { "ui": ui }
+        return { }
 
     @classmethod
     def IS_CHANGED(s, images, fps, lossless, quality, method):
