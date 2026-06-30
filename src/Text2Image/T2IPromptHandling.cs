@@ -49,7 +49,11 @@ public class T2IPromptHandling
             }
             Depth++;
             int sectionId = SectionID;
+            string preData = PreData, rawCurrent = RawCurrentTag, param = Param;
             string result = ProcessPromptLike(text, this, false);
+            Param = param;
+            RawCurrentTag = rawCurrent;
+            PreData = preData;
             SectionID = sectionId;
             Depth--;
             return result;
@@ -141,6 +145,7 @@ public class T2IPromptHandling
     /// <summary>Interprets a number input by a user, or returns null if unable to.</summary>
     public static double? InterpretNumber(string inputVal, PromptTagContext context)
     {
+        inputVal = context.Parse(inputVal);
         if (TryInterpretNumberRange(inputVal, context, out string number))
         {
             inputVal = number;
@@ -733,6 +738,28 @@ public class T2IPromptHandling
         PromptTagLengthEstimators["comment"] = estimateEmpty;
     }
 
+    public static int IndexOfNoncontained(string val, char c)
+    {
+        int depth = 0;
+        for (int i = 0; i < val.Length; i++)
+        {
+            char ch = val[i];
+            if (ch == '<')
+            {
+                depth++;
+            }
+            else if (ch == '>')
+            {
+                depth--;
+            }
+            else if (ch == c && depth == 0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     /// <summary>Special utility to process prompt inputs before the request is executed (to parse wildcards, embeddings, etc).</summary>
     public static string ProcessPromptLike(string val, PromptTagContext context, bool isMain)
     {
@@ -742,22 +769,31 @@ public class T2IPromptHandling
         }
         string addBefore = "", addAfter = "";
         int baseSectionId = context.SectionID;
-        void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set)
+        void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set, int setId)
         {
             context.SectionID = baseSectionId;
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
-                (string prefix, string data) = tag.BeforeAndAfter(':');
-                string preData = null;
-                if (prefix.EndsWith(']') && prefix.Contains('['))
+                string prefix = tag;
+                string data = "";
+                int colonIndex = IndexOfNoncontained(tag, ':');
+                if (colonIndex != -1)
                 {
-                    (prefix, preData) = prefix.BeforeLast(']').BeforeAndAfter('[');
+                    prefix = tag[..colonIndex];
+                    data = tag[(colonIndex + 1)..];
+                }
+                string preData = null;
+                int bracket = IndexOfNoncontained(prefix, '[');
+                if (prefix.EndsWith(']') && bracket != -1)
+                {
+                    preData = prefix[(bracket + 1)..^1];
+                    prefix = prefix[..bracket];
                 }
                 prefix = prefix.ToLowerFast();
                 context.RawCurrentTag = tag;
                 context.PreData = preData;
                 int sectionId = context.SectionID;
-                Logs.Verbose($"[Prompt Parsing] Found tag {val}, will fill... prefix = '{prefix}', data = '{data}', predata = '{preData}', section = '{sectionId}'");
+                Logs.Verbose($"[Prompt Parsing] Found tag {val}, will fill... prefix = '{prefix}', data = '{data}', predata = '{preData}', section = '{sectionId}', setID = '{setId}'");
                 if (set.TryGetValue(prefix, out Func<string, PromptTagContext, string> proc))
                 {
                     string result = proc(data, context);
@@ -781,6 +817,7 @@ public class T2IPromptHandling
                                 return "";
                             }
                         }
+                        Logs.Verbose($"Result is: {result}");
                         return result;
                     }
                 }
@@ -791,12 +828,13 @@ public class T2IPromptHandling
                     Logs.Verbose($"[Prompt Parsing] Section ID changed by a prior mapping from {context.SectionID} to  {sectionId}");
                     context.SectionID = sectionId;
                 }
+                Logs.Verbose($"Result is raw tag <{tag}>");
                 return $"<{tag}>";
             }, false, 0);
         }
-        processSet(PromptTagBasicProcessors);
-        processSet(PromptTagProcessors);
-        processSet(PromptTagPostProcessors);
+        processSet(PromptTagBasicProcessors, 0);
+        processSet(PromptTagProcessors, 1);
+        processSet(PromptTagPostProcessors, 2);
         if (isMain)
         {
             string triggerPhrase = context.TriggerPhraseExtra;
@@ -820,11 +858,20 @@ public class T2IPromptHandling
         {
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
-                (string prefix, string data) = tag.BeforeAndAfter(':');
-                string preData = null;
-                if (prefix.EndsWith(']') && prefix.Contains('['))
+                string prefix = tag;
+                string data = "";
+                int colonIndex = IndexOfNoncontained(tag, ':');
+                if (colonIndex != -1)
                 {
-                    (prefix, preData) = prefix.BeforeLast(']').BeforeAndAfter('[');
+                    prefix = tag[..colonIndex];
+                    data = tag[(colonIndex + 1)..];
+                }
+                string preData = null;
+                int bracket = IndexOfNoncontained(prefix, '[');
+                if (prefix.EndsWith(']') && bracket != -1)
+                {
+                    preData = prefix[(bracket + 1)..^1];
+                    prefix = prefix[..bracket];
                 }
                 context.PreData = preData;
                 if (set.TryGetValue(prefix, out Func<string, PromptTagContext, string> proc))
