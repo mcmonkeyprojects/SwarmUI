@@ -64,11 +64,11 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 
 # Current Recommendations
 
-Image model(s) most worth using, as of January 2026:
+Image model(s) most worth using, as of June 2026:
 
-- Z-Image is the best right now, especially for photoreal gens.
-- Flux.2 Klein is pretty great too, for Editing or for art style variety.
-- Flux.2 Dev is massive, but is the smartest of the bunch if you have the hardware and patience for it.
+- Krea 2 is the champion of image generation.
+- Flux.2 Klein is pretty great too, particularly for editing.
+- Ideogram is worth experimenting with if you like getting advanced, as it allows JSON inputs with structured bounding boxes.
 
 # General Info
 
