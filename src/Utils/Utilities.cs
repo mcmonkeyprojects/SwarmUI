@@ -1234,7 +1234,9 @@ public static class Utilities
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            WorkingDirectory = dir
+            WorkingDirectory = dir,
+            StandardOutputEncoding = StringConversionHelper.UTF8Encoding,
+            StandardErrorEncoding = StringConversionHelper.UTF8Encoding
         };
         start.Environment["GIT_TERMINAL_PROMPT"] = "0";
         SemaphoreSlim semaphore = GitOverlapLocks.GetLock(dir);
