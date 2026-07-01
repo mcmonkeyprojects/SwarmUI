@@ -38,26 +38,24 @@ class SwarmSaveImageWS:
     DESCRIPTION = "Acts like a special version of 'SaveImage' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the image itself rather than having Comfy's Core save it."
 
     def save_images(self, images, bit_depth = "8bit"):
-        pbar = comfy.utils.ProgressBar(SPECIAL_ID)
+        pbar = comfy.utils.ProgressBar(images.shape[0])
         step = 0
         for image in images:
+            i = 255.0 * image.cpu().numpy()
+            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            pbar.update_absolute(step, images.shape[0], ("PNG", img, None))
             if bit_depth == "raw":
-                i = 255.0 * image.cpu().numpy()
-                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 def do_save(out):
                     img.save(out, format='BMP')
                 send_image_to_server_raw(1, do_save, SPECIAL_ID, event_type=10)
             elif bit_depth == "16bit":
                 i = 65535.0 * image.cpu().numpy()
-                img = self.convert_img_16bit(np.clip(i, 0, 65535).astype(np.uint16))
-                send_image_to_server_raw(2, lambda out: out.write(img), SPECIAL_ID)
+                img16 = self.convert_img_16bit(np.clip(i, 0, 65535).astype(np.uint16))
+                send_image_to_server_raw(2, lambda out: out.write(img16), SPECIAL_ID)
             else:
-                i = 255.0 * image.cpu().numpy()
-                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 def do_save(out):
                     img.save(out, format='PNG')
                 send_image_to_server_raw(2, do_save, SPECIAL_ID)
-                #pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
             step += 1
 
         return {}
@@ -104,11 +102,15 @@ class SwarmSaveAnimatedWebpWS:
 
     def save_images(self, images, fps, lossless, quality, method):
         method = self.methods.get(method)
+        if images.shape[0] == 0:
+            return { }
         pil_images = []
         for image in images:
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             pil_images.append(img)
+
+        comfy.utils.ProgressBar(1).update_absolute(0, 1, ("PNG", pil_images[0], None))
 
         def do_save(out):
             pil_images[0].save(out, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')

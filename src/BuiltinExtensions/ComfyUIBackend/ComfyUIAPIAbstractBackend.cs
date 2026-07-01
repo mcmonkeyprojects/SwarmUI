@@ -349,6 +349,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             bool isExpectingVideo = false;
             bool isExpectingText = false;
             string currentNode = "";
+            HashSet<string> websocketOutputNodes = [];
             bool isMe = false;
             // autoCanceller will be cancelled via the using to end the task and not leave it waiting when the method clears
             using CancellationTokenSource autoCanceller = new();
@@ -517,6 +518,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                 };
                             }
                             takeOutput(new T2IEngine.ImageOutput() { File = new Image(output[preBytes..], mediaType), IsReal = isReal, BackendInternalHint = currentNode, GenTimeMS = firstStep == 0 ? -1 : (Environment.TickCount64 - firstStep) });
+                            websocketOutputNodes.Add(currentNode);
                         }
                         else
                         {
@@ -540,7 +542,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             JObject historyOut = await SendGet<JObject>($"history/{promptId}");
             if (!historyOut.Properties().IsEmpty())
             {
-                foreach (MediaFile file in await GetAllImagesForHistory(historyOut[promptId], user_input, interrupt))
+                foreach (MediaFile file in await GetAllImagesForHistory(historyOut[promptId], user_input, interrupt, websocketOutputNodes))
                 {
                     if (Program.ServerSettings.AddDebugData)
                     {
@@ -639,7 +641,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
     }
 
-    private async Task<MediaFile[]> GetAllImagesForHistory(JToken output, T2IParamInput userInput, CancellationToken interrupt)
+    private async Task<MediaFile[]> GetAllImagesForHistory(JToken output, T2IParamInput userInput, CancellationToken interrupt, HashSet<string> websocketOutputNodes = null)
     {
         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
         {
@@ -675,8 +677,13 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
         List<MediaFile> outputs = [];
         List<string> outputFailures = [];
-        foreach (JToken outData in output["outputs"].Values())
+        foreach (JProperty outputProp in output["outputs"].Children<JProperty>())
         {
+            if (websocketOutputNodes is not null && websocketOutputNodes.Contains(outputProp.Name))
+            {
+                continue;
+            }
+            JToken outData = outputProp.Value;
             if (outData is null)
             {
                 Logs.Debug($"null output data from ComfyUI server: {output.ToDenseDebugString()}");
