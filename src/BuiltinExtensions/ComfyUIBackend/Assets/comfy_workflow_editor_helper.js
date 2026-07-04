@@ -29,8 +29,7 @@ class ComfyTorchManager {
                 return;
             }
             this.card.style.display = '';
-            let html = `Installed Comfy Torch Version(s):<br><br>`
-                + `<table class="simple-table"><tr><th>Install Folder</th><th>Torch Version</th><th>Backend IDs</th><th>Action</th></tr>`;
+            let html = `<table class="simple-table"><tr><th>Install Folder</th><th>Torch Version</th><th>Backend IDs</th><th>Action</th></tr>`;
             for (let install of data.installs) {
                 let action;
                 if (install.can_update) {
