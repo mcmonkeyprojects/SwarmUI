@@ -7,7 +7,7 @@ if [ "$DOTNET_ROOT" = "$SCRIPT_DIR/.dotnet" ] || [ "$DOTNET_ROOT" = "$HOME/.dotn
     if ! dotnet --list-sdks 2>/dev/null | grep -q "^10\.0"; then
         echo "Installing dotnet 10 to user-local dir, if you don't want this you have 15 seconds to CTRL+C this terminal, then go manually install dotnet 10"
         sleep 15
-        ./launchtools/linux-dotnet-install.sh
+        ./launchtools/linux-dotnet-install.sh "$DOTNET_ROOT"
     fi
 fi
 

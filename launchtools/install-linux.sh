@@ -19,7 +19,8 @@ git clone https://github.com/mcmonkeyprojects/SwarmUI
 cd SwarmUI
 
 # install dotnet
-./launchtools/linux-dotnet-install.sh
+# Note: manual installers that want to avoid home dir, you can change the path below to "$PWD/.dotnet"
+./launchtools/linux-dotnet-install.sh "$HOME/.dotnet"
 
 # Launch
 ./launch-linux.sh "$@"
