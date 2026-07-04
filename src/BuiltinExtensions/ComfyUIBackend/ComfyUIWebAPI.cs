@@ -8,6 +8,7 @@ using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
+using System.Diagnostics;
 using System.IO;
 using System.Net.WebSockets;
 
@@ -26,6 +27,8 @@ public static class ComfyUIWebAPI
         API.RegisterAPICall(ComfyGetNodeTypesForBackend, false, Permissions.ViewBackendsList);
         API.RegisterAPICall(ComfyEnsureRefreshable, false, ComfyUIBackendExtension.PermDirectCalls);
         API.RegisterAPICall(ComfyInstallFeatures, true, Permissions.InstallFeatures);
+        API.RegisterAPICall(ComfyListTorchInstalls, false, Permissions.InstallFeatures);
+        API.RegisterAPICall(ComfyUpdateTorch, true, Permissions.InstallFeatures);
         API.RegisterAPICall(DoTensorRTCreateWS, true, Permissions.CreateTRT);
     }
 
@@ -236,6 +239,108 @@ public static class ComfyUIWebAPI
                 Program.Backends.DoInitBackend(backendToStart.BackendData);
             }
             return new JObject() { ["success"] = true };
+        }
+        finally
+        {
+            MultiInstallLock.Release();
+        }
+    }
+
+    /// <summary>API route to list torch version installs for comfy backends.</summary>
+    public static async Task<JObject> ComfyListTorchInstalls(Session session)
+    {
+        Version target = ComfyUISelfStartBackend.ParseVersion(ComfyUISelfStartBackend.CurrentTorchVersion);
+        Dictionary<string, List<int>> folders = [];
+        foreach (BackendHandler.BackendData data in Program.Backends.EnumerateT2IBackends)
+        {
+            if (data.AbstractBackend is not ComfyUISelfStartBackend backend)
+            {
+                continue;
+            }
+            string script = backend.Settings.StartScript;
+            if (string.IsNullOrWhiteSpace(script))
+            {
+                continue;
+            }
+            string folder = backend.ComfyPathBase;
+            folders.GetOrCreate(folder, () => []).Add(data.ID);
+        }
+        JArray installs = [];
+        foreach ((string folder, List<int> backends) in folders.OrderBy(p => p.Key))
+        {
+            string torchVersRaw = ComfyUISelfStartBackend.GetInstalledPackageVersion($"{folder}/main.py", "torch");
+            string torchVers = torchVersRaw?.Before('+');
+            bool canUpdate = false;
+            if (torchVers is not null && target is not null)
+            {
+                try
+                {
+                    canUpdate = ComfyUISelfStartBackend.ParseVersion(torchVers) < target;
+                }
+                catch (Exception)
+                {
+                    canUpdate = false;
+                }
+                if (!torchVersRaw.ToLowerFast().Contains("+cu")) // TODO: AMD/etc support?
+                {
+                    canUpdate = false;
+                }
+            }
+            installs.Add(new JObject()
+            {
+                ["path"] = folder,
+                ["torch_version"] = torchVersRaw ?? "(unknown)",
+                ["can_update"] = canUpdate,
+                ["backend_ids"] = new JArray(backends.OrderBy(i => i).Select(i => (JToken)i).ToArray())
+            });
+        }
+        return new JObject()
+        {
+            ["target_torch_version"] = ComfyUISelfStartBackend.CurrentTorchVersion,
+            ["installs"] = installs
+        };
+    }
+
+    /// <summary>API route to update Torch for a single Comfy install folder.</summary>
+    public static async Task<JObject> ComfyUpdateTorch(Session session, int backendId)
+    {
+        await MultiInstallLock.WaitAsync(Program.GlobalProgramCancel);
+        try
+        {
+            if (!Program.Backends.AllBackends.TryGetValue(backendId, out BackendHandler.BackendData backend) || backend.AbstractBackend is not ComfyUISelfStartBackend target)
+            {
+                return new() { ["error"] = $"Invalid backend ID {backendId}" };
+            }
+            string path = target.ComfyPathBase;
+            ComfyUISelfStartBackend[] backends = [.. Program.Backends.EnumerateT2IBackends.Select(d => d.AbstractBackend as ComfyUISelfStartBackend).Where(b => b is not null && b.ComfyPathBase == path)];
+            Logs.Info($"User {session.User.UserID} requested a PyTorch update for ComfyUI install at '{path}' (affecting {backends.Length} backend(s))...");
+            Logs.Info($"[Torch Update] Shutting down {backends.Length} backend(s) that use this install...");
+            Task[] shutdownTasks = [.. backends.Select(b => Program.Backends.ShutdownBackendCleanly(b.BackendData))];
+            await Task.WhenAll(shutdownTasks);
+            async Task pipCall(string reason, string call)
+            {
+                Logs.Info($"[Torch Update] {reason} for ComfyUI install '{path}'...");
+                Process p = target.DoPythonCall($"-s -m pip {call}");
+                NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Torch Update - {reason})", "");
+                await p.WaitForExitAsync(Program.GlobalProgramCancel);
+                Logs.Info($"[Torch Update] Done {reason} for ComfyUI install '{path}'.");
+            }
+            try
+            {
+                await pipCall("Uninstalling old torch", "uninstall -y torch torchvision torchaudio");
+                await pipCall("Installing new torch", "install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu132");
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Failed to update torch for ComfyUI install '{path}': {ex.ReadableString()}");
+                return new JObject() { ["error"] = "Torch update failed, check server logs for details." };
+            }
+            Logs.Info($"[Torch Update] Restarting {backends.Length} backend(s)...");
+            foreach (ComfyUISelfStartBackend back in backends)
+            {
+                Program.Backends.DoInitBackend(back.BackendData);
+            }
+            return new() { ["success"] = true };
         }
         finally
         {
