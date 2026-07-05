@@ -188,6 +188,7 @@ public class T2IModelClassSorter
         bool isKrea2(JObject h) => hasKey(h, "txtfusion.projector.weight") && hasKey(h, "blocks.0.attn.gate.weight") && hasKey(h, "blocks.0.mod.lin");
         bool isKrea2Lora(JObject h) => (hasLoraKey(h, "blocks.0.attn.gate") && hasLoraKey(h, "blocks.0.mlp.gate"))
             || (hasLoraKey(h, "text_fusion.layerwise_blocks.0.attn.to_gate") && hasLoraKey(h, "img_in") && hasLoraKey(h, "final_layer.linear"))
+            || (hasLoraKey(h, "lora_unet_txtfusion_refiner_blocks_1_mlp_up") && hasLoraKey(h, "lora_unet_last_linear") && hasLoraKey(h, "lora_unet_blocks_27_mlp_gate"))
             || (h.ContainsKey("diffusion_model.txtfusion.projector.diff")) || h.ContainsKey("diffusion_model.txtfusion.refiner_blocks.0.attn.wo.diff"); // Special filter-bypass loras target only certain txt weights
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && h.ContainsKey("transformer.transformer_blocks.37.attn.to_out.0.lora_B.weight");
         bool isMochi(JObject h) => hasKey(h, "blocks.0.attn.k_norm_x.weight");
