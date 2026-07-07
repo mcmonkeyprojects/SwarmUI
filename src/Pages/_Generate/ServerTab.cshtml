@@ -91,6 +91,12 @@
                         <p id="dotnet_missing_message" class="card-text">
                             You do not seem to have DotNET @Utilities.DotNetVersMissing installed - this will be required in a future version of SwarmUI.
                             <br>Please install DotNET SDK @(Utilities.DotNetVersMissing).0 from <a target="_blank" href="https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0">https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0</a>
+                            @if (WebUtil.IsWindows())
+                            {
+                                <span data-requiredpermission="install">
+                                    <br>Or click here: <button id="dotnet_install_update_button" class="basic-button translate" onclick="genericRequest('InstallDotnetUpdate', {}, () => {});getRequiredElementById('dotnet_install_update_button').disabled = true">Install DotNET SDK @(Utilities.DotNetVersMissing).0</button>
+                                </span>
+                            }
                         </p>
                     </div>
                 </div>
