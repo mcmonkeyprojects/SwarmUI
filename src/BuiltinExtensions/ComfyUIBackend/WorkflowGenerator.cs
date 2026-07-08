@@ -2525,6 +2525,14 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
+        if (UserInput.TryGet(T2IParamTypes.ConditioningMultiplier, out double condMultiplier))
+        {
+            node = CreateNode("ConditioningMultiply", new JObject()
+            {
+                ["conditioning"] = NodePath(node, 0),
+                ["multiplier"] = condMultiplier
+            });
+        }
         NodeHelpers[trackerId] = node;
         return [node, 0];
     }
