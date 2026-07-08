@@ -85,7 +85,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
-    public static string SwarmValidatedFrontendVersion = "1.42.11";
+    public static string SwarmValidatedFrontendVersion = "1.45.20";
 
     /// <summary>The current known version of PyTorch.</summary>
     public static string CurrentTorchVersion = "2.12.1";
