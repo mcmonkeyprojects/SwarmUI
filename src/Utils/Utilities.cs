@@ -584,6 +584,8 @@ public static class Utilities
         return CommonContentTypes.GetValueOrDefault(extension, "application/octet-stream");
     }
 
+    public static AsciiMatcher AlphaNumericMatcher = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits);
+
     public static AsciiMatcher GeneralValidSymbolsMatcher = new(c => (c >= 32 && c <= 126) || c == 9 || c == 10 || c == 13);
 
     /// <summary>Clean some potentially-trash text for output into logs. Strips invalid non-ascii characters and cuts to max length.
@@ -1234,7 +1236,9 @@ public static class Utilities
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            WorkingDirectory = dir
+            WorkingDirectory = dir,
+            StandardOutputEncoding = StringConversionHelper.UTF8Encoding,
+            StandardErrorEncoding = StringConversionHelper.UTF8Encoding
         };
         start.Environment["GIT_TERMINAL_PROMPT"] = "0";
         SemaphoreSlim semaphore = GitOverlapLocks.GetLock(dir);

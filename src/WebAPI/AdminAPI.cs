@@ -11,6 +11,7 @@ using SwarmUI.Utils;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace SwarmUI.WebAPI;
 
@@ -50,6 +51,7 @@ public static class AdminAPI
         API.RegisterAPICall(AdminEditRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminDeleteRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminListPermissions, false, Permissions.ConfigureRoles);
+        API.RegisterAPICall(InstallDotnetUpdate, true, Permissions.Install);
     }
 
     /// <summary>Async actions that check for backend updates, and add them to the JObject (within the lock!).</summary>
@@ -1354,5 +1356,17 @@ public static class AdminAPI
             };
         }
         return new JObject() { ["permissions"] = permissions, ["ordered"] = JArray.FromObject(Permissions.OrderedKeys) };
+    }
+
+    public static async Task<JObject> InstallDotnetUpdate(Session session)
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return new JObject() { ["error"] = "This API route is only valid on Windows." };
+        }
+        string output = await Utilities.QuickRunProcess("winget", ["install", "Microsoft.DotNet.SDK.10", "--accept-source-agreements", "--accept-package-agreements"]);
+        Logs.Info($"Winget output: {output}");
+        Program.RequestRestart();
+        return new JObject() { ["success"] = true };
     }
 }

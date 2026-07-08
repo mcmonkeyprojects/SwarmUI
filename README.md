@@ -70,7 +70,9 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 # Alternate Manual Windows Install
 
 - Install git from https://git-scm.com/download/win
+- Current version targets .NET 8, but a future version will target .NET 10, so install both:
 - Install DotNET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0 (Make sure to get the SDK x64 for Windows)
+- Install DotNET 10 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/10.0 (Make sure to get the SDK x64 for Windows)
 - open a terminal to the folder you want swarm in and run `git clone https://github.com/mcmonkeyprojects/SwarmUI`
 - open the folder and run `launch-windows.bat`
 
@@ -81,7 +83,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Install `git` and `python3` via your OS package manager if they are not already installed (make sure to include `pip` and `venv` on distros that do not include them in python directly)
     - For example, on some Ubuntu (desktop) versions, `sudo apt install git python3-pip python3-venv`, or you may need <https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa>
     - For Debian or Ubuntu Server, `sudo apt install git python3-full`
-    - You'll want Python 3.11 or 3.12. Things should also work fine with 3.10. Do not use 3.13.
+    - You'll want Python 3.11 or 3.12. Things should also work fine with 3.10. 3.13 might work. Do not use 3.14 or later.
     - Make sure `python3.11 -m pip --version` returns a valid package
 
 ### Linux Easy Install
@@ -95,11 +97,14 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 
 ### Linux Manual Install
 
-- Install DotNET 8 using the instructions at https://dotnet.microsoft.com/en-us/download/dotnet/8.0 (you need `dotnet-sdk-8.0`, as that includes all relevant sub-packages)
-- Open a shell terminal and `cd` to a directory you want to install into
 - Run shell commands:
     - `git clone https://github.com/mcmonkeyprojects/SwarmUI`
     - cd `SwarmUI`
+- Current version targets .NET 8, but a future version will target .NET 10, so install both:
+    - You can run shell command `./launchtools/linux-dotnet-install.sh`, or separately follow the instructions at:
+        - <https://dotnet.microsoft.com/en-us/download/dotnet/8.0> and also <https://dotnet.microsoft.com/en-us/download/dotnet/10.0> (you need `dotnet-sdk-8.0`/`dotnet-sdk-10.0`, as that includes all relevant sub-packages)
+- Open a shell terminal and `cd` to a directory you want to install into
+- To launch, in the shell run:
     - `./launch-linux.sh`
     - or if running on a headless server, `./launch-linux.sh --launch_mode none --host 0.0.0.0` and/or swap host for [cloudflared](/docs/Advanced%20Usage.md)
 - open `http://localhost:7801/Install` (if it doesn't launch itself)
@@ -121,7 +126,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Verify your `brew` installation with `brew doctor`. You should not see any error in the command output.
 - Install .NET for macOS: `brew install dotnet`.
 - If you don't have Python, install it: `brew install python@3.11` and `brew install virtualenv`
-    - Python 3.11, 3.12, 3.10 are all fine. 3.13 is not, do not use 3.13.
+    - Python 3.11, 3.12, 3.10 are all fine. 3.13 might work. Do not use 3.14 or later.
 - Change the directory (`cd`) to the folder where you want to install SwarmUI.
 - Clone the SwarmUI GitHub repository: `git clone https://github.com/mcmonkeyprojects/SwarmUI`.
 - `cd SwarmUI` and run the installation script: `./launch-macos.sh`.

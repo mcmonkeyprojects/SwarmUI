@@ -46,6 +46,7 @@ class AdvancedPopover {
         }
         this.created = Date.now();
         this.optionArea.style.width = (this.optionArea.offsetWidth + this.overExtendBy) + 'px';
+        this.scrollFix();
     }
 
     remove() {

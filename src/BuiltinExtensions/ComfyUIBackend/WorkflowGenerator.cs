@@ -1310,6 +1310,10 @@ public partial class WorkflowGenerator
                 target = 384;
                 doesFit = false;
             }
+            else if (IsBoogu() && !promptSize)
+            {
+                doesFit = Math.Abs(actual - target) <= 64;
+            }
             else if (IsQwenImage())
             {
                 target = 1024; // Qwen image targets 1328 for gen but wants 1024 inputs.

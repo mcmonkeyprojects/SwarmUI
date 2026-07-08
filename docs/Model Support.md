@@ -64,11 +64,11 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 
 # Current Recommendations
 
-Image model(s) most worth using, as of January 2026:
+Image model(s) most worth using, as of June 2026:
 
-- Z-Image is the best right now, especially for photoreal gens.
-- Flux.2 Klein is pretty great too, for Editing or for art style variety.
-- Flux.2 Dev is massive, but is the smartest of the bunch if you have the hardware and patience for it.
+- Krea 2 is the champion of image generation.
+- Flux.2 Klein is pretty great too, particularly for editing.
+- Ideogram is worth experimenting with if you like getting advanced, as it allows JSON inputs with structured bounding boxes.
 
 # General Info
 
@@ -699,10 +699,11 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - [Boogu](<https://huggingface.co/Boogu>) is supported in SwarmUI!
 - It is a 10B model, derived from OmniGen, that comes in three separate variants - **Base**, **Edit**, and **Turbo**:
     - **Base**: [Comfy-Org/Boogu-Image - Base FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_base_fp8_scaled.safetensors>)
-    - **Edit** - image editing, takes a prompt image as a reference: [Comfy-Org/Boogu-Image - Edit FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_edit_fp8_scaled.safetensors>)
-        - Or the NVFP4 (6 gigs) here: [Comfy-Org/Boogu-Image - Edit nvfp4](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_edit_nvfp4.safetensors>)
     - **Turbo** - very fast, low step counts: [Comfy-Org/Boogu-Image - Turbo FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_turbo_fp8_scaled.safetensors>)
         - Or the NVFP4 (6 gigs) here: [Comfy-Org/Boogu-Image - Turbo nvfp4](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_turbo_nvfp4.safetensors>)
+    - **Edit** - image editing, takes a prompt image as a reference: [Comfy-Org/Boogu-Image - Edit FP8](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_edit_fp8_scaled.safetensors>)
+        - Or the NVFP4 (6 gigs) here: [Comfy-Org/Boogu-Image - Edit nvfp4](<https://huggingface.co/Comfy-Org/Boogu-Image/resolve/main/diffusion_models/boogu_image_edit_nvfp4.safetensors>)
+    - **Edit Turbo** - image editing, takes a prompt image as a reference, turbo step/cfg handling: [Comfy-Org/Boogu-Image - Edit Turbo int8](<https://huggingface.co/Comfy-Org/Boogu-Image/blob/main/diffusion_models/boogu_image_edit_turbo_int8_convrot.safetensors>)
 - Uses the Flux.1 VAE and a Qwen3-VL8B text encoder, both downloaded and handled automatically.
 - For editing, use the `Edit` model and give it a prompt image - SwarmUI automatically wires it in as the reference.
 - **Parameters:** recommendations differ between the Base, Edit, and Turbo models:

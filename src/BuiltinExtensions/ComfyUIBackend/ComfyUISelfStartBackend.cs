@@ -85,7 +85,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
-    public static string SwarmValidatedFrontendVersion = "1.42.11";
+    public static string SwarmValidatedFrontendVersion = "1.45.20";
+
+    /// <summary>The current known version of PyTorch.</summary>
+    public static string CurrentTorchVersion = "2.12.1";
 
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
@@ -719,6 +722,26 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     public static Version ParseVersion(string vers)
     {
         return Version.Parse(vers.Before(".dev"));
+    }
+
+    /// <summary>Get the version of a single installed pip package.</summary>
+    public static string GetInstalledPackageVersion(string startScript, string package)
+    {
+        string lib = NetworkBackendUtils.GetProbableLibFolderFor(startScript);
+        if (lib is null || lib.Length < 3 || !Directory.Exists(lib))
+        {
+            return null;
+        }
+        string prefix = $"{package}-";
+        foreach (string dir in Directory.EnumerateDirectories(lib))
+        {
+            string name = dir.Replace('\\', '/').AfterLast('/');
+            if (name.EndsWith(".dist-info") && name.StartsWith(prefix))
+            {
+                return name[prefix.Length..].Before(".dist-info");
+            }
+        }
+        return null;
     }
 
     /// <summary>Strict matcher that will block any muckery, excluding URLs and etc.</summary>

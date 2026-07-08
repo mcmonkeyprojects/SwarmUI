@@ -209,7 +209,7 @@ public class ExtensionsManager
         string mode = Program.IsDevMode ? "Debug" : "Release";
         string dllName = $"SwarmExtension{folder.AfterLast('/')}";
         string hash = (await Utilities.RunGitProcess("rev-parse HEAD", Path.GetFullPath(folder))).Trim();
-        hash = hash.Length >= 8 ? hash[0..8] : "unknown";
+        hash = hash.Length >= 8 && Utilities.AlphaNumericMatcher.IsOnlyMatches(hash[0..8]) ? hash[0..8] : "unknown";
         string target = $"./src/bin/extensions/{dllName}/{dllName}-{hash}.dll";
         // bin/obj shouldn't exist but sometimes are accidentally created. They will break things if they form, so get rid of them.
         if (Directory.Exists($"{folder}/bin"))

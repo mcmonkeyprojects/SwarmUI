@@ -93,7 +93,7 @@ public class T2IModelClassSorter
         CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
         CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
         CompatIdeogram4 = RegisterCompat(new() { ID = "ideogram-4", ShortCode = "Ideo4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
-        CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
+        CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", VaeFamily = VaeQwenImage }),
         CompatBoogu = RegisterCompat(new() { ID = "boogu", ShortCode = "Boogu", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
@@ -188,7 +188,8 @@ public class T2IModelClassSorter
         bool isKrea2(JObject h) => hasKey(h, "txtfusion.projector.weight") && hasKey(h, "blocks.0.attn.gate.weight") && hasKey(h, "blocks.0.mod.lin");
         bool isKrea2Lora(JObject h) => (hasLoraKey(h, "blocks.0.attn.gate") && hasLoraKey(h, "blocks.0.mlp.gate"))
             || (hasLoraKey(h, "text_fusion.layerwise_blocks.0.attn.to_gate") && hasLoraKey(h, "img_in") && hasLoraKey(h, "final_layer.linear"))
-            || (h.ContainsKey("diffusion_model.txtfusion.projector.diff"));
+            || (hasLoraKey(h, "lora_unet_txtfusion_refiner_blocks_1_mlp_up") && hasLoraKey(h, "lora_unet_last_linear") && hasLoraKey(h, "lora_unet_blocks_27_mlp_gate"))
+            || (h.ContainsKey("diffusion_model.txtfusion.projector.diff")) || h.ContainsKey("diffusion_model.txtfusion.refiner_blocks.0.attn.wo.diff"); // Special filter-bypass loras target only certain txt weights
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && h.ContainsKey("transformer.transformer_blocks.37.attn.to_out.0.lora_B.weight");
         bool isMochi(JObject h) => hasKey(h, "blocks.0.attn.k_norm_x.weight");
         bool isMochiVae(JObject h) => h.ContainsKey("encoder.layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("blocks.2.blocks.3.stack.5.weight") || h.ContainsKey("decoder.blocks.2.blocks.3.stack.5.weight");
