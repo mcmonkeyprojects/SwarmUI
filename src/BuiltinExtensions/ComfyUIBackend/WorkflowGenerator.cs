@@ -2311,6 +2311,7 @@ public partial class WorkflowGenerator
             return [nodeId, 0];
         }
         string node;
+        bool isPlainTextEncode = false;
         double mult = isPositive ? 1.5 : 0.8;
         int width = UserInput.GetImageWidth();
         int height = UserInput.GetImageHeight();
@@ -2501,6 +2502,7 @@ public partial class WorkflowGenerator
                 ["target_height"] = height,
                 ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance)
             }, id);
+            isPlainTextEncode = true;
         }
         else if (model is not null && model.ModelClass is not null && model.ModelClass.ID == "stable-diffusion-xl-v1-base")
         {
@@ -2516,6 +2518,7 @@ public partial class WorkflowGenerator
                 ["target_width"] = width,
                 ["target_height"] = height
             }, id);
+            isPlainTextEncode = true;
         }
         else
         {
@@ -2524,8 +2527,9 @@ public partial class WorkflowGenerator
                 ["clip"] = clip,
                 ["text"] = prompt
             }, id);
+            isPlainTextEncode = true;
         }
-        if (UserInput.TryGet(T2IParamTypes.ConditioningMultiplier, out double condMultiplier))
+        if (isPlainTextEncode && UserInput.TryGet(T2IParamTypes.ConditioningMultiplier, out double condMultiplier) && condMultiplier != 1)
         {
             node = CreateNode("ConditioningMultiply", new JObject()
             {
