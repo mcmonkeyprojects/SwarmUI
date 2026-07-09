@@ -358,3 +358,12 @@ WD14Tagger:
     - parameters
     # Vibecoded, very strange implementation
     - lowquality
+
+KreaGoneWild:
+    author: Juan Treminio
+    description: Adds some neat Krea2 features, like NSFW and Edit-Lora support.
+    url: https://github.com/jtreminio/SwarmUI-KreaGoneWild
+    license: MIT
+    tags:
+    - parameters
+    - nodes
