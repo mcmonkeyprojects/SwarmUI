@@ -1,16 +1,37 @@
-import torch, struct, json
+import torch, struct, json, threading
 from io import BytesIO
+from PIL import Image
 import latent_preview, comfy
 from server import PromptServer
 from comfy.model_base import SDXL, SVD_img2vid, Flux, Flux2, WAN21, Chroma
-from comfy import samplers, nested_tensor
+from comfy import nested_tensor
 import numpy as np
 from math import ceil
-from latent_preview import TAESDPreviewerImpl
 from comfy_execution.utils import get_executing_context
 from comfy_extras.nodes_flux import Flux2Scheduler
 from comfy_extras.nodes_ideogram4 import ideogram4_sigmas
 from comfy_extras.nodes_custom_sampler import Guider_DualModel
+
+_preview_lock = threading.Lock()
+_preview_sampler_active = False
+_last_preview_step_sent = -1
+
+if not getattr(latent_preview.preview_to_image, "_swarm_patched", False):
+    _original_preview_to_image = latent_preview.preview_to_image
+    # Copy/paste of preview_to_image but with the Image.fromarray on unloaded data removed
+    def _swarm_preview_to_image(latent_image, do_scale=True):
+        if not _preview_sampler_active:
+            return _original_preview_to_image(latent_image, do_scale)
+        if do_scale:
+            latents_ubyte = (((latent_image + 1.0) / 2.0).clamp(0, 1).mul(0xFF))
+        else:
+            latents_ubyte = (latent_image.clamp(0, 1).mul(0xFF))
+        if comfy.model_management.directml_enabled:
+            latents_ubyte = latents_ubyte.to(dtype=torch.uint8)
+        latents_ubyte = latents_ubyte.to(device="cpu", dtype=torch.uint8, non_blocking=comfy.model_management.device_supports_non_blocking(latent_image.device))
+        return latents_ubyte
+    _swarm_preview_to_image._swarm_patched = True
+    latent_preview.preview_to_image = _swarm_preview_to_image
 
 def slerp(val, low, high):
     low_norm = low / torch.norm(low, dim=1, keepdim=True)
@@ -120,34 +141,46 @@ def make_swarm_sampler_callback(steps, device, model, previews):
     def callback(step, x0, x, total_steps):
         pbar.update_absolute(step + 1, total_steps, None)
         if previewer:
-            if (step == 0 or (step < 3 and x0.ndim == 5 and x0.shape[1] > 8)) and not isinstance(previewer, TAESDPreviewerImpl):
-                x0 = x0.clone().cpu() # Sync copy to CPU for first few steps to prevent reading old data, more steps for videos. Future steps allow comfy to do its async non_blocky stuff.
             if x0.ndim == 5:
                 # video shape is [batch, channels, backwards time, width, height], for previews needs to be swapped to [forwards time, channels, width, height]
                 x0 = x0[0].permute(1, 0, 2, 3)
                 x0 = torch.flip(x0, [0])
-            def do_preview(id, index):
-                preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[index:index+1])
-                swarm_send_extra_preview(id, preview_img[1])
+            def decode(index):
+                return previewer.decode_latent_to_preview_image("JPEG", x0[index:index+1])[1]
+            animated = False
+            frames = []
             if previews == "iterate":
-                do_preview(0, step % x0.shape[0])
+                frames = [(0, decode(step % x0.shape[0]))]
             elif previews == "animate":
                 if x0.shape[0] == 1:
-                    do_preview(0, 0)
+                    frames = [(0, decode(0))]
                 else:
-                    images = []
-                    for i in range(x0.shape[0]):
-                        preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[i:i+1])
-                        images.append(preview_img[1])
-                    swarm_send_animated_preview(0, images)
+                    animated = True
+                    frames = [decode(i) for i in range(x0.shape[0])]
             elif previews == "default":
-                for i in range(x0.shape[0]):
-                    preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[i:i+1])
-                    swarm_send_extra_preview(i, preview_img[1])
+                frames = [(i, decode(i)) for i in range(x0.shape[0])]
             elif previews == "one":
-                do_preview(0, 0)
+                frames = [(0, decode(0))]
             elif previews == "second":
-                do_preview(0, 1 % x0.shape[0])
+                frames = [(0, decode(1 % x0.shape[0]))]
+            event = None
+            if getattr(x0.device, "type", None) == "cuda":
+                event = torch.cuda.Event()
+                event.record()
+            def send_preview():
+                global _last_preview_step_sent
+                if event is not None:
+                    event.synchronize()
+                with _preview_lock:
+                    if not _preview_sampler_active or step < _last_preview_step_sent:
+                        return
+                    if animated:
+                        swarm_send_animated_preview(0, [Image.fromarray(tensor.numpy()) for tensor in frames])
+                    else:
+                        for id, tensor in frames:
+                            swarm_send_extra_preview(id, Image.fromarray(tensor.numpy()))
+                    _last_preview_step_sent = step
+            threading.Thread(target=send_preview, daemon=True).start()
     return callback
 
 
@@ -402,12 +435,20 @@ class SwarmKSampler:
         
         out = latent_image.copy()
         if steps > 0:
-            callback = make_swarm_sampler_callback(steps, device, model, previews)
+            global _preview_sampler_active, _last_preview_step_sent
+            with _preview_lock:
+                _preview_sampler_active = True
+                _last_preview_step_sent = -1
+            try:
+                callback = make_swarm_sampler_callback(steps, device, model, previews)
 
-            samples = sample_sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_samples,
-                                    denoise=1.0, disable_noise=disable_noise, start_step=start_at_step, last_step=end_at_step,
-                                    force_full_denoise=return_with_leftover_noise == "disable", noise_mask=noise_mask, sigmas=sigmas, callback=callback, seed=noise_seed, model_negative=model_negative)
-            out["samples"] = samples
+                samples = sample_sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_samples,
+                                        denoise=1.0, disable_noise=disable_noise, start_step=start_at_step, last_step=end_at_step,
+                                        force_full_denoise=return_with_leftover_noise == "disable", noise_mask=noise_mask, sigmas=sigmas, callback=callback, seed=noise_seed, model_negative=model_negative)
+                out["samples"] = samples
+            finally:
+                with _preview_lock:
+                    _preview_sampler_active = False
         return (out, )
 
     # tiled sample version of sample function
