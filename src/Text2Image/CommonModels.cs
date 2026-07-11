@@ -21,7 +21,7 @@ public static class CommonModels
         /// <summary>Trigger a download of this model.</summary>
         public async Task DownloadNow(Action<long, long, long> updateProgress = null)
         {
-            string folder = Program.T2IModelSets[FolderType].FolderPaths[0];
+            string folder = Program.T2IModelSets[FolderType].DownloadFolderPath;
             string path = $"{folder}/{FileName}";
             if (File.Exists(path))
             {

@@ -56,6 +56,11 @@ def do_lora_handle(base_data, other_data, rank, prefix, require, do_bias, callba
             key = key[len(require):]
         if base_tensor.shape != other_tensor.shape:
             continue
+        target_dtype = base_tensor.dtype
+        if target_dtype == torch.float8_e4m3fn or target_dtype == torch.float8_e5m2:
+            target_dtype = torch.bfloat16
+        base_tensor = base_tensor.to(dtype=target_dtype)
+        other_tensor = other_tensor.to(dtype=target_dtype)
         diff = other_tensor.to(device) - base_tensor.to(device)
         other_tensor = other_tensor.cpu()
         base_tensor = base_tensor.cpu()
@@ -69,16 +74,27 @@ def do_lora_handle(base_data, other_data, rank, prefix, require, do_bias, callba
             if len(base_tensor.shape) >= 2:
                 print(f"extract key {name} ({max_diff})")
                 out = extract_lora(diff, rank)
-                out_data[f"{name}.lora_up.weight"] = out[0].contiguous().half().cpu()
-                out_data[f"{name}.lora_down.weight"] = out[1].contiguous().half().cpu()
+                up = out[0].contiguous().to(dtype=target_dtype).cpu()
+                down = out[1].contiguous().to(dtype=target_dtype).cpu()
+                if up.isnan().any() or up.isinf().any():
+                    print(f"bad data for {name}.lora_up.weight")
+                    continue
+                if down.isnan().any() or down.isinf().any():
+                    print(f"bad data for {name}.lora_down.weight")
+                    continue
+                out_data[f"{name}.lora_up.weight"] = up
+                out_data[f"{name}.lora_down.weight"] = down
             else:
                 print(f"ignore valid raw pass-through key {name} ({max_diff})")
-                #out_data[name] = other_tensor.contiguous().half().cpu()
         elif key.endswith(".bias") and do_bias:
             fixed_key = key[:-len(".bias")].replace('.', '_')
             name = f"lora_{prefix}_{fixed_key}"
             print(f"extract bias key {name} ({max_diff})")
-            out_data[f"{name}.diff_b"] = diff.contiguous().half().cpu()
+            diff = diff.contiguous().to(dtype=target_dtype).cpu()
+            if diff.isnan().any() or diff.isinf().any():
+                print(f"bad data for {name}.diff_b")
+                continue
+            out_data[f"{name}.diff_b"] = diff
 
 
     return out_data
@@ -126,7 +142,7 @@ class SwarmExtractLora:
                 self.steps += 1
                 pbar.update_absolute(self.steps, key_count, None)
         helper = Helper()
-        out_data = do_lora_handle(base_data, other_data, rank, "unet", "diffusion_model.", True, lambda: helper.callback())
+        out_data = do_lora_handle(base_data, other_data, rank, "unet", "diffusion_model.", False, lambda: helper.callback())
         if save_clip:
             # TODO: CLIP keys get wonky, this probably doesn't work? Model-arch-dependent.
             out_clip = do_lora_handle(base_model_clip.get_sd(), other_model_clip.get_sd(), rank, "te_text_model_encoder_layers", "0.transformer.text_model.encoder.layers.", False, lambda: helper.callback())
