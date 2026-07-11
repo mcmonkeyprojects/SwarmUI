@@ -47,6 +47,7 @@ def do_lora_handle(base_data, other_data, rank, callback):
             continue
         base_tensor = base_data[key]
         other_tensor = other_data[key]
+        fixed_key = key
         if key.endswith(".weight"):
             fixed_key = key[:-len(".weight")]
             scale_key = f"{fixed_key}.weight_scale"
@@ -59,6 +60,7 @@ def do_lora_handle(base_data, other_data, rank, callback):
         elif key.endswith(".bias") or key.endswith(".scale") or key.endswith(".lin"):
             fixed_key = key
         if base_tensor.shape != other_tensor.shape:
+            print(f"discard mismatched shapes {base_tensor.shape} != {other_tensor.shape}")
             continue
         target_dtype = base_tensor.dtype
         if target_dtype == torch.float8_e4m3fn or target_dtype == torch.float8_e5m2:
@@ -69,28 +71,29 @@ def do_lora_handle(base_data, other_data, rank, callback):
         other_tensor = other_tensor.cpu()
         base_tensor = base_tensor.cpu()
         max_diff = float(diff.abs().max())
-        if max_diff < 1e-5:
+        if max_diff < 1e-4:
             print(f"discard unaltered key {key} ({max_diff})")
             continue
-        if len(base_tensor.shape) >= 2 and base_tensor.numel() < 1024:
-            print(f"extract key {fixed_key} ({max_diff})")
+        if len(base_tensor.shape) >= 2 and base_tensor.numel() > 1024:
+            print(f"extract key {key} (shape={base_tensor.shape}, maxdiff={max_diff}, numel={base_tensor.numel()})")
             out = extract_lora(diff, rank)
             up = out[0].contiguous().to(dtype=target_dtype).cpu()
             down = out[1].contiguous().to(dtype=target_dtype).cpu()
             if up.isnan().any() or up.isinf().any():
-                print(f"bad data for {fixed_key}.lora_up.weight")
+                print(f"bad data for {key}.lora_up.weight")
                 continue
             if down.isnan().any() or down.isinf().any():
-                print(f"bad data for {fixed_key}.lora_down.weight")
+                print(f"bad data for {key}.lora_down.weight")
                 continue
-            out_data[f"{fixed_key}.lora_up.weight"] = up
-            out_data[f"{fixed_key}.lora_down.weight"] = down
+            out_data[f"diffusion_model.{fixed_key}.lora_up.weight"] = up
+            out_data[f"diffusion_model.{fixed_key}.lora_down.weight"] = down
         else:
+            print(f"simple diff key {key} (shape={base_tensor.shape}, maxdiff={max_diff}, numel={base_tensor.numel()})")
             out = diff.contiguous().to(dtype=target_dtype).cpu()
             if out.isnan().any() or out.isinf().any():
-                print(f"bad data for {fixed_key}")
+                print(f"bad data for {key}")
                 continue
-            out_data[f"{fixed_key}.diff"] = out
+            out_data[f"diffusion_model.{fixed_key}.diff"] = out
 
 
     return out_data
@@ -121,6 +124,14 @@ class SwarmExtractLora:
     def extract_lora(self, base_model, other_model, rank, save_rawpath, save_filename, metadata):
         base_data = base_model.model_state_dict()
         other_data = other_model.model_state_dict()
+        def clean_key(k):
+            if k.startswith("model."):
+                k = k[len("model."):]
+            if k.startswith("diffusion_model."):
+                k = k[len("diffusion_model."):]
+            return k
+        base_data = {clean_key(k): v for k, v in base_data.items()}
+        other_data = {clean_key(k): v for k, v in other_data.items()}
         key_count = len(base_data.keys())
         pbar = comfy.utils.ProgressBar(key_count)
         class Helper:
