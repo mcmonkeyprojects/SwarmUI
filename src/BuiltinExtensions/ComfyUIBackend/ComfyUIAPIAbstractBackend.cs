@@ -303,11 +303,12 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         float curPercent = 0;
         void yieldProgressUpdate()
         {
+            Logs.Verbose($"Progress [{batchId}]: {nodesDone}/{expectedNodes}, curPercent={curPercent:00.00}");
             JObject toSend = new()
             {
                 ["batch_index"] = batchId,
                 ["request_id"] = $"{user_input.UserRequestId}",
-                ["overall_percent"] = (nodesDone + curPercent) / (float)expectedNodes,
+                ["overall_percent"] = (nodesDone + curPercent) / (float)(expectedNodes + 1),
                 ["current_percent"] = curPercent
             };
             if (previewMetadata is not null)
@@ -422,7 +423,14 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                 currentNode = nodeId;
                                 goto case "execution_cached";
                             case "execution_cached":
-                                nodesDone++;
+                                if (json.Value<JObject>("data").TryGetValue("nodes", out JToken nodes) && nodes is JArray nodeArr)
+                                {
+                                    nodesDone += nodeArr.Count;
+                                }
+                                else
+                                {
+                                    nodesDone++;
+                                }
                                 curPercent = 0;
                                 hasInterrupted = false;
                                 yieldProgressUpdate();
@@ -437,7 +445,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                 break;
                             case "executed":
                                 nodesDone = expectedNodes;
-                                curPercent = 0;
+                                curPercent = 1;
                                 yieldProgressUpdate();
                                 break;
                             case "execution_start":

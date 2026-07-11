@@ -142,6 +142,7 @@ class SwarmExtractLora:
             out_metadata.update(json.loads(metadata))
         path = f"{save_rawpath}{save_filename}.safetensors"
         print(f"saving to path {path}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         safetensors.torch.save_file(out_data, path, metadata=out_metadata)
         return ()
 
