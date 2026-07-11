@@ -303,7 +303,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         float curPercent = 0;
         void yieldProgressUpdate()
         {
-            Logs.Verbose($"Progress [{batchId}]: {nodesDone}/{expectedNodes}, curPercent={curPercent:00.00}");
+            Logs.Verbose($"Progress [{batchId}]: {nodesDone}/{expectedNodes}, curPercent={curPercent * 100:00.0}");
             JObject toSend = new()
             {
                 ["batch_index"] = batchId,
