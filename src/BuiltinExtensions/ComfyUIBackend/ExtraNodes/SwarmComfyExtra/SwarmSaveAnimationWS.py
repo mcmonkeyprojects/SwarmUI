@@ -1,4 +1,4 @@
-import comfy, folder_paths, io, struct, subprocess, os, sys, time, wave
+import folder_paths, io, struct, subprocess, os, random, sys, time, wave
 from PIL import Image
 import numpy as np
 from server import PromptServer, BinaryEventTypes
@@ -6,6 +6,7 @@ from imageio_ffmpeg import get_ffmpeg_exe
 
 SPECIAL_ID = 12345
 VIDEO_ID = 12346
+PREVIEW_PREFIX = "swarm_preview_" + '%08x' % random.getrandbits(32)
 FFMPEG_PATH = get_ffmpeg_exe()
 
 def send_image_to_server_raw(type_num: int, save_me: callable, id: int, event_type: int = BinaryEventTypes.PREVIEW_IMAGE):
@@ -48,19 +49,19 @@ class SwarmSaveAnimationWS:
         method = self.methods.get(method)
         if images.shape[0] == 0:
             return { }
+        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(PREVIEW_PREFIX, folder_paths.get_temp_directory(), images[0].shape[1], images[0].shape[0])
         if images.shape[0] == 1:
-            pbar = comfy.utils.ProgressBar(images.shape[0])
             i = 255.0 * images[0].cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-            pbar.update_absolute(0, images.shape[0], ("PNG", img, None))
-            def do_save(out):
-                img.save(out, format='PNG')
-            send_image_to_server_raw(2, do_save, SPECIAL_ID)
-            return { }
+            file = f"{filename}_{counter:05}_.png"
+            png = io.BytesIO()
+            img.save(png, format='PNG')
+            with open(os.path.join(full_output_folder, file), "wb") as f:
+                f.write(png.getvalue())
+            send_image_to_server_raw(2, lambda out: out.write(png.getvalue()), SPECIAL_ID)
+            return { "ui": { "images": [{ "filename": file, "subfolder": subfolder, "type": "temp" }] } }
 
-        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path("swarm_preview_", folder_paths.get_temp_directory(), images[0].shape[1], images[0].shape[0])
         out_img = io.BytesIO()
-        file = None
         if format in ["webp", "gif"]:
             if format == "webp":
                 type_num = 3
@@ -72,10 +73,9 @@ class SwarmSaveAnimationWS:
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 pil_images.append(img)
             file = f"{filename}_{counter:05}_.{format}"
-            file_path = os.path.join(full_output_folder, file)
-            pil_images[0].save(file_path, save_all=True, duration=int(1000.0 / fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format=format.upper(), loop=0)
-            with open(file_path, "rb") as f:
-                out_img.write(f.read())
+            pil_images[0].save(out_img, save_all=True, duration=int(1000.0 / fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format=format.upper(), loop=0)
+            with open(os.path.join(full_output_folder, file), "wb") as f:
+                f.write(out_img.getvalue())
         else:
             i = 255. * images.cpu().numpy()
             raw_images = np.clip(i, 0, 255).astype(np.uint8)
