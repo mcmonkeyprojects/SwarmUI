@@ -690,10 +690,6 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 if ($"{outImage["type"]}" == "temp")
                 {
                     imType = "temp";
-                    if (fname.StartsWith("swarm_preview_"))
-                    {
-                        return;
-                    }
                 }
                 string url = $"filename={HttpUtility.UrlEncode(fname)}&type={imType}";
                 if (outImage.TryGetValue("subfolder", out JToken subFolder) && !string.IsNullOrWhiteSpace($"{subFolder}"))
