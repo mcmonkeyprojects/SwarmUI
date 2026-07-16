@@ -26,6 +26,17 @@
 #   'lowquality': This extension has known quality issues, such as improper implementation methods or a fully vibecoded development approach, adding significant changes outside of the intended scope, or simply is a feature that does not work as well as one might hope
 #   'none': no tags of relevance to add
 
+KreaAttentionExtension:
+  author: Timothy Dudorov
+  description: Adds custom Krea-style attention controls and workflows to SwarmUI.
+  url: https://github.com/TimothyDudorov/KreaAttentionExtension
+  license: MIT
+  ci-test: true
+  tags:
+    - parameters
+    - nodes
+    - ui
+
 FaceTools:
     author: Quaggles
     description: Adds support for CodeFormer FaceRestore and ReActor.
