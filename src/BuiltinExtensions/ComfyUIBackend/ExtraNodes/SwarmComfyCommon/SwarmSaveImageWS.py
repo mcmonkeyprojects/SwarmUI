@@ -1,6 +1,5 @@
 from PIL import Image
 import numpy as np
-import comfy.utils
 from server import PromptServer, BinaryEventTypes
 import time, io, struct
 
@@ -38,8 +37,6 @@ class SwarmSaveImageWS:
     DESCRIPTION = "Acts like a special version of 'SaveImage' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the image itself rather than having Comfy's Core save it."
 
     def save_images(self, images, bit_depth = "8bit"):
-        pbar = comfy.utils.ProgressBar(SPECIAL_ID)
-        step = 0
         for image in images:
             if bit_depth == "raw":
                 i = 255.0 * image.cpu().numpy()
@@ -57,8 +54,6 @@ class SwarmSaveImageWS:
                 def do_save(out):
                     img.save(out, format='PNG')
                 send_image_to_server_raw(2, do_save, SPECIAL_ID)
-                #pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
-            step += 1
 
         return {}
 

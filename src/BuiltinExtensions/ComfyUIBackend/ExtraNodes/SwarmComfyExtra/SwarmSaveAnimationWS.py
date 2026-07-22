@@ -1,4 +1,4 @@
-import comfy, folder_paths, io, struct, subprocess, os, random, sys, time, wave
+import folder_paths, io, struct, subprocess, os, random, sys, time, wave
 from PIL import Image
 import numpy as np
 from server import PromptServer, BinaryEventTypes
@@ -49,13 +49,11 @@ class SwarmSaveAnimationWS:
         if images.shape[0] == 0:
             return { }
         if images.shape[0] == 1:
-            pbar = comfy.utils.ProgressBar(SPECIAL_ID)
             i = 255.0 * images[0].cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             def do_save(out):
                 img.save(out, format='PNG')
             send_image_to_server_raw(2, do_save, SPECIAL_ID)
-            #pbar.update_absolute(0, SPECIAL_ID, ("PNG", img, None))
             return { }
 
         out_img = io.BytesIO()
