@@ -769,9 +769,9 @@ public partial class WorkflowGenerator
     public (JArray, JArray, JArray, JArray) BuildInputImageHandling(List<JArray> images, JArray pos, JArray neg, JArray latent)
     {
         JArray imgNeg = null;
-        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2() || IsBoogu())
+        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2() || IsBoogu() || IsMageFlow())
         {
-            if (IsOmniGen() || IsQwenImageEditPlus() || IsBoogu())
+            if (IsOmniGen() || IsQwenImageEditPlus() || IsBoogu() || IsMageFlow())
             {
                 imgNeg = neg;
             }
@@ -803,7 +803,7 @@ public partial class WorkflowGenerator
             }
             if (img is not null)
             {
-                if (IsQwenImageEditPlus() || IsBoogu())
+                if (IsQwenImageEditPlus() || IsBoogu() || IsMageFlow())
                 {
                     neg = imgNeg;
                 }
@@ -975,7 +975,7 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsMageFlow())
         {
             defscheduler ??= "simple";
         }
@@ -1305,7 +1305,7 @@ public partial class WorkflowGenerator
                     doesFit = false;
                 }
             }
-            else if ((IsBoogu() || IsQwenImageEditPlus()) && promptSize)
+            else if ((IsBoogu() || IsQwenImageEditPlus() || IsMageFlow()) && promptSize)
             {
                 target = 384;
                 doesFit = false;
@@ -2353,7 +2353,7 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (IsIdeogram4() || IsKrea2() || (IsBoogu() && isPositive))
+        else if (IsIdeogram4() || IsKrea2() || (IsBoogu() && isPositive) || IsMageFlow())
         {
             JArray imageNode = GetPromptImage(true, true, 0);
             for (int i = 1; i < 10; i++)
