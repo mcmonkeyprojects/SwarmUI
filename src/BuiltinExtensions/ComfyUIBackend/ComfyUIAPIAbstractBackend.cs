@@ -183,7 +183,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Idler.ValidateCall = () =>
             {
                 using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(1));
-                SendGet<JObject>("object_info", cancel.Token).Wait();
+                SendGet<JObject>("features", cancel.Token).Wait();
             };
             Idler.Start();
         }
