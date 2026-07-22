@@ -42,6 +42,7 @@ def do_lora_handle(base_data, other_data, rank, callback):
     for key in base_data.keys():
         callback()
         if key not in other_data:
+            print(f"discard key in base but not in other: {key}")
             continue
         if key.endswith(".weight_scale") or key.endswith(".comfy_quant"):
             continue

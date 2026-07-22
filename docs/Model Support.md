@@ -563,6 +563,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - It is explicitly still in Preview status, they will be training it further before it's entirely ready.
 - Download [Anima v1 here](<https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/diffusion_models/anima-base-v1.0.safetensors>)
     - Save in `diffusion_models`
+- You can also get [Anima Controlnets here](<https://huggingface.co/kohya-ss/Anima-LLLite/tree/main>)
+    - Pick your favorites (depth, pose, lineart, scribble are the main ones)
+    - Save to the `controlnet` model folder
+    - Use like any other controlnet
 - It uses a tiny Qwen 3 600M ("0.6B") text encoder. This will be autodownloaded.
 - It uses the Qwen Image VAE. This will be autodownloaded.
 - **Parameters:**
