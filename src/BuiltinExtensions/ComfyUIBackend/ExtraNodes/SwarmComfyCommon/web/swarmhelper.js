@@ -38,6 +38,7 @@ function swarmShowPreview(node, blob, isVideo) {
         element.autoplay = true;
         element.loop = true;
         element.playsInline = true;
+        element.controls = true;
     }
     element.style.width = '100%';
     element.style.height = '100%';
