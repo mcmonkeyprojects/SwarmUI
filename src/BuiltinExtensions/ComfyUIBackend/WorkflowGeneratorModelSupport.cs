@@ -218,6 +218,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is any Kandinsky 5 variant.</summary>
     public bool IsKandinsky5() => IsKandinsky5ImgLite() || IsKandinsky5VidLite() || IsKandinsky5VidPro();
 
+    /// <summary>Returns true if the current model is Mage-Flow.</summary>
+    public bool IsMageFlow() => IsModelCompatClass(T2IModelClassSorter.CompatMageFlow);
+
     /// <summary>Returns true if the current model is any Wan-2.1 variant.</summary>
     public bool IsWanVideo()
     {
@@ -1168,6 +1171,11 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("boogu", helpers.GetQwen3vl_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsMageFlow())
+        {
+            helpers.LoadClip("mage", helpers.GetQwen3vl_4bModel());
+            helpers.DoVaeLoader(null, "mage-flow", "mage-flow-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
