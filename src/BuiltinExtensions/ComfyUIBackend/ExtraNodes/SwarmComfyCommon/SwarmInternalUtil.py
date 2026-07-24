@@ -60,8 +60,8 @@ NODE_CLASS_MAPPINGS = {
 
 # This is a dirty hack to shut up the errors from Dropdown combo mismatch, pending Comfy upstream fix
 ORIG_EXECUTION_VALIDATE = execution.validate_inputs
-async def validate_inputs(prompt_id, prompt, item, validated):
-    raw_result = await ORIG_EXECUTION_VALIDATE(prompt_id, prompt, item, validated)
+async def validate_inputs(prompt_id, prompt, *args, **kwargs):
+    raw_result = await ORIG_EXECUTION_VALIDATE(prompt_id, prompt, *args, **kwargs)
     if raw_result is None:
         return None
     (did_succeed, errors, unique_id) = raw_result
