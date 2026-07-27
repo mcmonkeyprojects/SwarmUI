@@ -570,7 +570,7 @@ public static class ComfyUIWebAPI
                 ["inputs"] = new JObject()
                 {
                     ["unet_name"] = baseModelData.ToString(format),
-                    ["weight_dtype"] = "fp8_e4m3fn"
+                    ["weight_dtype"] = "default"
                 }
             };
         }
@@ -593,7 +593,7 @@ public static class ComfyUIWebAPI
                 ["inputs"] = new JObject()
                 {
                     ["unet_name"] = otherModelData.ToString(format),
-                    ["weight_dtype"] = "fp8_e4m3fn"
+                    ["weight_dtype"] = "default"
                 }
             };
         }
@@ -619,7 +619,7 @@ public static class ComfyUIWebAPI
                 ["other_model"] = new JArray() { "5", 0 },
                 ["other_model_clip"] = doClip ? new JArray() { "5", 1 } : null,
                 ["rank"] = rank,
-                ["save_rawpath"] = Program.T2IModelSets["LoRA"].FolderPaths[0] + "/",
+                ["save_rawpath"] = Program.T2IModelSets["LoRA"].DownloadFolderPath + "/",
                 ["save_filename"] = outName.Replace('\\', '/').Replace("/", format ?? $"{Path.DirectorySeparatorChar}"),
                 ["save_clip"] = doClip,
                 ["metadata"] = metadata.ToString()

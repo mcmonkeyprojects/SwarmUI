@@ -42,6 +42,7 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 [LongCat-Image](/docs/Obscure%20Model%20Support.md#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
 [Zeta Chroma](/docs/Obscure%20Model%20Support.md#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
 [PixelDiT](/docs/Obscure%20Model%20Support.md#pixeldit) | Pixel DiT | 2026 | NVIDIA | 1.3B | Minimal | Modern, fast, pixel-space, but very bad relative quality on launch |
+[MageFlow](/docs/Obscure%20Model%20Support.md#mageflow) | MMDiT | 2026 | Microsoft | 4B | No | Very bad quality compared to contemporary models |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -563,6 +564,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - It is explicitly still in Preview status, they will be training it further before it's entirely ready.
 - Download [Anima v1 here](<https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/diffusion_models/anima-base-v1.0.safetensors>)
     - Save in `diffusion_models`
+- You can also get [Anima Controlnets here](<https://huggingface.co/kohya-ss/Anima-LLLite/tree/main>)
+    - Pick your favorites (depth, pose, lineart, scribble are the main ones)
+    - Save to the `controlnet` model folder
+    - Use like any other controlnet
 - It uses a tiny Qwen 3 600M ("0.6B") text encoder. This will be autodownloaded.
 - It uses the Qwen Image VAE. This will be autodownloaded.
 - **Parameters:**

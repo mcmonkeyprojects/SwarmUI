@@ -1154,6 +1154,25 @@ public class WorkflowGeneratorSteps
                         g.CurrentModel = g.CurrentModel.WithPath([diffsynthNode, 0]);
                         continue;
                     }
+                    else if (controlModel.ModelClass?.CompatClass?.ID == T2IModelClassSorter.CompatAnima.ID)
+                    {
+                        string modelPatchLoader = g.CreateNode("ModelPatchLoader", new JObject()
+                        {
+                            ["name"] = controlModel.ToString(g.ModelFolderFormat)
+                        });
+                        string animaApplyNode = g.CreateNode("AnimaLLLiteApply", new JObject()
+                        {
+                            ["model"] = g.CurrentModel.Path,
+                            ["model_patch"] = NodePath(modelPatchLoader, 0),
+                            ["image"] = imageNodeActual.Path,
+                            ["mask"] = g.FinalMask,
+                            ["strength"] = controlStrength,
+                            ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
+                            ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
+                        });
+                        g.CurrentModel = g.CurrentModel.WithPath([animaApplyNode, 0]);
+                        continue;
+                    }
                     string controlModelNode = g.CreateNode("ControlNetLoader", new JObject()
                     {
                         ["control_net_name"] = controlModel.ToString(g.ModelFolderFormat)

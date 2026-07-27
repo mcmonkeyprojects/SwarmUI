@@ -95,6 +95,7 @@ public class T2IModelClassSorter
         CompatIdeogram4 = RegisterCompat(new() { ID = "ideogram-4", ShortCode = "Ideo4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", VaeFamily = VaeQwenImage }),
         CompatBoogu = RegisterCompat(new() { ID = "boogu", ShortCode = "Boogu", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
+        CompatMageFlow = RegisterCompat(new() { ID = "mage-flow", ShortCode = "Mage", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones
@@ -245,6 +246,7 @@ public class T2IModelClassSorter
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
             || (h.ContainsKey("model.diffusion_model.time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("model.diffusion_model.img_in.bias") && (h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_qkv_proj.bias")));
         bool isQwenImageEdit2511(JObject h) => h.ContainsKey("__index_timestep_zero__");
+        bool isMageFlow(JObject h) => tryGetKey(h, "txt_norm.weight", out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 2560;
         bool isQwenImageLora(JObject h) => (hasLoraKey(h, "transformer_blocks.0.attn.add_k_proj") && hasLoraKey(h, "transformer_blocks.0.img_mlp.net.0.proj"))
                                             || (hasLoraKey(h, "transformer_blocks.0.attn.add_k_proj") && hasLoraKey(h, "transformer_blocks.0.img_mlp.net.2"))
                                             || (hasLoraKey(h, "transformer_blocks.59.attn.to_k") && hasLoraKey(h, "transformer_blocks.59.attn.to_out.0"))
@@ -666,7 +668,7 @@ public class T2IModelClassSorter
         // ====================== Qwen Image ======================
         Register(new() { ID = "qwen-image", CompatClass = CompatQwenImage, Name = "Qwen Image", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
-            return isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h) && !isQwenImageEdit2511(h);
+            return isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h) && !isQwenImageEdit2511(h) && !isMageFlow(h);
         }});
         Register(new() { ID = "qwen-image-edit", CompatClass = CompatQwenImage, Name = "Qwen Image Edit", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
@@ -696,6 +698,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "ernie-image", CompatClass = CompatErnieImage, Name = "Ernie Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isErnie(h);
+        }});
+        // ====================== Mage Flow ======================
+        Register(new() { ID = "mage-flow", CompatClass = CompatMageFlow, Name = "Mage Flow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isMageFlow(h) && isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h) && !isQwenImageEdit2511(h);
         }});
         // ====================== Kandinsky5 ======================
         Register(new() { ID = "kandinsky5-image-lite", CompatClass = CompatKandinsky5ImgLite, Name = "Kandinsky5 Image Lite", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>

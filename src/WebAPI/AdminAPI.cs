@@ -322,7 +322,7 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Invalid log level type specified." };
         }
-        Logs.Info($"User {session.User.UserID} is submitted logs above level {level} to pastebin...");
+        Logs.Info($"User {session.User.UserID} is submitting logs above level {level} to pastebin...");
         List<(Logs.LogLevel, Logs.LogMessage)> messages = [];
         for (int i = (int)level; i < Logs.Trackers.Length; i++)
         {

@@ -19,6 +19,7 @@ This doc tracks specifically the old, bad, unpopular, etc. models that are suppo
 [LongCat-Image](#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
 [Zeta Chroma](#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
 [PixelDiT](#pixeldit) | Pixel DiT | 2026 | NVIDIA | 1.3B | Minimal | Modern, fast, pixel-space, but very bad relative quality on launch |
+[MageFlow](#mageflow) | MMDiT | 2026 | Microsoft | 4B | No | Very bad quality compared to contemporary models |
 
 Obscure video models are tracked at the [Video Models heading](#video-models)
 
@@ -144,7 +145,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 
 - [OmniGen 2](<https://github.com/VectorSpaceLab/OmniGen2>) is natively partially supported in SwarmUI.
     - It is technically an LLM, and the LLM features are not supported, only the direct raw image features.
-    - Download the model here <https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/blob/main/split_files/diffusion_models/omnigen2_fp16.safetensors>
+- Download the model here <https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/blob/main/split_files/diffusion_models/omnigen2_fp16.safetensors>
         - Save it to `diffusion_models`
     - The text encoder is Qwen 2.5 VL 3B (LLM), and will be automatically downloaded.
     - The VAE is the Flux VAE, and will be automatically downloaded.
@@ -191,7 +192,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - [Zeta Chroma](<https://huggingface.co/lodestones/Zeta-Chroma>) is supported in SwarmUI.
     - It is a pixel-space variant of Z-Image by the Chroma team, similar to what Chroma Radiance is to regular Chroma.
     - Still under active development, results are pretty poor at the moment. Like Chroma, likely to improve as new versions are released. Z-Image LORAs will not work on it.
-    - Download the model from [lodestones/Zeta-Chroma](<https://huggingface.co/lodestones/Zeta-Chroma/tree/main>)
+- Download the model from [lodestones/Zeta-Chroma](<https://huggingface.co/lodestones/Zeta-Chroma/tree/main>)
     - Save model files in `diffusion_models`
     - It does not use a VAE
 - **Parameters**
@@ -204,7 +205,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 # PixelDiT
 
 - NVIDIA's [PixelDiT](<https://huggingface.co/Comfy-Org/PixelDiT>) is supported in SwarmUI!
-    - The smaller FP8 model can be downloaded here: [Comfy-Org/PixelDiT - fp8](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_mxfp8.safetensors>)
+- The smaller FP8 model can be downloaded here: [Comfy-Org/PixelDiT - fp8](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_mxfp8.safetensors>)
     - Or fat BF16 version: [Comfy-Org/PixelDiT - bf16](<https://huggingface.co/Comfy-Org/PixelDiT/resolve/main/diffusion_models/pixeldit_1300m_1024px_bf16.safetensors>)
     - Save in `diffusion_models`
     - Released as a pair with PiD (Pixel Decoder), which is a separate pixel decode/upscale model. See [Features/Upscaling: PiD](/docs/Features/Upscaling.md#pixel-decoder-pid) for more info.
@@ -216,6 +217,20 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **CFG Scale:** `4` is recommended.
     - **Steps:** `30` is recommended.
     - **Resolution:** Side length `1024` is the standard.
+
+# MageFlow
+
+Microsoft's [Mage Flow](https://huggingface.co/microsoft/Mage-Flow) is supported in SwarmUI
+    - It is poor quality compared to contemporary models, and can pretty much just be ignored.
+- Downloads are here: [Comfy-Org/Mage-Flow](<https://huggingface.co/Comfy-Org/Mage-Flow/tree/main/diffusion_models>)
+    - There is a base, turbo, edit, and edit turbo variant
+    - Base does text2image, edit is for editing images, and turbo are fast slow-step cfg-1 turbo variants
+- **Parameters:**
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** Usual (`5`-ish) for base, `1` for Turbo
+    - **Steps:** Usual (`20`-ish) for base, `4` for Turbo
+    - **Resolution:** Any side-length from 512 to 2048 works, defaults to `1024`.
 
 --------------------------------------------------------------------------
 
