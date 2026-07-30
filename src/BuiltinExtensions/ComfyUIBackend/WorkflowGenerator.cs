@@ -2694,6 +2694,27 @@ public partial class WorkflowGenerator
         return result;
     }
 
+    /// <summary>Runs the Final Stage upscale over the current media, if the user configured one and it hasn't run yet.</summary>
+    public void RunFinalStage()
+    {
+        if (!UserInput.TryGet(ComfyUIBackendExtension.FinalUpscaleMethod, out string method))
+        {
+            return;
+        }
+        double scale = UserInput.Get(T2IParamTypes.FinalUpscale, 2);
+        if (scale == 1 && method.StartsWith("pixel-"))
+        {
+            return;
+        }
+        if (UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
+        {
+            CurrentMedia.SaveOutput(CurrentVae, CurrentAudioVae, GetStableDynamicID(50000, 0));
+        }
+        IsFinalStage = true;
+        CurrentMedia = CreatePixelUpscale(method, CurrentMedia, CurrentVae, scale, UserInput.Get(T2IParamTypes.Seed) + 500);
+        IsFinalStage = false;
+    }
+
     /// <summary>Upscales raw media by any of the Final Upscale Methods.</summary>
     public WGNodeData CreatePixelUpscale(string method, WGNodeData media, WGNodeData vae, double scale, long seed)
     {

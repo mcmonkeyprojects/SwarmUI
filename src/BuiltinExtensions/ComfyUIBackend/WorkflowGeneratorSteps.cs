@@ -1937,27 +1937,6 @@ public class WorkflowGeneratorSteps
             RunSegmentationProcessing(g, isBeforeRefiner: false);
         }, 5);
         #endregion
-        #region Final Stage
-        AddStep(g =>
-        {
-            if (!g.UserInput.TryGet(ComfyUIBackendExtension.FinalUpscaleMethod, out string method))
-            {
-                return;
-            }
-            double scale = g.UserInput.Get(T2IParamTypes.FinalUpscale, 2);
-            if (scale == 1 && method.StartsWith("pixel-"))
-            {
-                return;
-            }
-            if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-            {
-                g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, g.GetStableDynamicID(50000, 0));
-            }
-            g.IsFinalStage = true;
-            g.CurrentMedia = g.CreatePixelUpscale(method, g.CurrentMedia, g.CurrentVae, scale, g.UserInput.Get(T2IParamTypes.Seed) + 500);
-            g.IsFinalStage = false;
-        }, 6);
-        #endregion
         #region SaveImage
         AddStep(g =>
         {
@@ -2022,6 +2001,10 @@ public class WorkflowGeneratorSteps
                 bool willHaveFollowupVideo = g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
                 // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
                 bool formedFromSingleImage = g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _);
+                if (!willHaveFollowupVideo)
+                {
+                    g.RunFinalStage();
+                }
                 if (g.IsVideoModel() && !formedFromSingleImage && !willHaveFollowupVideo)
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
@@ -2144,6 +2127,10 @@ public class WorkflowGeneratorSteps
                 g.CreateImageToVideo(genInfo);
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(genInfo.Vae);
                 bool hasExtend = prompt.Contains("<extend:");
+                if (!hasExtend)
+                {
+                    g.RunFinalStage();
+                }
                 if (!hasExtend && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
@@ -2292,6 +2279,7 @@ public class WorkflowGeneratorSteps
                 }
                 g.CurrentMedia = conjoinedLast;
                 g.CurrentMedia.FPS = videoFps ?? g.CurrentMedia.FPS;
+                g.RunFinalStage();
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (saveIntermediate)
