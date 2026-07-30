@@ -169,6 +169,9 @@ public partial class WorkflowGenerator
     /// <summary>If true, the generator is currently working on the pixel-decoder stage.</summary>
     public bool IsPixelDecoderStage = false;
 
+    /// <summary>If true, the generator is currently working on the final stage upscale.</summary>
+    public bool IsFinalStage = false;
+
     /// <summary>If true, the generator is currently working on Image2Video.</summary>
     public bool IsImageToVideo = false;
 
@@ -2668,6 +2671,61 @@ public partial class WorkflowGenerator
         CurrentTextEnc = priorTextEnc;
         CurrentVae = priorVae;
         return result;
+    }
+
+    /// <summary>Scales raw media to an exact pixel size, or does nothing if it's already that size.</summary>
+    public WGNodeData ScaleRawMedia(WGNodeData raw, int width, int height, string method = "lanczos", string id = null)
+    {
+        if (raw.Width == width && raw.Height == height)
+        {
+            return raw;
+        }
+        string scaled = CreateNode("ImageScale", new JObject()
+        {
+            ["image"] = raw.Path,
+            ["width"] = width,
+            ["height"] = height,
+            ["upscale_method"] = method,
+            ["crop"] = "disabled"
+        }, id);
+        WGNodeData result = raw.WithPath([scaled, 0]);
+        result.Width = width;
+        result.Height = height;
+        return result;
+    }
+
+    /// <summary>Upscales raw media by any of the Final Upscale Methods.</summary>
+    public WGNodeData CreatePixelUpscale(string method, WGNodeData media, WGNodeData vae, double scale, long seed)
+    {
+        WGNodeData raw = media.AsRawImage(vae);
+        int width = (int)Math.Round((raw.Width ?? UserInput.GetImageWidth()) * scale) / 16 * 16;
+        int height = (int)Math.Round((raw.Height ?? UserInput.GetImageHeight()) * scale) / 16 * 16;
+        if (method.StartsWith("pidmodel-"))
+        {
+            T2IModel pidModel = ComfyUIBackendExtension.GetPidModel(method.After("pidmodel-"), UserInput.SourceSession);
+            return ScaleRawMedia(CreatePixelDecode(pidModel, raw, vae, seed), width, height);
+        }
+        if (method.StartsWith("model-"))
+        {
+            string loaderNode = CreateNode("UpscaleModelLoader", new JObject()
+            {
+                ["model_name"] = method.After("model-")
+            });
+            string upscaledNode = CreateNode("ImageUpscaleWithModel", new JObject()
+            {
+                ["upscale_model"] = NodePath(loaderNode, 0),
+                ["image"] = raw.Path
+            });
+            WGNodeData upscaled = raw.WithPath([upscaledNode, 0]);
+            upscaled.Width = null; // the model's own scale factor is unknown here, so always correct after
+            upscaled.Height = null;
+            return ScaleRawMedia(upscaled, width, height);
+        }
+        if (method.StartsWith("pixel-"))
+        {
+            return ScaleRawMedia(raw, width, height, method.After("pixel-"));
+        }
+        throw new SwarmUserErrorException($"Upscale method '{method}' needs a sampler after it, so it can't be used as a Final Upscale Method. Use it in the Refine/Upscale group instead.");
     }
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>

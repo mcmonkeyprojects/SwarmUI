@@ -65,6 +65,10 @@ public class WorkflowGeneratorSteps
         }, -15);
         AddModelGenStep(g =>
         {
+            if (g.IsFinalStage)
+            {
+                return;
+            }
             if (g.IsRefinerStage && g.UserInput.TryGet(T2IParamTypes.RefinerVAE, out T2IModel rvae))
             {
                 g.LoadingVAE = g.CreateVAELoader(rvae.ToString(g.ModelFolderFormat), g.HasNode("21") ? null : "21");
@@ -102,7 +106,7 @@ public class WorkflowGeneratorSteps
         }, -14);
         AddModelGenStep(g =>
         {
-            if (g.LoadingModelType == "negative" && !g.UserInput.Get(T2IParamTypes.NegativeModelIncludeLoras, true))
+            if (g.LoadingModelType == "negative" && !g.UserInput.Get(T2IParamTypes.NegativeModelIncludeLoras, true) || g.IsFinalStage)
             {
                 return;
             }
@@ -143,6 +147,10 @@ public class WorkflowGeneratorSteps
         }, -9);
         AddModelGenStep(g =>
         {
+            if (g.IsFinalStage)
+            {
+                return;
+            }
             string applyTo = g.UserInput.Get(T2IParamTypes.FreeUApplyTo, null);
             if (g.Features.Contains("freeu") && applyTo is not null)
             {
@@ -163,6 +171,10 @@ public class WorkflowGeneratorSteps
         }, -8);
         AddModelGenStep(g =>
         {
+            if (g.IsFinalStage)
+            {
+                return;
+            }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.SelfAttentionGuidanceScale, out double sagScale))
             {
                 string patched = g.CreateNode("SelfAttentionGuidance", new JObject()
@@ -243,6 +255,10 @@ public class WorkflowGeneratorSteps
         }, -6);
         AddModelGenStep(g =>
         {
+            if (g.IsFinalStage)
+            {
+                return;
+            }
             if (g.UserInput.TryGet(T2IParamTypes.SeamlessTileable, out string tileable) && tileable != "false")
             {
                 string mode = "Both";
@@ -264,6 +280,10 @@ public class WorkflowGeneratorSteps
         }, -5);
         AddModelGenStep(g =>
         {
+            if (g.IsFinalStage)
+            {
+                return;
+            }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.TeaCacheMode, out string teaCacheMode) && teaCacheMode != "disabled")
             {
                 double teaCacheThreshold = g.UserInput.Get(ComfyUIBackendExtension.TeaCacheThreshold, 0.25);
@@ -370,6 +390,10 @@ public class WorkflowGeneratorSteps
         }, -4);
         AddModelGenStep(g =>
         {
+            if (g.IsFinalStage)
+            {
+                return;
+            }
             if (g.Features.Contains("aitemplate") && g.UserInput.Get(ComfyUIBackendExtension.AITemplateParam))
             {
                 string aitLoad = g.CreateNode("AITemplateLoader", new JObject()
@@ -1912,6 +1936,27 @@ public class WorkflowGeneratorSteps
             }
             RunSegmentationProcessing(g, isBeforeRefiner: false);
         }, 5);
+        #endregion
+        #region Final Stage
+        AddStep(g =>
+        {
+            if (!g.UserInput.TryGet(ComfyUIBackendExtension.FinalUpscaleMethod, out string method))
+            {
+                return;
+            }
+            double scale = g.UserInput.Get(T2IParamTypes.FinalUpscale, 2);
+            if (scale == 1 && method.StartsWith("pixel-"))
+            {
+                return;
+            }
+            if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
+            {
+                g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, g.GetStableDynamicID(50000, 0));
+            }
+            g.IsFinalStage = true;
+            g.CurrentMedia = g.CreatePixelUpscale(method, g.CurrentMedia, g.CurrentVae, scale, g.UserInput.Get(T2IParamTypes.Seed) + 500);
+            g.IsFinalStage = false;
+        }, 6);
         #endregion
         #region SaveImage
         AddStep(g =>
