@@ -65,7 +65,7 @@ public class WorkflowGeneratorSteps
         }, -15);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage)
+            if (g.IsFinalStage || g.IsSeedVR2())
             {
                 return;
             }
@@ -106,7 +106,7 @@ public class WorkflowGeneratorSteps
         }, -14);
         AddModelGenStep(g =>
         {
-            if (g.LoadingModelType == "negative" && !g.UserInput.Get(T2IParamTypes.NegativeModelIncludeLoras, true) || g.IsFinalStage)
+            if (g.LoadingModelType == "negative" && !g.UserInput.Get(T2IParamTypes.NegativeModelIncludeLoras, true) || g.IsFinalStage || g.IsSeedVR2())
             {
                 return;
             }
@@ -135,7 +135,7 @@ public class WorkflowGeneratorSteps
         }, -10);
         AddModelGenStep(g =>
         {
-            if (g.UserInput.TryGet(ComfyUIBackendExtension.SetClipDevice, out string device) && g.Features.Contains("set_clip_device"))
+            if (g.LoadingClip is not null && g.UserInput.TryGet(ComfyUIBackendExtension.SetClipDevice, out string device) && g.Features.Contains("set_clip_device"))
             {
                 string clipDeviceNode = g.CreateNode("OverrideCLIPDevice", new JObject()
                 {
@@ -147,7 +147,7 @@ public class WorkflowGeneratorSteps
         }, -9);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage)
+            if (g.IsFinalStage || g.IsSeedVR2())
             {
                 return;
             }
@@ -171,7 +171,7 @@ public class WorkflowGeneratorSteps
         }, -8);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage)
+            if (g.IsFinalStage || g.IsSeedVR2())
             {
                 return;
             }
@@ -243,7 +243,7 @@ public class WorkflowGeneratorSteps
         }, -7);
         AddModelGenStep(g =>
         {
-            if (g.UserInput.TryGet(T2IParamTypes.ClipStopAtLayer, out int layer))
+            if (g.LoadingClip is not null && g.UserInput.TryGet(T2IParamTypes.ClipStopAtLayer, out int layer))
             {
                 string clipSkip = g.CreateNode("CLIPSetLastLayer", new JObject()
                 {
@@ -255,7 +255,7 @@ public class WorkflowGeneratorSteps
         }, -6);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage)
+            if (g.IsFinalStage || g.IsSeedVR2())
             {
                 return;
             }
@@ -280,7 +280,7 @@ public class WorkflowGeneratorSteps
         }, -5);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage)
+            if (g.IsFinalStage || g.IsSeedVR2())
             {
                 return;
             }
@@ -390,10 +390,6 @@ public class WorkflowGeneratorSteps
         }, -4);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage)
-            {
-                return;
-            }
             if (g.Features.Contains("aitemplate") && g.UserInput.Get(ComfyUIBackendExtension.AITemplateParam))
             {
                 string aitLoad = g.CreateNode("AITemplateLoader", new JObject()
@@ -1562,6 +1558,7 @@ public class WorkflowGeneratorSteps
                 // TODO: Better same-VAE check
                 bool doPixelUpscale = doUpscale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
                 bool doPidUpscale = doUpscale && upscaleMethod.StartsWith("pidmodel-");
+                bool doSeedVR2Upscale = doUpscale && upscaleMethod.StartsWith("seedvr2model-");
                 int width = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale);
                 int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
                 width = (width / 16) * 16; // avoid unworkable output sizes
@@ -1591,6 +1588,25 @@ public class WorkflowGeneratorSteps
                     if (refinerControl <= 0)
                     {
                         g.CurrentMedia = decoded;
+                        return;
+                    }
+                    g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
+                }
+                else if (doSeedVR2Upscale)
+                {
+                    T2IModel seedVrModel = ComfyUIBackendExtension.GetSeedVR2Model(upscaleMethod.After("seedvr2model-"), g.UserInput.SourceSession);
+                    WGNodeData decoded = g.CurrentMedia.DecodeLatents(origVae, false, "24");
+                    decoded = decoded.WithPath(doMaskShrinkApply(g, decoded.Path));
+                    if (doSave)
+                    {
+                        decoded.SaveOutput(null, null, id: "29");
+                    }
+                    decoded = g.ScaleRawMedia(decoded, width, height, id: "26");
+                    decoded = g.CreateSeedVR2Restore(seedVrModel, decoded, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 2);
+                    if (refinerControl <= 0)
+                    {
+                        g.CurrentMedia = decoded;
+                        g.IsRefinerStage = false;
                         return;
                     }
                     g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");

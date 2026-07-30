@@ -2673,6 +2673,78 @@ public partial class WorkflowGenerator
         return result;
     }
 
+    /// <summary>Creates a SeedVR2 restoration stage.</summary>
+    public WGNodeData CreateSeedVR2Restore(T2IModel seedVrModel, WGNodeData media, WGNodeData decodeVae, long seed)
+    {
+        if (!Features.Contains("seedvr2"))
+        {
+            throw new SwarmUserErrorException($"Cannot use SeedVR2 model '{seedVrModel.Name}', the backend is missing SeedVR2 support. Update ComfyUI.");
+        }
+        WGNodeData raw = media.AsRawImage(decodeVae);
+        JArray resized = raw.Path;
+        string preprocessed = CreateNode("SeedVR2Preprocess", new JObject()
+        {
+            ["resized_images"] = resized
+        });
+        T2IModel priorFinalModel = FinalLoadedModel;
+        List<T2IModel> priorFinalModelList = FinalLoadedModelList;
+        WGNodeData priorModel = CurrentModel, priorTextEnc = CurrentTextEnc, priorVae = CurrentVae;
+        bool priorNoVae = NoVAEOverride;
+        FinalLoadedModel = seedVrModel;
+        FinalLoadedModelList = [seedVrModel];
+        NoVAEOverride = true;
+        (FinalLoadedModel, CurrentModel, CurrentTextEnc, CurrentVae) = CreateModelLoader(seedVrModel, "SeedVR2");
+        NoVAEOverride = priorNoVae;
+        WGNodeData encoded = raw.WithPath([preprocessed, 0]).EncodeToLatent(CurrentVae);
+        JArray latent = encoded.Path;
+        JArray chunkOverlap = null;
+        if (UserInput.Get(ComfyUIBackendExtension.SeedVR2SplitLatent, false))
+        {
+            int overlap = UserInput.TryGet(ComfyUIBackendExtension.SeedVR2TemporalVideoOverlap, out int seedVrOverlap) ? seedVrOverlap : UserInput.Get(T2IParamTypes.VAETemporalTileOverlap, 0);
+            string chunked = CreateNode("SeedVR2TemporalChunk", new JObject()
+            {
+                ["latent"] = latent,
+                ["temporal_overlap"] = overlap,
+                ["chunking_mode"] = "auto"
+            });
+            latent = [chunked, 0];
+            chunkOverlap = [chunked, 1];
+        }
+        string cond = CreateNode("SeedVR2Conditioning", new JObject()
+        {
+            ["model"] = CurrentModel.Path,
+            ["vae_conditioning"] = latent
+        });
+        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], [cond, 1], latent, 1, 1, 0, 10000, seed, false, true,
+            explicitSampler: "euler", explicitScheduler: "simple");
+        JArray sampledLatent = [sampled, 0];
+        if (chunkOverlap is not null)
+        {
+            string merged = CreateNode("SeedVR2TemporalMerge", new JObject()
+            {
+                ["latents"] = sampledLatent,
+                ["temporal_overlap"] = chunkOverlap
+            });
+            sampledLatent = [merged, 0];
+        }
+        WGNodeData decoded = encoded.WithPath(sampledLatent).DecodeLatents(CurrentVae, false);
+        string post = CreateNode("SeedVR2PostProcessing", new JObject()
+        {
+            ["images"] = decoded.Path,
+            ["original_resized_images"] = resized,
+            ["color_correction_method"] = UserInput.Get(ComfyUIBackendExtension.SeedVR2ColorCorrectionBehavior, "none")
+        });
+        FinalLoadedModel = priorFinalModel;
+        FinalLoadedModelList = priorFinalModelList;
+        CurrentModel = priorModel;
+        CurrentTextEnc = priorTextEnc;
+        CurrentVae = priorVae;
+        WGNodeData result = raw.WithPath([post, 0]);
+        result.Width = raw.Width;
+        result.Height = raw.Height;
+        return result;
+    }
+
     /// <summary>Scales raw media to an exact pixel size, or does nothing if it's already that size.</summary>
     public WGNodeData ScaleRawMedia(WGNodeData raw, int width, int height, string method = "lanczos", string id = null)
     {
@@ -2721,6 +2793,11 @@ public partial class WorkflowGenerator
         WGNodeData raw = media.AsRawImage(vae);
         int width = (int)Math.Round((raw.Width ?? UserInput.GetImageWidth()) * scale) / 16 * 16;
         int height = (int)Math.Round((raw.Height ?? UserInput.GetImageHeight()) * scale) / 16 * 16;
+        if (method.StartsWith("seedvr2model-"))
+        {
+            T2IModel seedVrModel = ComfyUIBackendExtension.GetSeedVR2Model(method.After("seedvr2model-"), UserInput.SourceSession);
+            return CreateSeedVR2Restore(seedVrModel, ScaleRawMedia(raw, width, height), vae, seed);
+        }
         if (method.StartsWith("pidmodel-"))
         {
             T2IModel pidModel = ComfyUIBackendExtension.GetPidModel(method.After("pidmodel-"), UserInput.SourceSession);
