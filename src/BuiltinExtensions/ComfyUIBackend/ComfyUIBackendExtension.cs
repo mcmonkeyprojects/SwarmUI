@@ -35,10 +35,10 @@ public class ComfyUIBackendExtension : Extension
     public static ConcurrentDictionary<string, ComfyCustomWorkflow> CustomWorkflows = new();
 
     /// <summary>Set of all feature-ids supported by ComfyUI backends.</summary>
-    public static HashSet<string> FeaturesSupported = ["comfyui", "refiners", "controlnet", "endstepsearly", "seamless", "video", "variation_seed", "freeu", "yolov8", "seedvr2"];
+    public static HashSet<string> FeaturesSupported = ["comfyui", "refiners", "controlnet", "endstepsearly", "seamless", "video", "variation_seed", "freeu", "yolov8"];
 
     /// <summary>Set of feature-ids that were added presumptively during loading and should be removed if the backend turns out to be missing them.</summary>
-    public static HashSet<string> FeaturesDiscardIfNotFound = ["variation_seed", "freeu", "yolov8", "seedvr2"];
+    public static HashSet<string> FeaturesDiscardIfNotFound = ["variation_seed", "freeu", "yolov8"];
 
     /// <summary>Extensible map of ComfyUI Node IDs to supported feature IDs.</summary>
     public static Dictionary<string, string> NodeToFeatureMap = new()
@@ -68,8 +68,7 @@ public class ComfyUIBackendExtension : Extension
         ["TeaCache"] = "teacache",
         ["TeaCacheForVidGen"] = "teacache",
         ["TeaCacheForImgGen"] = "teacache_oldvers",
-        ["OverrideCLIPDevice"] = "set_clip_device",
-        ["SeedVR2Conditioning"] = "seedvr2",
+        ["OverrideCLIPDevice"] = "set_clip_device"
     };
 
     /// <inheritdoc/>
@@ -607,13 +606,13 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, FinalUpscaleMethod, SeedVR2ColorCorrectionBehavior, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
+    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
 
-    public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG, SeedVR2SplitLatent;
+    public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG;
 
     public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG, NormalizedAttentionGuidanceScale, NormalizedAttentionGuidanceAlpha, NormalizedAttentionGuidanceTau;
 
-    public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier, SeedVR2TemporalVideoOverlap;
+    public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
     public static T2IRegisteredParam<T2IModel> PixelDecoderModel;
 
@@ -653,25 +652,6 @@ public class ComfyUIBackendExtension : Extension
         if (model is null || model.ModelClass?.CompatClass?.ID != "pid")
         {
             throw new SwarmUserErrorException($"PiD model '{name}' could not be found, or is not a valid PiD model.");
-        }
-        return model;
-    }
-
-    /// <summary>Lists SeedVR2 upscaler models.</summary>
-    public static List<string> SeedVR2UpscaleModels(Session session) => [.. Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "seedvr2").OrderBy(m => m.Name).Select(m => $"seedvr2model-{m.Name}///SeedVR2 Model: {m.Name}")];
-
-    /// <summary>Resolves a SeedVR2 model from a model name.</summary>
-    public static T2IModel GetSeedVR2Model(string name, Session session)
-    {
-        string matched = T2IParamTypes.GetBestModelInList(name, Program.MainSDModels.ListModelNamesFor(session));
-        if (matched is not null && matched.EndsWith(".safetensors"))
-        {
-            matched = matched.BeforeLast('.');
-        }
-        T2IModel model = matched is null ? null : Program.MainSDModels.GetModel(matched);
-        if (model is null || model.ModelClass?.CompatClass?.ID != "seedvr2")
-        {
-            throw new SwarmUserErrorException($"SeedVR2 model '{name}' could not be found, or is not a valid SeedVR2 model.");
         }
         return model;
     }
@@ -790,11 +770,7 @@ public class ComfyUIBackendExtension : Extension
             ));
         RefinerUpscaleMethod = T2IParamTypes.Register<string>(new("Refiner Upscale Method", "How to upscale the image, if upscaling is used.",
             "pixel-lanczos", Group: T2IParamTypes.GroupRefiners, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,
-            GetValues: (session) => [.. UpscalerModels, .. PidUpscaleModels(session), .. SeedVR2UpscaleModels(session)], DependNonDefault: T2IParamTypes.RefinerUpscale.Type.ID
-            ));
-        FinalUpscaleMethod = T2IParamTypes.Register<string>(new("Final Upscale Method", "How to upscale the image, if upscaling is used.\nNo sampler runs after this, so latent upscalers are not available here.",
-            "pixel-lanczos", Group: T2IParamTypes.GroupFinalStage, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,
-            GetValues: (session) => [.. RefinerUpscaleMethod.Type.GetValues(session).Where(u => !u.StartsWith("latent"))]
+            GetValues: (session) => [.. UpscalerModels, .. PidUpscaleModels(session)], DependNonDefault: T2IParamTypes.RefinerUpscale.Type.ID
             ));
         PixelDecoderModel = T2IParamTypes.Register<T2IModel>(new("Pixel Decoder Model", "Optionally use a PiD (Pixel Diffusion Decoder) model.",
             "", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Subtype: "Stable-Diffusion", ChangeWeight: 4, DoNotPreview: true, OrderPriority: 14,
@@ -822,15 +798,6 @@ public class ComfyUIBackendExtension : Extension
             ));
         RefinerHyperTile = T2IParamTypes.Register<int>(new("Refiner HyperTile", "The size of hypertiles to use for the refining stage.\nHyperTile is a technique to speed up sampling of large images by tiling the image and batching the tiles.\nThis is useful when using SDv1 models as the refiner. SDXL-Base models do not benefit as much.",
             "256", Min: 64, Max: 2048, Step: 32, Toggleable: true, IsAdvanced: true, FeatureFlag: "comfyui", ViewType: ParamViewType.POT_SLIDER, Group: T2IParamTypes.GroupAdvancedSampling, OrderPriority: 20
-            ));
-        SeedVR2ColorCorrectionBehavior = T2IParamTypes.Register<string>(new("SeedVR2 Color Correction Behavior", "How to match the colors of a SeedVR2 upscale back to the image it was given.\n'None' = Do not attempt color correction, only align the geometry.\n'CIELAB' = Transfer the color in CIELAB space, preserving detail.\n'Wavelet' = Transfer the low-frequency color, keeping the upscaled high-frequency detail.\n'AdaIN' = Match the per-channel mean and standard deviation.",
-            "none", FeatureFlag: "seedvr2", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, OrderPriority: 21, GetValues: (_) => ["none///None", "lab///CIELAB", "wavelet///Wavelet", "adain///AdaIN"]
-            ));
-        SeedVR2SplitLatent = T2IParamTypes.Register<bool>(new("SeedVR2 Split Latent", "If enabled, samples a SeedVR2 video upscale as chunks of frames instead of all at once, sized to fit in free VRAM.\nChunking reduces VRAM consumption.\nDoes nothing to a single image, or to a video that already fits.",
-            "false", IgnoreIf: "false", FeatureFlag: "seedvr2", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, OrderPriority: 22
-            ));
-        SeedVR2TemporalVideoOverlap = T2IParamTypes.Register<int>(new("SeedVR2 Temporal Video Overlap", "Overrides 'VAE Temporal Tile Overlap' for 'SeedVR2 Split Latent' chunks.\nHigher overlap hides the chunk seams better but takes longer.",
-            "0", Min: 0, Max: 4096, Step: 1, Toggleable: true, VisibleNormally: false, IsAdvanced: true, FeatureFlag: "seedvr2", Group: T2IParamTypes.GroupAdvancedSampling, OrderPriority: 23
             ));
         List<string> interpolators = ["RIFE", "FILM", "GIMM-VFI"];
         VideoPreviewType = T2IParamTypes.Register<string>(new("Video Preview Type", "How to display previews for generating videos.\n'Animate' shows a low-res animated video preview.\n'iterate' shows one frame at a time while it goes.\n'one' displays just the first frame.\n'none' disables previews.",

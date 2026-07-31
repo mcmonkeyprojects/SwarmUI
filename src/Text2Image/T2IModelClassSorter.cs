@@ -92,7 +92,6 @@ public class T2IModelClassSorter
         CompatLens = RegisterCompat(new() { ID = "lens", ShortCode = "Lens", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
         CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
-        CompatSeedVR2 = RegisterCompat(new() { ID = "seedvr2", ShortCode = "SeedVR2", LorasTargetTextEnc = false }),
         CompatIdeogram4 = RegisterCompat(new() { ID = "ideogram-4", ShortCode = "Ideo4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", VaeFamily = VaeQwenImage }),
         CompatBoogu = RegisterCompat(new() { ID = "boogu", ShortCode = "Boogu", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
@@ -242,8 +241,6 @@ public class T2IModelClassSorter
         bool isChromaRadiance(JObject h) => hasKey(h, "nerf_image_embedder.embedder.0.bias");
         bool isPiD(JObject h) => h.ContainsKey("net.lq_proj.latent_proj.0.weight") && h.ContainsKey("net.pixel_blocks.0.attn.q_norm.weight") && h.ContainsKey("net.pixel_blocks.0.compress_to_attn.weight");
         bool isPixelDiT(JObject h) => h.ContainsKey("core.pixel_embedder.proj.weight") && h.ContainsKey("core.pixel_blocks.0.attn.q_norm.weight") && h.ContainsKey("core.pixel_blocks.0.compress_to_attn.weight") && !isPiD(h);
-        bool isSeedVR2(JObject h) => hasKey(h, "blocks.31.mlp.all.proj_in_gate.weight") || hasKey(h, "blocks.35.mlp.all.proj_in_gate.weight") || hasKey(h, "blocks.35.mlp.vid.proj_out.weight");
-        bool isSeedVR2Vae(JObject h) => h.ContainsKey("decoder.up_blocks.2.upsamplers.0.upscale_conv.weight");
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight") && !isBoogu(h);
         bool isBoogu(JObject h) => hasKey(h, "double_stream_layers.0.img_instruct_attn.processor.img_to_q.weight") && hasKey(h, "double_stream_layers.0.img_instruct_attn.processor.instruct_to_q.weight");
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
@@ -778,15 +775,6 @@ public class T2IModelClassSorter
         Register(new() { ID = "pixeldit", CompatClass = CompatPixelDiT, Name = "PixelDiT", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isPixelDiT(h);
-        }});
-        // ====================== SeedVR2 ======================
-        Register(new() { ID = "seedvr2", CompatClass = CompatSeedVR2, Name = "SeedVR2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isSeedVR2(h);
-        }});
-        Register(new() { ID = "seedvr2/vae", CompatClass = CompatSeedVR2, Name = "SeedVR2 VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isSeedVR2Vae(h);
         }});
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = CompatAltDiffusion, Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {

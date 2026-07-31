@@ -65,10 +65,6 @@ public class WorkflowGeneratorSteps
         }, -15);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage || g.IsSeedVR2())
-            {
-                return;
-            }
             if (g.IsRefinerStage && g.UserInput.TryGet(T2IParamTypes.RefinerVAE, out T2IModel rvae))
             {
                 g.LoadingVAE = g.CreateVAELoader(rvae.ToString(g.ModelFolderFormat), g.HasNode("21") ? null : "21");
@@ -106,7 +102,7 @@ public class WorkflowGeneratorSteps
         }, -14);
         AddModelGenStep(g =>
         {
-            if (g.LoadingModelType == "negative" && !g.UserInput.Get(T2IParamTypes.NegativeModelIncludeLoras, true) || g.IsFinalStage || g.IsSeedVR2())
+            if (g.LoadingModelType == "negative" && !g.UserInput.Get(T2IParamTypes.NegativeModelIncludeLoras, true))
             {
                 return;
             }
@@ -135,7 +131,7 @@ public class WorkflowGeneratorSteps
         }, -10);
         AddModelGenStep(g =>
         {
-            if (g.LoadingClip is not null && g.UserInput.TryGet(ComfyUIBackendExtension.SetClipDevice, out string device) && g.Features.Contains("set_clip_device"))
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.SetClipDevice, out string device) && g.Features.Contains("set_clip_device"))
             {
                 string clipDeviceNode = g.CreateNode("OverrideCLIPDevice", new JObject()
                 {
@@ -147,10 +143,6 @@ public class WorkflowGeneratorSteps
         }, -9);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage || g.IsSeedVR2())
-            {
-                return;
-            }
             string applyTo = g.UserInput.Get(T2IParamTypes.FreeUApplyTo, null);
             if (g.Features.Contains("freeu") && applyTo is not null)
             {
@@ -171,10 +163,6 @@ public class WorkflowGeneratorSteps
         }, -8);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage || g.IsSeedVR2())
-            {
-                return;
-            }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.SelfAttentionGuidanceScale, out double sagScale))
             {
                 string patched = g.CreateNode("SelfAttentionGuidance", new JObject()
@@ -243,7 +231,7 @@ public class WorkflowGeneratorSteps
         }, -7);
         AddModelGenStep(g =>
         {
-            if (g.LoadingClip is not null && g.UserInput.TryGet(T2IParamTypes.ClipStopAtLayer, out int layer))
+            if (g.UserInput.TryGet(T2IParamTypes.ClipStopAtLayer, out int layer))
             {
                 string clipSkip = g.CreateNode("CLIPSetLastLayer", new JObject()
                 {
@@ -255,10 +243,6 @@ public class WorkflowGeneratorSteps
         }, -6);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage || g.IsSeedVR2())
-            {
-                return;
-            }
             if (g.UserInput.TryGet(T2IParamTypes.SeamlessTileable, out string tileable) && tileable != "false")
             {
                 string mode = "Both";
@@ -280,10 +264,6 @@ public class WorkflowGeneratorSteps
         }, -5);
         AddModelGenStep(g =>
         {
-            if (g.IsFinalStage || g.IsSeedVR2())
-            {
-                return;
-            }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.TeaCacheMode, out string teaCacheMode) && teaCacheMode != "disabled")
             {
                 double teaCacheThreshold = g.UserInput.Get(ComfyUIBackendExtension.TeaCacheThreshold, 0.25);
@@ -1558,7 +1538,6 @@ public class WorkflowGeneratorSteps
                 // TODO: Better same-VAE check
                 bool doPixelUpscale = doUpscale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
                 bool doPidUpscale = doUpscale && upscaleMethod.StartsWith("pidmodel-");
-                bool doSeedVR2Upscale = doUpscale && upscaleMethod.StartsWith("seedvr2model-");
                 int width = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale);
                 int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
                 width = (width / 16) * 16; // avoid unworkable output sizes
@@ -1588,25 +1567,6 @@ public class WorkflowGeneratorSteps
                     if (refinerControl <= 0)
                     {
                         g.CurrentMedia = decoded;
-                        return;
-                    }
-                    g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
-                }
-                else if (doSeedVR2Upscale)
-                {
-                    T2IModel seedVrModel = ComfyUIBackendExtension.GetSeedVR2Model(upscaleMethod.After("seedvr2model-"), g.UserInput.SourceSession);
-                    WGNodeData decoded = g.CurrentMedia.DecodeLatents(origVae, false, "24");
-                    decoded = decoded.WithPath(doMaskShrinkApply(g, decoded.Path));
-                    if (doSave)
-                    {
-                        decoded.SaveOutput(null, null, id: "29");
-                    }
-                    decoded = g.ScaleRawMedia(decoded, width, height, id: "26");
-                    decoded = g.CreateSeedVR2Restore(seedVrModel, decoded, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 2);
-                    if (refinerControl <= 0)
-                    {
-                        g.CurrentMedia = decoded;
-                        g.IsRefinerStage = false;
                         return;
                     }
                     g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
@@ -2017,10 +1977,6 @@ public class WorkflowGeneratorSteps
                 bool willHaveFollowupVideo = g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
                 // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
                 bool formedFromSingleImage = g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _);
-                if (!willHaveFollowupVideo)
-                {
-                    g.RunFinalStage();
-                }
                 if (g.IsVideoModel() && !formedFromSingleImage && !willHaveFollowupVideo)
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
@@ -2143,10 +2099,6 @@ public class WorkflowGeneratorSteps
                 g.CreateImageToVideo(genInfo);
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(genInfo.Vae);
                 bool hasExtend = prompt.Contains("<extend:");
-                if (!hasExtend)
-                {
-                    g.RunFinalStage();
-                }
                 if (!hasExtend && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
@@ -2295,7 +2247,6 @@ public class WorkflowGeneratorSteps
                 }
                 g.CurrentMedia = conjoinedLast;
                 g.CurrentMedia.FPS = videoFps ?? g.CurrentMedia.FPS;
-                g.RunFinalStage();
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (saveIntermediate)
