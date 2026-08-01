@@ -805,8 +805,8 @@ public class ComfyUIBackendExtension : Extension
         // ================================================ SeedVR ================================================
         GroupSeedVR = new T2IParamGroup("SeedVR", Toggles: true, Open: false, OrderPriority: -2.5, Description: "SeedVR2 is a one-step restoration model, run over the result of the normal generation.");
         SeedVRModel = T2IParamTypes.Register<T2IModel>(new("SeedVR Model", "Which SeedVR2 model to restore with.",
-            "", Toggleable: true, FeatureFlag: "seedvr2", Group: GroupSeedVR, Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true, OrderPriority: -10,
-            GetValues: (session) => T2IParamTypes.CleanModelList(Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "seedvr2").OrderBy(m => m.Name).Select(m => m.Name))
+            "None", IgnoreIf: "None", FeatureFlag: "seedvr2", Group: GroupSeedVR, Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true, OrderPriority: -10,
+            GetValues: (session) => ["None", .. T2IParamTypes.CleanModelList(Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "seedvr2").OrderBy(m => m.Name).Select(m => m.Name))]
             ));
         SeedVRUpscale = T2IParamTypes.Register<double>(new("SeedVR Upscale", "Optional upscale of the image before SeedVR2 runs over it.\nSetting to '1' disables the upscale, and just restores at the current size.",
             "1", Min: 0.25, Max: 8, ViewMax: 4, Step: 0.25, OrderPriority: -9, ViewType: ParamViewType.SLIDER, FeatureFlag: "seedvr2", Group: GroupSeedVR, DoNotPreview: true, Examples: ["1", "1.5", "2"]
