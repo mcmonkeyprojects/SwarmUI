@@ -43,6 +43,7 @@ function swarmShowPreview(node, blob, isVideo) {
     element.style.width = '100%';
     element.style.height = '100%';
     element.style.objectFit = 'contain';
+    element.style.pointerEvents = 'auto';
     element.onload = element.onloadedmetadata = () => {
         let width = element.videoWidth || element.naturalWidth;
         let height = element.videoHeight || element.naturalHeight;
