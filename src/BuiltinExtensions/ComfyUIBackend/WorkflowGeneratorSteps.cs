@@ -1573,7 +1573,7 @@ public class WorkflowGeneratorSteps
                         g.CurrentMedia = decoded;
                         return;
                     }
-                    g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
+                    g.CurrentMedia = isSeedVr ? decoded : decoded.EncodeToLatent(g.CurrentVae, "25");
                 }
                 else if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
                 {
@@ -1629,7 +1629,7 @@ public class WorkflowGeneratorSteps
                     }
                     if (modelMustReencode || doPixelUpscale)
                     {
-                        g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
+                        g.CurrentMedia = isSeedVr ? decoded : decoded.EncodeToLatent(g.CurrentVae, "25");
                     }
                 }
                 if (doUpscale && upscaleMethod.StartsWith("latent-"))
@@ -1692,7 +1692,7 @@ public class WorkflowGeneratorSteps
                 }
                 if (isSeedVr)
                 {
-                    g.CurrentMedia = g.CreateSeedVR2Restore(refineModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 1);
+                    g.CurrentMedia = g.CreateSeedVR2Restore(refineModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 1, isRefiner: true);
                     g.IsRefinerStage = false;
                     return;
                 }

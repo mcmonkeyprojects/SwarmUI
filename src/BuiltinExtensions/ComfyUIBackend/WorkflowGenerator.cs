@@ -2674,8 +2674,8 @@ public partial class WorkflowGenerator
         return result;
     }
 
-    /// <summary>Creates a SeedVR2 restoration stage: converts to a SeedVR2-space latent and samples a one-step restore from it.</summary>
-    public WGNodeData CreateSeedVR2Restore(T2IModel seedVrModel, WGNodeData media, WGNodeData decodeVae, long seed)
+    /// <summary>Creates a SeedVR2 restoration stage: converts to a SeedVR2-space latent and samples the restored image from it.</summary>
+    public WGNodeData CreateSeedVR2Restore(T2IModel seedVrModel, WGNodeData media, WGNodeData decodeVae, long seed, bool isRefiner = false)
     {
         WGNodeData raw = media.AsRawImage(decodeVae);
         JArray resized = raw.Path;
@@ -2686,13 +2686,12 @@ public partial class WorkflowGenerator
         T2IModel priorFinalModel = FinalLoadedModel;
         List<T2IModel> priorFinalModelList = FinalLoadedModelList;
         WGNodeData priorModel = CurrentModel, priorTextEnc = CurrentTextEnc, priorVae = CurrentVae;
-        bool priorNoVae = NoVAEOverride, priorRefinerStage = IsRefinerStage;
+        bool priorNoVae = NoVAEOverride;
+        int sectionId = isRefiner ? T2IParamInput.SectionID_Refiner : 0;
         FinalLoadedModel = seedVrModel;
         FinalLoadedModelList = [seedVrModel];
         NoVAEOverride = true;
-        IsRefinerStage = false;
-        (FinalLoadedModel, CurrentModel, CurrentTextEnc, CurrentVae) = CreateModelLoader(seedVrModel, "SeedVR2");
-        IsRefinerStage = priorRefinerStage;
+        (FinalLoadedModel, CurrentModel, CurrentTextEnc, CurrentVae) = CreateModelLoader(seedVrModel, "SeedVR2", sectionId: sectionId);
         NoVAEOverride = priorNoVae;
         WGNodeData encoded = raw.WithPath([preprocessed, 0]).EncodeToLatent(CurrentVae);
         JArray latent = encoded.Path;
@@ -2714,7 +2713,12 @@ public partial class WorkflowGenerator
             ["model"] = CurrentModel.Path,
             ["vae_conditioning"] = latent
         });
-        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], [cond, 1], latent, 1, 1, 0, 10000, seed, false, true, explicitSampler: "euler", explicitScheduler: "normal");
+        int steps = UserInput.GetNullable(T2IParamTypes.Steps, sectionId, false) ?? (isRefiner ? UserInput.GetNullable(T2IParamTypes.RefinerSteps) : null) ?? 1;
+        double cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, sectionId, false) ?? (isRefiner ? UserInput.GetNullable(T2IParamTypes.RefinerCFGScale) : null) ?? 1;
+        string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null) : null);
+        string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null) : null);
+        int startStep = isRefiner ? (int)Math.Round(steps * (1 - UserInput.Get(T2IParamTypes.RefinerControl, 1))) : 0;
+        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], [cond, 1], latent, cfg, steps, startStep, 10000, seed, false, true, explicitSampler: explicitSampler ?? "euler", explicitScheduler: explicitScheduler ?? "normal", sectionId: sectionId);
         JArray sampledLatent = [sampled, 0];
         if (chunkOverlap is not null)
         {
