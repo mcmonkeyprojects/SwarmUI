@@ -56,7 +56,6 @@ class SwarmMiniMaxH3AddKeyframes(io.ComfyNode):
         frame_count = latent.shape[0]
         width = latent.shape[4] * 16
         height = latent.shape[3] * 16
-        print(f"shape: {latent.shape}")
 
         images = []
         keyframes = []

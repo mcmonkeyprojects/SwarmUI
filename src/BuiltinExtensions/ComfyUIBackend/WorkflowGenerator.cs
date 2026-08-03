@@ -2372,6 +2372,46 @@ public partial class WorkflowGenerator
         }
         bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels() || attachImages is not null);
         JArray qwenImage;
+        if (attachImages is null && isPositive && IsMiniMaxH3())
+        {
+            // TODO: Compatible with SwarmCustom. Maybe a "ref items" passable unit of some form.
+            JObject refData = new()
+            {
+                ["clip"] = clip,
+                ["vae"] = CurrentVae.Path,
+                ["audio_vae"] = CurrentAudioVae.Path,
+                ["prompt"] = prompt,
+                ["width"] = width,
+                ["height"] = height,
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 124),
+            };
+            bool hasAny = false;
+            for (int i = 0; i < 9; i++)
+            {
+                JArray img = GetPromptImage(false, true, i);
+                if (img is null)
+                {
+                    break;
+                }
+                hasAny = true;
+                JArray refImages = [img];
+                refData[$"ref_images.ref_image_{i}"] = img;
+            }
+            if (UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+            {
+                // TODO: Allow multiple. Prompt audios?
+                hasAny = true;
+                string audioNode = CreateAudioLoadNode(audio, "${videoaudioreference}");
+                refData["ref_audios.ref_audio_0"] = NodePath(audioNode, 0);
+            }
+            // TODO: Ref video! Ref videoaudio!
+            if (hasAny)
+            {
+                node = CreateNode("MiniMaxH3ReferenceToVideo", refData);
+                NodeHelpers[trackerId] = node;
+                return [node, 0];
+            }
+        }
         if (IsAceStep15())
         {
             node = CreateNode("TextEncodeAceStepAudio1.5", new JObject()
