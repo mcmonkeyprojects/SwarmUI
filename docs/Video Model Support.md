@@ -506,6 +506,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
         - Download here: [Comfy-Org/MiniMax-H3: Ref2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors>)
 - It uses Qwen3 VL 32B as a text encoder, Swarm will automatically download an fp4 (16GB) version of it.
 - It has a unique video VAE and a unique separate audio VAE. These will be automatically downloaded for you.
+    - The video VAE encodes 2 latents for frameCount=5, and then +5 latents for each 17 additional frames.
 - **Parameters:**
     - **Prompt:** Works best with long proper LLM prompts, but short ones still go fine
         - The model generates audio, so remember to prompt for what the audio should be
