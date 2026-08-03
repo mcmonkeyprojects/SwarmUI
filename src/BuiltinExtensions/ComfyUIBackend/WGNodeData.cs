@@ -156,6 +156,15 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                     ["samples"] = Path
                 }, id);
             }
+            if (Gen.IsMiniMaxH3() && Frames == 1)
+            {
+                decoded = Gen.CreateNode("ImageFromBatch", new JObject()
+                {
+                    ["image"] = WorkflowGenerator.NodePath(decoded, 0),
+                    ["batch_index"] = 0,
+                    ["length"] = 1
+                });
+            }
             return WithPath([decoded, 0], DataType == DT_LATENT_VIDEO ? DT_VIDEO : DT_IMAGE, vae.Compat);
         }
         if (DataType == DT_LATENT_AUDIOVIDEO)

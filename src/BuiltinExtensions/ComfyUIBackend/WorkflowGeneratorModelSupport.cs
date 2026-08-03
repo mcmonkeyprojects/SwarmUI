@@ -272,6 +272,10 @@ public partial class WorkflowGenerator
     /// <summary>Rounds a frame count up to MiniMax H3's '17k+5' frame grid (5, 22, 39, 56, ...).</summary>
     public static int MiniMaxH3AlignFrames(int frames)
     {
+        if (frames == 1)
+        {
+            return 1;
+        }
         // This is comfyui's wonky approach to calculating this.
         frames = Math.Max(5, frames);
         while (frames % 17 != 5)
@@ -386,7 +390,7 @@ public partial class WorkflowGenerator
             int fps = UserInput.Get(T2IParamTypes.VideoFPS, 24);
             string emptyAV = CreateNode("EmptyMiniMaxH3LatentAV", new JObject()
             {
-                ["length"] = frames,
+                ["length"] = Math.Max(5, frames),
                 ["height"] = height,
                 ["width"] = width
             }, id);

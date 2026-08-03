@@ -534,6 +534,12 @@ You can use the 'video audio reference' input under 'advanced video' param group
 
 (TODO: Videos in prompt box)
 
+### MiniMax H3 Image Generation
+
+You can generate images with MiniMax H3 in Swarm by just setting Frames to 1. This similar to other video models, with a key exception: H3 will actually generate 5 frames, and then discard 4. While direct single-frame generation is possible in H3, quality suffers severely as it is not a trained case.
+
+You can use the Ref model this way to do image editing. Note that quality will be poor compared to proper dedicated image models.
+
 # Obscure Model Redirection
 
 ### Stable Video Diffusion
