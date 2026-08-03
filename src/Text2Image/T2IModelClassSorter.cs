@@ -759,15 +759,15 @@ public class T2IModelClassSorter
             return isLtxv23Vae(h);
         }});
         // ====================== MiniMax H3 ======================
-        Register(new() { ID = "minimax-h3", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3", StandardWidth = 1344, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "minimax-h3", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isMiniMaxH3(h);
         }});
-        Register(new() { ID = "minimax-h3/vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Video VAE", StandardWidth = 1344, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "minimax-h3/vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Video VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isMiniMaxH3VideoVae(h);
         }});
-        Register(new() { ID = "minimax-h3/audio-vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Audio VAE", StandardWidth = 1344, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "minimax-h3/audio-vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Audio VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isMiniMaxH3AudioVae(h);
         }});
