@@ -51,6 +51,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Lightricks LTX Video 2.3.</summary>
     public bool IsLTXV23() => CurrentModelClass()?.ID == "lightricks-ltx-video-2-3";
 
+    /// <summary>Returns true if the current model is MiniMax H3.</summary>
+    public bool IsMiniMaxH3() => IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxH3);
+
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
     public bool IsFlux() => IsModelCompatClass(T2IModelClassSorter.CompatFlux);
 
@@ -251,7 +254,7 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsLTXV2() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel() || IsKandinsky5VidLite() || IsKandinsky5VidPro();
+        return IsLTXV() || IsLTXV2() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel() || IsKandinsky5VidLite() || IsKandinsky5VidPro() || IsMiniMaxH3();
     }
 
     /// <summary>Returns true if the current model is Ace Step 1.5.</summary>
@@ -264,6 +267,40 @@ public partial class WorkflowGenerator
     public bool IsAudioModel()
     {
         return CurrentCompat()?.IsAudioModel ?? false;
+    }
+
+    /// <summary>Rounds a frame count up to MiniMax H3's '17k+5' frame grid (5, 22, 39, 56, ... at 24 fps).</summary>
+    public static int MiniMaxH3AlignFrames(int frames)
+    {
+        frames = Math.Max(5, frames);
+        while (frames % 17 != 5)
+        {
+            frames++;
+        }
+        return frames;
+    }
+
+    /// <summary>Creates a "MiniMaxH3ImageToVideo" node, which emits both the conditioning and the joint AV latent to sample.
+    public string CreateMiniMaxH3ImageToVideo(WGNodeData clip, WGNodeData vae, string prompt, JToken width, JToken height, JToken frames, JArray firstFrame, JArray lastFrame)
+    {
+        JObject inputs = new()
+        {
+            ["clip"] = clip.Path,
+            ["vae"] = vae.Path,
+            ["prompt"] = prompt,
+            ["width"] = width,
+            ["height"] = height,
+            ["length"] = frames
+        };
+        if (firstFrame is not null)
+        {
+            inputs["first_frame"] = firstFrame;
+        }
+        if (lastFrame is not null)
+        {
+            inputs["last_frame"] = lastFrame;
+        }
+        return CreateNode("MiniMaxH3ImageToVideo", inputs);
     }
 
     /// <summary>Creates an Empty Latent Image node.</summary>
@@ -364,6 +401,18 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
             return new([emptyVideo, 0], this, WGNodeData.DT_LATENT_VIDEO, CurrentCompat()) { Width = width, Height = height, Frames = frames, FPS = fps };
+        }
+        else if (IsMiniMaxH3())
+        {
+            int frames = MiniMaxH3AlignFrames(UserInput.Get(T2IParamTypes.Text2VideoFrames, 124));
+            int fps = UserInput.Get(T2IParamTypes.VideoFPS, 24);
+            string emptyAV = CreateNode("EmptyMiniMaxH3LatentAV", new JObject()
+            {
+                ["length"] = frames,
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+            return new([emptyAV, 0], this, WGNodeData.DT_LATENT_AUDIOVIDEO, CurrentCompat()) { Width = width, Height = height, Frames = frames, FPS = fps };
         }
         else if (IsAceStep15()) // TODO: use VAE Family
         {
@@ -554,6 +603,19 @@ public partial class WorkflowGenerator
             g.CurrentAudioVae = new WGNodeData([avaeLoader, 0], g, WGNodeData.DT_AUDIOVAE, g.CurrentCompat());
         }
 
+        /// <summary>Loads a known audio VAE through the standard VAELoader (for models whose audio VAE is a plain comfy VAE).</summary>
+        public void StandardAudioVaeLoad(string knownName)
+        {
+            CommonModels.ModelInfo knownFile = CommonModels.Known[knownName];
+            string vaeFile = knownFile.FileName;
+            if (!Program.T2IModelSets["VAE"].Models.ContainsKey(vaeFile))
+            {
+                knownFile.DownloadNow().Wait();
+                Program.RefreshAllModelSets();
+            }
+            g.CurrentAudioVae = new WGNodeData(g.CreateVAELoader(vaeFile), g, WGNodeData.DT_AUDIOVAE, g.CurrentCompat());
+        }
+
         public string RequireClipModel(string name, string url, string hash, T2IRegisteredParam<T2IModel> param)
         {
             if (param is not null && g.UserInput.TryGet(param, out T2IModel model))
@@ -632,6 +694,11 @@ public partial class WorkflowGenerator
         public string GetQwen3vl_4bModel()
         {
             return RequireClipModel("qwen3vl_4b.safetensors", "https://huggingface.co/Comfy-Org/Qwen3-VL/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors", "54bd5144df0bbc25dd6ccadfcb826b521445a1b06ae5a42570bdd2974ca87094", T2IParamTypes.QwenModel);
+        }
+
+        public string GetQwen3vl_32bMiniMaxModel()
+        {
+            return RequireClipModel("qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "35a88d51044231fe332301d7a62aa81e3f2cba62febeb446e2c1e3e0ef76f2c6", T2IParamTypes.QwenModel);
         }
 
         public string GetOvisQwenModel()
@@ -1323,6 +1390,19 @@ public partial class WorkflowGenerator
                 helpers.LoadClipAudio(helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
                 helpers.AudioVaeLoad(model.ToString(ModelFolderFormat));
             }
+        }
+        else if (IsMiniMaxH3())
+        {
+            helpers.LoadClip("minimax", helpers.GetQwen3vl_32bMiniMaxModel());
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxH3, "minimax-h3-video-vae");
+            helpers.StandardAudioVaeLoad("minimax-h3-audio-vae");
+            string shiftNode = CreateNode("MiniMaxH3SigmaShift", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift_video"] = UserInput.Get(T2IParamTypes.SigmaShift, 12, sectionId: sectionId),
+                ["shift_audio"] = 3
+            });
+            LoadingModel = [shiftNode, 0];
         }
         else if (IsHunyuanVideo())
         {

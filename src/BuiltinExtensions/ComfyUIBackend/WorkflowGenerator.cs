@@ -926,6 +926,11 @@ public partial class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
+        else if (IsMiniMaxH3())
+        {
+            defsampler ??= "res_multistep";
+            defscheduler ??= "simple";
+        }
         else if (IsAnima())
         {
             defsampler ??= "er_sde";
@@ -1470,7 +1475,7 @@ public partial class WorkflowGenerator
         public int BatchIndex = -1;
         public int BatchLen = -1;
         public bool HasMatchedModelData = false;
-        public WGNodeData Model, Vae;
+        public WGNodeData Model, Vae, Clip;
         public JArray PosCond, NegCond;
         public string DefaultSampler = null, DefaultScheduler = null;
         public double DefaultCFG = 7;
@@ -1501,6 +1506,7 @@ public partial class WorkflowGenerator
         {
             g.FinalLoadedModel = VideoModel;
             (VideoModel, Model, WGNodeData clip, Vae) = g.CreateModelLoader(VideoModel, "image2video", null, true, sectionId: ContextID);
+            Clip = clip;
             string promptText = Prompt;
             if (VideoModel.ModelClass?.ID == "hunyuan-video-i2v" || VideoModel.ModelClass?.ID == "hunyuan-video-i2v-v2")
             {
@@ -1639,6 +1645,26 @@ public partial class WorkflowGenerator
                 HadSpecialCond = true;
                 DefaultSampler = "euler";
                 DefaultScheduler = "normal";
+            }
+            else if (VideoModel.ModelClass?.CompatClass?.ID == T2IModelClassSorter.CompatMiniMaxH3.ID)
+            {
+                VideoFPS ??= 24;
+                Frames = MiniMaxH3AlignFrames(Frames ?? 124);
+                origSrcImg = FixMediaLen();
+                JArray endFramePath = null;
+                if (VideoEndFrame is not null)
+                {
+                    endFramePath = g.LoadImage(VideoEndFrame, "${videoendframe}", false).Path;
+                }
+                PromptRegion regions = new(Prompt);
+                string promptText = string.IsNullOrWhiteSpace(regions.VideoPrompt) ? regions.GlobalPrompt : regions.VideoPrompt;
+                string i2vnode = g.CreateMiniMaxH3ImageToVideo(Clip, Vae, promptText, Width, Height, Frames, origSrcImg.Path, endFramePath);
+                PosCond = [i2vnode, 0];
+                g.CurrentMedia = g.CurrentMedia.WithPath([i2vnode, 1], WGNodeData.DT_LATENT_AUDIOVIDEO, Model.Compat);
+                g.CurrentMedia.Frames = Frames;
+                g.CurrentMedia.FPS = VideoFPS;
+                DefaultCFG = 1;
+                HadSpecialCond = true;
             }
             else if (VideoModel.ModelClass?.CompatClass?.ID == "nvidia-cosmos-1")
             {
