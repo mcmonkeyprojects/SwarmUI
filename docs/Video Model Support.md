@@ -2,12 +2,13 @@
 
 | Model | Year | Author | Scale | Type | Censored? | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- | ---- |
-[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
-[Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
-[Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
+[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Legacy, was good quality at the time |
+[Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Legacy, was good quality at the time |
+[Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Legacy, Fast but ugly |
 [Lightricks LTX Video 2](#lightricks-ltx-video-2) | 2026 | Lightricks | 19B DiT | Text/Image 2Video+Audio | Minimal | Modern, good/mixed quality but fun |
-[Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Incredible Quality |
+[Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Great Quality |
 [Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
+[MiniMax H3](#minimax-h3) | 2026 | MiniMax AI | 33B or 20B | Any2Video+Audio | Very Minimal | Modern, Incredible Quality |
 
 Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above
 
@@ -494,6 +495,35 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
     - **CFG Scale:** for regular models, regular CFG such as `5` works. For CFG-distill and step distill, use CFG of `1`.
     - **Steps:** For regular, 20 or higher is used. For Step Distill, 16 is the target. Going lower will work but with a severe quality hit.
     - **Resolution:** All video models primarily target a side length of 640. Higher resolutions can work, Pro handles 960x960 fine.
+
+# MiniMax H3
+
+- The [MiniMax H3](<https://modelscope.cn/models/MiniMax/MiniMax-H3>) family of video models is supported in SwarmUI!
+- It comes in two primary flavors: "FL2AV", "Ref2AV"
+    - FL2AV (First/Last Frame to Audio/Video) does text2video, image2video, and first/last frame to video
+        - Download here: [Comfy-Org/MiniMax-H3: FL2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors>)
+    - Ref2AV (Omni-reference to video) allows input of text, video, image, audio, as references to include somewhere within a video
+        - Download here: [Comfy-Org/MiniMax-H3: Ref2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors>)
+- It uses Qwen3 VL 32B as a text encoder, Swarm will automatically download an fp4 (16GB) version of it.
+- It has a unique video VAE and a unique separate audio VAE. These will be automatically downloaded for you.
+- **Parameters:**
+    - **Prompt:** Works best with long proper LLM prompts, but short ones still go fine
+        - The model generates audio, so remember to prompt for what the audio should be
+        - You can prompt for multiple shots at different times in the video and it will work
+    - **Frames:** The model targets 24FPS and supports up to 15 seconds, so 360 is the max frame count.
+    - **CFG Scale:** Use `1`
+    - **Steps:** Normal step counts like `20`
+    - **Sampler:** Defaults to `res_multistep`, works well, common alternatives might not
+    - **Scheduler:** Default (`simple`) is fine
+    - **Resolution:** Seems highly adaptable to a wide range. Any aspect ratio is fine, keep side length between about `512` to `1536`, you can go past to eg `2048` with some degredation as you get too high or too low
+
+### MiniMax H3 Image To Video
+
+The "FL2VA" model is used for basic image-to-video. Works like any other image2video model (see [Beginner's Guide - Generate Videos With SwarmUI](<https://github.com/mcmonkeyprojects/SwarmUI/discussions/716>)) and supports the "Video End Image" input as well. Remember that the model wants to add audio, so prompt accordingly.
+
+### MiniMax H3 Reference Model Usage
+
+(TODO: Good impl and docs for the ref model)
 
 # Obscure Model Redirection
 
