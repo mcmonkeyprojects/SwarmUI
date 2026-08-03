@@ -25,6 +25,18 @@ function setGroupAdvancedOverride(groupId, enable) {
     }
 }
 
+/** Returns the resolution rounding precision for the current model compat class (eg 16, or 32 for MiniMax H3). */
+function getResolutionPrecision() {
+    let compatId = currentModelHelper.curCompatClass;
+    if (compatId) {
+        let compat = modelsHelpers.compatClasses[compatId];
+        if (compat?.resolutionPrecision) {
+            return compat.resolutionPrecision;
+        }
+    }
+    return 16;
+}
+
 class AspectRatio {
     constructor(id, width, height, altLogic = null) {
         this.id = id;
@@ -41,13 +53,14 @@ class AspectRatio {
                 return [newWidth, newHeight];
             }
         }
+        let precision = getResolutionPrecision();
         if (inWidth != inHeight) {
-            inWidth = roundTo(Math.sqrt(inWidth * inHeight), 16);
+            inWidth = roundTo(Math.sqrt(inWidth * inHeight), precision);
             inHeight = inWidth;
         }
         // NOTE: This math must match T2IParamInput GetImageWidth
-        let width = roundTo(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, 16);
-        let height = roundTo(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, 16);
+        let width = roundTo(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, precision);
+        let height = roundTo(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, precision);
         return [width, height];
     }
 }

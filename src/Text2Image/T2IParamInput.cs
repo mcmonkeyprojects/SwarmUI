@@ -225,6 +225,9 @@ public class T2IParamInput
         ["9:21"] = (320, 768)
     };
 
+    /// <summary>Resolution precision currently in use.</summary>
+    public int TargetResolutionPrecision = 16;
+
     /// <summary>Gets the desired image width.</summary>
     public int GetImageWidth(int def = 512)
     {
@@ -235,7 +238,7 @@ public class T2IParamInput
         if (TryGet(T2IParamTypes.SideLength, out int sideLen) && TryGet(T2IParamTypes.AspectRatio, out string aspect) && ResolutionAspectReferences.TryGetValue(aspect, out (int, int) resRef))
         {
             // NOTE: This math must match params.js AspectRatio
-            return (int)Utilities.RoundToPrecision(resRef.Item1 * (sideLen / 512.0), 16);
+            return (int)Utilities.RoundToPrecision(resRef.Item1 * (sideLen / 512.0), TargetResolutionPrecision);
         }
         return Get(T2IParamTypes.Width, def);
     }
@@ -253,7 +256,7 @@ public class T2IParamInput
         }
         if (TryGet(T2IParamTypes.SideLength, out int sideLen) && TryGet(T2IParamTypes.AspectRatio, out string aspect) && ResolutionAspectReferences.TryGetValue(aspect, out (int, int) resRef))
         {
-            return (int)Utilities.RoundToPrecision(resRef.Item2 * (sideLen / 512.0), 16);
+            return (int)Utilities.RoundToPrecision(resRef.Item2 * (sideLen / 512.0), TargetResolutionPrecision);
         }
         return Get(T2IParamTypes.Height, def);
     }

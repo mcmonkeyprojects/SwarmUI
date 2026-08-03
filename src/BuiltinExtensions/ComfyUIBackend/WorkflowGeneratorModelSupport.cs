@@ -1538,6 +1538,7 @@ public partial class WorkflowGenerator
                 LoadingModel = [samplingNode, 0];
             }
         }
+        UserInput.TargetResolutionPrecision = model?.ModelClass?.CompatClass?.ResolutionPrecision ?? 16;
         foreach (WorkflowGenStep step in ModelGenSteps.Where(s => s.Priority > -100))
         {
             step.Action(this);

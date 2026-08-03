@@ -8,6 +8,7 @@ class ModelCompatClass {
         this.isImage2Video = data.is_image2video;
         this.lorasTargetTextEnc = data.loras_target_text_enc;
         this.isAudioModel = data.is_audio_model;
+        this.resolutionPrecision = data.resolution_precision || 16;
     }
 }
 

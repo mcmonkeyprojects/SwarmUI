@@ -85,7 +85,6 @@ public class T2IModelClassSorter
         CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
-        CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
@@ -97,6 +96,7 @@ public class T2IModelClassSorter
         CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", VaeFamily = VaeQwenImage }),
         CompatBoogu = RegisterCompat(new() { ID = "boogu", ShortCode = "Boogu", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatMageFlow = RegisterCompat(new() { ID = "mage-flow", ShortCode = "Mage", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true, ResolutionPrecision = 32 }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         // Obscure old random ones

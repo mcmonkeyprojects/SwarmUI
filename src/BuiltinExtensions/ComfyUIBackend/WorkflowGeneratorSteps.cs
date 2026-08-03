@@ -1258,10 +1258,6 @@ public class WorkflowGeneratorSteps
                 g.CurrentMedia = new WGNodeData([vaceNode, 2], g, WGNodeData.DT_LATENT_VIDEO, g.CurrentCompat()) { Width = width, Height = height, Frames = frames };
                 g.FinalTrimLatent = [vaceNode, 3];
             }
-            if (g.IsMiniMaxH3())
-            {
-                // TODO: Ref video, audio, image support?
-            }
             if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile ltxAudio))
             {
                 string audioNode = g.CreateAudioLoadNode(ltxAudio, "${videoaudioreference}");

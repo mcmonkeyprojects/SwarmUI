@@ -63,6 +63,9 @@ public record class T2IModelCompatClass
     /// <summary>What family of shared latent space this model works in.</summary>
     public T2IVAEFamily VaeFamily = null;
 
+    /// <summary>The minimum valid multiplier for resolution that models of this family can handle.</summary>
+    public int ResolutionPrecision = 16;
+
     /// <summary>Get a networkable JObject for this compat class.</summary>
     public JObject ToNetData()
     {
@@ -75,6 +78,7 @@ public record class T2IModelCompatClass
             ["is_image2video"] = IsImage2Video,
             ["is_audio_model"] = IsAudioModel,
             ["has_joint_av_latents"] = HasJointAVLatents,
+            ["resolution_precision"] = ResolutionPrecision,
             ["vae_family"] = VaeFamily?.ID
         };
     }

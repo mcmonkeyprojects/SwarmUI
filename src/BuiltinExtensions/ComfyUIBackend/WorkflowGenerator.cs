@@ -2394,7 +2394,6 @@ public partial class WorkflowGenerator
                     break;
                 }
                 hasAny = true;
-                JArray refImages = [img];
                 refData[$"ref_images.ref_image_{i}"] = img;
             }
             if (UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
