@@ -160,7 +160,7 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         }
         if (DataType == DT_LATENT_AUDIOVIDEO)
         {
-            if (IsCompat(T2IModelClassSorter.CompatLtxv2))
+            if (Compat?.HasJointAVLatents ?? false)
             {
                 JArray vidRoute, audRoute;
                 if (sourceType == "LTXVConcatAVLatent")
@@ -361,7 +361,7 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         }
         if (DataType == DT_LATENT_VIDEO || DataType == DT_LATENT_IMAGE)
         {
-            if (vae.IsCompat(T2IModelClassSorter.CompatLtxv2))
+            if (vae.Compat?.HasJointAVLatents ?? false)
             {
                 JArray target = AttachedAudio.Path;
                 if (AttachedAudio.IsRawMedia) // TODO: When is the correct case to do a solid mask on audio? Any raw audio is *probably* mask-worthy, but...??
@@ -373,18 +373,22 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                     });
                     WGNodeData ensuredNode = AttachedAudio.WithPath([ensured, 0], DT_AUDIO);
                     WGNodeData audioEncoded = ensuredNode.EncodeToLatent(audioVae);
-                    string mask = Gen.CreateNode("SolidMask", new JObject()
+                    target = audioEncoded.Path;
+                    if (vae.IsCompat(T2IModelClassSorter.CompatLtxv2))
                     {
-                        ["value"] = 0,
-                        ["width"] = 512,
-                        ["height"] = 512 // TODO: ?
-                    });
-                    string masked = Gen.CreateNode("SetLatentNoiseMask", new JObject()
-                    {
-                        ["samples"] = audioEncoded.Path,
-                        ["mask"] = WorkflowGenerator.NodePath(mask, 0)
-                    });
-                    target = [masked, 0];
+                        string mask = Gen.CreateNode("SolidMask", new JObject()
+                        {
+                            ["value"] = 0,
+                            ["width"] = 512,
+                            ["height"] = 512 // TODO: ?
+                        });
+                        string masked = Gen.CreateNode("SetLatentNoiseMask", new JObject()
+                        {
+                            ["samples"] = audioEncoded.Path,
+                            ["mask"] = WorkflowGenerator.NodePath(mask, 0)
+                        });
+                        target = [masked, 0];
+                    }
                 }
                 string concatted = Gen.CreateNode("LTXVConcatAVLatent", new JObject()
                 {
@@ -424,7 +428,7 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         }
         else if (DataType == DT_LATENT_AUDIOVIDEO)
         {
-            if (IsCompat(T2IModelClassSorter.CompatLtxv2))
+            if (Compat?.HasJointAVLatents ?? false)
             {
                 (string sourceType, JObject srcInputs) = SourceNodeData;
                 if (sourceType == "LTXVConcatAVLatent")

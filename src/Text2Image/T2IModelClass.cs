@@ -57,6 +57,9 @@ public record class T2IModelCompatClass
     /// <summary>If true, this is a model that primarily operates on audio.</summary>
     public bool IsAudioModel = false;
 
+    /// <summary>If true, this model samples video and audio together in a single joint AV latent.</summary>
+    public bool HasJointAVLatents = false;
+
     /// <summary>What family of shared latent space this model works in.</summary>
     public T2IVAEFamily VaeFamily = null;
 
@@ -71,6 +74,7 @@ public record class T2IModelCompatClass
             ["is_text2video"] = IsText2Video,
             ["is_image2video"] = IsImage2Video,
             ["is_audio_model"] = IsAudioModel,
+            ["has_joint_av_latents"] = HasJointAVLatents,
             ["vae_family"] = VaeFamily?.ID
         };
     }
