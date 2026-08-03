@@ -498,7 +498,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 # MiniMax H3
 
-- The [MiniMax H3](<https://modelscope.cn/models/MiniMax/MiniMax-H3>) family of video models is supported in SwarmUI!
+- The [MiniMax H3](<https://modelscope.cn/models/MiniMax/MiniMax-H3>) (Hailuo 3) family of video models is supported in SwarmUI!
 - It comes in two primary flavors: "FL2AV", "Ref2AV"
     - FL2AV (First/Last Frame to Audio/Video) does text2video, image2video, and first/last frame to video
         - Download here: [Comfy-Org/MiniMax-H3: FL2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors>)

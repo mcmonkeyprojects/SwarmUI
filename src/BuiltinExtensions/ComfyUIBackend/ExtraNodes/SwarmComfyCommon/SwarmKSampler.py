@@ -146,7 +146,7 @@ def make_swarm_sampler_callback(steps, device, model, previews):
             if x0.ndim == 5:
                 # video shape is [batch, channels, backwards time, width, height], for previews needs to be swapped to [forwards time, channels, width, height]
                 x0 = x0[0].permute(1, 0, 2, 3)
-                x0 = torch.flip(x0, [0])
+                #x0 = torch.flip(x0, [0]) # it is unclear when the backwardsness applies or not
             def decode(index):
                 return previewer.decode_latent_to_preview_image("JPEG", x0[index:index+1])[1]
             animated = False

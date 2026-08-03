@@ -361,43 +361,21 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         }
         if (DataType == DT_LATENT_VIDEO || DataType == DT_LATENT_IMAGE)
         {
+            WGNodeData result = this;
             if (vae.Compat?.HasJointAVLatents ?? false)
             {
-                JArray target = AttachedAudio.Path;
                 if (AttachedAudio.IsRawMedia) // TODO: When is the correct case to do a solid mask on audio? Any raw audio is *probably* mask-worthy, but...??
                 {
-                    string ensured = Gen.CreateNode("SwarmEnsureAudio", new JObject()
-                    {
-                        ["audio"] = AttachedAudio.Path,
-                        ["target_duration"] = 0.1
-                    });
-                    WGNodeData ensuredNode = AttachedAudio.WithPath([ensured, 0], DT_AUDIO);
-                    WGNodeData audioEncoded = ensuredNode.EncodeToLatent(audioVae);
-                    target = audioEncoded.Path;
-                    if (vae.IsCompat(T2IModelClassSorter.CompatLtxv2))
-                    {
-                        string mask = Gen.CreateNode("SolidMask", new JObject()
-                        {
-                            ["value"] = 0,
-                            ["width"] = 512,
-                            ["height"] = 512 // TODO: ?
-                        });
-                        string masked = Gen.CreateNode("SetLatentNoiseMask", new JObject()
-                        {
-                            ["samples"] = audioEncoded.Path,
-                            ["mask"] = WorkflowGenerator.NodePath(mask, 0)
-                        });
-                        target = [masked, 0];
-                    }
+                    result = result.WithMaskedAudio(audioVae);
                 }
                 string concatted = Gen.CreateNode("LTXVConcatAVLatent", new JObject()
                 {
-                    ["video_latent"] = Path,
-                    ["audio_latent"] = target
+                    ["video_latent"] = result.Path,
+                    ["audio_latent"] = result.AttachedAudio.Path
                 });
                 return WithPath([concatted, 0], DT_LATENT_AUDIOVIDEO);
             }
-            return this;
+            return result;
         }
         if (DataType == DT_IMAGE || DataType == DT_VIDEO)
         {
@@ -465,6 +443,43 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         }
         WGAssert(false, $"Cannot convert data of type '{DataType}' to raw image/video.");
         return null;
+    }
+
+    /// <summary>Returns a copy of this node data. If it has attached audio, the copy's audio will be masked off.</summary>
+    public WGNodeData WithMaskedAudio(WGNodeData audioVae)
+    {
+        if (AttachedAudio is null)
+        {
+            return this;
+        }
+        WGNodeData audioData = AttachedAudio;
+        JArray target = AttachedAudio.Path;
+        if (AttachedAudio.IsRawMedia) // TODO: When is the correct case to do a solid mask on audio? Any raw audio is *probably* mask-worthy, but...??
+        {
+            string ensured = Gen.CreateNode("SwarmEnsureAudio", new JObject()
+            {
+                ["audio"] = AttachedAudio.Path,
+                ["target_duration"] = 0.1
+            });
+            WGNodeData ensuredNode = AttachedAudio.WithPath([ensured, 0], DT_AUDIO);
+            audioData = ensuredNode.EncodeToLatent(audioVae);
+            target = audioData.Path;
+        }
+        string mask = Gen.CreateNode("SolidMask", new JObject()
+        {
+            ["value"] = 0,
+            ["width"] = 512,
+            ["height"] = 512 // TODO: ?
+        });
+        string masked = Gen.CreateNode("SetLatentNoiseMask", new JObject()
+        {
+            ["samples"] = target,
+            ["mask"] = WorkflowGenerator.NodePath(mask, 0)
+        });
+        target = [masked, 0];
+        WGNodeData result = Duplicate();
+        result.AttachedAudio = audioData.WithPath(target);
+        return result;
     }
 
     /// <summary>Emit nodes to save this data as output. Only works with media or latent media types (latents will be autodecoded using the given VAEs).</summary>

@@ -1260,21 +1260,7 @@ public class WorkflowGeneratorSteps
             }
             if (g.IsMiniMaxH3())
             {
-                WGNodeData endFrame = null;
-                if (g.UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image endImg))
-                {
-                    endFrame = g.LoadImage(endImg, "${videoendframe}", false);
-                }
-                if (g.BasicInputImage is not null || endFrame is not null)
-                {
-                    int width = g.UserInput.GetImageWidth();
-                    int height = g.UserInput.GetImageHeight();
-                    int frames = MiniMaxH3AlignFrames(g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 124));
-                    string promptText = new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt)).GlobalPrompt;
-                    string i2vNode = g.CreateMiniMaxH3ImageToVideo(g.CurrentTextEnc, g.CurrentVae, promptText, width, height, frames, g.BasicInputImage?.Path, endFrame?.Path);
-                    g.FinalPrompt = [i2vNode, 0];
-                    g.CurrentMedia = new WGNodeData([i2vNode, 1], g, WGNodeData.DT_LATENT_AUDIOVIDEO, g.CurrentCompat()) { Width = width, Height = height, Frames = frames, FPS = g.UserInput.Get(T2IParamTypes.VideoFPS, 24) };
-                }
+                // TODO: Ref video, audio, image support?
             }
             if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
             {
@@ -1389,7 +1375,7 @@ public class WorkflowGeneratorSteps
             }
             int startStep = 0;
             int endStep = 10000;
-            if (g.UserInput.TryGet(T2IParamTypes.InitImage, out Image _) && g.UserInput.TryGet(T2IParamTypes.InitImageCreativity, out double creativity) && !g.IsMiniMaxH3())
+            if (g.UserInput.TryGet(T2IParamTypes.InitImage, out Image _) && g.UserInput.TryGet(T2IParamTypes.InitImageCreativity, out double creativity))
             {
                 startStep = (int)Math.Round(steps * (1 - creativity));
             }
@@ -1587,7 +1573,7 @@ public class WorkflowGeneratorSteps
                         g.CurrentMedia = decoded;
                         return;
                     }
-                    g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
+                    g.CurrentMedia = decoded.WithMaskedAudio(g.CurrentAudioVae).EncodeToLatent(g.CurrentVae, "25");
                 }
                 else if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
                 {
@@ -1643,7 +1629,7 @@ public class WorkflowGeneratorSteps
                     }
                     if (modelMustReencode || doPixelUpscale)
                     {
-                        g.CurrentMedia = decoded.EncodeToLatent(g.CurrentVae, "25");
+                        g.CurrentMedia = decoded.WithMaskedAudio(g.CurrentAudioVae).EncodeToLatent(g.CurrentVae, "25");
                     }
                 }
                 if (doUpscale && upscaleMethod.StartsWith("latent-"))
