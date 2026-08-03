@@ -502,7 +502,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 - It comes in two primary flavors: "FL2AV", "Ref2AV"
     - FL2AV (First/Last Frame to Audio/Video) does text2video, image2video, and first/last frame to video
         - Download here: [Comfy-Org/MiniMax-H3: FL2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors>)
-    - Ref2AV (Omni-reference to video) allows input of text, video, image, audio, as references to include somewhere within a video
+    - Ref2AV (Omni-reference to video) also does text2video, and allows input of text, video, image, audio, as references to include somewhere within a video
         - Download here: [Comfy-Org/MiniMax-H3: Ref2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors>)
 - It uses Qwen3 VL 32B as a text encoder, Swarm will automatically download an fp4 (16GB) version of it.
 - It has a unique video VAE and a unique separate audio VAE. These will be automatically downloaded for you.

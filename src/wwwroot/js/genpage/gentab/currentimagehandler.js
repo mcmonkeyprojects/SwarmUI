@@ -575,6 +575,12 @@ function copy_current_image_params() {
         }
         let elem = document.getElementById(`input_${param.id}`);
         let val = metadata[param.id];
+        if (!val && (param.type == 'image' || param.type == 'audio' || param.type == 'video')) {
+            let fn = extra[`${param.id}_filename`];
+            if (fn && typeof fn == 'string' && (fn.startsWith('inputs/') || fn.startsWith('raw/') || fn.startsWith('Starred/'))) {
+                val = fn;
+            }
+        }
         if (elem && val !== undefined && val !== null && val !== '') {
             let group = param.group;
             while (group) {
@@ -585,6 +591,9 @@ function copy_current_image_params() {
                     }
                 }
                 group = group.parent;
+            }
+            if (param.group) {
+                toggleGroupOpen(elem, true);
             }
             setDirectParamValue(param, val);
         }

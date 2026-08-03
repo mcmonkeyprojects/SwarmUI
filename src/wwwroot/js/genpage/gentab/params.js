@@ -1096,11 +1096,19 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
         return;
     }
     else if (param.type == "image" || param.type == "image_list" || param.type == "audio" || param.type == "video") {
-        if (typeof value == 'string' && value.startsWith('inputs/')) {
-            let previewSrc = `${getImageOutPrefix()}/${value}`;
-            setMediaFileDirect(paramElem, previewSrc, param.type, value, value, () => {
-                paramElem.dataset.filedata = value;
+        let pathVal = value == null ? '' : `${value}`;
+        if (!pathVal) {
+            clearMediaFileInput(paramElem);
+            return;
+        }
+        if (pathVal.startsWith('inputs/') || pathVal.startsWith('raw/') || pathVal.startsWith('Starred/')) {
+            let mediaType = getMediaType(pathVal);
+            let previewSrc = `${getImageOutPrefix()}/${pathVal}`;
+            let baseName = pathVal.substring(pathVal.lastIndexOf('/') + 1);
+            setMediaFileDirect(paramElem, previewSrc, mediaType, baseName, pathVal, () => {
+                paramElem.dataset.filedata = pathVal;
             });
+            paramElem.dataset.filedata = pathVal;
             return;
         }
         // do not edit raw data files directly (eg data URLs), this will just misbehave

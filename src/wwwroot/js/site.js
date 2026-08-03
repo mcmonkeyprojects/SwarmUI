@@ -612,6 +612,9 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
             elem.dataset.height = img.videoHeight;
             elem.dataset.resolution = `${img.videoWidth}x${img.videoHeight}`;
         }
+        else {
+            label.textContent = shortName;
+        }
         longName = longName && longName.length > 500 ? longName.substring(0, 150) + '...' : longName;
         elem.dataset.filename = longName || shortName;
         loadMediaFileDedup = true;
