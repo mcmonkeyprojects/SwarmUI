@@ -698,7 +698,7 @@ public partial class WorkflowGenerator
 
         public string GetQwen3vl_32bMiniMaxModel()
         {
-            return RequireClipModel("qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "e2674b88dea1ab1aa531a578128aec51fab6adb17920ef100e88931b455c328e", T2IParamTypes.QwenModel);
+            return RequireClipModel("qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "35a88d51044231fe332301d7a62aa81e3f2cba62febeb446e2c1e3e0ef76f2c6", T2IParamTypes.QwenModel);
         }
 
         public string GetOvisQwenModel()
