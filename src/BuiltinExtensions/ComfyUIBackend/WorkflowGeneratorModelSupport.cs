@@ -269,38 +269,16 @@ public partial class WorkflowGenerator
         return CurrentCompat()?.IsAudioModel ?? false;
     }
 
-    /// <summary>Rounds a frame count up to MiniMax H3's '17k+5' frame grid (5, 22, 39, 56, ... at 24 fps).</summary>
+    /// <summary>Rounds a frame count up to MiniMax H3's '17k+5' frame grid (5, 22, 39, 56, ...).</summary>
     public static int MiniMaxH3AlignFrames(int frames)
     {
+        // This is comfyui's wonky approach to calculating this.
         frames = Math.Max(5, frames);
         while (frames % 17 != 5)
         {
             frames++;
         }
         return frames;
-    }
-
-    /// <summary>Creates a "MiniMaxH3ImageToVideo" node, which emits both the conditioning and the joint AV latent to sample.
-    public string CreateMiniMaxH3ImageToVideo(WGNodeData clip, WGNodeData vae, string prompt, JToken width, JToken height, JToken frames, JArray firstFrame, JArray lastFrame)
-    {
-        JObject inputs = new()
-        {
-            ["clip"] = clip.Path,
-            ["vae"] = vae.Path,
-            ["prompt"] = prompt,
-            ["width"] = width,
-            ["height"] = height,
-            ["length"] = frames
-        };
-        if (firstFrame is not null)
-        {
-            inputs["first_frame"] = firstFrame;
-        }
-        if (lastFrame is not null)
-        {
-            inputs["last_frame"] = lastFrame;
-        }
-        return CreateNode("MiniMaxH3ImageToVideo", inputs);
     }
 
     /// <summary>Creates an Empty Latent Image node.</summary>

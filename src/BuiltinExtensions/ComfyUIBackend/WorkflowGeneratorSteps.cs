@@ -1262,9 +1262,9 @@ public class WorkflowGeneratorSteps
             {
                 // TODO: Ref video, audio, image support?
             }
-            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile ltxAudio))
             {
-                string audioNode = g.CreateAudioLoadNode(audio, "${videoaudioinput}");
+                string audioNode = g.CreateAudioLoadNode(ltxAudio, "${videoaudioreference}");
                 string refNode = g.CreateNode("LTXVReferenceAudio", new JObject()
                 {
                     ["model"] = g.CurrentModel.Path,
