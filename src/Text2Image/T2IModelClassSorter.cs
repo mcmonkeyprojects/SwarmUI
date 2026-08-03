@@ -86,7 +86,6 @@ public class T2IModelClassSorter
         CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
         CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
-        CompatMiniMaxH3Audio = RegisterCompat(new() { ID = "minimax-h3-audio", ShortCode = "MMH3A" }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
@@ -768,7 +767,7 @@ public class T2IModelClassSorter
         {
             return isMiniMaxH3VideoVae(h);
         }});
-        Register(new() { ID = "minimax-h3/audio-vae", CompatClass = CompatMiniMaxH3Audio, Name = "MiniMax H3 Audio VAE", StandardWidth = 1344, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "minimax-h3/audio-vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Audio VAE", StandardWidth = 1344, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
         {
             return isMiniMaxH3AudioVae(h);
         }});
