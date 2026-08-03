@@ -367,3 +367,12 @@ KreaGoneWild:
     tags:
     - parameters
     - nodes
+
+Krea2Edit:
+    author: Allen Benz
+    description: Adds support for models that require the ComfyUI-Krea2Edit nodes.
+    url: https://github.com/allenbenz/SwarmUI-Krea2Edit
+    license: MIT
+    tags:
+    - parameters
+    - nodes
