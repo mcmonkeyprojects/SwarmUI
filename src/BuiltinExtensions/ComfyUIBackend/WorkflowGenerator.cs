@@ -1520,10 +1520,10 @@ public partial class WorkflowGenerator
                 if (VideoEndFrame is not null)
                 {
                     WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
-                    string batched = g.CreateNode("BatchImages", new JObject()
+                    string batched = g.CreateNode("BatchImagesNode", new JObject()
                     {
-                        ["image0"] = attachImages,
-                        ["image1"] = endFrame.Path
+                        ["images.image0"] = attachImages,
+                        ["images.image1"] = endFrame.Path
                     });
                     attachImages = [batched, 0];
                 }

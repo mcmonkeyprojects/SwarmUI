@@ -512,7 +512,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
         - You can prompt for multiple shots at different times in the video and it will work
     - **Frames:** The model targets 24FPS and supports up to 15 seconds, so 362 is the max frame count. Inputs will automatically round up to the next valid framecount.
         - It uses the formula `5 + 17n` as the valid latent range. So: 5, 22, 39, 56, 73, 90, 107, 124, ...
-        - `22` for 1 second, `124` for 5 seconds, `248` for 10 seconds, `362` for 15 seconds.
+        - `22` for 1 second, `124` for 5 seconds, `243` for 10 seconds, `362` for 15 seconds.
     - **CFG Scale:** Use `1`.
     - **Steps:** Normal step counts like `20`
     - **Sampler:** Defaults to `res_multistep`, works well, common alternatives might not

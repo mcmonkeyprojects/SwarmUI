@@ -25,7 +25,7 @@ function setGroupAdvancedOverride(groupId, enable) {
     }
 }
 
-/** Returns the resolution rounding precision for the current model compat class (eg 16, or 32 for MiniMax H3). */
+/** Returns the resolution rounding precision for the current model compat class (16 for most models, some may be higher or lower). */
 function getResolutionPrecision() {
     let compatId = currentModelHelper.curCompatClass;
     if (compatId) {
