@@ -29,6 +29,7 @@ public static class T2IAPI
         API.RegisterAPICall(GenerateText2Image, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(GenerateText2ImageWS, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(AddImageToHistory, true, Permissions.BasicImageGeneration);
+        API.RegisterAPICall(ExtractVideoAudio, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(ListImages, false, Permissions.ViewImageHistory);
         API.RegisterAPICall(ToggleImageStarred, true, Permissions.UserStarImages);
         API.RegisterAPICall(OpenImageFolder, true, Permissions.LocalImageFolder);
@@ -517,6 +518,116 @@ public static class T2IAPI
         T2IEngine.ImageOutput outputImage = new() { File = img as Image, ActualFileTask = imgTask };
         (string path, _) = session.SaveImage(outputImage, 0, user_input, metadata);
         return new() { ["images"] = new JArray() { new JObject() { ["image"] = path, ["batch_index"] = "0", ["request_id"] = $"{user_input.UserRequestId}", ["metadata"] = metadata } } };
+    }
+
+    [API.APIDescription("Extracts the audio track from a video, saves it under inputs/extracted_audio, and returns the saved audio.",
+        """
+            "audio":
+            {
+                "path": "inputs/extracted_audio/video-audio-1.mp3",
+                "src": "View/local/inputs/extracted_audio/video-audio-1.mp3"
+            }
+        """)]
+    public static async Task<JObject> ExtractVideoAudio(Session session,
+        [API.APIParameter("Video data URL or reusable server media path.")] string video,
+        [API.APIParameter("Original video filename, used to name the extracted audio.")] string filename = null)
+    {
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        string temporaryInput = null;
+        string sourceName = filename;
+        try
+        {
+            string inputFile;
+            if (video.StartsWith("data:"))
+            {
+                VideoFile videoFile;
+                try
+                {
+                    videoFile = VideoFile.FromDataString(video);
+                }
+                catch (Exception)
+                {
+                    throw new SwarmUserErrorException("Invalid video data supplied for audio extraction.");
+                }
+                if (videoFile.Type.MetaType != MediaMetaType.Video)
+                {
+                    throw new SwarmUserErrorException("The supplied media is not a video.");
+                }
+                temporaryInput = Path.Combine(Path.GetTempPath(), $"swarm-audio-source-{Guid.NewGuid():N}.{videoFile.Type.Extension}");
+                await File.WriteAllBytesAsync(temporaryInput, videoFile.RawData);
+                inputFile = temporaryInput;
+            }
+            else
+            {
+                if (!video.StartsWith("inputs/") && !video.StartsWith("raw/") && !video.StartsWith("Starred/"))
+                {
+                    throw new SwarmUserErrorException("Invalid video path supplied for audio extraction.");
+                }
+                (string checkedPath, string consoleError, string userError) = WebServer.CheckFilePath(root, video);
+                if (consoleError is not null)
+                {
+                    Logs.Error(consoleError);
+                    throw new SwarmUserErrorException(userError);
+                }
+                inputFile = UserImageHistoryHelper.GetRealPathFor(session.User, checkedPath, root: root);
+                sourceName ??= video;
+                string extension = Path.GetExtension(inputFile).TrimStart('.').ToLowerFast();
+                if (MediaType.GetByExtension(extension)?.MetaType != MediaMetaType.Video)
+                {
+                    throw new SwarmUserErrorException("The supplied media path is not a video.");
+                }
+                string fullInputPath = Path.GetFullPath(inputFile);
+                if (Session.StillSavingFiles.TryGetValue(fullInputPath, out Task<byte[]> pendingData))
+                {
+                    temporaryInput = Path.Combine(Path.GetTempPath(), $"swarm-audio-source-{Guid.NewGuid():N}.{extension}");
+                    await File.WriteAllBytesAsync(temporaryInput, await pendingData);
+                    inputFile = temporaryInput;
+                }
+                else if (!File.Exists(inputFile))
+                {
+                    throw new SwarmUserErrorException("The video file does not exist.");
+                }
+            }
+            byte[] audioData = await UserImageHistoryHelper.ExtractVideoAudio(inputFile);
+            string baseName = Utilities.StrictFilenameClean(Path.GetFileNameWithoutExtension(sourceName ?? "video"));
+            if (string.IsNullOrWhiteSpace(baseName))
+            {
+                baseName = "video";
+            }
+            T2IParamInput outputInput = new(session);
+            outputInput.Set(T2IParamTypes.OverrideOutpathFormat, $"inputs/extracted_audio/{baseName}-audio-[number]");
+            string metadata = T2IParamInput.MetadataToString(new JObject()
+            {
+                ["sui_image_params"] = new JObject(),
+                ["sui_extra_data"] = new JObject()
+                {
+                    ["source video"] = sourceName,
+                    ["operation applied"] = "Split Audio"
+                }
+            });
+            AudioFile audioFile = new(audioData, MediaType.AudioMp3);
+            T2IEngine.ImageOutput outputAudio = new() { File = audioFile };
+            (string src, string localPath) = session.SaveImage(outputAudio, 0, outputInput, metadata);
+            if (src == "ERROR" || localPath is null)
+            {
+                throw new SwarmUserErrorException("Failed to save the extracted audio. Ensure file saving is enabled.");
+            }
+            string inputPath = Path.GetRelativePath(root, localPath).Replace('\\', '/');
+            Logs.Info($"User {session.User.UserID} extracted audio from '{sourceName}' to '{inputPath}'.");
+            JObject audio = new() { ["path"] = inputPath, ["src"] = src, ["metadata"] = metadata };
+            return new()
+            {
+                ["audio"] = audio,
+                ["images"] = new JArray() { new JObject() { ["image"] = src, ["batch_index"] = "0", ["request_id"] = $"{outputInput.UserRequestId}", ["metadata"] = metadata } }
+            };
+        }
+        finally
+        {
+            if (temporaryInput is not null && File.Exists(temporaryInput))
+            {
+                File.Delete(temporaryInput);
+            }
+        }
     }
 
     public static HashSet<string> HistoryExtensions = // TODO: Use MediaType?

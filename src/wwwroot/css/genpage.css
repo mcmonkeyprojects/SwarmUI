@@ -1415,6 +1415,38 @@ body {
     margin-right: 0.5rem;
     width: auto;
 }
+.alt-prompt-image-container-menu-button {
+    flex-shrink: 0;
+    position: absolute;
+    right: -1px;
+    top: 1rem;
+    z-index: 1;
+    opacity: 0.7;
+    background-color: color-mix(in srgb, transparent 80%, var(--background));
+    border: 1px solid color-mix(in srgb, transparent 30%, var(--emphasis));
+    border-radius: 0 0 0 0.25rem;
+    padding: 0 0.25rem;
+    line-height: 1rem;
+    font-weight: bold;
+    color: var(--text);
+    transition: background-color 0.2s ease-out;
+    cursor: pointer;
+    text-align: center;
+}
+.alt-prompt-image-container:hover .alt-prompt-image-container-menu-button {
+    opacity: 1.0;
+    background-color: color-mix(in srgb, transparent 50%, var(--background));
+    border-color: var(--emphasis);
+}
+.alt-prompt-image-container .alt-prompt-image-container-menu-button:hover {
+    opacity: 1.0;
+    background-color: color-mix(in srgb, var(--emphasis) 70%, black);
+    border-color: black;
+}
+.alt-prompt-image-container-menu-button[data-loading="true"] {
+    cursor: wait;
+    opacity: 0.6;
+}
 .alt-prompt-image-container-remove-button {
     flex-shrink: 0;
     position: relative;
@@ -1422,7 +1454,7 @@ body {
     top: -1px;
     opacity: 0.7;
     background-color: color-mix(in srgb, transparent 80%, var(--background));
-    border: none;
+    border: 1px solid color-mix(in srgb, transparent 30%, var(--red));
     border-radius: 0 0.5rem 0 0;
     padding-left: 0.2rem;
     padding-right: 0.25rem;
@@ -1432,19 +1464,17 @@ body {
     color: var(--text);
     transition: background-color 0.2s ease-out;
     cursor: pointer;
-    border: 1px solid color-mix(in srgb, transparent 30%, var(--red));
     text-align: center;
 }
 .alt-prompt-image-container:hover .alt-prompt-image-container-remove-button {
     opacity: 1.0;
     background-color: color-mix(in srgb, transparent 50%, var(--background));
-    border: 1px solid var(--red);
+    border-color: var(--red);
 }
 .alt-prompt-image-container-remove-button:hover {
     opacity: 1.0;
     background-color: color-mix(in srgb, var(--red) 70%, black) !important;
-    border: 1px solid black;
-    cursor: pointer;
+    border-color: black;
 }
 .alt-prompt-image-container.image-drop-replace-target .alt-prompt-image {
     outline: 4px solid var(--emphasis);

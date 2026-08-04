@@ -558,16 +558,60 @@ function imagePromptAddImage(file) {
     reader.readAsDataURL(file);
 }
 
+/** Extracts a prompt video's audio on the server and attaches the saved audio result. */
+function imagePromptSplitVideoAudio(video) {
+    genericRequest('ExtractVideoAudio', { video: video.dataset.filedata, filename: video.dataset.filename || '' }, result => {
+        imagePromptAddImageData(result.audio.src, 'audio', result.audio.path, result.audio.path);
+        if (inputBrowserHelper.inputImageBrowser) {
+            inputBrowserHelper.inputImageBrowser.lightRefresh();
+        }
+        mainGenHandler.gotImageResult(result.images[0].image, result.images[0].metadata, '0');
+    }, 0, error => {
+        showError(error);
+    });
+}
+
+/** Removes one prompt media attachment and updates the surrounding UI. */
+function imagePromptRemoveMedia(media) {
+    media.closest('.alt-prompt-image-container').remove();
+    updatePromptMediaTitles();
+    autoRevealRevision();
+    genTabLayout.altPromptSizeHandle();
+}
+
+/** Shows the action menu for one prompt media attachment. */
+function showPromptMediaMenu(media, menuButton, x = null, y = null) {
+    let buttons = [];
+    if (media.tagName == 'VIDEO') {
+        buttons.push({
+            key: 'Split Audio',
+            title: "Extract this video's audio and attach it as a separate prompt audio input",
+            action: () => imagePromptSplitVideoAudio(media)
+        });
+    }
+    buttons.push({
+        key: 'Remove',
+        title: `Remove this ${media.tagName.toLowerCase()}`,
+        action: () => imagePromptRemoveMedia(media)
+    });
+    if (x == null || y == null) {
+        let rect = menuButton.getBoundingClientRect();
+        x = rect.x;
+        y = rect.y + menuButton.offsetHeight + 6;
+    }
+    new AdvancedPopover('prompt_media_context_menu', buttons, false, x, y, document.body, null);
+}
+
 /** Updates prompt media title numbering, counted separately per media type. */
 function updatePromptMediaTitles() {
-    let typeNames = { IMG: 'Image', AUDIO: 'Audio', VIDEO: 'Video' };
+    let typeNames = { IMG: 'Img', AUDIO: 'Aud', VIDEO: 'Vid' };
     let typeCounts = { IMG: 0, AUDIO: 0, VIDEO: 0 };
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     for (let media of promptImageArea.querySelectorAll('.alt-prompt-image')) {
         typeCounts[media.tagName]++;
         let filename = media.dataset.filename;
         let displayFilename = filename?.replaceAll('\\', '/').split('/').pop();
-        let shortFilename = displayFilename?.length > 30 ? `${displayFilename.substring(0, 27)}...` : displayFilename;
+        let shortFilename = displayFilename?.length > 90 ? `${displayFilename.substring(0, 87)}...` : displayFilename;
         let titlePrefix = `${typeNames[media.tagName]} ${typeCounts[media.tagName]}`;
         let details = '';
         if (media.tagName == 'AUDIO' && media.dataset.duration) {
@@ -643,15 +687,23 @@ function imagePromptAddImageData(data, mediaType, fileData = data, fileName = nu
         let imageContainer = createDiv(null, 'alt-prompt-image-container');
         let imageHeader = createDiv(null, 'alt-prompt-image-container-header');
         let imageHeaderText = createSpan(null, 'alt-prompt-image-container-header-text');
-        let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
-        imageRemoveButton.addEventListener('click', () => {
-            imageContainer.remove();
-            updatePromptMediaTitles();
-            autoRevealRevision();
-            genTabLayout.altPromptSizeHandle();
+        let imageMenuButton = createSpan(null, 'alt-prompt-image-container-menu-button', '&#9776;');
+        imageMenuButton.title = 'Prompt media options';
+        imageMenuButton.addEventListener('click', () => {
+            showPromptMediaMenu(imageContainer.querySelector('.alt-prompt-image'), imageMenuButton);
         });
+        let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
         imageRemoveButton.title = `Remove this ${type}`;
+        imageRemoveButton.addEventListener('click', () => {
+            imagePromptRemoveMedia(imageContainer.querySelector('.alt-prompt-image'));
+        });
+        imageHeader.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showPromptMediaMenu(imageContainer.querySelector('.alt-prompt-image'), imageMenuButton, e.clientX, e.clientY);
+        });
         imageHeader.appendChild(imageHeaderText);
+        imageHeader.appendChild(imageMenuButton);
         imageHeader.appendChild(imageRemoveButton);
         imageContainer.appendChild(imageHeader);
         imageContainer.appendChild(imageObject);
