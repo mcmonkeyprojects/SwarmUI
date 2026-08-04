@@ -478,7 +478,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 # MiniMax H3
 
-![minimax_h3](https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792)
+https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792
 
 *(The test prompt is frankly too easy for H3! Note the prompt doesn't specify audio so the video produced nonsense. This is a prompt issue not a model bug.)*
 
