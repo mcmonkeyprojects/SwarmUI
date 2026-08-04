@@ -1135,6 +1135,14 @@ class InputBrowserHelper {
         return data;
     }
 
+    /** Applies an input-browser file to a generated media input. */
+    setInputFile(inputElem, file) {
+        let type = getMediaType(file.name);
+        setMediaFileDirect(inputElem, file.data.src, type, file.name, file.name, () => {
+            inputElem.dataset.filedata = file.name;
+        });
+    }
+
     /** Called when an image is selected from the input image browser. */
     selectInputFile(file) {
         if (this.inputImageBrowserSelectCallback) {
@@ -1146,10 +1154,7 @@ class InputBrowserHelper {
         if (!inputElem) {
             return;
         }
-        let type = getMediaType(file.name);
-        setMediaFileDirect(inputElem, file.data.src, type, file.name, file.name, () => {
-            inputElem.dataset.filedata = file.name;
-        });
+        this.setInputFile(inputElem, file);
         $('#input_image_browser_modal').modal('hide');
     }
 
@@ -1188,7 +1193,8 @@ function chromeIsDumbFileHack(file, uris) {
 // This is a giant hackpile to force dragging images onto inputs to treat them like files and thus actually work
 // ft. bonus chrome nonsense hackfix, see above
 window.addEventListener('drop', e => {
-    if (isValidMediaPath(e.dataTransfer?.getData(swarmMediaPathDataType)) && e.target.closest?.('#alt_prompt_region')) {
+    let mediaPath = e.dataTransfer?.getData(swarmMediaPathDataType);
+    if (isValidMediaPath(mediaPath) && e.target.closest?.('#alt_prompt_region')) {
         return;
     }
     let uris;
@@ -1212,6 +1218,19 @@ window.addEventListener('drop', e => {
     e.preventDefault();
     e.stopPropagation();
     let file = uris.split('\n')[0];
+    if (isValidMediaPath(mediaPath) && e.target.matches?.('input.auto-file')) {
+        let input = e.target;
+        let param = typeof gen_param_types == 'undefined' ? null : gen_param_types.find(type => type.id == input.dataset.param_id);
+        let mediaType = getMediaType(mediaPath);
+        let isCompatible = (param?.type == 'image' && (mediaType == 'image' || mediaType == 'video'))
+            || (param?.type == 'audio' && mediaType == 'audio')
+            || (param?.type == 'video' && mediaType == 'video');
+        if (isCompatible) {
+            updateFileDragging({ target: input }, true);
+            inputBrowserHelper.setInputFile(input, { name: mediaPath, data: { src: file } });
+            return false;
+        }
+    }
     let xhr = new XMLHttpRequest();
     xhr.responseType = 'blob';
     xhr.onload = () => {
