@@ -136,7 +136,7 @@ function enableVideoFramesInput(id, prefix) {
         if (!Number.isFinite(frames)) {
             frames = 0;
         }
-        let seconds = formatNumberClean(frames / getFPS(), 3);
+        let seconds = formatNumberClean(frames / getFPS(), 2);
         isSyncingSeconds = true;
         secondsInput.value = seconds;
         secondsInput.dispatchEvent(new Event('input'));
@@ -148,7 +148,7 @@ function enableVideoFramesInput(id, prefix) {
         if (!Number.isFinite(seconds)) {
             return;
         }
-        secondsInput.value = formatNumberClean(seconds, 3);
+        secondsInput.value = formatNumberClean(seconds, 2);
         let frames = Math.round(seconds * getFPS());
         frames = Math.max(parseInt(frameInput.min), Math.min(parseInt(frameInput.max), frames));
         isSyncingFrames = true;

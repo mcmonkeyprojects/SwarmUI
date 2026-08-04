@@ -495,6 +495,10 @@ https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792
     - **Prompt:** Works best with long proper LLM prompts, but short ones still go fine
         - The model generates audio, so remember to prompt for what the audio should be
         - You can prompt for multiple shots at different times in the video and it will work
+        - [Base Guide Here](<https://modelscope.cn/models/MiniMax/MiniMax-H3/file/view/master/docs%2FVIDEO_PROMPT_WRITING_GUIDE_base_en.md?status=1>) and [Ref Guide Here](<https://modelscope.cn/models/MiniMax/MiniMax-H3/file/view/master/docs%252FVIDEO_PROMPT_WRITING_GUIDE_ref_en.md?status=1>)
+        - For verbal speech, use this format `<d>[English] something to say here</d>`
+        - Identify speakers with the subject marks `(S1)`, (and `(S2)` and etc). or combine them eg `(S1,S2)`
+        - The keys in their structured format eg `non_diegetic_music: ` are useful for separating parts of the prompt.
         - They use very long complex example prompts with a structured format. See below for a simple text2video example
             <details>
                 <summary>Click to view example prompt</summary>

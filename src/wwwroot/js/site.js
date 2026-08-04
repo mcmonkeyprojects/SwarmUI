@@ -818,7 +818,7 @@ function makeVideoFramesInput(featureid, id, paramid, name, description, value, 
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
     let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
     featureid += featureid2;
-    let initialSeconds = formatNumberClean(Number(value) / 24, 3);
+    let initialSeconds = formatNumberClean(Number(value) / 24, 2);
     let sliderSeconds = Math.min(20, Math.max(0, initialSeconds));
     return `
         <div class="auto-input auto-slider-box auto-video-frames-box"${featureid}>
