@@ -565,6 +565,9 @@ class GenPageBrowserClass {
                     e.dataTransfer.clearData();
                     e.dataTransfer.setDragImage(img, 0, 0);
                     e.dataTransfer.setData('text/uri-list', desc.dragimage);
+                    if (isValidMediaPath(file.name)) {
+                        e.dataTransfer.setData(swarmMediaPathDataType, file.name);
+                    }
                 });
             }
             if (before) {

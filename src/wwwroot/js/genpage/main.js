@@ -604,7 +604,8 @@ function showPromptMediaMenu(media, menuButton, x = null, y = null) {
 
 /** Updates prompt media title numbering, counted separately per media type. */
 function updatePromptMediaTitles() {
-    let typeNames = { IMG: 'Img', AUDIO: 'Aud', VIDEO: 'Vid' };
+    let typeNames = { IMG: 'Image', AUDIO: 'Audio', VIDEO: 'Video' };
+    let typeNamesShort = { IMG: 'Img', AUDIO: 'Aud', VIDEO: 'Vid' };
     let typeCounts = { IMG: 0, AUDIO: 0, VIDEO: 0 };
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     for (let media of promptImageArea.querySelectorAll('.alt-prompt-image')) {
@@ -624,9 +625,9 @@ function updatePromptMediaTitles() {
             let [width, height] = media.dataset.resolution.split('x').map(value => parseInt(value));
             details += ` (${media.dataset.resolution}, ${describeAspectRatio(width, height)})`;
         }
-        media.title = `${titlePrefix}${filename ? `: ${filename}` : ''}${details}`;
+        media.title = `${typeNames[media.tagName]} ${typeCounts[media.tagName]}${filename ? `: ${filename}` : ''}${details}`;
         let headerText = media.closest('.alt-prompt-image-container').querySelector('.alt-prompt-image-container-header-text');
-        headerText.textContent = `${titlePrefix}${shortFilename ? `: ${shortFilename}` : ''}${details}`;
+        headerText.textContent = `${typeNamesShort[media.tagName]} ${typeCounts[media.tagName]}${shortFilename ? `: ${shortFilename}` : ''}${details}`;
         headerText.title = media.title;
     }
 }
@@ -727,6 +728,15 @@ function imagePromptInputHandler() {
         clearPromptImages();
     });
     dragArea.addEventListener('drop', (e) => {
+        let mediaPath = e.dataTransfer.getData(swarmMediaPathDataType);
+        if (isValidMediaPath(mediaPath)) {
+            e.preventDefault();
+            e.stopPropagation();
+            let replaceTarget = promptImageReplaceTarget;
+            setPromptImageReplaceTarget(null);
+            imagePromptAddImageData(`${getImageOutPrefix()}/${mediaPath}`, getMediaType(mediaPath), mediaPath, mediaPath, replaceTarget);
+            return;
+        }
         let files = uiImprover.getFileList(e.dataTransfer, e);
         if (files.length > 0) {
             e.preventDefault();

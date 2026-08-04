@@ -565,7 +565,9 @@ You can also attach audio files freely (up to a max of 3). In the prompt you can
 
 You can also attach video files freely (up to a max of 3). In the prompt you can type something like `Match the motion displayed in <Video 1>` to reference the video.
 
-(TODO: What about videos with audio?)
+If you want to use the audio from a video file, click the `☰` hamburger menu on the attached video and click `Split Audio`.
+
+Prompt inputs all are labeled eg `Img 1: ...`, these numbers correctly correspond to the number in eg `<Picture 1>`.
 
 ### MiniMax H3 Image Generation
 

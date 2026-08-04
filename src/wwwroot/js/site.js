@@ -1034,6 +1034,8 @@ function isValidMediaPath(path) {
     return typeof path == 'string' && (path.startsWith('inputs/') || path.startsWith('raw/') || path.startsWith('Starred/'));
 }
 
+let swarmMediaPathDataType = 'application/x-swarm-media-path';
+
 class InputBrowserHelper {
 
     constructor() {
@@ -1186,6 +1188,9 @@ function chromeIsDumbFileHack(file, uris) {
 // This is a giant hackpile to force dragging images onto inputs to treat them like files and thus actually work
 // ft. bonus chrome nonsense hackfix, see above
 window.addEventListener('drop', e => {
+    if (isValidMediaPath(e.dataTransfer?.getData(swarmMediaPathDataType)) && e.target.closest?.('#alt_prompt_region')) {
+        return;
+    }
     let uris;
     if (e.dataTransfer && e.dataTransfer.files.length) {
         let fname = strBeforeLast(e.dataTransfer.files[0].name, '.');
