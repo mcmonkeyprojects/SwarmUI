@@ -4,7 +4,7 @@
 
 *Formerly known as StableSwarmUI.*
 
-A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (*Stable Diffusion, Z-Image, Flux, Qwen Image, etc.*), and AI video models (*Wan, Hunyuan Video, etc.*), with plans to support eg audio and more in the future.
+A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (*Krea 2, Stable Diffusion, Flux, etc.*), and AI video models (*MiniMax H3, Wan, LTX-2, etc.*), some AI audio models (ACE-Step, etc.) and will continue adding new ones in the future when they are released to the public.
 
 ![ui-screenshot](.github/images/swarmui.jpg)
 
