@@ -2633,6 +2633,14 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
+        if (UserInput.TryGet(isPositive ? T2IParamTypes.ConditioningMultiplier : T2IParamTypes.NegativeConditioningMultiplier, out double condMultiplier) && condMultiplier != 1)
+        {
+            node = CreateNode("ConditioningMultiply", new JObject()
+            {
+                ["conditioning"] = NodePath(node, 0),
+                ["multiplier"] = condMultiplier
+            });
+        }
         NodeHelpers[trackerId] = node;
         return [node, 0];
     }
