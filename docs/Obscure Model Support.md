@@ -241,6 +241,7 @@ Microsoft's [Mage Flow](https://huggingface.co/microsoft/Mage-Flow) is supported
 [Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
 [Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
+[Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
 
 --------------------------------------------------------------------------
 
@@ -302,5 +303,24 @@ Microsoft's [Mage Flow](https://huggingface.co/microsoft/Mage-Flow) is supported
 - **Frame Count:** The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss, but generally you're stuck at exactly 121.
 - **CFG and Steps:** Nvidia default recommends CFG=7 and Steps=35
 - **Performance:** The models are extremely slow. Expect over 10 minutes for a single video even on a 4090.
+
+# Kandinsky 5
+
+- Kandinsky 5 Video Lite and Video Pro are supported in SwarmUI!
+    - Also the image models, docs [in the image model support doc](/docs/Model%20Support.md#kandinsky-5)
+- They come in a variety of variants, you will have to pick what you want, or experimental with several.
+    - Do you want "Lite" or "Pro"?
+        - Lite is a 2B (very small) video model with a variety of distilled and other variants. Its quality is not quite on par with competitors like Wan 14B, but its small size makes it easier to run.
+            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-lite>
+                - NoCFG or Distilled16Steps are the fastest variants, SFT is supposedly the best quality.
+        - Pro is a 19B (very large) video model with only different quality tune variants.
+            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-pro>
+                - You probably want the SFT 10s version.
+- At time of writing, the current implementation has bugs, and some hacks are used to workaround them. Not all features work. What does work is kinda bad.
+- **Parameters:**
+    - These vary heavily based on model you choose.
+    - **CFG Scale:** for regular models, regular CFG such as `5` works. For CFG-distill and step distill, use CFG of `1`.
+    - **Steps:** For regular, 20 or higher is used. For Step Distill, 16 is the target. Going lower will work but with a severe quality hit.
+    - **Resolution:** All video models primarily target a side length of 640. Higher resolutions can work, Pro handles 960x960 fine.
 
 <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
