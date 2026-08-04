@@ -445,6 +445,12 @@ public partial class WorkflowGenerator
         return LoadImage(img, param, resize, nodeId, width, height).Path[0].ToString();
     }
 
+    /// <summary>Creates a new node to load a video.</summary>
+    public WGNodeData LoadVideo(VideoFile vid, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
+    {
+        return LoadImage(new ImageFile() { RawData = vid.RawData, Type = vid.Type, SourceFilePath = vid.SourceFilePath }, param, resize, nodeId, width, height);
+    }
+
     /// <summary>Creates a new node to load an image.</summary>
     public WGNodeData LoadImage(ImageFile img, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
     {

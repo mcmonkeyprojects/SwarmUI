@@ -288,6 +288,14 @@ public class T2IParamInput
         {
             return imgList.Select(img => img.AsBase64).JoinString("|");
         }
+        else if (val is List<AudioFile> audioList)
+        {
+            return audioList.Select(audio => audio.AsBase64).JoinString("|");
+        }
+        else if (val is List<VideoFile> videoList)
+        {
+            return videoList.Select(video => video.AsBase64).JoinString("|");
+        }
         else if (val is List<string> strList)
         {
             return strList.JoinString(",");

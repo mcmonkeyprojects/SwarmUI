@@ -180,8 +180,13 @@ function getHtmlForParam(param, prefix, isPreset = false) {
                 return {html: makeAudioInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
             case 'video':
                 return {html: makeVideoInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
+            // TODO: Proper impl for list types
             case 'image_list':
                 return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
+            case 'audio_list':
+                return {html: makeAudioInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
+            case 'video_list':
+                return {html: makeVideoInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
         }
         console.log(`Cannot generate input for param ${param.id} of type ${param.type} - unknown type`);
         return null;
@@ -1091,7 +1096,7 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
         $(paramElem).val(vals);
         $(paramElem).trigger('change');
     }
-    else if (param.type == "image_list") {
+    else if (param.type == "image_list" || param.type == "audio_list" || param.type == "video_list") {
         // List too messy for impl for now
         return;
     }

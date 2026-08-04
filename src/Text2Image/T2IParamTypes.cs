@@ -38,8 +38,12 @@ public enum T2IParamDataType
     IMAGE_LIST,
     /// <summary>Raw audio data file.</summary>
     AUDIO,
+    /// <summary>List of audio files.</summary>
+    AUDIO_LIST,
     /// <summary>Raw video data file.</summary>
     VIDEO,
+    /// <summary>List of video files.</summary>
+    VIDEO_LIST,
 }
 
 /// <summary>Which format to display a number in.</summary>
@@ -239,7 +243,9 @@ public class T2IParamTypes
         if (t.IsAssignableTo(typeof(List<string>))) { return T2IParamDataType.LIST; }
         if (t.IsAssignableTo(typeof(List<Image>))) { return T2IParamDataType.IMAGE_LIST; }
         if (t.IsAssignableTo(typeof(AudioFile))) { return T2IParamDataType.AUDIO; }
+        if (t.IsAssignableTo(typeof(List<AudioFile>))) { return T2IParamDataType.AUDIO_LIST; }
         if (t.IsAssignableTo(typeof(VideoFile))) { return T2IParamDataType.VIDEO; }
+        if (t.IsAssignableTo(typeof(List<VideoFile>))) { return T2IParamDataType.VIDEO_LIST; }
         return T2IParamDataType.UNSET;
     }
 
@@ -257,7 +263,9 @@ public class T2IParamTypes
             T2IParamDataType.LIST => typeof(List<string>),
             T2IParamDataType.IMAGE_LIST => typeof(List<Image>),
             T2IParamDataType.AUDIO => typeof(AudioFile),
+            T2IParamDataType.AUDIO_LIST => typeof(List<AudioFile>),
             T2IParamDataType.VIDEO => typeof(VideoFile),
+            T2IParamDataType.VIDEO_LIST => typeof(List<VideoFile>),
             _ => null
         };
     }
@@ -1102,6 +1110,8 @@ public class T2IParamTypes
                 }
                 return origVal;
             case T2IParamDataType.IMAGE_LIST:
+            case T2IParamDataType.AUDIO_LIST:
+            case T2IParamDataType.VIDEO_LIST:
                 {
                     string splitter = val.Contains("\n|||\n") ? "\n|||\n" : "|";
                     string[] rawSplit = val.Split(splitter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -1120,7 +1130,7 @@ public class T2IParamTypes
                         if (!ValidBase64Matcher.IsOnlyMatches(partVal) || partVal.Length < 10)
                         {
                             string shortText = partVal.Length > 10 ? partVal[..10] + "..." : partVal;
-                            throw new SwarmUserErrorException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
+                            throw new SwarmUserErrorException($"Invalid {type.Type.ToString().ToLowerFast().Replace('_', '-')} value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
                         }
                     }
                     return rawSplit.JoinString(splitter);
