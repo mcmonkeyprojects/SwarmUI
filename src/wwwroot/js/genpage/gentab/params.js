@@ -1126,7 +1126,7 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
         }
         return;
     }
-    else if (param.type == "image" || param.type == "image_list" || param.type == "audio" || param.type == "video") {
+    else if (param.type == "image" || param.type == "audio" || param.type == "video") {
         let pathVal = value == null ? '' : `${value}`;
         if (!pathVal) {
             clearMediaFileInput(paramElem);

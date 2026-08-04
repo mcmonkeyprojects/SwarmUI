@@ -534,7 +534,7 @@ public static class T2IAPI
     {
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
         string temporaryInput = null;
-        string sourceName = filename;
+        string sourceName = string.IsNullOrWhiteSpace(filename) ? null : filename;
         try
         {
             string inputFile;
@@ -588,8 +588,9 @@ public static class T2IAPI
                     throw new SwarmUserErrorException("The video file does not exist.");
                 }
             }
+            sourceName ??= "video";
             byte[] audioData = await UserImageHistoryHelper.ExtractVideoAudio(inputFile);
-            string baseName = Utilities.StrictFilenameClean(Path.GetFileNameWithoutExtension(sourceName ?? "video"));
+            string baseName = Utilities.StrictFilenameClean(Path.GetFileNameWithoutExtension(sourceName));
             if (string.IsNullOrWhiteSpace(baseName))
             {
                 baseName = "video";
@@ -614,7 +615,7 @@ public static class T2IAPI
             }
             string inputPath = Path.GetRelativePath(root, localPath).Replace('\\', '/');
             Logs.Info($"User {session.User.UserID} extracted audio from '{sourceName}' to '{inputPath}'.");
-            JObject audio = new() { ["path"] = inputPath, ["src"] = src, ["metadata"] = metadata };
+            JObject audio = new() { ["path"] = inputPath, ["src"] = src };
             return new()
             {
                 ["audio"] = audio,

@@ -1416,7 +1416,6 @@ body {
     width: auto;
 }
 .alt-prompt-image-container-menu-button {
-    flex-shrink: 0;
     position: absolute;
     right: -1px;
     top: 1rem;
@@ -1442,10 +1441,6 @@ body {
     opacity: 1.0;
     background-color: color-mix(in srgb, var(--emphasis) 70%, black);
     border-color: black;
-}
-.alt-prompt-image-container-menu-button[data-loading="true"] {
-    cursor: wait;
-    opacity: 0.6;
 }
 .alt-prompt-image-container-remove-button {
     flex-shrink: 0;

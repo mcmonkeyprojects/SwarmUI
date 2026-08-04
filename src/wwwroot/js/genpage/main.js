@@ -613,7 +613,6 @@ function updatePromptMediaTitles() {
         let filename = media.dataset.filename;
         let displayFilename = filename?.replaceAll('\\', '/').split('/').pop();
         let shortFilename = displayFilename?.length > 90 ? `${displayFilename.substring(0, 87)}...` : displayFilename;
-        let titlePrefix = `${typeNames[media.tagName]} ${typeCounts[media.tagName]}`;
         let details = '';
         if (media.tagName == 'AUDIO' && media.dataset.duration) {
             details += ` (${media.dataset.duration}s)`;

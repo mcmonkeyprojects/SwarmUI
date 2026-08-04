@@ -1118,7 +1118,7 @@ class InputBrowserHelper {
         }, false);
         reader.readAsDataURL(file);
     }
-    
+
     /** Lists image files under the inputs/ directory for the input image browser. */
     listInputFiles(path, isRefresh, callback, depth) {
         path = path ? `inputs/${path}` : 'inputs/';
