@@ -1121,6 +1121,12 @@ select {
 .auto-slider-box .auto-slider-number {
     margin-left: auto;
 }
+.auto-video-frames-box .auto-video-frames-seconds-input {
+    margin-left: 0.5rem;
+}
+.auto-video-frames-unit {
+    margin-left: 0.2rem;
+}
 .auto-slider-range-wrapper {
     width: 100%;
 }

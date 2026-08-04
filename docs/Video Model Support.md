@@ -565,6 +565,8 @@ If you want to use the audio from a video file, click the `☰` hamburger menu o
 
 Prompt inputs all are labeled eg `Img 1: ...`, these numbers correctly correspond to the number in eg `<Picture 1>`.
 
+Note that the Ref model crunches its inputs a bit (they pass through the text encoder) so quality will suffer compared to use FL2VA with a dedicated first frame.
+
 ### MiniMax H3 Image Generation
 
 You can generate images with MiniMax H3 in Swarm by just setting Frames to 1. This similar to other video models, with a key exception: H3 will actually generate 5 frames, and then discard 4. While direct single-frame generation is possible in H3, quality suffers severely as it is not a trained case.

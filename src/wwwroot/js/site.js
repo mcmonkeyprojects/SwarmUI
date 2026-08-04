@@ -17,9 +17,9 @@ function enableSliderAbove(div) {
     enableSliderForBox(findParentOfClass(div, 'auto-slider-box'));
 }
 
-function enableSliderForBox(div) {
+function enableSliderForBox(div, number = null) {
     let range = div.querySelector('input[type="range"]');
-    let number = div.querySelector('input[type="number"]');
+    number = number || div.querySelector('input[type="number"]');
     number.addEventListener('input', (event) => {
         let newVal = number.value;
         if (!event.shiftKey) {
@@ -489,6 +489,7 @@ function doToggleEnable(id) {
         return;
     }
     let elem2 = document.getElementById(id + '_rangeslider');
+    let elem3 = document.getElementById(id + '_seconds');
     if (!toggler.checked) {
         if (elem.classList.contains('disabled-input')) {
             return;
@@ -496,6 +497,9 @@ function doToggleEnable(id) {
         elem.classList.add('disabled-input');
         if (elem2) {
             elem2.classList.add('disabled-input');
+        }
+        if (elem3) {
+            elem3.classList.add('disabled-input');
         }
         if (!elem.dataset.has_toggle_handler) {
             function autoActivate() {
@@ -508,6 +512,10 @@ function doToggleEnable(id) {
                 elem2.addEventListener('focus', autoActivate);
                 elem2.addEventListener('change', autoActivate);
             }
+            if (elem3) {
+                elem3.addEventListener('focus', autoActivate);
+                elem3.addEventListener('change', autoActivate);
+            }
             elem.dataset.has_toggle_handler = true;
         }
     }
@@ -518,6 +526,9 @@ function doToggleEnable(id) {
         elem.classList.remove('disabled-input');
         if (elem2) {
             elem2.classList.remove('disabled-input');
+        }
+        if (elem3) {
+            elem3.classList.remove('disabled-input');
         }
     }
     if (typeof scheduleParamUnsupportUpdate == 'function') {
@@ -751,6 +762,14 @@ function updateRangeStyle(e) {
     el.parentElement.style.setProperty("--range-value", `${(el.value-el.min)/(el.max-el.min)*100}%`);
 }
 
+/** Builds the range portion shared by slider-based inputs. */
+function makeSliderRange(id, value, min, max, step, isPot = false) {
+    return `
+        <div class="auto-slider-range-wrapper" style="${getRangeStyle(value, min, max)}">
+            <input class="auto-slider-range" type="range" id="${id}_rangeslider" value="${value}" min="${min}" max="${max}" step="${step}" data-ispot="${isPot}" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+        </div>`;
+}
+
 function makeSliderInput(featureid, id, paramid, name, description, value, min, max, view_min = 0, view_max = 0, step = 1, isPot = false, toggles = false, popover_button = true) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
@@ -764,9 +783,7 @@ function makeSliderInput(featureid, id, paramid, name, description, value, min, 
         </label>
         <input class="auto-slider-number" type="number" id="${id}" data-param_id="${paramid}" value="${value}" min="${min}" max="${max}" step="${step}" data-ispot="${isPot}" autocomplete="off" onchange="autoNumberWidth(this)">
         <br>
-        <div class="auto-slider-range-wrapper" style="${getRangeStyle(rangeVal, view_min, view_max)}">
-            <input class="auto-slider-range" type="range" id="${id}_rangeslider" value="${rangeVal}" min="${view_min}" max="${view_max}" step="${step}" data-ispot="${isPot}" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
-        </div>
+        ${makeSliderRange(id, rangeVal, view_min, view_max, step, isPot)}
     </div>`;
 }
 
@@ -792,6 +809,27 @@ function makeNumberInput(featureid, id, paramid, name, description, value, min, 
                 <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
             </label>
             <input class="auto-number" type="number" id="${id}" data-param_id="${paramid}" value="${value}" min="${min}" max="${max}" step="${step}" data-name="${name}" autocomplete="off" onchange="autoNumberWidth(this)">
+        </div>`;
+}
+
+/** Builds synchronized video duration controls in frames and seconds. */
+function makeVideoFramesInput(featureid, id, paramid, name, description, value, min, max, step = 1, toggles = false, popover_button = true) {
+    name = escapeHtml(name);
+    featureid = featureid ? ` data-feature-require="${featureid}"` : '';
+    let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
+    featureid += featureid2;
+    let initialSeconds = formatNumberClean(Number(value) / 24, 3);
+    let sliderSeconds = Math.min(20, Math.max(0, initialSeconds));
+    return `
+        <div class="auto-input auto-slider-box auto-video-frames-box"${featureid}>
+            <label>
+                <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
+            </label>
+            <input class="auto-slider-number auto-video-frames-frame-input" type="number" id="${id}" data-param_id="${paramid}" value="${value}" min="${min}" max="${max}" step="${step}" data-name="${name}" autocomplete="off" onchange="autoNumberWidth(this)">
+            <span class="auto-video-frames-unit">${translateableHtml('Frames')}</span>
+            <input class="auto-slider-number auto-video-frames-seconds-input" type="number" id="${id}_seconds" value="${initialSeconds}" min="0" max="20" step="0.5" autocomplete="off">
+            <span class="auto-video-frames-unit">${translateableHtml('Seconds')}</span>
+            ${makeSliderRange(id, sliderSeconds, 0, 20, 0.5)}
         </div>`;
 }
 

@@ -105,6 +105,81 @@ let aspectRatios = [
     new AspectRatio("9:21", 320, 768)
 ];
 
+/** Synchronizes video duration controls in frames and seconds using the applicable Video FPS input. */
+function enableVideoFramesInput(id, prefix) {
+    let frameInput = getRequiredElementById(id);
+    let secondsInput = getRequiredElementById(`${id}_seconds`);
+    let secondsRange = getRequiredElementById(`${id}_rangeslider`);
+    let fpsInput = document.getElementById(`${prefix}videofps`);
+    let fpsToggle = document.getElementById(`${prefix}videofps_toggle`);
+    let isSyncingFrames = false;
+    let isSyncingSeconds = false;
+    enableSliderForBox(findParentOfClass(frameInput, 'auto-slider-box'), secondsInput);
+    function updateSecondsRangeStep(event) {
+        secondsRange.step = event.shiftKey ? 1 / getFPS() : 0.5;
+    }
+    secondsRange.addEventListener('pointerdown', updateSecondsRangeStep);
+    secondsRange.addEventListener('keydown', updateSecondsRangeStep);
+    secondsRange.addEventListener('keyup', updateSecondsRangeStep);
+    secondsRange.addEventListener('blur', () => {
+        secondsRange.step = 0.5;
+    });
+    function getFPS() {
+        if (!fpsInput || (fpsToggle && !fpsToggle.checked)) {
+            return 24;
+        }
+        let fps = parseFloat(fpsInput.value);
+        return Number.isFinite(fps) && fps > 0 ? fps : 24;
+    }
+    function updateFromFrames() {
+        let frames = parseInt(frameInput.value);
+        if (!Number.isFinite(frames)) {
+            frames = 0;
+        }
+        let seconds = formatNumberClean(frames / getFPS(), 3);
+        isSyncingSeconds = true;
+        secondsInput.value = seconds;
+        secondsInput.dispatchEvent(new Event('input'));
+        isSyncingSeconds = false;
+        autoNumberWidth(frameInput);
+    }
+    function updateFromSeconds() {
+        let seconds = parseFloat(secondsInput.value);
+        if (!Number.isFinite(seconds)) {
+            return;
+        }
+        secondsInput.value = formatNumberClean(seconds, 3);
+        let frames = Math.round(seconds * getFPS());
+        frames = Math.max(parseInt(frameInput.min), Math.min(parseInt(frameInput.max), frames));
+        isSyncingFrames = true;
+        frameInput.value = frames;
+        triggerChangeFor(frameInput);
+        isSyncingFrames = false;
+        autoNumberWidth(frameInput);
+        autoNumberWidth(secondsInput);
+    }
+    frameInput.addEventListener('input', () => {
+        if (!isSyncingFrames) {
+            updateFromFrames();
+        }
+    });
+    secondsInput.addEventListener('input', () => {
+        if (!isSyncingSeconds) {
+            updateFromSeconds();
+        }
+    });
+    secondsRange.addEventListener('input', () => {
+        updateFromSeconds();
+    });
+    if (fpsInput) {
+        fpsInput.addEventListener('input', updateFromFrames);
+        fpsInput.addEventListener('change', updateFromFrames);
+    }
+    if (fpsToggle) {
+        fpsToggle.addEventListener('change', updateFromFrames);
+    }
+    updateFromFrames();
+}
 
 function getHtmlForParam(param, prefix, isPreset = false) {
     try {
@@ -135,6 +210,9 @@ function getHtmlForParam(param, prefix, isPreset = false) {
                     case 'big':
                         return {html: makeNumberInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, min, max, step, 'big', param.toggleable, !param.no_popover) + pop,
                         runnable: () => autoNumberWidth(getRequiredElementById(`${prefix}${param.id}`))};
+                    case 'video_frames':
+                        return {html: makeVideoFramesInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, min, max, step, param.toggleable, !param.no_popover) + pop,
+                            runnable: () => enableVideoFramesInput(`${prefix}${param.id}`, prefix)};
                     case 'seed':
                         return {html: makeNumberInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, min, max, step, 'seed', param.toggleable, !param.no_popover) + pop};
                     case 'slider':
@@ -1164,10 +1242,15 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
     else if (param.type == "integer" || param.type == "decimal") {
         paramElem.value = value;
         if (!doTrigger) {
-            let range = document.getElementById(`input_${param.id}_rangeslider`);
-            if (range && range.oninput) {
-                range.value = value;
-                range.oninput({srcElement: range});
+            if (param.view_type == 'video_frames') {
+                paramElem.dispatchEvent(new Event('input'));
+            }
+            else {
+                let range = document.getElementById(`input_${param.id}_rangeslider`);
+                if (range && range.oninput) {
+                    range.value = value;
+                    range.oninput({srcElement: range});
+                }
             }
         }
     }
