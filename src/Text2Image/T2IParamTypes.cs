@@ -337,10 +337,12 @@ public class T2IParamTypes
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale, Text2AudioDuration;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
-    public static T2IRegisteredParam<AudioFile> VideoAudioInput, VideoAudioReference;
+    public static T2IRegisteredParam<AudioFile> VideoAudioInput;
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, GptOssModel, VideoExtendModel, VideoExtendSwapModel, NegativeModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
+    public static T2IRegisteredParam<List<AudioFile>> PromptAudios;
+    public static T2IRegisteredParam<List<VideoFile>> PromptVideos;
     public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData, NegativeModelIncludeLoras, ContinueAfterErrors,
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
@@ -384,6 +386,12 @@ public class T2IParamTypes
             ));
         PromptImages = Register<List<Image>>(new("Prompt Images", "Images to include with the prompt, for eg ReVision or UnCLIP.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
             "", IgnoreIf: "", OrderPriority: -95, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
+            ));
+        PromptAudios = Register<List<AudioFile>>(new("Prompt Audios", "Audio files to include with the prompt.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
+            "", IgnoreIf: "", OrderPriority: -94, VisibleNormally: false, IsAdvanced: true, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
+            ));
+        PromptVideos = Register<List<VideoFile>>(new("Prompt Videos", "Videos to include with the prompt.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
+            "", IgnoreIf: "", OrderPriority: -93, VisibleNormally: false, IsAdvanced: true, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
             ));
         NegativePrompt = Register<string>(new("Negative Prompt", "Like the input prompt text, but describe what NOT to generate.\nTell the AI things you don't want to see.",
             "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -90, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
@@ -634,9 +642,6 @@ public class T2IParamTypes
             ));
         VideoAudioInput = Register<AudioFile>(new("Video Audio Input", "If generating a video with a model that supports audio input, this is the audio input.",
             null, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, IsAdvanced: true
-            ));
-        VideoAudioReference = Register<AudioFile>(new("Video Audio Reference", "If generating a video with a model that supports reference audio (eg LTX-2.3 IC-Lora), this input adds the reference audio.",
-            null, OrderPriority: 3.5, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, IsAdvanced: true
             ));
         GroupAdvancedVideoObscure = new("Video Obscure Options", Open: false, OrderPriority: 50, IsAdvanced: true, Toggles: false, Description: "You almost never need these.", Parent: GroupAdvancedVideo);
         VideoMinCFG = Register<double>(new("Video Min CFG", "The minimum CFG to use for video generation.\nVideos start with max CFG on first frame, and then reduce to this CFG. Set to -1 to disable.\nOnly used for SVD.",

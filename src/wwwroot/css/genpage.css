@@ -1380,6 +1380,7 @@ body {
     background-color: color-mix(in srgb, transparent 80%, var(--background));
     transition: background-color 0.2s ease-out;
     margin: 0 2px;
+    vertical-align: center;
 }
 .alt-prompt-image {
     max-height: 128px;

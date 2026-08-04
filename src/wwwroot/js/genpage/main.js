@@ -562,10 +562,27 @@ function imagePromptAddImage(file) {
             imagePromptAddImage(file);
             return;
         }
+        let imageObject;
+        if (file.type.startsWith('video/')) {
+            imageObject = document.createElement('video');
+            imageObject.controls = false;
+            imageObject.autoplay = true;
+            imageObject.muted = true;
+            imageObject.loop = true;
+        }
+        else if (file.type.startsWith('audio/')) {
+            imageObject = document.createElement('audio');
+            imageObject.controls = true;
+        }
+        else {
+            imageObject = new Image();
+        }
+        imageObject.src = data;
+        imageObject.height = 128;
+        imageObject.className = 'alt-prompt-image';
+        imageObject.dataset.filedata = data;
         if (existingImage) {
-            existingImage.src = data;
-            existingImage.height = 128;
-            existingImage.dataset.filedata = data;
+            existingImage.replaceWith(imageObject);
         }
         else {
             let promptImageArea = getRequiredElementById('alt_prompt_image_area');
@@ -578,11 +595,6 @@ function imagePromptAddImage(file) {
             });
             imageRemoveButton.title = 'Remove this image';
             imageContainer.appendChild(imageRemoveButton);
-            let imageObject = new Image();
-            imageObject.src = data;
-            imageObject.height = 128;
-            imageObject.className = 'alt-prompt-image';
-            imageObject.dataset.filedata = data;
             imageContainer.appendChild(imageObject);
             promptImageArea.appendChild(imageContainer);
         }
@@ -605,11 +617,12 @@ function imagePromptInputHandler() {
         clearPromptImages();
     });
     dragArea.addEventListener('drop', (e) => {
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        let files = uiImprover.getFileList(e.dataTransfer, e);
+        if (files.length > 0) {
             e.preventDefault();
             e.stopPropagation();
-            for (let file of e.dataTransfer.files) {
-                if (file.type.startsWith('image/')) {
+            for (let file of files) {
+                if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) {
                     imagePromptAddImage(file);
                 }
             }

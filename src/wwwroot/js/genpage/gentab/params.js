@@ -893,6 +893,17 @@ function toggle_advanced_checkbox_manual() {
     toggle_advanced();
 }
 
+/** Adds prompt image, audio, and video data from an added-image-area to a generation input. */
+function addPromptMediaToInput(input, addedImageArea) {
+    let mediaTypes = { IMG: 'promptimages', AUDIO: 'promptaudios', VIDEO: 'promptvideos' };
+    for (let tagName in mediaTypes) {
+        let media = [...addedImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == tagName);
+        if (media.length > 0) {
+            input[mediaTypes[tagName]] = media.map(item => item.dataset.filedata);
+        }
+    }
+}
+
 function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     let input = JSON.parse(JSON.stringify(input_preoverrides));
     let extraMetadata = {};
@@ -940,10 +951,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             let addedImageArea = container.querySelector('.added-image-area');
             if (addedImageArea) {
                 addedImageArea.style.display = '';
-                let imgs = [...addedImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
-                if (imgs.length > 0) {
-                    input["promptimages"] = imgs.map(img => img.dataset.filedata);
-                }
+                addPromptMediaToInput(input, addedImageArea);
             }
         }
     }
@@ -964,10 +972,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         delete input['vae'];
     }
     let revisionImageArea = getRequiredElementById('alt_prompt_image_area');
-    let revisionImages = [...revisionImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
-    if (revisionImages.length > 0) {
-        input["promptimages"] = revisionImages.map(img => img.dataset.filedata);
-    }
+    addPromptMediaToInput(input, revisionImageArea);
     if (imageEditor.active) {
         extraMetadata["used_image_editor"] = "true";
         input["initimage"] = imageEditor.getFinalImageData();

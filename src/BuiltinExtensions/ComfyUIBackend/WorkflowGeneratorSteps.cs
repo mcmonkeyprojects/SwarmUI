@@ -1258,9 +1258,10 @@ public class WorkflowGeneratorSteps
                 g.CurrentMedia = new WGNodeData([vaceNode, 2], g, WGNodeData.DT_LATENT_VIDEO, g.CurrentCompat()) { Width = width, Height = height, Frames = frames };
                 g.FinalTrimLatent = [vaceNode, 3];
             }
-            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile ltxAudio))
+            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.PromptAudios, out List<AudioFile> ltxAudios) && ltxAudios.Count > 0)
             {
-                string audioNode = g.CreateAudioLoadNode(ltxAudio, "${videoaudioreference}");
+                // TODO: Does supporting multiple make sense?
+                string audioNode = g.CreateAudioLoadNode(ltxAudios[0], "${promptaudios.0}");
                 string refNode = g.CreateNode("LTXVReferenceAudio", new JObject()
                 {
                     ["model"] = g.CurrentModel.Path,

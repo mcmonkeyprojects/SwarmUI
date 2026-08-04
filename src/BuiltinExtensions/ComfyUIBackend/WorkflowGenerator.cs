@@ -1644,9 +1644,10 @@ public partial class WorkflowGenerator
                     });
                     g.CurrentMedia = g.CurrentMedia.WithPath([addedGuide, 2], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
                 }
-                if (g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+                if (g.UserInput.TryGet(T2IParamTypes.PromptAudios, out List<AudioFile> audios) && audios.Count > 0)
                 {
-                    string audioNode = g.CreateAudioLoadNode(audio, "${videoaudioinput}");
+                    // TODO: Does supporting multiple make sense?
+                    string audioNode = g.CreateAudioLoadNode(audios[0], "${promptaudios.0}");
                     string refNode = g.CreateNode("LTXVReferenceAudio", new JObject()
                     {
                         ["model"] = Model.Path,
@@ -2392,6 +2393,7 @@ public partial class WorkflowGenerator
                 ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 124),
             };
             bool hasAny = false;
+            // TODO: Warn or error if max inputs exceeded
             for (int i = 0; i < 9; i++)
             {
                 JArray img = GetPromptImage(false, true, i);
@@ -2402,14 +2404,25 @@ public partial class WorkflowGenerator
                 hasAny = true;
                 refData[$"ref_images.ref_image_{i}"] = img;
             }
-            if (UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+            if (UserInput.TryGet(T2IParamTypes.PromptAudios, out List<AudioFile> audio))
             {
-                // TODO: Allow multiple. Prompt audios?
-                hasAny = true;
-                string audioNode = CreateAudioLoadNode(audio, "${videoaudioreference}");
-                refData["ref_audios.ref_audio_0"] = NodePath(audioNode, 0);
+                for (int i = 0; i < audio.Count && i < 3; i++)
+                {
+                    hasAny = true;
+                    string audioNode = CreateAudioLoadNode(audio[i], "${promptaudios." + i + "}");
+                    refData[$"ref_audios.ref_audio_{i}"] = NodePath(audioNode, 0);
+                }
             }
-            // TODO: Ref video! Ref videoaudio!
+            // TODO: Handle videos with embedded audio properly
+            if (UserInput.TryGet(T2IParamTypes.PromptVideos, out List<VideoFile> video))
+            {
+                for (int i = 0; i < video.Count && i < 3; i++)
+                {
+                    hasAny = true;
+                    WGNodeData videoNode = LoadVideo(video[i], "${promptvideos." + i + "}", false);
+                    refData[$"ref_videos.ref_video_{i}"] = videoNode.Path;
+                }
+            }
             if (hasAny)
             {
                 node = CreateNode("MiniMaxH3ReferenceToVideo", refData);
