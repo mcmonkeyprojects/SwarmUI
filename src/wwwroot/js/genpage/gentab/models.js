@@ -1186,10 +1186,18 @@ class CurrentModelHelper {
             $('#nunchaku_installer').modal('show');
             return true;
         }
-        let imageVidToggler = document.getElementById('input_group_content_imagetovideo_toggle');
-        let isImageVidToggled = imageVidToggler && imageVidToggler.checked;
-        let videoModel = isImageVidToggled ? document.getElementById('input_videomodel')?.value : '';
-        if ((this.curSpecialFormat == 'gguf' || videoModel.endsWith('.gguf')) && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
+        let hasGGUFModel = false;
+        for (let param of gen_param_types) {
+            if (param.type != 'model') {
+                continue;
+            }
+            let modelInput = document.getElementById(`input_${param.id}`);
+            if (isParamEnabled(param) && modelInput?.value.endsWith('.gguf')) {
+                hasGGUFModel = true;
+                break;
+            }
+        }
+        if ((this.curSpecialFormat == 'gguf' || hasGGUFModel) && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
             $('#gguf_installer').modal('show');
             return true;
         }

@@ -917,28 +917,34 @@ function addPromptMediaToInput(input, addedImageArea, extraMetadata) {
     }
 }
 
+/** Returns whether a parameter and all of its containing groups are enabled. */
+function isParamEnabled(param) {
+    if (param.toggleable && !getRequiredElementById(`input_${param.id}_toggle`).checked) {
+        return false;
+    }
+    if (param.feature_missing) {
+        return false;
+    }
+    let group = param.original_group || param.group;
+    while (group) {
+        if (group.toggles && !document.getElementById(`input_group_content_${group.id}_toggle`)?.checked) {
+            return false;
+        }
+        group = group.parent;
+    }
+    let elem = getRequiredElementById(`input_${param.id}`);
+    let parent = findParentOfClass(elem, 'auto-input');
+    return !parent || parent.dataset.disabled != 'true';
+}
+
 function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     let input = JSON.parse(JSON.stringify(input_preoverrides));
     let extraMetadata = {};
-    paramLoop: for (let type of gen_param_types) {
-        if (type.toggleable && !getRequiredElementById(`input_${type.id}_toggle`).checked) {
+    for (let type of gen_param_types) {
+        if (!isParamEnabled(type)) {
             continue;
-        }
-        if (type.feature_missing) {
-            continue;
-        }
-        let group = type.original_group || type.group;
-        while (group) {
-            if (group.toggles && !document.getElementById(`input_group_content_${group.id}_toggle`)?.checked) {
-                continue paramLoop;
-            }
-            group = group.parent;
         }
         let elem = getRequiredElementById(`input_${type.id}`);
-        let parent = findParentOfClass(elem, 'auto-input');
-        if (parent && parent.dataset.disabled == 'true') {
-            continue;
-        }
         let val = getInputVal(elem, true);
         if (val != null) {
             input[type.id] = val;
