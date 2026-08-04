@@ -558,6 +558,35 @@ function imagePromptAddImage(file) {
     reader.readAsDataURL(file);
 }
 
+/** Updates prompt media title numbering, counted separately per media type. */
+function updatePromptMediaTitles() {
+    let typeNames = { IMG: 'Image', AUDIO: 'Audio', VIDEO: 'Video' };
+    let typeCounts = { IMG: 0, AUDIO: 0, VIDEO: 0 };
+    let promptImageArea = getRequiredElementById('alt_prompt_image_area');
+    for (let media of promptImageArea.querySelectorAll('.alt-prompt-image')) {
+        typeCounts[media.tagName]++;
+        let filename = media.dataset.filename;
+        let displayFilename = filename?.replaceAll('\\', '/').split('/').pop();
+        let shortFilename = displayFilename?.length > 30 ? `${displayFilename.substring(0, 27)}...` : displayFilename;
+        let titlePrefix = `${typeNames[media.tagName]} ${typeCounts[media.tagName]}`;
+        let details = '';
+        if (media.tagName == 'AUDIO' && media.dataset.duration) {
+            details += ` (${media.dataset.duration}s)`;
+        }
+        else if (media.tagName == 'VIDEO' && media.dataset.duration) {
+            details += ` (${roundTo(parseFloat(media.dataset.duration), 0.01)}s)`;
+        }
+        if (media.dataset.resolution) {
+            let [width, height] = media.dataset.resolution.split('x').map(value => parseInt(value));
+            details += ` (${media.dataset.resolution}, ${describeAspectRatio(width, height)})`;
+        }
+        media.title = `${titlePrefix}${filename ? `: ${filename}` : ''}${details}`;
+        let headerText = media.closest('.alt-prompt-image-container').querySelector('.alt-prompt-image-container-header-text');
+        headerText.textContent = `${titlePrefix}${shortFilename ? `: ${shortFilename}` : ''}${details}`;
+        headerText.title = media.title;
+    }
+}
+
 /** Adds image, video, or audio data to the prompt media area. */
 function imagePromptAddImageData(data, mediaType, fileData = data, fileName = null, replaceTarget = null) {
     if (replaceTarget && !replaceTarget.isConnected) {
@@ -593,6 +622,7 @@ function imagePromptAddImageData(data, mediaType, fileData = data, fileName = nu
     if (type == 'image') {
         imageObject.addEventListener('load', () => {
             imageObject.dataset.resolution = `${imageObject.naturalWidth}x${imageObject.naturalHeight}`;
+            updatePromptMediaTitles();
         });
     }
     else {
@@ -601,6 +631,7 @@ function imagePromptAddImageData(data, mediaType, fileData = data, fileName = nu
             if (type == 'video') {
                 imageObject.dataset.resolution = `${imageObject.videoWidth}x${imageObject.videoHeight}`;
             }
+            updatePromptMediaTitles();
         });
     }
     imageObject.src = data;
@@ -610,17 +641,23 @@ function imagePromptAddImageData(data, mediaType, fileData = data, fileName = nu
     else {
         let promptImageArea = getRequiredElementById('alt_prompt_image_area');
         let imageContainer = createDiv(null, 'alt-prompt-image-container');
+        let imageHeader = createDiv(null, 'alt-prompt-image-container-header');
+        let imageHeaderText = createSpan(null, 'alt-prompt-image-container-header-text');
         let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
         imageRemoveButton.addEventListener('click', () => {
             imageContainer.remove();
+            updatePromptMediaTitles();
             autoRevealRevision();
             genTabLayout.altPromptSizeHandle();
         });
         imageRemoveButton.title = `Remove this ${type}`;
-        imageContainer.appendChild(imageRemoveButton);
+        imageHeader.appendChild(imageHeaderText);
+        imageHeader.appendChild(imageRemoveButton);
+        imageContainer.appendChild(imageHeader);
         imageContainer.appendChild(imageObject);
         promptImageArea.appendChild(imageContainer);
     }
+    updatePromptMediaTitles();
     let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
     clearButton.style.display = '';
     showRevisionInputs(true);

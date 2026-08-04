@@ -511,6 +511,37 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
     - **Prompt:** Works best with long proper LLM prompts, but short ones still go fine
         - The model generates audio, so remember to prompt for what the audio should be
         - You can prompt for multiple shots at different times in the video and it will work
+        - They use very long complex example prompts with a structured format. See below for an example for the ref model.
+            <details>
+                <summary>Click to view example prompt</summary>
+
+            ```text
+            subject_definitions:
+            <Subject 1> is the young man with short wavy blonde hair, wearing a bright pink suit jacket, matching pink trousers, an unbuttoned white shirt, and silver rings, holding a small black lamb in his arms in <Video 1>.
+            <Video 1> is the source video for the editing task.
+            <Audio 1> is the synchronized audio track of <Video 1>, providing the background music.
+            <Audio 2> is the voice timbre reference for <Subject 1>'s voice, containing a spoken male voiceover.
+
+            summary:
+            [video editing + audio reference + audio reuse] The target video is an edited version of <Video 1>. <Subject 1>, wearing a bright pink suit and holding a black lamb, stands in a grassy field with other white lambs in the background. The edit animates <Subject 1>'s face to speak the user-provided dialogue. <Audio 1> is partially reused as the continuous background music, while the target references the calm male voice timbre of <Audio 2> for <Subject 1>'s spoken lines.
+
+            retention_analysis:
+            <Subject 1> (appears in [Shot 1]): fully_preserved - the man retains his identity, wavy blonde hair, pink suit, white shirt, accessories, and the black lamb he holds, with his mouth newly animated to speak.
+            <Video 1> (source video editing): fully_preserved - the original camera framing, warm golden hour lighting, grassy hill setting, and background white lambs are maintained while the central character is edited.
+            <Audio 1>: partially_copy - the atmospheric background music from <Audio 1> is reused in the target video, mixed beneath the newly added spoken dialogue.
+            <Audio 2>: reference - the target audio references the male voice timbre from <Audio 2> to generate <Subject 1>'s spoken dialogue.
+
+            detailed_description:
+            The target video is in realistic photographic style.
+            [Shot 1] The shot begins from the source <Video 1>, showing <Subject 1>, a young man with short wavy blonde hair, wearing a bright pink suit jacket, matching pink trousers, and a casually unbuttoned white shirt. He stands confidently in a sunlit green pasture, gently holding a small black lamb securely in his arms. The warm, golden hour lighting casts soft shadows across his face and the bright pink fabric of his suit. Behind him, several white lambs stand and graze on the rolling grassy hill against a clear, pale blue sky. The atmospheric background music from <Audio 1> plays continuously throughout the scene. <Subject 1> physically speaks, his mouth movements naturally syncing to the new dialogue, with his voice timbre referencing the calm male delivery from <Audio 2>. Looking thoughtfully forward, <Subject 1> (S1) speaks softly, <d>[English] Follow the wind, live free.</d> As he delivers the line, he subtly shifts his weight, cradling the resting black lamb while the camera slowly pushes in. <Subject 1> (S1) continues his thought, <d>[English] Leave worries behind, enjoy the moment.</d> Exactly as his voice stops, his lips meet in a relaxed, peaceful smile, and his jaw ceases speaking motion. He then turns his gaze slightly away toward the horizon, gently stroking the black lamb's fleece with his fingers as the camera holds on this tranquil, sunlit state through the end of the video.
+
+            overall_soundscape:
+            The soundscape consists of the continuous, atmospheric background music from <Audio 1>, overlaid with the clear, calm male dialogue spoken by the main character, referencing the voice timbre of <Audio 2>.
+
+            non_diegetic_music:
+            The atmospheric, sustained background music from <Audio 1> is reused as the continuous score, playing quietly beneath the spoken dialogue.
+            ```
+            </details>
     - **Frames:** The model targets 24FPS and supports up to 15 seconds, so 362 is the max frame count. Inputs will automatically round up to the next valid framecount.
         - It uses the formula `5 + 17n` as the valid latent range. So: 5, 22, 39, 56, 73, 90, 107, 124, ...
         - `22` for 1 second, `124` for 5 seconds, `243` for 10 seconds, `362` for 15 seconds.

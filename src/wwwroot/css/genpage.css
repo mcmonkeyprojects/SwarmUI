@@ -1375,26 +1375,55 @@ body {
     max-width: calc(100% - 7rem);
 }
 .alt-prompt-image-container {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
     position: relative;
     background-color: color-mix(in srgb, transparent 80%, var(--background));
+    border: 1px solid var(--light-border);
+    border-radius: 0.5rem;
+    overflow: visible;
     transition: background-color 0.2s ease-out;
     margin: 0 2px;
-    vertical-align: center;
+    min-width: 30px;
+    vertical-align: top;
+    width: fit-content;
+}
+.alt-prompt-image-container-header {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 100%;
+    padding: 0 0 0 0.2rem;
+    width: 0;
+}
+.alt-prompt-image-container-header-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.6rem;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .alt-prompt-image {
+    align-self: center;
+    display: block;
     max-height: 128px;
-    margin-right: 1px;
+    max-width: 100%;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    width: auto;
 }
 .alt-prompt-image-container-remove-button {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    z-index: 100;
+    flex-shrink: 0;
+    position: relative;
+    right: -1px;
+    top: -1px;
     opacity: 0.7;
     background-color: color-mix(in srgb, transparent 80%, var(--background));
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0 0.5rem 0 0;
     padding-left: 0.2rem;
     padding-right: 0.25rem;
     padding-bottom: 0.25rem;
@@ -1403,7 +1432,7 @@ body {
     color: var(--text);
     transition: background-color 0.2s ease-out;
     cursor: pointer;
-    border: 1px solid transparent;
+    border: 1px solid color-mix(in srgb, transparent 30%, var(--red));
     text-align: center;
 }
 .alt-prompt-image-container:hover .alt-prompt-image-container-remove-button {
