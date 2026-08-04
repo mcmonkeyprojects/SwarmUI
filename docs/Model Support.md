@@ -618,6 +618,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 # Krea 2
 
+![img](/docs/images/models/krea2.jpg)
+
 - Krea 2 is supported in SwarmUI!
 - It is a 13B model (reported officially as 12B) with a Base ('Raw') and Turbo variant.
     - Downloads of the model are available at [Comfy-Org/Krea-2](<https://huggingface.co/Comfy-Org/Krea-2/tree/main/diffusion_models>)
