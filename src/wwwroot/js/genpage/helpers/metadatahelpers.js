@@ -242,6 +242,53 @@ function formatMetadataEntry(entry) {
     return `<span class="param_view_block tag-text tag-type-${entry.hash}${entry.added}"><span class="param_view_name" title="${escapeHtmlNoBr(entry.keyTitle)}">${escapeHtml(entry.key)}:</span> ${entry.valueHtml}${entry.extras}</span>`;
 }
 
+/** Combines media filenames, resolutions, and durations into their corresponding parameter metadata values. */
+function combineMediaMetadata(data) {
+    if (!data.sui_extra_data) {
+        return;
+    }
+    let mediaTypes = ['image', 'audio', 'video', 'image_list', 'audio_list', 'video_list'];
+    for (let filenameKey of Object.keys(data.sui_extra_data).filter(key => key.endsWith('_filename'))) {
+        let paramId = filenameKey.substring(0, filenameKey.length - '_filename'.length);
+        let param = getParamById(paramId);
+        if (!param || !mediaTypes.includes(param.type)) {
+            continue;
+        }
+        let filenames = data.sui_extra_data[filenameKey];
+        let resolutions = data.sui_extra_data[`${paramId}_resolution`];
+        let durations = data.sui_extra_data[`${paramId}_duration`];
+        let values = data.sui_image_params[paramId];
+        let isList = param.type.endsWith('_list');
+        let filenameList = Array.isArray(filenames) ? filenames : [filenames];
+        let resolutionList = Array.isArray(resolutions) ? resolutions : [resolutions];
+        let durationList = Array.isArray(durations) ? durations : [durations];
+        let valueList = Array.isArray(values) ? values : [values];
+        let combined = [];
+        let count = isList ? Math.max(filenameList.length, valueList.length) : 1;
+        for (let i = 0; i < count; i++) {
+            let value = filenameList[i] || valueList[i];
+            if (!value) {
+                continue;
+            }
+            let duration = durationList[i];
+            if (duration) {
+                let durationNumber = parseFloat(duration);
+                value += ` (${Number.isNaN(durationNumber) ? duration : roundTo(durationNumber, 0.01)}s)`;
+            }
+            if (resolutionList[i]) {
+                value += ` (${resolutionList[i]})`;
+            }
+            combined.push(value);
+        }
+        if (combined.length > 0) {
+            data.sui_image_params[paramId] = isList ? combined : combined[0];
+        }
+        delete data.sui_extra_data[filenameKey];
+        delete data.sui_extra_data[`${paramId}_resolution`];
+        delete data.sui_extra_data[`${paramId}_duration`];
+    }
+}
+
 function getFormattedMetadataEntries(metadata) {
     if (!metadata) {
         return { entries: [], error: '' };
@@ -322,6 +369,7 @@ function getFormattedMetadataEntries(metadata) {
         }
         entries.push(...newEntries);
     }
+    combineMediaMetadata(data);
     if ('swarm_version' in data.sui_image_params && 'sui_extra_data' in data) {
         data.sui_extra_data['Swarm Version'] = data.sui_image_params.swarm_version;
         delete data.sui_image_params.swarm_version;
