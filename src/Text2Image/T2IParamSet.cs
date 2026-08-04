@@ -203,7 +203,7 @@ public class T2IParamSet
             T2IParamDataType.BOOLEAN => bool.Parse(val),
             T2IParamDataType.TEXT or T2IParamDataType.DROPDOWN => val,
             T2IParamDataType.IMAGE => imageFor(val, true),
-            T2IParamDataType.IMAGE_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(v => imageFor(v, false) as Image).ToList(),
+            T2IParamDataType.IMAGE_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(v => imageFor(v, true) as Image).ToList(),
             T2IParamDataType.MODEL => getModel(val),
             T2IParamDataType.LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : ",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
             T2IParamDataType.AUDIO => audioFor(val),

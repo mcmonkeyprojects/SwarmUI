@@ -542,6 +542,8 @@ You can generate images with MiniMax H3 in Swarm by just setting Frames to 1. Th
 
 You can use the Ref model this way to do image editing. Note that quality will be poor compared to proper dedicated image models.
 
+This is not optimal. Quality is messy, and it of course adds motion artifacts. They have said they plan to release an actual dedicated Image model in the future as well.
+
 # Obscure Model Redirection
 
 ### Stable Video Diffusion

@@ -200,7 +200,7 @@ public static class T2IAPI
         {
             foreach (JProperty prop in obj.Properties())
             {
-                user_input.ExtraMeta[prop.Name] = prop.Value.ToString();
+                user_input.ExtraMeta[prop.Name] = prop.Value is JArray ? prop.Value.ToBasicObject() : prop.Value.ToString();
             }
         }
         foreach (string key in keys)

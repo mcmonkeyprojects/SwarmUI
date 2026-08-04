@@ -336,6 +336,11 @@ public class T2IParamInput
             }
             return null;
         }
+        if (val is IEnumerable<MediaFile> mediaFiles)
+        {
+            List<string> sourceFiles = [.. mediaFiles.Where(file => !string.IsNullOrEmpty(file.SourceFilePath)).Select(file => file.SourceFilePath)];
+            return sourceFiles.Count > 0 ? JArray.FromObject(sourceFiles) : null;
+        }
         if (val is string str)
         {
             val = FillEmbedsInString(str, e => $"<embed:{e}>");

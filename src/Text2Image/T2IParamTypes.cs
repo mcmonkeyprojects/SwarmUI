@@ -385,13 +385,13 @@ public class T2IParamTypes
             "", Clean: ApplyStringEdit, Examples: ["a photo of a cat", "a cartoonish drawing of an astronaut"], OrderPriority: -100, VisibleNormally: false, ViewType: ParamViewType.PROMPT, ChangeWeight: -5
             ));
         PromptImages = Register<List<Image>>(new("Prompt Images", "Images to include with the prompt, for eg ReVision or UnCLIP.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
-            "", IgnoreIf: "", OrderPriority: -95, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
+            "", IgnoreIf: "", OrderPriority: -95, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2 // Has special internal handling
             ));
         PromptAudios = Register<List<AudioFile>>(new("Prompt Audios", "Audio files to include with the prompt.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
-            "", IgnoreIf: "", OrderPriority: -94, VisibleNormally: false, IsAdvanced: true, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
+            "", IgnoreIf: "", OrderPriority: -94, VisibleNormally: false, IsAdvanced: true, ChangeWeight: 2 // Has special internal handling
             ));
         PromptVideos = Register<List<VideoFile>>(new("Prompt Videos", "Videos to include with the prompt.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
-            "", IgnoreIf: "", OrderPriority: -93, VisibleNormally: false, IsAdvanced: true, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
+            "", IgnoreIf: "", OrderPriority: -93, VisibleNormally: false, IsAdvanced: true, ChangeWeight: 2 // Has special internal handling
             ));
         NegativePrompt = Register<string>(new("Negative Prompt", "Like the input prompt text, but describe what NOT to generate.\nTell the AI things you don't want to see.",
             "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -90, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
@@ -1123,14 +1123,15 @@ public class T2IParamTypes
                     for (int i = 0; i < rawSplit.Length; i++)
                     {
                         string partVal = rawSplit[i];
+                        if (partVal.StartsWith("inputs/") || partVal.StartsWith("raw/") || partVal.StartsWith("Starred/"))
+                        {
+                            string filename = partVal;
+                            partVal = FilePathToDataString(session, filename, $"for param {type.Name}");
+                            rawSplit[i] = new JObject() { ["filename"] = filename, ["data"] = partVal }.ToString();
+                        }
                         if (partVal.StartsWith("data:"))
                         {
                             partVal = partVal.After(',');
-                        }
-                        if (partVal.StartsWith("inputs/") || partVal.StartsWith("raw/") || partVal.StartsWith("Starred/"))
-                        {
-                            partVal = FilePathToDataString(session, partVal, $"for param {type.Name}");
-                            rawSplit[i] = partVal;
                         }
                         if (!ValidBase64Matcher.IsOnlyMatches(partVal) || partVal.Length < 10)
                         {

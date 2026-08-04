@@ -535,18 +535,24 @@ class PromptPlusButton {
             this.regionModalProcessChanges();
             $('#text_prompt_region_modal').modal('show');
         }});
-        buttons.push({ key: 'image', key_html: 'Upload Prompt Image', title: "Upload an image to use as an image-prompt", action: () => {
+        buttons.push({ key: 'image', key_html: 'Upload Prompt Image/Video/Audio', title: "Upload an image, video, or audio file to use as a prompt input", action: () => {
             this.autoHideMenu();
             let input = document.createElement('input');
             input.type = 'file';
-            input.accept = 'image/*';
+            input.accept = 'image/*,video/*,audio/*';
             input.onchange = (e) => {
                 let file = e.target.files[0];
-                if (file && file.type.startsWith('image/')) {
+                if (file && (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))) {
                     imagePromptAddImage(file);
                 }
             };
             input.click();
+        }});
+        buttons.push({ key: 'select_image', key_html: 'Select Prompt Image/Video/Audio', title: "Select an image, video, or audio prompt input from the inputs browser", action: () => {
+            this.autoHideMenu();
+            inputBrowserHelper.openInputBrowser(null, ['image', 'video', 'audio'], file => {
+                imagePromptAddImageData(file.data.src, getMediaType(file.name), file.name, file.name);
+            });
         }});
         buttons.push({ key: 'other', key_html: 'Other...', title: "Add some other prompt syntax (that doesn't have its own menu)", action: () => {
             let text = this.altTextBox.value.trim();

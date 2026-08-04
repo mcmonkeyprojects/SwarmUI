@@ -577,8 +577,14 @@ function copy_current_image_params() {
         let val = metadata[param.id];
         if (!val && (param.type == 'image' || param.type == 'audio' || param.type == 'video')) {
             let fn = extra[`${param.id}_filename`];
-            if (fn && typeof fn == 'string' && (fn.startsWith('inputs/') || fn.startsWith('raw/') || fn.startsWith('Starred/'))) {
+            if (isValidMediaPath(fn)) {
                 val = fn;
+            }
+        }
+        else if (!val && (param.type == 'image_list' || param.type == 'audio_list' || param.type == 'video_list')) {
+            let filenames = extra[`${param.id}_filename`];
+            if (Array.isArray(filenames)) {
+                val = filenames.filter(isValidMediaPath);
             }
         }
         if (elem && val !== undefined && val !== null && val !== '') {

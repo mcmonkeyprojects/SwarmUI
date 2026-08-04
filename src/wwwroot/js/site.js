@@ -841,7 +841,7 @@ function makeTextInput(featureid, id, paramid, name, description, value, format,
         </label>
         ${tokenCounter}
         <textarea class="auto-text${(isBig ? " auto-text-block" : "")} translate translate-no-text" id="${id}" data-param_id="${paramid}" rows="${isBig ? 2 : 1}"${onInp} placeholder="${escapeHtmlNoBr(placeholder)}" data-name="${name}" autocomplete="off">${escapeHtmlNoBr(value)}</textarea>
-        ${format == 'prompt' ? `<button class="interrupt-button image-clear-button" style="display: none;">${translateableHtml("Clear Images")}</button>
+        ${format == 'prompt' ? `<button class="interrupt-button image-clear-button" style="display: none;">${translateableHtml("Clear Attachments")}</button>
         <div class="added-image-area" style="display: none;"></div>` : ''}
     </div>`;
 }
@@ -1029,11 +1029,17 @@ function makeVideoInput(featureid, id, paramid, name, description, toggles = fal
     return html;
 }
 
+/** Returns whether a value is a reusable server media path. */
+function isValidMediaPath(path) {
+    return typeof path == 'string' && (path.startsWith('inputs/') || path.startsWith('raw/') || path.startsWith('Starred/'));
+}
+
 class InputBrowserHelper {
 
     constructor() {
         this.inputImageBrowser = null;
         this.inputImageBrowserTargetElemId = null;
+        this.inputImageBrowserSelectCallback = null;
         this.currentMediaType = ['image'];
         this.uploadContainer = getRequiredElementById('input_image_browser_upload_container');
     }
@@ -1053,8 +1059,19 @@ class InputBrowserHelper {
         this.uploadContainer.innerHTML = html;
         let fileInput = document.getElementById('input_browser_modal_upload');
         if (fileInput) {
+            fileInput.accept = this.currentMediaType.map(type => `${type}/*`).join(',');
+            if (this.currentMediaType.includes('audio')) {
+                fileInput.parentElement.classList.add('drag_audio_target');
+            }
             fileInput.onchange = () => {
                 this.handleModalUpload(fileInput);
+            };
+        }
+        let pasteBox = document.getElementById('input_browser_modal_upload_pastebox');
+        if (pasteBox) {
+            pasteBox.placeholder = `Ctrl+V: Paste ${this.currentMediaType.map(type => type[0].toUpperCase() + type.substring(1)).join('/')}`;
+            pasteBox.onpaste = (e) => {
+                onFileInputPaste(e, this.currentMediaType.map(type => `${type}/`).join(','));
             };
         }
     }
@@ -1118,6 +1135,11 @@ class InputBrowserHelper {
 
     /** Called when an image is selected from the input image browser. */
     selectInputFile(file) {
+        if (this.inputImageBrowserSelectCallback) {
+            this.inputImageBrowserSelectCallback(file);
+            $('#input_image_browser_modal').modal('hide');
+            return;
+        }
         let inputElem = getRequiredElementById(this.inputImageBrowserTargetElemId);
         if (!inputElem) {
             return;
@@ -1129,10 +1151,11 @@ class InputBrowserHelper {
         $('#input_image_browser_modal').modal('hide');
     }
 
-    openInputBrowser(inputElemId, type) {
+    openInputBrowser(inputElemId, type, selectCallback = null) {
         this.currentMediaType = type;
         this.rebuildModalUploadArea();
         this.inputImageBrowserTargetElemId = inputElemId;
+        this.inputImageBrowserSelectCallback = selectCallback;
         if (!this.inputImageBrowser) {
             this.inputImageBrowser = new GenPageBrowserClass('input_image_browser_container', this.listInputFiles.bind(this), 'inputimagebrowser', 'Thumbnails', this.describeInputFile.bind(this), this.selectInputFile.bind(this));
         }

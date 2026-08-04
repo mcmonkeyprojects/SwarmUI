@@ -1422,7 +1422,7 @@ body {
     border-radius: 5px;
 }
 .image-clear-button {
-    vertical-align: middle;
+    vertical-align: center;
     display: inline-block;
 }
 .param-edit-group-container {

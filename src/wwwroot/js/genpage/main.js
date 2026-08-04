@@ -551,59 +551,80 @@ function getPromptImageDropReplaceTarget(e) {
 function imagePromptAddImage(file) {
     let replaceTarget = promptImageReplaceTarget;
     setPromptImageReplaceTarget(null);
+    let reader = new FileReader();
+    reader.onload = (e) => {
+        imagePromptAddImageData(e.target.result, file.type, e.target.result, file.name, replaceTarget);
+    };
+    reader.readAsDataURL(file);
+}
+
+/** Adds image, video, or audio data to the prompt media area. */
+function imagePromptAddImageData(data, mediaType, fileData = data, fileName = null, replaceTarget = null) {
+    if (replaceTarget && !replaceTarget.isConnected) {
+        replaceTarget = null;
+    }
     let existingImage = replaceTarget ? replaceTarget.querySelector('.alt-prompt-image') : null;
     if (replaceTarget && !existingImage) {
         replaceTarget = null;
     }
-    let reader = new FileReader();
-    reader.onload = (e) => {
-        let data = e.target.result;
-        if (replaceTarget && !replaceTarget.isConnected) {
-            imagePromptAddImage(file);
-            return;
-        }
-        let imageObject;
-        if (file.type.startsWith('video/')) {
-            imageObject = document.createElement('video');
-            imageObject.controls = false;
-            imageObject.autoplay = true;
-            imageObject.muted = true;
-            imageObject.loop = true;
-        }
-        else if (file.type.startsWith('audio/')) {
-            imageObject = document.createElement('audio');
-            imageObject.controls = true;
-        }
-        else {
-            imageObject = new Image();
-        }
-        imageObject.src = data;
-        imageObject.height = 128;
-        imageObject.className = 'alt-prompt-image';
-        imageObject.dataset.filedata = data;
-        if (existingImage) {
-            existingImage.replaceWith(imageObject);
-        }
-        else {
-            let promptImageArea = getRequiredElementById('alt_prompt_image_area');
-            let imageContainer = createDiv(null, 'alt-prompt-image-container');
-            let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
-            imageRemoveButton.addEventListener('click', () => {
-                imageContainer.remove();
-                autoRevealRevision();
-                genTabLayout.altPromptSizeHandle();
-            });
-            imageRemoveButton.title = 'Remove this image';
-            imageContainer.appendChild(imageRemoveButton);
-            imageContainer.appendChild(imageObject);
-            promptImageArea.appendChild(imageContainer);
-        }
-        let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
-        clearButton.style.display = '';
-        showRevisionInputs(true);
-        genTabLayout.altPromptSizeHandle();
-    };
-    reader.readAsDataURL(file);
+    let imageObject;
+    if (mediaType == 'video' || mediaType.startsWith('video/')) {
+        imageObject = document.createElement('video');
+        imageObject.controls = false;
+        imageObject.autoplay = true;
+        imageObject.muted = true;
+        imageObject.loop = true;
+    }
+    else if (mediaType == 'audio' || mediaType.startsWith('audio/')) {
+        imageObject = document.createElement('audio');
+        imageObject.controls = true;
+    }
+    else {
+        imageObject = new Image();
+    }
+    imageObject.height = 128;
+    imageObject.className = 'alt-prompt-image';
+    imageObject.dataset.filedata = fileData;
+    fileName = fileName || (isValidMediaPath(fileData) ? fileData : null);
+    if (fileName) {
+        imageObject.dataset.filename = fileName;
+    }
+    let type = mediaType.split('/')[0];
+    if (type == 'image') {
+        imageObject.addEventListener('load', () => {
+            imageObject.dataset.resolution = `${imageObject.naturalWidth}x${imageObject.naturalHeight}`;
+        });
+    }
+    else {
+        imageObject.addEventListener('loadedmetadata', () => {
+            imageObject.dataset.duration = `${imageObject.duration}`;
+            if (type == 'video') {
+                imageObject.dataset.resolution = `${imageObject.videoWidth}x${imageObject.videoHeight}`;
+            }
+        });
+    }
+    imageObject.src = data;
+    if (existingImage) {
+        existingImage.replaceWith(imageObject);
+    }
+    else {
+        let promptImageArea = getRequiredElementById('alt_prompt_image_area');
+        let imageContainer = createDiv(null, 'alt-prompt-image-container');
+        let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
+        imageRemoveButton.addEventListener('click', () => {
+            imageContainer.remove();
+            autoRevealRevision();
+            genTabLayout.altPromptSizeHandle();
+        });
+        imageRemoveButton.title = `Remove this ${type}`;
+        imageContainer.appendChild(imageRemoveButton);
+        imageContainer.appendChild(imageObject);
+        promptImageArea.appendChild(imageContainer);
+    }
+    let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
+    clearButton.style.display = '';
+    showRevisionInputs(true);
+    genTabLayout.altPromptSizeHandle();
 }
 
 function imagePromptInputHandler() {
