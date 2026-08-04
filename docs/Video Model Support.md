@@ -22,10 +22,9 @@ Old or bad options also tracked listed:
 
 ## Current Recommendations
 
-Video model(s) most worth using, as of December 2025:
+Video model(s) most worth using, as of August 2026:
 
-- Wan 2.2 or 2.1, in 14B either way. It's the best you can get locally currently.
-- Kandinsky 19B looks interesting, but is new and struggling to reach its potential. Could be worth playing with.
+- MiniMax H3 is the crown champion, everything before it is outdated and irrelevant in comparison!
 
 ## Demo Gifs
 
@@ -478,6 +477,10 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
         - Wan 2.2 has an official prompting guide book: <https://alidocs.dingtalk.com/i/nodes/EpGBa2Lm8aZxe5myC99MelA2WgN7R35y>
 
 # MiniMax H3
+
+![minimax_h3](https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792)
+
+*(The test prompt is frankly too easy for H3! Note the prompt doesn't specify audio so the video produced nonsense. This is a prompt issue not a model bug.)*
 
 - The [MiniMax H3](<https://modelscope.cn/models/MiniMax/MiniMax-H3>) (Hailuo 3) family of video models is supported in SwarmUI!
 - It comes in two primary flavors: "FL2AV", "Ref2AV"
