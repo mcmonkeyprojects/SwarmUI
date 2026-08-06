@@ -163,6 +163,8 @@ class GenTabLayout {
         this.mobileHintRight = null;
         /** Bottom edge swipe-hint button. */
         this.mobileHintBottom = null;
+        /** Whether the mobile prompt textboxes currently have focus. */
+        this.mobilePromptFocused = false;
         if (this.isSmallWindow) {
             this.bottomShut = true;
             this.leftShut = true;
@@ -170,12 +172,36 @@ class GenTabLayout {
         }
     }
 
-    /** Effective viewport height, accounting for mobile browser chrome / soft keyboard when possible. */
+    /** Visible viewport height, using visualViewport when available. */
     getViewportHeight() {
         if (window.visualViewport && window.visualViewport.height) {
-            return window.visualViewport.height;
+            return Math.round(window.visualViewport.height);
         }
         return window.innerHeight;
+    }
+
+    /** Soft-keyboard overlap below the visual viewport, in px. */
+    getKeyboardInset() {
+        if (!this.isSmallWindow || !this.mobilePromptFocused || !window.visualViewport) {
+            return 0;
+        }
+        let inset = Math.max(0, Math.round(window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop)));
+        if (inset < 60) {
+            return 0;
+        }
+        return inset;
+    }
+
+    /** Syncs keyboard-related body classes and CSS vars. Returns true if the bottom peek should hide. */
+    syncMobileKeyboardState() {
+        let inset = this.getKeyboardInset();
+        let vvShrank = window.visualViewport
+            && (window.innerHeight - window.visualViewport.height) > 100;
+        let hidePeek = this.isSmallWindow && (this.mobilePromptFocused || vvShrank);
+        document.documentElement.style.setProperty('--mobile-keyboard-inset', `${inset}px`);
+        document.body.classList.toggle('mobile-keyboard-open', hidePeek);
+        document.body.classList.toggle('mobile-keyboard-pin', inset > 0);
+        return hidePeek;
     }
 
     /** Whether the mobile left (inputs) overlay should be open. */
@@ -225,26 +251,14 @@ class GenTabLayout {
         }
     }
 
-    /** Clears mobile-only inline positioning when leaving small-window mode. */
+    /** Clears mobile overlay state when leaving small-window mode. */
     clearMobileInlineStyles() {
         this.clearMobileDragTransforms();
-        this.inputSidebar.style.top = '';
-        this.inputSidebar.style.bottom = '';
-        this.inputSidebar.style.left = '';
-        this.inputSidebar.style.right = '';
-        this.inputSidebar.style.paddingBottom = '';
-        this.currentImageBatch.style.top = '';
-        this.currentImageBatch.style.bottom = '';
-        this.currentImageBatch.style.left = '';
-        this.currentImageBatch.style.right = '';
-        this.currentImageBatch.style.paddingBottom = '';
-        this.bottomBar.style.top = '';
-        this.bottomBar.style.bottom = '';
-        this.altRegion.style.bottom = '';
-        this.altRegion.style.left = '';
-        this.altRegion.style.right = '';
-        this.altRegion.style.position = '';
-        document.body.classList.remove('mobile-panel-left-open', 'mobile-panel-right-open', 'mobile-panel-bottom-open', 'mobile-panels-all-shut', 'mobile-panel-dragging');
+        this.altRegion.style.visibility = '';
+        document.documentElement.style.removeProperty('--mobile-keyboard-inset');
+        document.documentElement.style.removeProperty('--mobile-bottom-peek');
+        document.documentElement.style.removeProperty('--mobile-alt-height');
+        document.body.classList.remove('mobile-panel-left-open', 'mobile-panel-right-open', 'mobile-panel-bottom-open', 'mobile-panels-all-shut', 'mobile-panel-dragging', 'mobile-keyboard-pin', 'mobile-keyboard-open');
     }
 
     /** Syncs body classes that drive mobile overlay CSS. */
@@ -580,11 +594,11 @@ class GenTabLayout {
 
     /** Mobile overlay positioning path (small-window only). */
     reapplyMobilePositions(rootTop, viewH) {
-        let peek = this.getMobileBottomPeekPx();
+        let hideBottomPeek = this.syncMobileKeyboardState();
+        let peek = hideBottomPeek ? 0 : this.getMobileBottomPeekPx();
         document.documentElement.style.setProperty('--mobile-bottom-peek', `${peek}px`);
         let topHeight = Math.max(120, viewH - rootTop - peek);
         this.syncMobilePanelClasses();
-        // Center fills the top area; side panels are CSS overlays.
         this.inputSidebar.style.display = '';
         this.inputSidebar.style.width = '100%';
         this.inputSidebar.style.height = '';
@@ -597,15 +611,8 @@ class GenTabLayout {
         this.leftSplitBar.style.height = `${topHeight}px`;
         this.rightSplitBar.style.height = `${topHeight}px`;
         this.bottomBar.style.height = `${Math.max(200, viewH - rootTop)}px`;
-        if (this.isMobileBottomOpen()) {
-            this.altRegion.style.visibility = 'hidden';
-        }
-        else {
-            this.altRegion.style.visibility = '';
-        }
         this.altRegion.style.width = '100%';
         this.altRegion.style.top = '';
-        // Measure alt after width settle for overlay bottom inset.
         let altHeight = this.altRegion.style.display == 'none' || this.isMobileBottomOpen() ? 0 : this.altRegion.offsetHeight;
         document.documentElement.style.setProperty('--mobile-alt-height', `${altHeight}px`);
         this.currentImageWrapbox.style.width = '100%';
@@ -836,7 +843,6 @@ class GenTabLayout {
                         if (wantHorizontal && absX > absY) {
                             this.mobileDragActive = true;
                             document.body.classList.add('mobile-panel-dragging');
-                            // Ensure the panel is visible under the finger while opening.
                             if (this.mobileDragOpening) {
                                 if (this.mobileDragPanel == 'left') {
                                     document.body.classList.add('mobile-panel-left-open');
@@ -859,7 +865,6 @@ class GenTabLayout {
                             }
                         }
                         else {
-                            // Axis mismatch: cancel panel gesture so scrolling can proceed.
                             this.mobileDragPanel = null;
                             this.swipeStartX = -1;
                             this.swipeStartY = -1;
@@ -1044,6 +1049,25 @@ class GenTabLayout {
             window.visualViewport.addEventListener('resize', vvHandler);
             window.visualViewport.addEventListener('scroll', vvHandler);
         }
+        let promptFocusHandler = () => {
+            this.mobilePromptFocused = true;
+            if (this.isSmallWindow) {
+                this.reapplyPositions();
+            }
+        };
+        let promptBlurHandler = () => {
+            setTimeout(() => {
+                let active = document.activeElement;
+                this.mobilePromptFocused = active == this.altText || active == this.altNegText;
+                if (this.isSmallWindow) {
+                    this.reapplyPositions();
+                }
+            }, 50);
+        };
+        this.altText.addEventListener('focus', promptFocusHandler);
+        this.altNegText.addEventListener('focus', promptFocusHandler);
+        this.altText.addEventListener('blur', promptBlurHandler);
+        this.altNegText.addEventListener('blur', promptBlurHandler);
         textPromptAddKeydownHandler(getRequiredElementById('edit_wildcard_contents'));
         this.initMobileOverlayUi();
         this.reapplyPositions();
