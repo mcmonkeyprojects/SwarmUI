@@ -367,3 +367,14 @@ KreaGoneWild:
     tags:
     - parameters
     - nodes
+
+SageAttentionOptout:
+    # Wraps https://github.com/EnviralDesign/comfy-sageattention-optout-customnodes by EnviralDesign
+    author: barelymining
+    description: Adds a per-generation attention mode override dropdown (disabled/sdpa/pytorch/sage/flash), letting you opt specific models out of global SageAttention without restarting ComfyUI.
+    url: https://github.com/barelymining/SwarmUI-SageAttentionOptout
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+    - nodes
