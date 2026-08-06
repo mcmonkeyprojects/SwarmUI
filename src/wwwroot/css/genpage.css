@@ -2345,13 +2345,12 @@ body {
 /* ===== Mobile Generate-tab overlay layout (small-window only) ===== */
 .small-window #Text2Image {
     position: relative;
-    overflow: hidden;
 }
 .small-window #t2i_top_bar {
     position: relative;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
     white-space: normal;
 }
 .small-window .t2i-area-quicktools {
@@ -2369,6 +2368,7 @@ body {
     max-width: 100%;
     margin: 0;
     padding: 0;
+    overflow: visible;
     white-space: normal;
 }
 .small-window #current_image_wrapbox,
@@ -2399,11 +2399,11 @@ body {
     transform: translateX(105%);
 }
 .small-window.mobile-panel-left-open #input_sidebar {
-    transform: translateX(0);
+    transform: none;
     pointer-events: auto;
 }
 .small-window.mobile-panel-right-open #current_image_batch_wrapper {
-    transform: translateX(0);
+    transform: none;
     pointer-events: auto;
 }
 .small-window #alt_prompt_region {
@@ -2414,7 +2414,7 @@ body {
     top: auto !important;
     width: 100% !important;
     max-width: 100%;
-    z-index: 28;
+    z-index: 40;
     padding: 0.4rem 0.5rem 0.35rem 0.5rem;
     box-sizing: border-box;
     background: color-mix(in srgb, var(--background) 92%, transparent);
@@ -2453,7 +2453,7 @@ body {
     overflow: hidden;
 }
 .small-window.mobile-panel-bottom-open #t2i_bottom_bar {
-    transform: translateY(0);
+    transform: none;
 }
 .small-window:not(.mobile-panel-bottom-open) #bottom_info_bar {
     display: none;

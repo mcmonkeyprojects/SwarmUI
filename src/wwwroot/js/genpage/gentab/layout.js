@@ -172,10 +172,14 @@ class GenTabLayout {
         }
     }
 
-    /** Visible viewport height, using visualViewport when available. */
+    /** Height used for Generate layout geometry (layout viewport). */
     getViewportHeight() {
         if (window.visualViewport && window.visualViewport.height) {
-            return Math.round(window.visualViewport.height);
+            let vv = Math.round(window.visualViewport.height);
+            if (window.innerHeight - vv > 100) {
+                return window.innerHeight;
+            }
+            return vv;
         }
         return window.innerHeight;
     }
