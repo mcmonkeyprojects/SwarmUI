@@ -68,8 +68,7 @@ public class ComfyUIBackendExtension : Extension
         ["TeaCache"] = "teacache",
         ["TeaCacheForVidGen"] = "teacache",
         ["TeaCacheForImgGen"] = "teacache_oldvers",
-        ["OverrideCLIPDevice"] = "set_clip_device",
-        ["SeedVR2Conditioning"] = "seedvr2",
+        ["OverrideCLIPDevice"] = "set_clip_device"
     };
 
     /// <inheritdoc/>
@@ -805,24 +804,24 @@ public class ComfyUIBackendExtension : Extension
         // ================================================ SeedVR ================================================
         GroupSeedVR = new T2IParamGroup("SeedVR", Toggles: true, Open: false, OrderPriority: -2.5, Description: "SeedVR2 is a one-step restoration model, run over the result of the normal generation.");
         SeedVRModel = T2IParamTypes.Register<T2IModel>(new("SeedVR Model", "Which SeedVR2 model to restore with.",
-            "None", IgnoreIf: "None", FeatureFlag: "seedvr2", Group: GroupSeedVR, Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true, OrderPriority: -10,
+            "None", IgnoreIf: "None", FeatureFlag: "comfyui", Group: GroupSeedVR, Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true, OrderPriority: -10,
             GetValues: (session) => ["None", .. T2IParamTypes.CleanModelList(Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "seedvr2").OrderBy(m => m.Name).Select(m => m.Name))]
             ));
         SeedVRUpscale = T2IParamTypes.Register<double>(new("SeedVR Upscale", "Optional upscale of the image before SeedVR2 runs over it.\nSetting to '1' disables the upscale, and just restores at the current size.",
-            "1", Min: 0.25, Max: 8, ViewMax: 4, Step: 0.25, OrderPriority: -9, ViewType: ParamViewType.SLIDER, FeatureFlag: "seedvr2", Group: GroupSeedVR, DoNotPreview: true, Examples: ["1", "1.5", "2"]
+            "1", Min: 0.25, Max: 8, ViewMax: 4, Step: 0.25, OrderPriority: -9, ViewType: ParamViewType.SLIDER, FeatureFlag: "comfyui", Group: GroupSeedVR, DoNotPreview: true, Examples: ["1", "1.5", "2"]
             ));
         SeedVRUpscaleMethod = T2IParamTypes.Register<string>(new("SeedVR Upscale Method", "How to upscale the image before SeedVR2 runs over it, if upscaling is used.",
-            "pixel-lanczos", OrderPriority: -8, FeatureFlag: "seedvr2", Group: GroupSeedVR, ChangeWeight: 1,
+            "pixel-lanczos", OrderPriority: -8, FeatureFlag: "comfyui", Group: GroupSeedVR, ChangeWeight: 1,
             GetValues: (session) => RefinerUpscaleMethod.Type.GetValues(session), DependNonDefault: SeedVRUpscale.Type.ID
             ));
         SeedVRColorCorrectionBehavior = T2IParamTypes.Register<string>(new("SeedVR Color Correction Behavior", "How to match the colors of a SeedVR2 restore back to the image it was given.\n'None' = Do not attempt color correction, only align the geometry.\n'CIELAB' = Transfer the color in CIELAB space, preserving detail.\n'Wavelet' = Transfer the low-frequency color, keeping the upscaled high-frequency detail.\n'AdaIN' = Match the per-channel mean and standard deviation.",
-            "none", IgnoreIf: "none", FeatureFlag: "seedvr2", Group: GroupSeedVR, IsAdvanced: true, OrderPriority: 1, GetValues: (_) => ["none///None", "lab///CIELAB", "wavelet///Wavelet", "adain///AdaIN"]
+            "none", IgnoreIf: "none", FeatureFlag: "comfyui", Group: GroupSeedVR, IsAdvanced: true, OrderPriority: 1, GetValues: (_) => ["none///None", "lab///CIELAB", "wavelet///Wavelet", "adain///AdaIN"]
             ));
         SeedVRSplitLatent = T2IParamTypes.Register<bool>(new("SeedVR Split Latent", "If enabled, samples a SeedVR2 video restore as chunks of frames instead of all at once, sized to fit in free VRAM.\nChunking reduces VRAM consumption.\nDoes nothing to a single image, or to a video that already fits.",
-            "false", IgnoreIf: "false", FeatureFlag: "seedvr2", Group: GroupSeedVR, IsAdvanced: true, OrderPriority: 2
+            "false", IgnoreIf: "false", FeatureFlag: "comfyui", Group: GroupSeedVR, IsAdvanced: true, OrderPriority: 2
             ));
         SeedVRTemporalVideoOverlap = T2IParamTypes.Register<int>(new("SeedVR Temporal Video Overlap", "How many frames of overlap to keep between 'SeedVR Split Latent' chunks.\nHigher overlap hides the chunk seams better but takes longer.",
-            "0", Min: 0, Max: 4096, Step: 1, IsAdvanced: true, FeatureFlag: "seedvr2", Group: GroupSeedVR, OrderPriority: 3
+            "0", Min: 0, Max: 4096, Step: 1, IsAdvanced: true, FeatureFlag: "comfyui", Group: GroupSeedVR, OrderPriority: 3
             ));
         List<string> interpolators = ["RIFE", "FILM", "GIMM-VFI"];
         VideoPreviewType = T2IParamTypes.Register<string>(new("Video Preview Type", "How to display previews for generating videos.\n'Animate' shows a low-res animated video preview.\n'iterate' shows one frame at a time while it goes.\n'one' displays just the first frame.\n'none' disables previews.",

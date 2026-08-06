@@ -2123,6 +2123,7 @@ public partial class WorkflowGenerator
             ["crop"] = "disabled"
         });
         CurrentMedia = CurrentMedia.WithPath([scaled, 0]);
+        // TODO: Update width/height properly
         if (genInfo.Width?.Type == JTokenType.Integer && genInfo.Height?.Type == JTokenType.Integer)
         {
             CurrentMedia.Width = (int)genInfo.Width;
