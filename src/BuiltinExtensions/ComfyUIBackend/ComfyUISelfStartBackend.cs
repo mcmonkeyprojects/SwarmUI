@@ -85,10 +85,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
-    public static string SwarmValidatedFrontendVersion = "1.45.20";
+    /// <summary>The current version of the comfy frontend package that has been confirmed to not break.</summary>
+    public static string SwarmValidatedFrontendVersion = "1.47.12";
 
     /// <summary>The current known version of PyTorch.</summary>
-    public static string CurrentTorchVersion = "2.12.1";
+    public static string CurrentTorchVersion = "2.13.0";
 
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
@@ -582,12 +583,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 Logs.Warning($"(Developer Notice) ComfyUI Frontend target version is {frontVers}, but validated version is {SwarmValidatedFrontendVersion}");
             }
             string actualTemplateVers = getVers("comfyui_workflow_templates");
-            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers) && (actualTemplateVers is null || Version.Parse(actualTemplateVers) < templateVers))
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers) && (actualTemplateVers is null || ParseVersion(actualTemplateVers) < templateVers))
             {
                 await update("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
             }
             string actualEmbedVers = getVers("comfyui_embedded_docs");
-            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-embedded-docs", out Version embedDocsVers) && (actualEmbedVers is null || Version.Parse(actualEmbedVers) < embedDocsVers))
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-embedded-docs", out Version embedDocsVers) && (actualEmbedVers is null || ParseVersion(actualEmbedVers) < embedDocsVers))
             {
                 await update("comfyui_embedded_docs", $"comfyui-embedded-docs=={embedDocsVers}");
             }
@@ -600,12 +601,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await install("comfyui_frontend_package", "comfyui-frontend-package");
             }
             string actualKitchenVers = getVers("comfy_kitchen");
-            if (reqs.TryGetValue("comfy-kitchen", out Version kitchenVers) && (actualKitchenVers is null || Version.Parse(actualKitchenVers) < kitchenVers))
+            if (reqs.TryGetValue("comfy-kitchen", out Version kitchenVers) && (actualKitchenVers is null || ParseVersion(actualKitchenVers) < kitchenVers))
             {
                 await update("comfy_kitchen", $"comfy-kitchen=={kitchenVers}");
             }
             string actualAimdoVers = getVers("comfy_aimdo");
-            if (reqs.TryGetValue("comfy-aimdo", out Version aimdoVers) && (actualAimdoVers is null || Version.Parse(actualAimdoVers) < aimdoVers))
+            if (reqs.TryGetValue("comfy-aimdo", out Version aimdoVers) && (actualAimdoVers is null || ParseVersion(actualAimdoVers) < aimdoVers))
             {
                 await update("comfy_aimdo", $"comfy-aimdo=={aimdoVers}");
             }
@@ -718,10 +719,18 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
     }
 
-    /// <summary>Wraps <see cref="Version.Parse(string)"/> but accounting for '.dev' versions.</summary>
+    /// <summary>Wraps <see cref="Version.Parse(string)"/> but accounting for '.dev' versions, with a null fallback for invalid versions.</summary>
     public static Version ParseVersion(string vers)
     {
-        return Version.Parse(vers.Before(".dev"));
+        try
+        {
+            return Version.Parse(vers.Before(".dev"));
+        }
+        catch (Exception ex)
+        {
+            Logs.Debug($"While parsing version '{vers}', failed: {ex.ReadableString()}");
+            return null;
+        }
     }
 
     /// <summary>Get the version of a single installed pip package.</summary>

@@ -7,7 +7,6 @@
 [Stable Diffusion 3](#stable-diffusion-3) | MMDiT | 2024 | Stability AI | 2B | Yes | Outdated, prefer 3.5 |
 [Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Partial | Outdated, Good Quality for its time |
 [Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Partial | Outdated, Good Quality for its time |
-[AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Outdated, High Quality for its time |
 [Flux.2](#flux-2) | MMDiT | 2025 | Black Forest Labs | 4B, 9B, 32B | Minimal | Recent, Incredible Quality, choice of speed or quality preference |
 [Chroma](#chroma) | MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Decent Quality |
@@ -18,9 +17,7 @@
 [Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Modern, Great Quality, lightweight |
 [Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
-[ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
-[Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
 [Ideogram 4](#ideogram-4) | DiT | 2026 | Ideogram AI | 9B | Yes | Modern, advanced on input understanding |
 [Krea 2](#krea-2) | DiT | 2026 | Krea AI | 12B | Yes | Modern, extremely smart and great quality |
 [Boogu](#boogu) | MMDiT | 2026 | Boogu | 10B | Minimal | Modern, fast |
@@ -34,6 +31,7 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 [Segmind SSD 1B](/docs/Obscure%20Model%20Support.md#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Partial | Outdated |
 [Stable Cascade](/docs/Obscure%20Model%20Support.md#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Partial | Outdated |
 [PixArt Sigma](/docs/Obscure%20Model%20Support.md#pixart-sigma) | DiT | 2024 | PixArt | 1B | ? | Outdated |
+[AuraFlow](/docs/Obscure%20Model%20Support.md#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
 [Nvidia Sana](/docs/Obscure%20Model%20Support.md#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Just Bad |
 [Nvidia Cosmos Predict2](/docs/Obscure%20Model%20Support.md#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Just Bad |
 [HiDream i1](/docs/Obscure%20Model%20Support.md#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
@@ -43,6 +41,8 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 [Zeta Chroma](/docs/Obscure%20Model%20Support.md#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
 [PixelDiT](/docs/Obscure%20Model%20Support.md#pixeldit) | Pixel DiT | 2026 | NVIDIA | 1.3B | Minimal | Modern, fast, pixel-space, but very bad relative quality on launch |
 [MageFlow](/docs/Obscure%20Model%20Support.md#mageflow) | MMDiT | 2026 | Microsoft | 4B | No | Very bad quality compared to contemporary models |
+[ERNIE](/docs/Obscure%20Model%20Support.md#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
+[Lens](/docs/Obscure%20Model%20Support.md#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -153,20 +153,6 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - You can also use [GGUF Versions](#gguf-quantized-models) of the models.
     - SD3.5 Medium <https://huggingface.co/city96/stable-diffusion-3.5-medium-gguf/tree/main>
 - SD 3.5 Medium support resolutions from 512x512 to 1440x1440, and the model metadata of the official model recommends 1440x1440. However, the official model is not good at this resolution. You will want to click the `☰` hamburger menu on a model, then `Edit Metadata`, then change the resolution to `1024x1024` for better results. You can of course set the `Aspect Ratio` parameter to `Custom` and the edit resolutions on the fly per-image.
-
-# AuraFlow
-
-![img](/docs/images/models/auraflow-02.jpg)
-*(above image is AuraFlow v0.2)*
-
-- [Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) and [v0.2](https://huggingface.co/fal/AuraFlow-v0.2) and v0.3 are supported in Swarm, but you must manually select architecture to use it.
-- The model used "Pile T5-XXL" as it's text encoder.
-- The model used the SDXL VAE as its VAE.
-- This model group was quickly forgotten by the community due to quality issues, but came back into popular attention much later via community finetune "Pony v7".
-    - Pony wants to be in the `diffusion_models` folder, but regular AuraFlow goes in `Stable-Diffusion` folder
-- Parameters and usage is the same as any other normal model.
-    - CFG recommended around 3.5 or 4.
-    - Pony v7 allows higher resolutions than base AuraFlow normally targets.
 
 # Black Forest Labs' Flux.1 Models
 
@@ -578,31 +564,6 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Sampler:** Defaults to `ER-SDE-Solver`, but all common samplers work. They officially recommend also trying out `Euler Ancestral` or `DPM++ 2M SDE`
     - **Scheduler:** Default is fine (`Simple`), or you can experiment at will. The model is adaptable.
 
-# ERNIE
-
-![img](/docs/images/models/ernie.jpg)
-
-*(ERNIE Base, Steps=20, CFG=4)*
-
-- Baidu's [ERNIE Image](<https://huggingface.co/baidu/ERNIE-Image>) is supported in SwarmUI!
-- It is an 8B model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
-    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/ERNIE-Image - turbo](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors>)
-    - Or the base version (in fat BF16) [Comfy-Org/ERNIE-Image - base](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image.safetensors>)
-    - FP8 links pending
-    - Save in `diffusion_models`
-- Uses the Flux.2 VAE, will be downloaded and handled automatically
-- Uses the Ministral 3 3b text encoder, will be downloaded and handled automatically
-- **Parameters:**
-    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply.
-    - **Sampler:** Default is fine.
-    - **Scheduler:** Default is fine.
-    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `4`)
-    - **Steps:** For Turbo `8` is recommended. For Base, 20+ steps as normal.
-    - **Resolution:** Side length `1024` is the standard.
-        - Down to 512 works still, up to 1536 is fine.
-        - Out of range doesn't corrupt immediately but will fail at composition.
-        - Prefers aspects from square to 16:9, gets funny in 21:9
-
 # HiDream-O1
 
 ![img](/docs/images/models/hidreamo1.jpg)
@@ -630,27 +591,6 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - **Dev Lora:**
     - A dev lora can be downloaded here [Kijai/hidream-O1-image_comfy](<https://huggingface.co/Kijai/hidream-O1-image_comfy/resolve/main/loras/hidream_o1_dev_lora_rank_64_bf16_pruned_v1.safetensors>). It allows use of the base model with the distilled behavior from the Dev model. 8 steps will generate a coherent image of lower quality, 16 steps seems closer to original quality. Use CFG Scale 1.
 
-# Lens
-
-![img](/docs/images/models/lens.jpg)
-
-*(Lens Turbo fp8, Steps=8, CFG=1, SideLength=1440)*
-
-- Microsoft's [Lens](<https://huggingface.co/microsoft/Lens>) is supported in SwarmUI!
-- It is a 4B model (Officially listed as 3.8B), with a base model and an official turbo distill designed to run fast.
-    - The raw base model (FP8) can be downloaded here: [Comfy-Org/Lens](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_mxfp8.safetensors>)
-    - The Turbo model (FP8) can be downloaded here: [Comfy-Org/Lens - Turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_mxfp8.safetensors>)
-    - Or fat BF16 versions [Comfy-Org/Lens - base bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_bf16.safetensors>) [Comfy-Org/Lens - turbo bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_bf16.safetensors>)
-    - Save in `diffusion_models`
-- Uses the Flux.2 VAE, will be downloaded and handled automatically
-- Uses the GPT-OSS 20B text encoder, will be downloaded and handled automatically
-- **Parameters:**
-    - **Sampler:** Default is fine.
-    - **Scheduler:** Default is fine.
-    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
-    - **Steps:** For Turbo, `4` is recommended, `8` works well. For Base, `20` as normal.
-    - **Resolution:** Side length `1440` is the official default, but 1024 is a reasonable option. It retains coherence down to about 512 and up to about 2048.
-
 # Ideogram 4
 
 - [Ideogram 4](<https://huggingface.co/ideogram-ai/ideogram-4-fp8>) is supported in SwarmUI!
@@ -677,6 +617,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Sigma Shift:** Default is `5`, but `1` is the legacy default. Sigma shift does nothing on the Ideogram official scheduler but does do things on normal schedulers.
 
 # Krea 2
+
+![img](/docs/images/models/krea2.jpg)
 
 - Krea 2 is supported in SwarmUI!
 - It is a 13B model (reported officially as 12B) with a Base ('Raw') and Turbo variant.
@@ -785,11 +727,14 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 ### SegMind SSD-1B
 ### Stable Cascade
 ### PixArt Sigma
+### AuraFlow
 ### NVIDIA Sana
 ### HiDream-i1
 ### Cosmos Predict2
 ### OmniGen 2
 ### Ovis
+# ERNIE
+# Lens
 These obscure/old/bad/unpopular/etc. models have been moved to [Obscure Model Support](/docs/Obscure%20Model%20Support.md)
 
 <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

@@ -1375,25 +1375,82 @@ body {
     max-width: calc(100% - 7rem);
 }
 .alt-prompt-image-container {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
     position: relative;
     background-color: color-mix(in srgb, transparent 80%, var(--background));
+    border: 1px solid var(--light-border);
+    border-radius: 0.5rem;
+    overflow: visible;
     transition: background-color 0.2s ease-out;
     margin: 0 2px;
+    min-width: 30px;
+    vertical-align: top;
+    width: fit-content;
+}
+.alt-prompt-image-container-header {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 100%;
+    padding: 0 0 0 0.2rem;
+    width: 0;
+}
+.alt-prompt-image-container-header-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.6rem;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .alt-prompt-image {
+    align-self: center;
+    display: block;
     max-height: 128px;
-    margin-right: 1px;
+    max-width: 100%;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    width: auto;
 }
-.alt-prompt-image-container-remove-button {
+.alt-prompt-image-container-menu-button {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    z-index: 100;
+    right: -1px;
+    top: 1rem;
+    z-index: 1;
     opacity: 0.7;
     background-color: color-mix(in srgb, transparent 80%, var(--background));
-    border: none;
-    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, transparent 30%, var(--emphasis));
+    border-radius: 0 0 0 0.25rem;
+    padding: 0 0.25rem;
+    line-height: 1rem;
+    font-weight: bold;
+    color: var(--text);
+    transition: background-color 0.2s ease-out;
+    cursor: pointer;
+    text-align: center;
+}
+.alt-prompt-image-container:hover .alt-prompt-image-container-menu-button {
+    opacity: 1.0;
+    background-color: color-mix(in srgb, transparent 50%, var(--background));
+    border-color: var(--emphasis);
+}
+.alt-prompt-image-container .alt-prompt-image-container-menu-button:hover {
+    opacity: 1.0;
+    background-color: color-mix(in srgb, var(--emphasis) 70%, black);
+    border-color: black;
+}
+.alt-prompt-image-container-remove-button {
+    flex-shrink: 0;
+    position: relative;
+    right: -1px;
+    top: -1px;
+    opacity: 0.7;
+    background-color: color-mix(in srgb, transparent 80%, var(--background));
+    border: 1px solid color-mix(in srgb, transparent 30%, var(--red));
+    border-radius: 0 0.5rem 0 0;
     padding-left: 0.2rem;
     padding-right: 0.25rem;
     padding-bottom: 0.25rem;
@@ -1402,26 +1459,24 @@ body {
     color: var(--text);
     transition: background-color 0.2s ease-out;
     cursor: pointer;
-    border: 1px solid transparent;
     text-align: center;
 }
 .alt-prompt-image-container:hover .alt-prompt-image-container-remove-button {
     opacity: 1.0;
     background-color: color-mix(in srgb, transparent 50%, var(--background));
-    border: 1px solid var(--red);
+    border-color: var(--red);
 }
 .alt-prompt-image-container-remove-button:hover {
     opacity: 1.0;
     background-color: color-mix(in srgb, var(--red) 70%, black) !important;
-    border: 1px solid black;
-    cursor: pointer;
+    border-color: black;
 }
 .alt-prompt-image-container.image-drop-replace-target .alt-prompt-image {
     outline: 4px solid var(--emphasis);
     border-radius: 5px;
 }
 .image-clear-button {
-    vertical-align: middle;
+    vertical-align: center;
     display: inline-block;
 }
 .param-edit-group-container {

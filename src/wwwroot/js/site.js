@@ -17,9 +17,9 @@ function enableSliderAbove(div) {
     enableSliderForBox(findParentOfClass(div, 'auto-slider-box'));
 }
 
-function enableSliderForBox(div) {
+function enableSliderForBox(div, number = null) {
     let range = div.querySelector('input[type="range"]');
-    let number = div.querySelector('input[type="number"]');
+    number = number || div.querySelector('input[type="number"]');
     number.addEventListener('input', (event) => {
         let newVal = number.value;
         if (!event.shiftKey) {
@@ -489,6 +489,7 @@ function doToggleEnable(id) {
         return;
     }
     let elem2 = document.getElementById(id + '_rangeslider');
+    let elem3 = document.getElementById(id + '_seconds');
     if (!toggler.checked) {
         if (elem.classList.contains('disabled-input')) {
             return;
@@ -496,6 +497,9 @@ function doToggleEnable(id) {
         elem.classList.add('disabled-input');
         if (elem2) {
             elem2.classList.add('disabled-input');
+        }
+        if (elem3) {
+            elem3.classList.add('disabled-input');
         }
         if (!elem.dataset.has_toggle_handler) {
             function autoActivate() {
@@ -508,6 +512,10 @@ function doToggleEnable(id) {
                 elem2.addEventListener('focus', autoActivate);
                 elem2.addEventListener('change', autoActivate);
             }
+            if (elem3) {
+                elem3.addEventListener('focus', autoActivate);
+                elem3.addEventListener('change', autoActivate);
+            }
             elem.dataset.has_toggle_handler = true;
         }
     }
@@ -518,6 +526,9 @@ function doToggleEnable(id) {
         elem.classList.remove('disabled-input');
         if (elem2) {
             elem2.classList.remove('disabled-input');
+        }
+        if (elem3) {
+            elem3.classList.remove('disabled-input');
         }
     }
     if (typeof scheduleParamUnsupportUpdate == 'function') {
@@ -611,6 +622,9 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
             elem.dataset.width = img.videoWidth;
             elem.dataset.height = img.videoHeight;
             elem.dataset.resolution = `${img.videoWidth}x${img.videoHeight}`;
+        }
+        else {
+            label.textContent = shortName;
         }
         longName = longName && longName.length > 500 ? longName.substring(0, 150) + '...' : longName;
         elem.dataset.filename = longName || shortName;
@@ -748,6 +762,14 @@ function updateRangeStyle(e) {
     el.parentElement.style.setProperty("--range-value", `${(el.value-el.min)/(el.max-el.min)*100}%`);
 }
 
+/** Builds the range portion shared by slider-based inputs. */
+function makeSliderRange(id, value, min, max, step, isPot = false) {
+    return `
+        <div class="auto-slider-range-wrapper" style="${getRangeStyle(value, min, max)}">
+            <input class="auto-slider-range" type="range" id="${id}_rangeslider" value="${value}" min="${min}" max="${max}" step="${step}" data-ispot="${isPot}" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+        </div>`;
+}
+
 function makeSliderInput(featureid, id, paramid, name, description, value, min, max, view_min = 0, view_max = 0, step = 1, isPot = false, toggles = false, popover_button = true) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
@@ -761,9 +783,7 @@ function makeSliderInput(featureid, id, paramid, name, description, value, min, 
         </label>
         <input class="auto-slider-number" type="number" id="${id}" data-param_id="${paramid}" value="${value}" min="${min}" max="${max}" step="${step}" data-ispot="${isPot}" autocomplete="off" onchange="autoNumberWidth(this)">
         <br>
-        <div class="auto-slider-range-wrapper" style="${getRangeStyle(rangeVal, view_min, view_max)}">
-            <input class="auto-slider-range" type="range" id="${id}_rangeslider" value="${rangeVal}" min="${view_min}" max="${view_max}" step="${step}" data-ispot="${isPot}" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
-        </div>
+        ${makeSliderRange(id, rangeVal, view_min, view_max, step, isPot)}
     </div>`;
 }
 
@@ -789,6 +809,27 @@ function makeNumberInput(featureid, id, paramid, name, description, value, min, 
                 <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
             </label>
             <input class="auto-number" type="number" id="${id}" data-param_id="${paramid}" value="${value}" min="${min}" max="${max}" step="${step}" data-name="${name}" autocomplete="off" onchange="autoNumberWidth(this)">
+        </div>`;
+}
+
+/** Builds synchronized video duration controls in frames and seconds. */
+function makeVideoFramesInput(featureid, id, paramid, name, description, value, min, max, step = 1, toggles = false, popover_button = true) {
+    name = escapeHtml(name);
+    featureid = featureid ? ` data-feature-require="${featureid}"` : '';
+    let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
+    featureid += featureid2;
+    let initialSeconds = formatNumberClean(Number(value) / 24, 2);
+    let sliderSeconds = Math.min(20, Math.max(0, initialSeconds));
+    return `
+        <div class="auto-input auto-slider-box auto-video-frames-box"${featureid}>
+            <label>
+                <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
+            </label>
+            <input class="auto-slider-number auto-video-frames-frame-input" type="number" id="${id}" data-param_id="${paramid}" value="${value}" min="${min}" max="${max}" step="${step}" data-name="${name}" autocomplete="off" onchange="autoNumberWidth(this)">
+            <span class="auto-video-frames-unit">${translateableHtml('Frames')}</span>
+            <input class="auto-slider-number auto-video-frames-seconds-input" type="number" id="${id}_seconds" value="${initialSeconds}" min="0" max="20" step="0.5" autocomplete="off">
+            <span class="auto-video-frames-unit">${translateableHtml('Seconds')}</span>
+            ${makeSliderRange(id, sliderSeconds, 0, 20, 0.5)}
         </div>`;
 }
 
@@ -838,7 +879,7 @@ function makeTextInput(featureid, id, paramid, name, description, value, format,
         </label>
         ${tokenCounter}
         <textarea class="auto-text${(isBig ? " auto-text-block" : "")} translate translate-no-text" id="${id}" data-param_id="${paramid}" rows="${isBig ? 2 : 1}"${onInp} placeholder="${escapeHtmlNoBr(placeholder)}" data-name="${name}" autocomplete="off">${escapeHtmlNoBr(value)}</textarea>
-        ${format == 'prompt' ? `<button class="interrupt-button image-clear-button" style="display: none;">${translateableHtml("Clear Images")}</button>
+        ${format == 'prompt' ? `<button class="interrupt-button image-clear-button" style="display: none;">${translateableHtml("Clear Attachments")}</button>
         <div class="added-image-area" style="display: none;"></div>` : ''}
     </div>`;
 }
@@ -1026,11 +1067,19 @@ function makeVideoInput(featureid, id, paramid, name, description, toggles = fal
     return html;
 }
 
+/** Returns whether a value is a reusable server media path. */
+function isValidMediaPath(path) {
+    return typeof path == 'string' && (path.startsWith('inputs/') || path.startsWith('raw/') || path.startsWith('Starred/'));
+}
+
+let swarmMediaPathDataType = 'application/x-swarm-media-path';
+
 class InputBrowserHelper {
 
     constructor() {
         this.inputImageBrowser = null;
         this.inputImageBrowserTargetElemId = null;
+        this.inputImageBrowserSelectCallback = null;
         this.currentMediaType = ['image'];
         this.uploadContainer = getRequiredElementById('input_image_browser_upload_container');
     }
@@ -1050,8 +1099,19 @@ class InputBrowserHelper {
         this.uploadContainer.innerHTML = html;
         let fileInput = document.getElementById('input_browser_modal_upload');
         if (fileInput) {
+            fileInput.accept = this.currentMediaType.map(type => `${type}/*`).join(',');
+            if (this.currentMediaType.includes('audio')) {
+                fileInput.parentElement.classList.add('drag_audio_target');
+            }
             fileInput.onchange = () => {
                 this.handleModalUpload(fileInput);
+            };
+        }
+        let pasteBox = document.getElementById('input_browser_modal_upload_pastebox');
+        if (pasteBox) {
+            pasteBox.placeholder = `Ctrl+V: Paste ${this.currentMediaType.map(type => type[0].toUpperCase() + type.substring(1)).join('/')}`;
+            pasteBox.onpaste = (e) => {
+                onFileInputPaste(e, this.currentMediaType.map(type => `${type}/`).join(','));
             };
         }
     }
@@ -1096,7 +1156,7 @@ class InputBrowserHelper {
         }, false);
         reader.readAsDataURL(file);
     }
-    
+
     /** Lists image files under the inputs/ directory for the input image browser. */
     listInputFiles(path, isRefresh, callback, depth) {
         path = path ? `inputs/${path}` : 'inputs/';
@@ -1113,23 +1173,34 @@ class InputBrowserHelper {
         return data;
     }
 
-    /** Called when an image is selected from the input image browser. */
-    selectInputFile(file) {
-        let inputElem = getRequiredElementById(this.inputImageBrowserTargetElemId);
-        if (!inputElem) {
-            return;
-        }
+    /** Applies an input-browser file to a generated media input. */
+    setInputFile(inputElem, file) {
         let type = getMediaType(file.name);
         setMediaFileDirect(inputElem, file.data.src, type, file.name, file.name, () => {
             inputElem.dataset.filedata = file.name;
         });
+    }
+
+    /** Called when an image is selected from the input image browser. */
+    selectInputFile(file) {
+        if (this.inputImageBrowserSelectCallback) {
+            this.inputImageBrowserSelectCallback(file);
+            $('#input_image_browser_modal').modal('hide');
+            return;
+        }
+        let inputElem = getRequiredElementById(this.inputImageBrowserTargetElemId);
+        if (!inputElem) {
+            return;
+        }
+        this.setInputFile(inputElem, file);
         $('#input_image_browser_modal').modal('hide');
     }
 
-    openInputBrowser(inputElemId, type) {
+    openInputBrowser(inputElemId, type, selectCallback = null) {
         this.currentMediaType = type;
         this.rebuildModalUploadArea();
         this.inputImageBrowserTargetElemId = inputElemId;
+        this.inputImageBrowserSelectCallback = selectCallback;
         if (!this.inputImageBrowser) {
             this.inputImageBrowser = new GenPageBrowserClass('input_image_browser_container', this.listInputFiles.bind(this), 'inputimagebrowser', 'Thumbnails', this.describeInputFile.bind(this), this.selectInputFile.bind(this));
         }
@@ -1160,6 +1231,10 @@ function chromeIsDumbFileHack(file, uris) {
 // This is a giant hackpile to force dragging images onto inputs to treat them like files and thus actually work
 // ft. bonus chrome nonsense hackfix, see above
 window.addEventListener('drop', e => {
+    let mediaPath = e.dataTransfer?.getData(swarmMediaPathDataType);
+    if (isValidMediaPath(mediaPath) && e.target.closest?.('#alt_prompt_region')) {
+        return;
+    }
     let uris;
     if (e.dataTransfer && e.dataTransfer.files.length) {
         let fname = strBeforeLast(e.dataTransfer.files[0].name, '.');
@@ -1181,6 +1256,19 @@ window.addEventListener('drop', e => {
     e.preventDefault();
     e.stopPropagation();
     let file = uris.split('\n')[0];
+    if (isValidMediaPath(mediaPath) && e.target.matches?.('input.auto-file')) {
+        let input = e.target;
+        let param = typeof gen_param_types == 'undefined' ? null : gen_param_types.find(type => type.id == input.dataset.param_id);
+        let mediaType = getMediaType(mediaPath);
+        let isCompatible = (param?.type == 'image' && (mediaType == 'image' || mediaType == 'video'))
+            || (param?.type == 'audio' && mediaType == 'audio')
+            || (param?.type == 'video' && mediaType == 'video');
+        if (isCompatible) {
+            updateFileDragging({ target: input }, true);
+            inputBrowserHelper.setInputFile(input, { name: mediaPath, data: { src: file } });
+            return false;
+        }
+    }
     let xhr = new XMLHttpRequest();
     xhr.responseType = 'blob';
     xhr.onload = () => {

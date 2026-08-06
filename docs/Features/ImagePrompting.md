@@ -33,7 +33,11 @@
         - After being downloaded once, the models are stored in `(Swarm)/Models/ipadapter` (or wherever your models dir is), and won't need to be downloaded again.
 - You can use non-standard IPAdapter models by saving them to `(Swarm)/Models/ipadapter`. If they don't use CLIPVision G, you will need to select the correct vision model under `Advanced Model Addons` -> `ReVision Model`.
 
-# Style Models
+## Style Models
 
 - Style models, such as **Flux Redux**, can be used through the same interface.
     - See [the model support doc for Flux Redux specifics](/docs/Model%20Support.md#flux1-tools)
+
+## Video/Audio Prompting
+
+Some video models, such as MiniMax H3, support adding video or audio to the prompt as well.

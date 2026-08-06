@@ -30,6 +30,8 @@ public class T2IParamSet
             object useVal = val;
             if (useVal is List<string> strs) { useVal = new List<string>(strs); }
             else if (useVal is List<Image> imgs) { useVal = new List<Image>(imgs); }
+            else if (useVal is List<AudioFile> audios) { useVal = new List<AudioFile>(audios); }
+            else if (useVal is List<VideoFile> videos) { useVal = new List<VideoFile>(videos); }
             else if (useVal is List<T2IModel> models) { useVal = new List<T2IModel>(models); }
             toret.ValuesInput[key] = useVal;
         }
@@ -149,13 +151,13 @@ public class T2IParamSet
             ValuesInput.Remove(param.ID);
             return;
         }
-        ImageFile imageFor(string val, bool canJson)
+        ImageFile imageFor(string val)
         {
             if (val.StartsWithFast("data:"))
             {
                 return ImageFile.FromDataString(val);
             }
-            if (canJson && val.StartsWithFast('{'))
+            if (val.StartsWithFast('{'))
             {
                 JObject parsed = val.ParseToJson();
                 ImageFile result = ImageFile.FromDataString(parsed["data"].ToString());
@@ -192,7 +194,7 @@ public class T2IParamSet
                 result.SourceFilePath = parsed["filename"].ToString();
                 return result;
             }
-            return VideoFile.FromBase64(val, MediaType.AudioWav);
+            return VideoFile.FromBase64(val, MediaType.VideoMp4);
         }
         object obj = param.Type switch
         {
@@ -200,12 +202,14 @@ public class T2IParamSet
             T2IParamDataType.DECIMAL => param.SharpType == typeof(double) ? double.Parse(val) : float.Parse(val),
             T2IParamDataType.BOOLEAN => bool.Parse(val),
             T2IParamDataType.TEXT or T2IParamDataType.DROPDOWN => val,
-            T2IParamDataType.IMAGE => imageFor(val, true),
-            T2IParamDataType.IMAGE_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(v => imageFor(v, false) as Image).ToList(),
+            T2IParamDataType.IMAGE => imageFor(val),
+            T2IParamDataType.IMAGE_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(v => imageFor(v) as Image).ToList(),
             T2IParamDataType.MODEL => getModel(val),
             T2IParamDataType.LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : ",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
             T2IParamDataType.AUDIO => audioFor(val),
+            T2IParamDataType.AUDIO_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(audioFor).ToList(),
             T2IParamDataType.VIDEO => videoFor(val),
+            T2IParamDataType.VIDEO_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(videoFor).ToList(),
             _ => throw new NotImplementedException()
         };
         if (param.SharpType == typeof(int))

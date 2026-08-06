@@ -53,7 +53,25 @@ More thorough information about custom Comfy Workflows will be in [Features/Cust
     - Make sure you have updated torch, and follow [Troubleshooting Pip Install](/docs/Troubleshooting.md#i-need-to-install-something-with-pip) to `pip install -U triton sageattention`
     - and then edit the Backend to have `--use-sage-attention` under `ExtraArgs`
     - and maybe just works?
-- For Windows, it's a lot more effort, see below:
+- For Windows:
+    - Open a command line in `(Your Swarm Install)\dlbackend\comfy`
+    - `.\python_embeded\python.exe -s -m pip install triton-windows`
+    - `.\python_embeded\python.exe -s -m pip install sageattention` or use of these wheels <https://github.com/woct0rdho/SageAttention/releases>
+- Launch SwarmUI
+    - Go to Server->Backends, edit the Comfy Self Start backend
+    - Under `ExtraArgs`, add `--use-sage-attention`
+    - Save the backend, let it load, go back to Generate tab
+    - Generate something. Let it finish, then generate a second thing.
+    - Hopefully it works fine and is a bit faster than usual. If not, ~~god help you~~ maybe ask for help on the Swarm Discord. No promises. This stuff is a mess.
+        - Sage runs a few percentage faster normally (eg on a 4090, Flux goes from 11-12 sec per image to about 10 sec per image), but if you have limited VRAM some users report as much as 2x speedup from Sage alone.
+    - Optionally go to Advanced->Advanced Model Addons->set `Torch Compile` to `inductor`
+        - This will be much slower on the first run of any model, then subsequent runs will be faster.
+        - That means TorchCompile is only faster if you're going to generate many things in sequence. It's maybe a 30% speedup, but 1-2 minutes added to the first run.
+        - So for example Flux Dev on my 4090 with sageattention takes 10 seconds to generate 1 image, with TorchCompile it's 7 seconds. That's 3 seconds cut per gen but 20 x 3 seconds added to first run, meaning I have to generate at least 20 images in a row just to pull even on gen speeds. Arguably with slow iterations (trying different things one at a time) it will still "feel" faster and thus be worth using anyway. Up to personal choice.
+
+## Old Triton Info
+
+Legacy Windows install guide, may or may not still apply to some installs?
 
 This is only for very advanced / tech-skilled users. Normal users beware, here be cyberdragons.
 
@@ -74,17 +92,6 @@ Triton is a Linux-only AI acceleration library that you can hack into working on
 - Go back to the command line inside the `dlbackend\comfy`
     - `.\python_embeded\python.exe -s -m pip install triton-windows`
     - `.\python_embeded\python.exe -s -m pip install sageattention` or use of these wheels <https://github.com/woct0rdho/SageAttention/releases>
-- Launch SwarmUI
-    - Go to Server->Backends, edit the Comfy Self Start backend
-    - Under `ExtraArgs`, add `--use-sage-attention`
-    - Save the backend, let it load, go back to Generate tab
-    - Generate something. Let it finish, then generate a second thing.
-    - Hopefully it works fine and is a bit faster than usual. If not, ~~god help you~~ maybe ask for help on the Swarm Discord. No promises. This stuff is a mess.
-        - Sage runs a few percentage faster normally (eg on a 4090, Flux goes from 11-12 sec per image to about 10 sec per image), but if you have limited VRAM some users report as much as 2x speedup from Sage alone.
-    - Optionally go to Advanced->Advanced Model Addons->set `Torch Compile` to `inductor`
-        - This will be much slower on the first run of any model, then subsequent runs will be faster.
-        - That means TorchCompile is only faster if you're going to generate many things in sequence. It's maybe a 30% speedup, but 1-2 minutes added to the first run.
-        - So for example Flux Dev on my 4090 with sageattention takes 10 seconds to generate 1 image, with TorchCompile it's 7 seconds. That's 3 seconds cut per gen but 20 x 3 seconds added to first run, meaning I have to generate at least 20 images in a row just to pull even on gen speeds. Arguably with slow iterations (trying different things one at a time) it will still "feel" faster and thus be worth using anyway. Up to personal choice.
 
 ## Multiple Model Folders
 

@@ -1258,9 +1258,10 @@ public class WorkflowGeneratorSteps
                 g.CurrentMedia = new WGNodeData([vaceNode, 2], g, WGNodeData.DT_LATENT_VIDEO, g.CurrentCompat()) { Width = width, Height = height, Frames = frames };
                 g.FinalTrimLatent = [vaceNode, 3];
             }
-            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.PromptAudios, out List<AudioFile> ltxAudios) && ltxAudios.Count > 0)
             {
-                string audioNode = g.CreateAudioLoadNode(audio, "${videoaudioinput}");
+                // TODO: Does supporting multiple make sense?
+                string audioNode = g.CreateAudioLoadNode(ltxAudios[0], "${promptaudios.0}");
                 string refNode = g.CreateNode("LTXVReferenceAudio", new JObject()
                 {
                     ["model"] = g.CurrentModel.Path,
@@ -1573,7 +1574,7 @@ public class WorkflowGeneratorSteps
                         g.CurrentMedia = decoded;
                         return;
                     }
-                    g.CurrentMedia = isSeedVr ? decoded : decoded.EncodeToLatent(g.CurrentVae, "25");
+                    g.CurrentMedia = isSeedVr ? decoded : decoded.WithMaskedAudio(g.CurrentAudioVae).EncodeToLatent(g.CurrentVae, "25");
                 }
                 else if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
                 {
@@ -1629,7 +1630,7 @@ public class WorkflowGeneratorSteps
                     }
                     if (modelMustReencode || doPixelUpscale)
                     {
-                        g.CurrentMedia = isSeedVr ? decoded : decoded.EncodeToLatent(g.CurrentVae, "25");
+                        g.CurrentMedia = isSeedVr ? decoded : decoded.WithMaskedAudio(g.CurrentAudioVae).EncodeToLatent(g.CurrentVae, "25");
                     }
                 }
                 if (doUpscale && upscaleMethod.StartsWith("latent-"))

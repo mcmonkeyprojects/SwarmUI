@@ -11,6 +11,7 @@ This doc tracks specifically the old, bad, unpopular, etc. models that are suppo
 [Segmind SSD 1B](#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Partial | Outdated |
 [Stable Cascade](#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Partial | Outdated |
 [PixArt Sigma](#pixart-sigma) | DiT | 2024 | PixArt | 1B | ? | Outdated |
+[AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
 [Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Just Bad |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Just Bad |
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
@@ -20,6 +21,8 @@ This doc tracks specifically the old, bad, unpopular, etc. models that are suppo
 [Zeta Chroma](#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
 [PixelDiT](#pixeldit) | Pixel DiT | 2026 | NVIDIA | 1.3B | Minimal | Modern, fast, pixel-space, but very bad relative quality on launch |
 [MageFlow](#mageflow) | MMDiT | 2026 | Microsoft | 4B | No | Very bad quality compared to contemporary models |
+[ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
+[Lens](#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
 
 Obscure video models are tracked at the [Video Models heading](#video-models)
 
@@ -68,6 +71,20 @@ These steps are not friendly to beginners (if PixArt gains popularity, likely mo
 - Make sure in **User Settings**, you have a `DefaultSDXLVae` selected. If not, Swarm will autodownload a valid SDXL VAE.
 - Swarm will autodownload T5XXL-EncoderOnly for you on first run (same as SD3-Medium T5-Only mode)
 - You can now use the model as easily as any other model. Some feature compatibility features might arise.
+
+# AuraFlow
+
+![img](/docs/images/models/auraflow-02.jpg)
+*(above image is AuraFlow v0.2)*
+
+- [Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) and [v0.2](https://huggingface.co/fal/AuraFlow-v0.2) and v0.3 are supported in Swarm, but you must manually select architecture to use it.
+- The model used "Pile T5-XXL" as it's text encoder.
+- The model used the SDXL VAE as its VAE.
+- This model group was quickly forgotten by the community due to quality issues, but came back into popular attention much later via community finetune "Pony v7".
+    - Pony wants to be in the `diffusion_models` folder, but regular AuraFlow goes in `Stable-Diffusion` folder
+- Parameters and usage is the same as any other normal model.
+    - CFG recommended around 3.5 or 4.
+    - Pony v7 allows higher resolutions than base AuraFlow normally targets.
 
 # NVIDIA Sana
 
@@ -232,6 +249,52 @@ Microsoft's [Mage Flow](https://huggingface.co/microsoft/Mage-Flow) is supported
     - **Steps:** Usual (`20`-ish) for base, `4` for Turbo
     - **Resolution:** Any side-length from 512 to 2048 works, defaults to `1024`.
 
+# ERNIE
+
+![img](/docs/images/models/ernie.jpg)
+
+*(ERNIE Base, Steps=20, CFG=4)*
+
+- Baidu's [ERNIE Image](<https://huggingface.co/baidu/ERNIE-Image>) is supported in SwarmUI!
+- It is an 8B model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
+    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/ERNIE-Image - turbo](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors>)
+    - Or the base version (in fat BF16) [Comfy-Org/ERNIE-Image - base](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image.safetensors>)
+    - FP8 links pending
+    - Save in `diffusion_models`
+- Uses the Flux.2 VAE, will be downloaded and handled automatically
+- Uses the Ministral 3 3b text encoder, will be downloaded and handled automatically
+- **Parameters:**
+    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply.
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `4`)
+    - **Steps:** For Turbo `8` is recommended. For Base, 20+ steps as normal.
+    - **Resolution:** Side length `1024` is the standard.
+        - Down to 512 works still, up to 1536 is fine.
+        - Out of range doesn't corrupt immediately but will fail at composition.
+        - Prefers aspects from square to 16:9, gets funny in 21:9
+
+# Lens
+
+![img](/docs/images/models/lens.jpg)
+
+*(Lens Turbo fp8, Steps=8, CFG=1, SideLength=1440)*
+
+- Microsoft's [Lens](<https://huggingface.co/microsoft/Lens>) is supported in SwarmUI!
+- It is a 4B model (Officially listed as 3.8B), with a base model and an official turbo distill designed to run fast.
+    - The raw base model (FP8) can be downloaded here: [Comfy-Org/Lens](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_mxfp8.safetensors>)
+    - The Turbo model (FP8) can be downloaded here: [Comfy-Org/Lens - Turbo](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_mxfp8.safetensors>)
+    - Or fat BF16 versions [Comfy-Org/Lens - base bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_bf16.safetensors>) [Comfy-Org/Lens - turbo bf16](<https://huggingface.co/Comfy-Org/Lens/resolve/main/diffusion_models/lens_turbo_bf16.safetensors>)
+    - Save in `diffusion_models`
+- Uses the Flux.2 VAE, will be downloaded and handled automatically
+- Uses the GPT-OSS 20B text encoder, will be downloaded and handled automatically
+- **Parameters:**
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `5`)
+    - **Steps:** For Turbo, `4` is recommended, `8` works well. For Base, `20` as normal.
+    - **Resolution:** Side length `1440` is the official default, but 1024 is a reasonable option. It retains coherence down to about 512 and up to about 2048.
+
 --------------------------------------------------------------------------
 
 # Video Models
@@ -241,6 +304,7 @@ Microsoft's [Mage Flow](https://huggingface.co/microsoft/Mage-Flow) is supported
 [Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
 [Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
+[Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
 
 --------------------------------------------------------------------------
 
@@ -302,5 +366,24 @@ Microsoft's [Mage Flow](https://huggingface.co/microsoft/Mage-Flow) is supported
 - **Frame Count:** The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss, but generally you're stuck at exactly 121.
 - **CFG and Steps:** Nvidia default recommends CFG=7 and Steps=35
 - **Performance:** The models are extremely slow. Expect over 10 minutes for a single video even on a 4090.
+
+# Kandinsky 5
+
+- Kandinsky 5 Video Lite and Video Pro are supported in SwarmUI!
+    - Also the image models, docs [in the image model support doc](/docs/Model%20Support.md#kandinsky-5)
+- They come in a variety of variants, you will have to pick what you want, or experimental with several.
+    - Do you want "Lite" or "Pro"?
+        - Lite is a 2B (very small) video model with a variety of distilled and other variants. Its quality is not quite on par with competitors like Wan 14B, but its small size makes it easier to run.
+            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-lite>
+                - NoCFG or Distilled16Steps are the fastest variants, SFT is supposedly the best quality.
+        - Pro is a 19B (very large) video model with only different quality tune variants.
+            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-pro>
+                - You probably want the SFT 10s version.
+- At time of writing, the current implementation has bugs, and some hacks are used to workaround them. Not all features work. What does work is kinda bad.
+- **Parameters:**
+    - These vary heavily based on model you choose.
+    - **CFG Scale:** for regular models, regular CFG such as `5` works. For CFG-distill and step distill, use CFG of `1`.
+    - **Steps:** For regular, 20 or higher is used. For Step Distill, 16 is the target. Going lower will work but with a severe quality hit.
+    - **Resolution:** All video models primarily target a side length of 640. Higher resolutions can work, Pro handles 960x960 fine.
 
 <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

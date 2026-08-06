@@ -141,10 +141,12 @@ def make_swarm_sampler_callback(steps, device, model, previews):
     def callback(step, x0, x, total_steps):
         pbar.update_absolute(step + 1, total_steps, None)
         if previewer:
+            if getattr(x0, "is_nested", False) and hasattr(x0, "tensors"):
+                x0 = x0.tensors[0]
             if x0.ndim == 5:
                 # video shape is [batch, channels, backwards time, width, height], for previews needs to be swapped to [forwards time, channels, width, height]
                 x0 = x0[0].permute(1, 0, 2, 3)
-                x0 = torch.flip(x0, [0])
+                #x0 = torch.flip(x0, [0]) # it is unclear when the backwardsness applies or not
             def decode(index):
                 return previewer.decode_latent_to_preview_image("JPEG", x0[index:index+1])[1]
             animated = False

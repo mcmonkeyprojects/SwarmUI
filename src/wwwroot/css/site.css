@@ -1061,25 +1061,30 @@ textarea, input, select {
 
 
 
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: transparent;
-    transition: all 0.5s;
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(100, 100, 100, 0.5);
-    border-radius: 20px;
-    border: transparent;
-    transition: all 0.5s;
-}
-::-webkit-scrollbar-track:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 100, 100, 0.7);
+/* Chrome scrollbar config - blocked from Firefox. */
+@supports not (-moz-appearance: none) {
+    @supports selector(::-webkit-scrollbar-thumb) {
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+            transition: all 0.5s;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 20px;
+            border: transparent;
+            transition: all 0.5s;
+        }
+        ::-webkit-scrollbar-track:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 100, 100, 0.7);
+        }
+    }
 }
 textarea,
 input,
@@ -1115,6 +1120,12 @@ select {
 }
 .auto-slider-box .auto-slider-number {
     margin-left: auto;
+}
+.auto-video-frames-box .auto-video-frames-seconds-input {
+    margin-left: 0.5rem;
+}
+.auto-video-frames-unit {
+    margin-left: 0.2rem;
 }
 .auto-slider-range-wrapper {
     width: 100%;

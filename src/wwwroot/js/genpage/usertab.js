@@ -251,7 +251,7 @@ class ParamConfigurationClass {
                     <div class="param-edit-part"><span title="If using a slider, this is where the slider stops">View Max</span>: <input type="number" id="${paramPrefix}__view_max" value="${param.view_max}" autocomplete="off"></div>
                     <div class="param-edit-part">Step: <input class="param-edit-number" type="number" id="${paramPrefix}__step" value="${param.step}" autocomplete="off"></div>
                     <div class="param-edit-part">View Type: <select id="${paramPrefix}__view_type" autocomplete="off">`;
-                for (let type of ['small', 'big', 'seed', 'slider', 'pot_slider']) {
+                for (let type of ['small', 'big', 'seed', 'slider', 'pot_slider', 'video_frames']) {
                     paramHtml += `<option value="${type}"${param.view_type == type ? ` selected="true"` : ''}>${type}</option>`;
                 }
                 paramHtml += `</select></div>`;

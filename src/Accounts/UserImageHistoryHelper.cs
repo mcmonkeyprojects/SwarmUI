@@ -77,4 +77,32 @@ public class UserImageHistoryHelper
             }
         }
     }
+
+    /// <summary>Use ffmpeg to extract a video's audio track as MP3 data.</summary>
+    /// <param name="file">The video file.</param>
+    public static async Task<byte[]> ExtractVideoAudio(string file)
+    {
+        if (string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
+        {
+            throw new SwarmUserErrorException("Cannot split video audio because ffmpeg is not available.");
+        }
+        string outputFile = Path.Combine(Path.GetTempPath(), $"swarm-extracted-audio-{Guid.NewGuid():N}.mp3");
+        try
+        {
+            using ManyReadOneWriteLock.WriteClaim claim = FfmpegLock.LockWrite();
+            await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-y", "-i", file, "-vn", "-codec:a", "libmp3lame", "-q:a", "2", "-f", "mp3", outputFile]);
+            if (!File.Exists(outputFile) || new FileInfo(outputFile).Length == 0)
+            {
+                throw new SwarmUserErrorException("The video does not contain a readable audio track.");
+            }
+            return await File.ReadAllBytesAsync(outputFile);
+        }
+        finally
+        {
+            if (File.Exists(outputFile))
+            {
+                File.Delete(outputFile);
+            }
+        }
+    }
 }

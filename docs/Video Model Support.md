@@ -2,12 +2,12 @@
 
 | Model | Year | Author | Scale | Type | Censored? | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- | ---- |
-[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
-[Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
-[Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
+[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Legacy, was good quality at the time |
+[Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Legacy, was good quality at the time |
+[Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Legacy, Fast but ugly |
 [Lightricks LTX Video 2](#lightricks-ltx-video-2) | 2026 | Lightricks | 19B DiT | Text/Image 2Video+Audio | Minimal | Modern, good/mixed quality but fun |
-[Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Incredible Quality |
-[Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
+[Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Great Quality |
+[MiniMax H3](#minimax-h3) | 2026 | MiniMax AI | 33B or 20B | Any2Video+Audio | Very Minimal | Modern, Incredible Quality |
 
 Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above
 
@@ -18,13 +18,13 @@ Old or bad options also tracked listed:
 [Stable Video Diffusion](/docs/Obscure%20Model%20Support.md#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
 [Genmo Mochi 1](/docs/Obscure%20Model%20Support.md#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
 [Nvidia Cosmos](/docs/Obscure%20Model%20Support.md#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
+[Kandinsky 5](/docs/Obscure%20Model%20Support.md#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
 
 ## Current Recommendations
 
-Video model(s) most worth using, as of December 2025:
+Video model(s) most worth using, as of August 2026:
 
-- Wan 2.2 or 2.1, in 14B either way. It's the best you can get locally currently.
-- Kandinsky 19B looks interesting, but is new and struggling to reach its potential. Could be worth playing with.
+- MiniMax H3 is the crown champion, everything before it is outdated and irrelevant in comparison!
 
 ## Demo Gifs
 
@@ -476,30 +476,115 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
             - For T2V, this has some visual oddities but does still mostly work
         - Wan 2.2 has an official prompting guide book: <https://alidocs.dingtalk.com/i/nodes/EpGBa2Lm8aZxe5myC99MelA2WgN7R35y>
 
-# Kandinsky 5
+# MiniMax H3
 
-- Kandinsky 5 Video Lite and Video Pro are supported in SwarmUI!
-    - Also the image models, docs [in the image model support doc](/docs/Model%20Support.md#kandinsky-5)
-- They come in a variety of variants, you will have to pick what you want, or experimental with several.
-    - Do you want "Lite" or "Pro"?
-        - Lite is a 2B (very small) video model with a variety of distilled and other variants. Its quality is not quite on par with competitors like Wan 14B, but its small size makes it easier to run.
-            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-lite>
-                - NoCFG or Distilled16Steps are the fastest variants, SFT is supposedly the best quality.
-        - Pro is a 19B (very large) video model with only different quality tune variants.
-            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-pro>
-                - You probably want the SFT 10s version.
-- At time of writing, the current implementation has bugs, and some hacks are used to workaround them. Not all features work. What does work is kinda bad.
+https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792
+
+*(The test prompt is frankly too easy for H3! Note the prompt doesn't specify audio so the video produced nonsense. This is a prompt issue not a model bug.)*
+
+- The [MiniMax H3](<https://modelscope.cn/models/MiniMax/MiniMax-H3>) (Hailuo 3) family of video models is supported in SwarmUI!
+- It comes in two primary flavors: "FL2AV", "Ref2AV"
+    - FL2AV (First/Last Frame to Audio/Video) does text2video, image2video, and first/last frame to video
+        - Download here: [Comfy-Org/MiniMax-H3: FL2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors>)
+    - Ref2AV (Omni-reference to video) also does text2video, and allows input of text, video, image, audio, as references to include somewhere within a video
+        - Download here: [Comfy-Org/MiniMax-H3: Ref2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors>)
+- It uses Qwen3 VL 32B as a text encoder, Swarm will automatically download an fp4 (16GB) version of it.
+- It has a unique video VAE and a unique separate audio VAE. These will be automatically downloaded for you.
+    - The video VAE encodes 2 latents for frameCount=5, and then +5 latents for each 17 additional frames.
 - **Parameters:**
-    - These vary heavily based on model you choose.
-    - **CFG Scale:** for regular models, regular CFG such as `5` works. For CFG-distill and step distill, use CFG of `1`.
-    - **Steps:** For regular, 20 or higher is used. For Step Distill, 16 is the target. Going lower will work but with a severe quality hit.
-    - **Resolution:** All video models primarily target a side length of 640. Higher resolutions can work, Pro handles 960x960 fine.
+    - **Prompt:** Works best with long proper LLM prompts, but short ones still go fine
+        - The model generates audio, so remember to prompt for what the audio should be
+        - You can prompt for multiple shots at different times in the video and it will work
+        - [Base Guide Here](<https://modelscope.cn/models/MiniMax/MiniMax-H3/file/view/master/docs%2FVIDEO_PROMPT_WRITING_GUIDE_base_en.md?status=1>) and [Ref Guide Here](<https://modelscope.cn/models/MiniMax/MiniMax-H3/file/view/master/docs%252FVIDEO_PROMPT_WRITING_GUIDE_ref_en.md?status=1>)
+        - For verbal speech, use this format `<d>[English] something to say here</d>`
+        - Identify speakers with the subject marks `(S1)`, (and `(S2)` and etc). or combine them eg `(S1,S2)`
+        - The keys in their structured format eg `non_diegetic_music: ` are useful for separating parts of the prompt.
+        - They use very long complex example prompts with a structured format. See below for a simple text2video example
+            <details>
+                <summary>Click to view example prompt</summary>
+            
+            ```text
+            integrated_multimodal_description:
+            [Shot 1] Cinematic, medium wide shot, pushing in slowly. In the cavernous, dimly lit bridge of a starship, sleek metallic consoles with glowing amber displays flank a massive, curved observation window. A female captain, in her late 40s with an athletic build and short silver-streaked black hair, stands in the center midground. She wears a structured, high-collared dark navy military tunic with silver chest insignias. Her back is to the camera, silhouetted against the cool, ambient starlight pouring through the thick glass. She stands perfectly still with her hands clasped tightly behind her back. Outside the window, a massive armada of jagged, dark grey dreadnoughts hovers in tight formation against a deep purple space nebula. The fleet's massive rear thrusters begin to glow with an intense, escalating bright blue light.
+            [Shot 2] At 00:04.500, the camera cuts to a close-up of the captain's face and shakes strongly. The brilliant blue-white light from the fleet's gathering energy reflects vividly in her dark eyes. Suddenly, a blinding white flash floods through the window, completely washing out the background as the fleet jumps to hyperspace. The sheer spatial force violently jolts the bridge, causing the captain from Shot 1 to stagger slightly forward, her shoulders tensing as she visibly braces herself against the physical tremors. As the intense white light fades abruptly, leaving only the dim, empty expanse of the purple nebula reflected on her starkly lit skin, her jaw clenches, and she slowly closes her eyes in the newly emptied space.
+            overall_soundscape: A low, resonant hum of the ship's ambient life support systems serves as the baseline, soon drowned out by an audible, escalating, high-pitched electronic whine as the fleet outside charges its hyperdrives. A massive, deafening, bass-heavy boom and sharp crackle erupts during the blinding flash, accompanied by the loud metallic creaking, rattling, and deep thuds of the bridge's bulkheads vibrating under immense physical stress. The intense roaring impact then cuts abruptly back to a hollow, echoing room tone, leaving only the faint, steady hum of the isolated bridge.
+            non_diegetic_music: Cinematic space-opera orchestral score, slow tempo, featuring a solitary, mournful French horn melody over deep, sustained string dissonances that build rapidly in volume and intensity, swelling to a massive orchestral peak before snapping immediately into silence right after the jump.
+            ```
+            </details>
+        - See below for an example for the ref model.
+            <details>
+                <summary>Click to view example prompt</summary>
+
+            ```text
+            subject_definitions:
+            <Subject 1> is the young man with short wavy blonde hair, wearing a bright pink suit jacket, matching pink trousers, an unbuttoned white shirt, and silver rings, holding a small black lamb in his arms in <Video 1>.
+            <Video 1> is the source video for the editing task.
+            <Audio 1> is the synchronized audio track of <Video 1>, providing the background music.
+            <Audio 2> is the voice timbre reference for <Subject 1>'s voice, containing a spoken male voiceover.
+
+            summary:
+            [video editing + audio reference + audio reuse] The target video is an edited version of <Video 1>. <Subject 1>, wearing a bright pink suit and holding a black lamb, stands in a grassy field with other white lambs in the background. The edit animates <Subject 1>'s face to speak the user-provided dialogue. <Audio 1> is partially reused as the continuous background music, while the target references the calm male voice timbre of <Audio 2> for <Subject 1>'s spoken lines.
+
+            retention_analysis:
+            <Subject 1> (appears in [Shot 1]): fully_preserved - the man retains his identity, wavy blonde hair, pink suit, white shirt, accessories, and the black lamb he holds, with his mouth newly animated to speak.
+            <Video 1> (source video editing): fully_preserved - the original camera framing, warm golden hour lighting, grassy hill setting, and background white lambs are maintained while the central character is edited.
+            <Audio 1>: partially_copy - the atmospheric background music from <Audio 1> is reused in the target video, mixed beneath the newly added spoken dialogue.
+            <Audio 2>: reference - the target audio references the male voice timbre from <Audio 2> to generate <Subject 1>'s spoken dialogue.
+
+            detailed_description:
+            The target video is in realistic photographic style.
+            [Shot 1] The shot begins from the source <Video 1>, showing <Subject 1>, a young man with short wavy blonde hair, wearing a bright pink suit jacket, matching pink trousers, and a casually unbuttoned white shirt. He stands confidently in a sunlit green pasture, gently holding a small black lamb securely in his arms. The warm, golden hour lighting casts soft shadows across his face and the bright pink fabric of his suit. Behind him, several white lambs stand and graze on the rolling grassy hill against a clear, pale blue sky. The atmospheric background music from <Audio 1> plays continuously throughout the scene. <Subject 1> physically speaks, his mouth movements naturally syncing to the new dialogue, with his voice timbre referencing the calm male delivery from <Audio 2>. Looking thoughtfully forward, <Subject 1> (S1) speaks softly, <d>[English] Follow the wind, live free.</d> As he delivers the line, he subtly shifts his weight, cradling the resting black lamb while the camera slowly pushes in. <Subject 1> (S1) continues his thought, <d>[English] Leave worries behind, enjoy the moment.</d> Exactly as his voice stops, his lips meet in a relaxed, peaceful smile, and his jaw ceases speaking motion. He then turns his gaze slightly away toward the horizon, gently stroking the black lamb's fleece with his fingers as the camera holds on this tranquil, sunlit state through the end of the video.
+
+            overall_soundscape:
+            The soundscape consists of the continuous, atmospheric background music from <Audio 1>, overlaid with the clear, calm male dialogue spoken by the main character, referencing the voice timbre of <Audio 2>.
+
+            non_diegetic_music:
+            The atmospheric, sustained background music from <Audio 1> is reused as the continuous score, playing quietly beneath the spoken dialogue.
+            ```
+            </details>
+    - **Frames:** The model targets 24FPS and supports up to 15 seconds, so 362 is the max frame count. Inputs will automatically round up to the next valid framecount.
+        - It uses the formula `5 + 17n` as the valid latent range. So: 5, 22, 39, 56, 73, 90, 107, 124, ...
+        - `22` for 1 second, `124` for 5 seconds, `243` for 10 seconds, `362` for 15 seconds.
+    - **CFG Scale:** Use `1`.
+    - **Steps:** Normal step counts like `20`. If you need speed, even `10` steps can often be enough (especially with a refiner).
+    - **Sampler:** Defaults to `res_multistep`, works well, common alternatives might not
+    - **Scheduler:** Default (`simple`) is fine
+    - **Resolution:** Seems highly adaptable to a wide range. Any aspect ratio is fine, keep side length between about `512` to `1536`, you can go past to eg `2048` with some degredation as you get too high or too low
+
+### MiniMax H3 Image To Video
+
+The "FL2VA" model is used for basic image-to-video. Works like any other image2video model (see [Beginner's Guide - Generate Videos With SwarmUI](<https://github.com/mcmonkeyprojects/SwarmUI/discussions/716>)) and supports the "Video End Image" input as well. Remember that the model wants to add audio, so prompt accordingly.
+
+### MiniMax H3 Reference Model Usage
+
+Full reference support is a work-in-progress, but is almost all working.
+
+When using the reference model, you can attach images freely (up to a max of 10) to the prompt box. In the prompt you can type something like `The person in <Picture 1>` to reference your first picture (and naturally, `<Picture 2>` for the next, etc.).
+
+You can also attach audio files freely (up to a max of 3). In the prompt you can type something like `She has the voice from <Audio 1>` to reference the audio.
+
+You can also attach video files freely (up to a max of 3). In the prompt you can type something like `Match the motion displayed in <Video 1>` to reference the video.
+
+If you want to use the audio from a video file, click the `☰` hamburger menu on the attached video and click `Split Audio`.
+
+Prompt inputs all are labeled eg `Img 1: ...`, these numbers correctly correspond to the number in eg `<Picture 1>`.
+
+Note that the Ref model crunches its inputs a bit (they pass through the text encoder) so quality will suffer compared to use FL2VA with a dedicated first frame.
+
+### MiniMax H3 Image Generation
+
+You can generate images with MiniMax H3 in Swarm by just setting Frames to 1. This similar to other video models, with a key exception: H3 will actually generate 5 frames, and then discard 4. While direct single-frame generation is possible in H3, quality suffers severely as it is not a trained case.
+
+You can use the Ref model this way to do image editing. Note that quality will be poor compared to proper dedicated image models.
+
+This is not optimal. Quality is messy, and it of course adds motion artifacts. They have said they plan to release an actual dedicated Image model in the future as well.
 
 # Obscure Model Redirection
 
 ### Stable Video Diffusion
 ### Genmo Mochi 1 (Text2Video)
 ### NVIDIA Cosmos
+### Kandinsky 5
 
 These obscure/old/bad/unpopular/etc. models have been moved to [Obscure Model Support](/docs/Obscure%20Model%20Support.md#video-models)
 
