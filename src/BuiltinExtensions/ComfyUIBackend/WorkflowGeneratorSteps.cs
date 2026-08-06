@@ -2072,6 +2072,12 @@ public class WorkflowGeneratorSteps
                         height = (int)Math.Round(height * scale);
                     }
                 }
+                else if (resFormat == "Custom")
+                {
+                    int vidPrecision = vidModel.ModelClass?.CompatClass?.ResolutionPrecision ?? resPrecision;
+                    width = (int)Utilities.RoundToPrecision(imageWidth, vidPrecision);
+                    height = (int)Utilities.RoundToPrecision(imageHeight, vidPrecision);
+                }
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(g.CurrentVae);
                 ImageToVideoGenInfo genInfo = new()
                 {
