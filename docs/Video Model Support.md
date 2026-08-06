@@ -546,7 +546,7 @@ https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792
         - It uses the formula `5 + 17n` as the valid latent range. So: 5, 22, 39, 56, 73, 90, 107, 124, ...
         - `22` for 1 second, `124` for 5 seconds, `243` for 10 seconds, `362` for 15 seconds.
     - **CFG Scale:** Use `1`.
-    - **Steps:** Normal step counts like `20`
+    - **Steps:** Normal step counts like `20`. If you need speed, even `10` steps can often be enough (especially with a refiner).
     - **Sampler:** Defaults to `res_multistep`, works well, common alternatives might not
     - **Scheduler:** Default (`simple`) is fine
     - **Resolution:** Seems highly adaptable to a wide range. Any aspect ratio is fine, keep side length between about `512` to `1536`, you can go past to eg `2048` with some degredation as you get too high or too low
