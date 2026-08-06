@@ -601,13 +601,18 @@ public class T2IParamTypes
             ));
         // ================================================ Image To Video ================================================
         GroupVideo = new("Image To Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos using models that take an image as their primary input.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Video%20Model%20Support.md\">See more docs here.</a>");
-        static bool isVideoClass(string id) => id.Contains("stable-video-diffusion") || id.Contains("lightricks-ltx-video") || id.Contains("-video2world") || id.Contains("-i2v") || id.Contains("-ti2v") || id.Contains("-flf2v") || id.Contains("-image2video") || id.Contains("hunyuan-video-1_5") || id.Contains("kandinsky5-video") || id.Contains("minimax-h3");
+        static bool isVideoModel(T2IModel model)
+        {
+            string id = model.ModelClass.ID;
+            return id.Contains("stable-video-diffusion") || id.Contains("lightricks-ltx-video") || id.Contains("-video2world") || id.Contains("-i2v") || id.Contains("-ti2v") || id.Contains("-flf2v") || id.Contains("-image2video") || id.Contains("hunyuan-video-1_5") || id.Contains("kandinsky5-video") ||
+                (id.Contains("minimax-h3") && !model.Name.Contains("ref2va"));
+        }
         VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nSelect an image-to-video conversion model, note that text-to-video models do not work.",
-            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoClass(m.ModelClass.ID)).Select(m => m.Name)),
+            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoModel(m)).Select(m => m.Name)),
             OrderPriority: 1, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
             ));
         VideoSwapModel = Register<T2IModel>(new("Video Swap Model", "If using a video model pair (eg Wan 2.2) for Image-To-Video, this is the second model to use.",
-            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoClass(m.ModelClass.ID)).Select(m => m.Name)),
+            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoModel(m)).Select(m => m.Name)),
             OrderPriority: 1.5, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 8, IsAdvanced: true, DoNotPreview: true, Toggleable: true
             ));
         VideoSwapPercent = Register<double>(new("Video Swap Percent", "If using a video model pair (eg Wan 2.2), For Image-To-Video, this is the percentage of steps given to the Swap model.\nFor example, at Steps=20 Swap=0.75, the base will run 5 steps then the swap model will run 15.\nWan 2.2 generally uses 50% or higher.",
@@ -667,11 +672,11 @@ public class T2IParamTypes
             "9", Min: 1, Max: 128, OrderPriority: 5.5, Group: GroupVideoExtend, Examples: ["1", "5", "9"], DoNotPreview: true
             ));
         VideoExtendModel = Register<T2IModel>(new("Video Extend Model", "The model to use for video extending.\nSelect an image-to-video model, note that text-to-video models do not work.",
-            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoClass(m.ModelClass.ID)).Select(m => m.Name)),
+            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoModel(m)).Select(m => m.Name)),
             OrderPriority: 1, Group: GroupVideoExtend, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
             ));
         VideoExtendSwapModel = Register<T2IModel>(new("Video Extend Swap Model", "If using a video model pair (eg Wan 2.2) for Image-To-Video, this is the second model to use.",
-            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoClass(m.ModelClass.ID)).Select(m => m.Name)),
+            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoModel(m)).Select(m => m.Name)),
             OrderPriority: 1.5, Group: GroupVideoExtend, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 8, IsAdvanced: true, DoNotPreview: true, Toggleable: true
             ));
         VideoExtendSwapPercent = Register<double>(new("Video Extend Swap Percent", "If using a video model pair (eg Wan 2.2), For Image-To-Video, this is the percentage of steps given to the Swap model.\nFor example, at Steps=20 Swap=0.75, the base will run 5 steps then the swap model will run 15.\nWan 2.2 generally uses 50% or higher.",

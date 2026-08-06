@@ -155,7 +155,7 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                 {
                     ["vae"] = vae.Path,
                     ["samples"] = Path,
-                    ["tile_size"] = 512,
+                    ["tile_size"] = 256,
                     ["overlap"] = 64,
                     ["temporal_size"] = 9999, // Can't currently temporal tile
                     ["temporal_overlap"] = 8
