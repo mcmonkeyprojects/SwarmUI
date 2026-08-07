@@ -2381,7 +2381,7 @@ body {
     left: 0;
     right: 0;
     top: 0;
-    bottom: var(--mobile-alt-height, 8rem);
+    bottom: 0;
     width: 100% !important;
     height: auto !important;
     z-index: 25;
@@ -2414,7 +2414,7 @@ body {
     top: auto !important;
     width: 100% !important;
     max-width: 100%;
-    z-index: 40;
+    z-index: 15;
     padding: 0.4rem 0.5rem 0.35rem 0.5rem;
     box-sizing: border-box;
     background: color-mix(in srgb, var(--background) 92%, transparent);
