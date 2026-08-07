@@ -2445,11 +2445,12 @@ body {
     max-width: 100%;
     z-index: 32;
     background: var(--background);
-    box-shadow: 0 -0.5rem 1.25rem color-mix(in srgb, transparent 70%, var(--text));
-    transition: height 0.28s ease-out;
     display: flex;
     flex-direction: column;
     overflow: visible;
+}
+.small-window.mobile-panel-bottom-open #t2i_bottom_bar {
+    box-shadow: 0 -0.5rem 1.25rem color-mix(in srgb, transparent 70%, var(--text));
 }
 .small-window.modal-open #t2i_bottom_bar {
     z-index: 2000;
