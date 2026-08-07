@@ -2455,8 +2455,9 @@ body {
 .small-window.mobile-panel-bottom-open #t2i_bottom_bar {
     transform: none;
 }
-.small-window:not(.mobile-panel-bottom-open) #bottom_info_bar {
-    display: none;
+.small-window #bottom_info_bar {
+    flex: 0 0 auto;
+    max-width: 100%;
 }
 .small-window #t2i_bottom_bar .tab-content {
     flex: 1 1 auto;
@@ -2476,14 +2477,6 @@ body {
 .small-window #bottombartabcollection .nav-item {
     flex: 0 0 auto;
     float: none;
-}
-.small-window #current_model,
-.small-window .bottom-info-bar-component {
-    max-width: 100%;
-}
-.small-window #current_model {
-    width: auto !important;
-    max-width: calc(100vw - 5rem);
 }
 .small-window .mobile-layout-scrim {
     position: fixed;

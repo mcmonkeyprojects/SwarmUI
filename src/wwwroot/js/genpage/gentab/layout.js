@@ -379,14 +379,15 @@ class GenTabLayout {
         }
     }
 
-    /** Pixel height of the bottom tab peek when the bottom panel is shut. */
+    /** Pixel height of the bottom info+tabs peek when the bottom panel is shut. */
     getMobileBottomPeekPx() {
+        let infoH = this.bottomInfoBar ? this.bottomInfoBar.offsetHeight : 0;
         let tabs = getRequiredElementById('bottombartabcollection');
-        let h = tabs.getBoundingClientRect().height;
-        if (!h || h < 24) {
-            return Math.round(2.75 * parseFloat(getComputedStyle(document.documentElement).fontSize));
+        let tabsH = tabs.getBoundingClientRect().height;
+        if (!tabsH || tabsH < 24) {
+            tabsH = 2.75 * parseFloat(getComputedStyle(document.documentElement).fontSize);
         }
-        return Math.ceil(h + 4);
+        return Math.ceil(infoH + tabsH + 4);
     }
 
     /** True if a touch target is inside a scrollable mobile content area (not an edge gesture). */
