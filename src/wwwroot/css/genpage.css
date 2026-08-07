@@ -13,6 +13,10 @@ body.small-window {
 }
 body.small-window > #toptablist {
     flex: 0 0 auto;
+    position: relative;
+    z-index: 5;
+    transform: translateY(calc(-1 * var(--mobile-topbar-collapse, 0px)));
+    margin-bottom: calc(-1 * var(--mobile-topbar-collapse, 0px));
 }
 body.small-window > .tab-content.tab-hundred {
     flex: 1 1 auto;

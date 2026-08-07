@@ -165,6 +165,14 @@ class GenTabLayout {
         this.mobileHintRight = null;
         /** Whether the mobile prompt textboxes currently have focus. */
         this.mobilePromptFocused = false;
+        /** How many px the mobile top tab bar is currently collapsed by. */
+        this.mobileTopbarCollapsePx = 0;
+        /** True while a finger is driving topbar collapse. */
+        this.mobileTopbarDragging = false;
+        /** Collapse px when the current topbar finger-drag began. */
+        this.mobileTopbarDragFrom = 0;
+        /** Whether the current touch may drive topbar collapse. */
+        this.mobileTopbarCanDrag = false;
         if (this.isSmallWindow) {
             this.bottomShut = true;
             this.leftShut = true;
@@ -253,7 +261,37 @@ class GenTabLayout {
         this.clearMobileDragTransforms();
         this.altRegion.style.visibility = '';
         document.documentElement.style.removeProperty('--mobile-keyboard-inset');
+        document.documentElement.style.removeProperty('--mobile-topbar-collapse');
         document.body.classList.remove('mobile-panel-left-open', 'mobile-panel-right-open', 'mobile-panel-bottom-open', 'mobile-panels-all-shut', 'mobile-panel-dragging', 'mobile-keyboard-pin', 'mobile-keyboard-open');
+        this.mobileTopbarCollapsePx = 0;
+        this.mobileTopbarDragging = false;
+    }
+
+    /** Progressive mobile top-tab collapse (0 = open). Follows finger / scroll. */
+    setMobileTopbarCollapse(px) {
+        if (!this.isSmallWindow) {
+            px = 0;
+        }
+        let tabs = getRequiredElementById('toptablist');
+        let max = Math.max(0, (tabs.scrollHeight || tabs.offsetHeight) - 10);
+        this.mobileTopbarCollapsePx = Math.max(0, Math.min(max, px));
+        document.documentElement.style.setProperty('--mobile-topbar-collapse', `${this.mobileTopbarCollapsePx}px`);
+        let rootTop = this.t2iRootDiv.getBoundingClientRect().top;
+        this.quickToolsButton.style.top = `${Math.max(2, rootTop - 12)}px`;
+        this.quickToolsButton.style.right = '0.5rem';
+        let viewH = this.getViewportHeight();
+        let bottomPeek = document.body.classList.contains('mobile-keyboard-open') ? 0 : this.getMobileBottomPeekPx();
+        let topHeight = Math.max(120, viewH - rootTop - bottomPeek);
+        this.mainImageArea.style.height = `${topHeight}px`;
+        this.topSection.style.height = `${topHeight}px`;
+        let altHeight = this.altRegion.style.display == 'none' || this.isMobileBottomOpen() ? 0 : this.altRegion.offsetHeight;
+        this.currentImageWrapbox.style.height = `calc(${topHeight}px - ${altHeight}px)`;
+        this.editorSizebar.style.height = `calc(${topHeight}px - ${altHeight}px)`;
+    }
+
+    /** Fully hides the mobile top tab bar (leaves the Quick Tools peek). */
+    hideMobileTopbar() {
+        this.setMobileTopbarCollapse(1e9);
     }
 
     /** Syncs body classes that drive mobile overlay CSS. */
@@ -270,6 +308,7 @@ class GenTabLayout {
 
     /** Opens a mobile overlay panel, closing the others. */
     openMobilePanel(which) {
+        this.hideMobileTopbar();
         if (which == 'left') {
             this.setLeftShut(false);
             this.leftSectionBarPos = window.innerWidth;
@@ -539,6 +578,27 @@ class GenTabLayout {
         this.mobileHintRight.addEventListener('click', () => this.openMobilePanel('right'));
         host.appendChild(this.mobileHintLeft);
         host.appendChild(this.mobileHintRight);
+        document.addEventListener('scroll', (e) => {
+            if (!this.isSmallWindow || this.mobileTopbarDragging || document.body.classList.contains('modal-open')) {
+                return;
+            }
+            let el = e.target;
+            if (!(el instanceof Element) || !el.matches('.main_inputs_area_wrapper, .current_image_batch_core, .browser-content-container, .browser_container, .scroll-within-tab')) {
+                return;
+            }
+            this.setMobileTopbarCollapse(el.scrollTop);
+        }, true);
+        document.addEventListener('focusin', (e) => {
+            if (!this.isSmallWindow || !e.target || !e.target.closest) {
+                return;
+            }
+            if (e.target.closest('#toptablist')) {
+                return;
+            }
+            if (e.target.matches('input, textarea, select') || e.target.isContentEditable) {
+                this.hideMobileTopbar();
+            }
+        });
     }
 
     /** Resets the entire page layout to default, and removes all stored browser layout state info. */
@@ -606,12 +666,17 @@ class GenTabLayout {
                 this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 1rem - 7px)`;
             }
         }
+        if (this.isSmallWindow) {
+            this.setMobileTopbarCollapse(this.mobileTopbarCollapsePx);
+        }
         let rootTop = this.t2iRootDiv.getBoundingClientRect().top;
         let bottomShut = this.bottomShut;
         let leftShut = this.leftShut;
         let viewH = this.getViewportHeight();
-        this.quickToolsButton.style.top = `${rootTop - 18}px`;
-        this.quickToolsButton.style.right = this.isSmallWindow ? '0.5rem' : '';
+        if (!this.isSmallWindow) {
+            this.quickToolsButton.style.top = `${rootTop - 18}px`;
+            this.quickToolsButton.style.right = '';
+        }
         setCookie('barspot_pageBarTop', this.leftSectionBarPos, 365);
         setCookie('barspot_pageBarTop2', this.rightSectionBarPos, 365);
         setCookie('barspot_pageBarMidPx', this.bottomSectionBarPos, 365);
@@ -883,6 +948,13 @@ class GenTabLayout {
                 }
                 let deltaX = touch.pageX - this.swipeStartX;
                 let deltaY = touch.pageY - this.swipeStartY;
+                if (this.mobileTopbarDragging) {
+                    this.setMobileTopbarCollapse(this.mobileTopbarDragFrom - deltaY);
+                    if (e.cancelable) {
+                        e.preventDefault();
+                    }
+                    return;
+                }
                 if (!this.mobileDragActive && this.mobileDragPanel) {
                     let absX = Math.abs(deltaX);
                     let absY = Math.abs(deltaY);
@@ -890,6 +962,9 @@ class GenTabLayout {
                         let wantHorizontal = this.mobileDragPanel == 'left' || this.mobileDragPanel == 'right';
                         if (wantHorizontal && absX > absY) {
                             this.mobileDragActive = true;
+                            if (this.mobileDragOpening) {
+                                this.hideMobileTopbar();
+                            }
                             document.body.classList.add('mobile-panel-dragging');
                             if (this.mobileDragOpening) {
                                 if (this.mobileDragPanel == 'left') {
@@ -906,6 +981,9 @@ class GenTabLayout {
                         }
                         else if (!wantHorizontal && absY > absX) {
                             this.mobileDragActive = true;
+                            if (this.mobileDragOpening) {
+                                this.hideMobileTopbar();
+                            }
                             document.body.classList.add('mobile-panel-dragging');
                             if (this.mobileDragOpening) {
                                 document.body.classList.add('mobile-panel-bottom-open');
@@ -914,13 +992,20 @@ class GenTabLayout {
                         }
                         else {
                             this.mobileDragPanel = null;
-                            this.swipeStartX = -1;
-                            this.swipeStartY = -1;
                         }
                     }
                 }
                 if (this.mobileDragActive) {
                     this.applyMobileDragTransform(touch.pageX, touch.pageY);
+                    if (e.cancelable) {
+                        e.preventDefault();
+                    }
+                    return;
+                }
+                if (this.mobileTopbarCanDrag && !this.mobileDragPanel && Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                    this.mobileTopbarDragging = true;
+                    this.mobileTopbarDragFrom = this.mobileTopbarCollapsePx;
+                    this.setMobileTopbarCollapse(this.mobileTopbarDragFrom - deltaY);
                     if (e.cancelable) {
                         e.preventDefault();
                     }
@@ -940,6 +1025,8 @@ class GenTabLayout {
         document.addEventListener('touchstart', (e) => {
             this.mobileDragActive = false;
             this.mobileDragPanel = null;
+            this.mobileTopbarCanDrag = false;
+            this.mobileTopbarDragging = false;
             document.body.classList.remove('mobile-panel-dragging');
             if (this.isSmallWindow && document.body.classList.contains('modal-open')) {
                 this.swipeStartX = -1;
@@ -957,6 +1044,8 @@ class GenTabLayout {
                         this.mobileDragPanel = gesture.panel;
                         this.mobileDragOpening = gesture.opening;
                     }
+                    let onTopChrome = !!(e.target.closest && e.target.closest('#toptablist, .t2i-area-quicktools'));
+                    this.mobileTopbarCanDrag = onTopChrome || (!this.isMobileScrollableTouchTarget(e.target) && this.areAllMobilePanelsShut());
                 }
             }
             else {
@@ -970,11 +1059,22 @@ class GenTabLayout {
             this.bottomBarDrag = false;
             this.imageEditorSizeBarDrag = false;
             let touch = e.changedTouches.length == 1 ? e.changedTouches.item(0) : null;
+            if (this.mobileTopbarDragging) {
+                this.mobileTopbarDragging = false;
+                this.mobileTopbarCanDrag = false;
+                this.swipeStartX = -1;
+                this.swipeStartY = -1;
+                this.mobileDragActive = false;
+                this.mobileDragPanel = null;
+                this.reapplyPositions();
+                return;
+            }
             if (!touch) {
                 this.swipeStartX = -1;
                 this.swipeStartY = -1;
                 this.mobileDragActive = false;
                 this.mobileDragPanel = null;
+                this.mobileTopbarCanDrag = false;
                 document.body.classList.remove('mobile-panel-dragging');
                 return;
             }
@@ -982,6 +1082,7 @@ class GenTabLayout {
                 this.finishMobileDrag(touch.pageX, touch.pageY);
                 this.swipeStartX = -1;
                 this.swipeStartY = -1;
+                this.mobileTopbarCanDrag = false;
                 return;
             }
             if (this.swipeStartX != -1 && this.swipeStartY != -1 && this.isSmallWindow) {
@@ -1019,6 +1120,7 @@ class GenTabLayout {
             this.swipeStartY = -1;
             this.mobileDragActive = false;
             this.mobileDragPanel = null;
+            this.mobileTopbarCanDrag = false;
             document.body.classList.remove('mobile-panel-dragging');
             this.clearMobileDragTransforms();
         });
