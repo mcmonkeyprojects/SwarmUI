@@ -2587,9 +2587,6 @@ body.small-window > .tab-content.tab-hundred {
 .small-window .mobile-edge-hint-right {
     right: 0.15rem;
 }
-.small-window .mobile-edge-hint-bottom {
-    display: none !important;
-}
 .small-window.mobile-panel-dragging #input_sidebar,
 .small-window.mobile-panel-dragging #current_image_batch_wrapper,
 .small-window.mobile-panel-dragging #t2i_bottom_bar,
@@ -2600,7 +2597,7 @@ body.small-window > .tab-content.tab-hundred {
     height: auto;
     font-size: 130%;
     text-align: center;
-    padding-bottom: calc(0.4rem + max(48px, env(safe-area-inset-bottom, 0px)));
+    padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
 }
 .small-window .settings_submit_confirmer .settings_submit_confirmer_text {
     display: block;

@@ -163,8 +163,6 @@ class GenTabLayout {
         this.mobileHintLeft = null;
         /** Right edge swipe-hint button. */
         this.mobileHintRight = null;
-        /** Bottom edge swipe-hint button. */
-        this.mobileHintBottom = null;
         /** Whether the mobile prompt textboxes currently have focus. */
         this.mobilePromptFocused = false;
         if (this.isSmallWindow) {
@@ -174,15 +172,8 @@ class GenTabLayout {
         }
     }
 
-    /** Height used for Generate layout geometry (layout viewport). */
+    /** Height used for Generate layout geometry. */
     getViewportHeight() {
-        if (window.visualViewport && window.visualViewport.height) {
-            let vv = Math.round(window.visualViewport.height);
-            if (window.innerHeight - vv > 100) {
-                return window.innerHeight;
-            }
-            return vv;
-        }
         return window.innerHeight;
     }
 
@@ -262,8 +253,6 @@ class GenTabLayout {
         this.clearMobileDragTransforms();
         this.altRegion.style.visibility = '';
         document.documentElement.style.removeProperty('--mobile-keyboard-inset');
-        document.documentElement.style.removeProperty('--mobile-bottom-peek');
-        document.documentElement.style.removeProperty('--mobile-alt-height');
         document.body.classList.remove('mobile-panel-left-open', 'mobile-panel-right-open', 'mobile-panel-bottom-open', 'mobile-panels-all-shut', 'mobile-panel-dragging', 'mobile-keyboard-pin', 'mobile-keyboard-open');
     }
 
@@ -544,16 +533,12 @@ class GenTabLayout {
         host.appendChild(this.mobileScrim);
         this.mobileHintLeft = createDiv('mobile_edge_hint_left', 'mobile-edge-hint mobile-edge-hint-left', '&#x2039;');
         this.mobileHintRight = createDiv('mobile_edge_hint_right', 'mobile-edge-hint mobile-edge-hint-right', '&#x203A;');
-        this.mobileHintBottom = createDiv('mobile_edge_hint_bottom', 'mobile-edge-hint mobile-edge-hint-bottom', '&#x203A;');
         this.mobileHintLeft.title = 'Swipe right for inputs';
         this.mobileHintRight.title = 'Swipe left for batch';
-        this.mobileHintBottom.title = 'Swipe up for history and models';
         this.mobileHintLeft.addEventListener('click', () => this.openMobilePanel('left'));
         this.mobileHintRight.addEventListener('click', () => this.openMobilePanel('right'));
-        this.mobileHintBottom.addEventListener('click', () => this.openMobilePanel('bottom'));
         host.appendChild(this.mobileHintLeft);
         host.appendChild(this.mobileHintRight);
-        host.appendChild(this.mobileHintBottom);
     }
 
     /** Resets the entire page layout to default, and removes all stored browser layout state info. */
@@ -659,7 +644,6 @@ class GenTabLayout {
     reapplyMobilePositions(rootTop, viewH) {
         let hideBottomPeek = this.syncMobileKeyboardState();
         let peek = hideBottomPeek ? 0 : this.getMobileBottomPeekPx();
-        document.documentElement.style.setProperty('--mobile-bottom-peek', `${peek}px`);
         let topHeight = Math.max(120, viewH - rootTop - peek);
         this.syncMobilePanelClasses();
         this.inputSidebar.style.display = '';
@@ -671,8 +655,6 @@ class GenTabLayout {
         this.topSection.style.height = `${topHeight}px`;
         this.currentImageBatch.style.width = '100%';
         this.currentImageBatch.style.height = '';
-        this.leftSplitBar.style.height = `${topHeight}px`;
-        this.rightSplitBar.style.height = `${topHeight}px`;
         let fullBottom = Math.max(200, viewH - rootTop);
         if (this.isMobileBottomOpen()) {
             fullBottom = Math.max(200, fullBottom - Math.min(52, Math.round(viewH * 0.07)));
@@ -681,7 +663,6 @@ class GenTabLayout {
         this.altRegion.style.width = '100%';
         this.altRegion.style.top = '';
         let altHeight = this.altRegion.style.display == 'none' || this.isMobileBottomOpen() ? 0 : this.altRegion.offsetHeight;
-        document.documentElement.style.setProperty('--mobile-alt-height', `${altHeight}px`);
         this.currentImageWrapbox.style.width = '100%';
         this.currentImageWrapbox.style.height = `calc(${topHeight}px - ${altHeight}px)`;
         this.editorSizebar.style.height = `calc(${topHeight}px - ${altHeight}px)`;
