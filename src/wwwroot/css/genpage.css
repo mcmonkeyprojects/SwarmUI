@@ -1120,6 +1120,15 @@ body.small-window > .tab-content.tab-hundred {
     width: 7px;
     height: calc(max(10rem, 100%));
     cursor: col-resize;
+    touch-action: none;
+    position: relative;
+    z-index: 6;
+}
+.small-window .browser-folder-tree-splitter {
+    box-sizing: content-box;
+    padding: 0 1.5rem;
+    margin: 0 -1.5rem;
+    background-clip: content-box;
 }
 .browser-header-bar {
     width: calc(100% - 1rem);

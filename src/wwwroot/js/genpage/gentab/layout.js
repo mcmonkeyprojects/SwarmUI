@@ -462,8 +462,16 @@ class GenTabLayout {
         return false;
     }
 
+    /** True if a touch is on a splitter/drag handle that must not start a panel gesture. */
+    isMobileSplitterTouchTarget(target) {
+        return !!(target && target.closest && target.closest('.splitter-bar, .browser-folder-tree-splitter'));
+    }
+
     /** Determines which mobile panel gesture (if any) a touch should start. */
     getMobileGestureForTouch(startX, startY, target) {
+        if (this.isMobileSplitterTouchTarget(target)) {
+            return null;
+        }
         let width = window.innerWidth;
         let height = this.getViewportHeight();
         let edgeX = width / 6;
@@ -1029,6 +1037,11 @@ class GenTabLayout {
             this.mobileTopbarDragging = false;
             document.body.classList.remove('mobile-panel-dragging');
             if (this.isSmallWindow && document.body.classList.contains('modal-open')) {
+                this.swipeStartX = -1;
+                this.swipeStartY = -1;
+                return;
+            }
+            if (this.isSmallWindow && this.isMobileSplitterTouchTarget(e.target)) {
                 this.swipeStartX = -1;
                 this.swipeStartY = -1;
                 return;
