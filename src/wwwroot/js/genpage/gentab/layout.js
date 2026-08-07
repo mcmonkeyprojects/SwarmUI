@@ -191,7 +191,7 @@ class GenTabLayout {
         if (!this.isSmallWindow || !this.mobilePromptFocused || !window.visualViewport) {
             return 0;
         }
-        let inset = Math.max(0, Math.round(window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop)) - 64);
+        let inset = Math.max(0, Math.round(window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop)));
         if (inset < 60) {
             return 0;
         }

@@ -6,6 +6,20 @@ body {
     position: fixed;
     overflow: hidden;
 }
+body.small-window {
+    display: flex;
+    flex-direction: column;
+    height: 100svh;
+}
+body.small-window > #toptablist {
+    flex: 0 0 auto;
+}
+body.small-window > .tab-content.tab-hundred {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+    overflow: hidden;
+}
 .modal-body {
     white-space: normal;
 }
@@ -2581,6 +2595,15 @@ body {
 .small-window.mobile-panel-dragging #t2i_bottom_bar,
 .small-window.mobile-panel-dragging .mobile-layout-scrim {
     transition: none !important;
+}
+.small-window .settings_submit_confirmer {
+    height: auto;
+    font-size: 130%;
+    text-align: center;
+    padding-bottom: calc(0.4rem + max(48px, env(safe-area-inset-bottom, 0px)));
+}
+.small-window .settings_submit_confirmer .settings_submit_confirmer_text {
+    display: block;
 }
 @media (prefers-reduced-motion: reduce) {
     .small-window #input_sidebar,
