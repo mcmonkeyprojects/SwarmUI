@@ -1095,7 +1095,7 @@ class GenTabLayout {
         addEventListener("resize", this.reapplyPositions.bind(this));
         if (window.visualViewport) {
             let vvHandler = () => {
-                if (this.isSmallWindow) {
+                if (this.isSmallWindow && this.mobilePromptFocused) {
                     this.reapplyPositions();
                 }
             };

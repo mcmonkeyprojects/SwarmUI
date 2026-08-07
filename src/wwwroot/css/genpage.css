@@ -799,6 +799,7 @@ body.small-window > .tab-content.tab-hundred {
     height: calc(100vh - 7rem);
     max-width: 95vw;
     overflow: hidden;
+    touch-action: none;
 }
 .imageview_popup_modal_img {
     height: 100%;
