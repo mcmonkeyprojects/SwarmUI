@@ -157,6 +157,8 @@ class GenTabLayout {
         this.mobileDragOpening = false;
         /** Scrim element behind mobile overlays. */
         this.mobileScrim = null;
+        /** Ignore synthetic/ghost clicks until this timestamp (iOS tap-dismiss). */
+        this.mobileIgnoreClicksUntil = 0;
         /** Left edge swipe-hint button. */
         this.mobileHintLeft = null;
         /** Right edge swipe-hint button. */
@@ -325,6 +327,31 @@ class GenTabLayout {
         this.closeMobilePanel(null);
     }
 
+    /** Which mobile overlay is open, if any. */
+    getOpenMobilePanel() {
+        if (this.isMobileBottomOpen()) {
+            return 'bottom';
+        }
+        if (this.isMobileLeftOpen()) {
+            return 'left';
+        }
+        if (this.isMobileRightOpen()) {
+            return 'right';
+        }
+        return null;
+    }
+
+    /** Dismiss the current mobile overlay (same path as a completed swipe-close). */
+    dismissMobileOverlayFromScrim() {
+        let which = this.getOpenMobilePanel();
+        if (which) {
+            this.closeMobilePanel(which);
+        }
+        else {
+            this.closeAllMobilePanels();
+        }
+    }
+
     /** Applies a follow-finger transform for the active mobile drag. */
     applyMobileDragTransform(pageX, pageY) {
         let elem = this.getMobilePanelElem(this.mobileDragPanel);
@@ -362,7 +389,8 @@ class GenTabLayout {
         }
         else if (this.mobileDragPanel == 'bottom') {
             let peek = this.getMobileBottomPeekPx();
-            let full = Math.max(200, height - this.t2iRootDiv.getBoundingClientRect().top);
+            let dismissGap = Math.min(52, Math.round(height * 0.07));
+            let full = Math.max(200, height - this.t2iRootDiv.getBoundingClientRect().top - dismissGap);
             let travel = Math.max(1, full - peek);
             let h;
             if (this.mobileDragOpening) {
@@ -482,9 +510,37 @@ class GenTabLayout {
     initMobileOverlayUi() {
         let host = this.t2iRootDiv;
         this.mobileScrim = createDiv('mobile_layout_scrim', 'mobile-layout-scrim');
-        this.mobileScrim.addEventListener('click', () => {
-            this.closeAllMobilePanels();
+        this.mobileScrim.addEventListener('touchend', (e) => {
+            if (!this.isSmallWindow || e.changedTouches.length != 1) {
+                return;
+            }
+            this.mobileIgnoreClicksUntil = Date.now() + 500;
+            this.swipeStartX = -1;
+            this.swipeStartY = -1;
+            this.mobileDragActive = false;
+            this.mobileDragPanel = null;
+            document.body.classList.remove('mobile-panel-dragging');
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            e.stopPropagation();
+            this.dismissMobileOverlayFromScrim();
+        }, { passive: false });
+        this.mobileScrim.addEventListener('click', (e) => {
+            if (Date.now() < this.mobileIgnoreClicksUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            this.dismissMobileOverlayFromScrim();
         });
+        document.addEventListener('click', (e) => {
+            if (Date.now() < this.mobileIgnoreClicksUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+            }
+        }, true);
         host.appendChild(this.mobileScrim);
         this.mobileHintLeft = createDiv('mobile_edge_hint_left', 'mobile-edge-hint mobile-edge-hint-left', '&#x2039;');
         this.mobileHintRight = createDiv('mobile_edge_hint_right', 'mobile-edge-hint mobile-edge-hint-right', '&#x203A;');
@@ -618,6 +674,9 @@ class GenTabLayout {
         this.leftSplitBar.style.height = `${topHeight}px`;
         this.rightSplitBar.style.height = `${topHeight}px`;
         let fullBottom = Math.max(200, viewH - rootTop);
+        if (this.isMobileBottomOpen()) {
+            fullBottom = Math.max(200, fullBottom - Math.min(52, Math.round(viewH * 0.07)));
+        }
         this.bottomBar.style.height = `${this.isMobileBottomOpen() ? fullBottom : peek}px`;
         this.altRegion.style.width = '100%';
         this.altRegion.style.top = '';
