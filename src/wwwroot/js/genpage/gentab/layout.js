@@ -362,17 +362,19 @@ class GenTabLayout {
         }
         else if (this.mobileDragPanel == 'bottom') {
             let peek = this.getMobileBottomPeekPx();
-            let travel = Math.max(1, height - peek);
+            let full = Math.max(200, height - this.t2iRootDiv.getBoundingClientRect().top);
+            let travel = Math.max(1, full - peek);
+            let h;
             if (this.mobileDragOpening) {
-                let y = Math.min(travel, Math.max(0, travel + deltaY));
-                elem.style.transform = `translateY(${y}px)`;
-                progress = Math.min(1, Math.max(0, -deltaY / travel));
+                h = Math.min(full, Math.max(peek, peek - deltaY));
+                progress = Math.min(1, Math.max(0, (h - peek) / travel));
             }
             else {
-                let y = Math.min(travel, Math.max(0, deltaY));
-                elem.style.transform = `translateY(${y}px)`;
-                progress = Math.min(1, Math.max(0, 1 - (y / travel)));
+                h = Math.min(full, Math.max(peek, full - deltaY));
+                progress = Math.min(1, Math.max(0, (h - peek) / travel));
             }
+            elem.style.transform = '';
+            elem.style.height = `${h}px`;
         }
         if (this.mobileScrim) {
             this.mobileScrim.style.opacity = `${Math.min(0.45, 0.15 + progress * 0.3)}`;
@@ -395,7 +397,7 @@ class GenTabLayout {
         if (!target || !target.closest) {
             return false;
         }
-        if (target.closest('textarea, input, select, button, a, .nav-link, .basic-button, .interrupt-button, .model-block, .sui-popover, .mobile-layout-scrim, .mobile-edge-hint')) {
+        if (target.closest('textarea, input, select, button, a, .nav-link, .basic-button, .interrupt-button, .model-block, .sui-popover, .mobile-layout-scrim, .mobile-edge-hint, #image_fullview_modal, #image_compare_modal')) {
             return true;
         }
         if (target.closest('.main_inputs_area_wrapper, .current_image_batch_core, .browser-content-container, .browser_container, .scroll-within-tab')) {
@@ -615,7 +617,8 @@ class GenTabLayout {
         this.currentImageBatch.style.height = '';
         this.leftSplitBar.style.height = `${topHeight}px`;
         this.rightSplitBar.style.height = `${topHeight}px`;
-        this.bottomBar.style.height = `${Math.max(200, viewH - rootTop)}px`;
+        let fullBottom = Math.max(200, viewH - rootTop);
+        this.bottomBar.style.height = `${this.isMobileBottomOpen() ? fullBottom : peek}px`;
         this.altRegion.style.width = '100%';
         this.altRegion.style.top = '';
         let altHeight = this.altRegion.style.display == 'none' || this.isMobileBottomOpen() ? 0 : this.altRegion.offsetHeight;
@@ -898,6 +901,11 @@ class GenTabLayout {
             this.mobileDragActive = false;
             this.mobileDragPanel = null;
             document.body.classList.remove('mobile-panel-dragging');
+            if (this.isSmallWindow && document.body.classList.contains('modal-open')) {
+                this.swipeStartX = -1;
+                this.swipeStartY = -1;
+                return;
+            }
             if (e.touches.length == 1 && !['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName) && !findParentOfClass(e.target, 'model-block')) {
                 this.swipeStartX = e.touches.item(0).pageX;
                 this.swipeStartY = e.touches.item(0).pageY;

@@ -2446,14 +2446,52 @@ body {
     z-index: 32;
     background: var(--background);
     box-shadow: 0 -0.5rem 1.25rem color-mix(in srgb, transparent 70%, var(--text));
-    transform: translateY(calc(100% - var(--mobile-bottom-peek, 2.75rem)));
-    transition: transform 0.28s ease-out;
+    transition: height 0.28s ease-out;
     display: flex;
     flex-direction: column;
+    overflow: visible;
+}
+.small-window.modal-open #t2i_bottom_bar {
+    z-index: 2000;
+}
+.small-window.modal-open #bottom_info_bar,
+.small-window.modal-open #bottombartabcollection {
+    visibility: hidden;
+    pointer-events: none;
+}
+.small-window:not(.mobile-panel-bottom-open) #t2i_bottom_bar_content > .tab-pane {
+    display: none !important;
+}
+.small-window #image_fullview_modal_content {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw;
+    margin: 0 !important;
+}
+.small-window #image_fullview_modal .imageview_modal_inner_div {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    max-width: 100vw;
     overflow: hidden;
 }
-.small-window.mobile-panel-bottom-open #t2i_bottom_bar {
-    transform: none;
+.small-window #image_fullview_modal .imageview_modal_imagewrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+    max-width: 100vw;
+}
+.small-window #image_fullview_modal.imageview_popup_modal_background {
+    background-color: rgb(20, 20, 20, 0.94);
+}
+.small-window #image_fullview_modal .imageview_popup_modal_undertext {
+    flex: 0 0 auto;
+    height: auto;
+    max-height: 45vh;
+    overflow-y: auto;
+    padding-bottom: 0.5rem;
+    box-sizing: border-box;
 }
 .small-window #bottom_info_bar {
     flex: 0 0 auto;
