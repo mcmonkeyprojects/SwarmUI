@@ -53,7 +53,7 @@ class SwarmMiniMaxH3AddKeyframes(io.ComfyNode):
     @classmethod
     def execute(cls, vae, latent, conditioning, first_frame=None, last_frame=None) -> io.NodeOutput:
         latent = latent["samples"].unbind()[0]
-        frame_count = 5 + 17 * ((latent.shape[0] - 2) // 5)
+        frame_count = 5 + 17 * ((latent.shape[2] - 2) // 5)
         width = latent.shape[4] * 16
         height = latent.shape[3] * 16
 

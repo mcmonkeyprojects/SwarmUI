@@ -18,6 +18,11 @@ class AdvancedPopover {
         this.heightLimit = heightLimit;
         this.overExtendBy = 24;
         this.canSelect = canSelect;
+        this.onViewportChange = () => {
+            if (this.popover && !this.isHidden()) {
+                this.reposition();
+            }
+        };
         if (canSearch) {
             this.textInput = document.createElement('input');
             this.textInput.type = 'text';
@@ -26,7 +31,7 @@ class AdvancedPopover {
             this.textInput.placeholder = 'Search...';
             this.textInput.addEventListener('input', (e) => {
                 this.buildList();
-                this.optionArea.style.width = (this.optionArea.offsetWidth + this.overExtendBy) + 'px';
+                this.optionArea.style.width = `${Math.min(this.optionArea.offsetWidth + this.overExtendBy, window.innerWidth - 40)}px`;
             });
             this.textInput.addEventListener('keydown', (e) => {
                 this.onKeyDown(e);
@@ -45,11 +50,19 @@ class AdvancedPopover {
             this.textInput.focus();
         }
         this.created = Date.now();
-        this.optionArea.style.width = (this.optionArea.offsetWidth + this.overExtendBy) + 'px';
+        this.optionArea.style.width = `${Math.min(this.optionArea.offsetWidth + this.overExtendBy, window.innerWidth - 40)}px`;
         this.scrollFix();
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', this.onViewportChange);
+            window.visualViewport.addEventListener('scroll', this.onViewportChange);
+        }
     }
 
     remove() {
+        if (window.visualViewport) {
+            window.visualViewport.removeEventListener('resize', this.onViewportChange);
+            window.visualViewport.removeEventListener('scroll', this.onViewportChange);
+        }
         if (this.popover) {
             this.hide();
             this.popover.remove();
@@ -209,23 +222,28 @@ class AdvancedPopover {
         if (this.popover.classList.contains('sui_popover_reverse')) {
             this.popover.classList.remove('sui_popover_reverse');
         }
+        let viewTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
+        let viewH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        let viewBottom = viewTop + viewH;
         let y;
         let maxHeight;
         let extraHeight = (this.textInput ? this.textInput.offsetHeight : 0) + 32;
         let rawExpected = Math.min(this.expectedHeight, this.heightLimit);
         let expected = rawExpected + extraHeight;
-        if (this.targetY + expected < window.innerHeight) {
+        if (this.targetY + expected < viewBottom) {
             y = this.targetY;
             maxHeight = rawExpected;
         }
-        else if (this.flipYHeight != null && this.targetY > window.innerHeight / 2) {
-            y = Math.max(0, this.targetY - this.flipYHeight - expected);
+        else if (this.flipYHeight != null && this.targetY > viewTop + viewH / 2) {
+            let anchor = Math.min(this.targetY, viewBottom);
+            maxHeight = Math.min(Math.max(0, anchor - this.flipYHeight - viewTop - extraHeight), rawExpected);
+            expected = maxHeight + extraHeight;
+            y = Math.max(viewTop, anchor - this.flipYHeight - expected);
             this.popover.classList.add('sui_popover_reverse');
-            maxHeight = Math.min(this.targetY - this.flipYHeight - 32, rawExpected);
         }
         else {
             y = this.targetY;
-            maxHeight = window.innerHeight - y - extraHeight - 10;
+            maxHeight = viewBottom - y - extraHeight - 10;
         }
         this.popover.style.top = `${y}px`;
         this.optionArea.style.maxHeight = `${maxHeight}px`;
