@@ -97,6 +97,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is PiD.</summary>
     public bool IsPiD() => IsModelCompatClass(T2IModelClassSorter.CompatPiD);
 
+    /// <summary>Returns true if the current model is SeedVR2.</summary>
+    public bool IsSeedVR2() => IsModelCompatClass(T2IModelClassSorter.CompatSeedVR2);
+
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
     public bool IsHiDream() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamI1);
 
@@ -1015,7 +1018,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsZImage() || IsZetaChroma() || IsAnima() || IsLens() || IsPixelDiT() || IsPiD()) // Model is small and dense, so trust user preferred download format
+                    else if (IsZImage() || IsZetaChroma() || IsAnima() || IsLens() || IsPixelDiT() || IsPiD() || IsSeedVR2()) // Model is small and dense, so trust user preferred download format
                     {
                         dtype = "default";
                     }
@@ -1282,6 +1285,10 @@ public partial class WorkflowGenerator
             helpers.LoadClip("pixeldit", helpers.GetGemma2_2bElmModel());
             LoadingVAE = CreateVAELoader("pixel_space");
         }
+        else if (IsSeedVR2())
+        {
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatSeedVR2, "seedvr2-vae");
+        }
         else if (IsHiDream())
         {
             string loaderType = "QuadrupleCLIPLoader";
@@ -1547,7 +1554,7 @@ public partial class WorkflowGenerator
         {
             step.Action(this);
         }
-        if (LoadingClip is null)
+        if (LoadingClip is null && type != "SeedVR2")
         {
             if (string.IsNullOrWhiteSpace(model.Metadata?.ModelClassType))
             {

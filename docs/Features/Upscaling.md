@@ -7,3 +7,7 @@
 (TODO)
 
 Downloads here: <https://huggingface.co/Comfy-Org/PixelDiT/tree/main/diffusion_models>
+
+# SeedVR2
+
+Downloads here: <https://huggingface.co/Comfy-Org/SeedVR2/tree/main/diffusion_models>
