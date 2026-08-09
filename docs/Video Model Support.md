@@ -557,8 +557,6 @@ The "FL2VA" model is used for basic image-to-video. Works like any other image2v
 
 ### MiniMax H3 Reference Model Usage
 
-Full reference support is a work-in-progress, but is almost all working.
-
 When using the reference model, you can attach images freely (up to a max of 10) to the prompt box. In the prompt you can type something like `The person in <Picture 1>` to reference your first picture (and naturally, `<Picture 2>` for the next, etc.).
 
 You can also attach audio files freely (up to a max of 3). In the prompt you can type something like `She has the voice from <Audio 1>` to reference the audio.
