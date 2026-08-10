@@ -277,7 +277,8 @@ public static class OutputMetadataTracker
             }
             if (fileData is null)
             {
-                byte[] data = File.ReadAllBytes(altExists ? altPreview : file);
+                string target = altExists ? altPreview : file;
+                byte[] data = File.ReadAllBytes(target);
                 if (data.Length == 0)
                 {
                     return null;
@@ -292,7 +293,7 @@ public static class OutputMetadataTracker
                 }
                 else
                 {
-                    ImageFile newFile = new Image(data, MediaType.GetByExtension(ext));
+                    ImageFile newFile = new Image(data, MediaType.GetByExtension(target.AfterLast('.')));
                     fileData = newFile.ToMetadataJpg()?.RawData;
                 }
             }
