@@ -51,6 +51,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Lightricks LTX Video 2.3.</summary>
     public bool IsLTXV23() => CurrentModelClass()?.ID == "lightricks-ltx-video-2-3";
 
+    /// <summary>Returns true if the current model is Lightricks LTX Video 2.5.</summary>
+    public bool IsLTXV25() => CurrentModelClass()?.ID == "lightricks-ltx-video-2-5";
+
     /// <summary>Returns true if the current model is MiniMax H3.</summary>
     public bool IsMiniMaxH3() => IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxH3);
 
@@ -770,6 +773,11 @@ public partial class WorkflowGenerator
             return RequireClipModel("ltx2/ltx2-embeddings-connector-distill.safetensors", "https://huggingface.co/Kijai/LTXV2_comfy/resolve/main/text_encoders/ltx-2-19b-embeddings_connector_distill_bf16.safetensors", "8990ec3fe88396ca33ac1795c89b1771d88190e51e24084b21f54b25399acbed", null);
         }
 
+        public string GetLTX25Gemma4Model()
+        {
+            return RequireClipModel("LTX-2/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "09a89e084de1a149c3de60cfe9dfd3e5161967eb09eea39e806fcdeffdd568de", T2IParamTypes.GemmaModel);
+        }
+
         public string GetLTX23TextProjectionClip()
         {
             // TODO: Still cursed!
@@ -1359,17 +1367,26 @@ public partial class WorkflowGenerator
         {
             if (LoadingVAE is null)
             {
-                if (!IsLTXV23())
+                if (IsLTXV25())
+                {
+                    helpers.LoadClip("ltxv", helpers.GetLTX25Gemma4Model());
+                    helpers.DoVaeLoader(null, (T2IModelCompatClass)null, "ltx2-5-video-vae");
+                    helpers.LTXAudioVaeLoad("ltx2-5-audio-vae");
+                }
+                else if (IsLTXV23())
+                {
+                    helpers.LoadClip2("ltxv", helpers.GetGemma3_12bModel(), helpers.GetLTX23TextProjectionClip());
+                    helpers.DoVaeLoader(null, "lightricks-ltx-video-2", "ltx2-3-video-vae");
+                    helpers.LTXAudioVaeLoad("ltx2-3-audio-vae");
+                }
+                else
                 {
                     throw new SwarmUserErrorException("LTX2 requires the safetensors checkpoint format currently due to comfy limitations.");
                 }
-                helpers.LoadClip2("ltxv", helpers.GetGemma3_12bModel(), helpers.GetLTX23TextProjectionClip());
-                helpers.DoVaeLoader(null, "lightricks-ltx-video-2", "ltx2-3-video-vae");
-                helpers.LTXAudioVaeLoad("ltx2-3-audio-vae");
             }
             else
             {
-                helpers.LoadClipAudio(helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
+                helpers.LoadClipAudio(IsLTXV25() ? helpers.GetLTX25Gemma4Model() : helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
                 helpers.AudioVaeLoad(model.ToString(ModelFolderFormat));
             }
         }

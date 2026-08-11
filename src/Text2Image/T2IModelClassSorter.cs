@@ -195,6 +195,8 @@ public class T2IModelClassSorter
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && h.ContainsKey("transformer.transformer_blocks.37.attn.to_out.0.lora_B.weight");
         bool isMochi(JObject h) => hasKey(h, "blocks.0.attn.k_norm_x.weight");
         bool isMochiVae(JObject h) => h.ContainsKey("encoder.layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("blocks.2.blocks.3.stack.5.weight") || h.ContainsKey("decoder.blocks.2.blocks.3.stack.5.weight");
+        bool isLtxv25(JObject h) => hasKey(h, "keyframes_abs_pos_embedding") && hasKey(h, "audio_patchify_proj.weight") && hasKey(h, "audio_proj_out.weight");
+        bool isLtxv25VideoVae(JObject h) => h.ContainsKey("decoder.conv_in_x_t.weight") && h.ContainsKey("decoder.shared_adaln.proj.weight") && h.ContainsKey("decoder.diff_blocks.0.context_proj.weight");
         bool isLtxv(JObject h) => hasKey(h, "adaln_single.emb.timestep_embedder.linear_1.bias");
         bool isLtxvVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias") && h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias");
         bool isLtxv23Vae(JObject h) => (h.ContainsKey("decoder.conv_in.conv.bias") && !h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias") && !h.ContainsKey("per_channel_statistics.channel"))
@@ -753,11 +755,19 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "lightricks-ltx-video-2-3", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.3", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isLtxv2(h) && isLtxv23(h);
+            return isLtxv2(h) && isLtxv23(h) && !isLtxv25(h);
         }});
         Register(new() { ID = "lightricks-ltx-video-2-3/vae", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.3 VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isLtxv23Vae(h);
+        }});
+        Register(new() { ID = "lightricks-ltx-video-2-5", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.5", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isLtxv2(h) && isLtxv25(h);
+        }});
+        Register(new() { ID = "lightricks-ltx-video-2-5/vae", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.5 VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isLtxv25VideoVae(h);
         }});
         // ====================== MiniMax H3 ======================
         Register(new() { ID = "minimax-h3", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
