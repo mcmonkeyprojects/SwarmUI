@@ -122,7 +122,7 @@ public class T2IModelClassSorter
     {
         // TODO: This is exponential, but we could instead eg prestrip these prefixes to reduce the exponentiality
         bool hasKey(JObject h, string key) => h.ContainsKey(key) || h.ContainsKey($"diffusion_model.{key}") || h.ContainsKey($"model.diffusion_model.{key}") || h.ContainsKey($"net.{key}") || h.ContainsKey($"transformer.{key}");
-        bool hasLoraKey(JObject h, string key) => hasKey(h, $"{key}.lora_A.weight") || hasKey(h, $"{key}.lora_A") || hasKey(h, $"{key}.lora_A.default.weight") || hasKey(h, $"{key}.lora_up.weight") || hasKey(h, $"{key}.lora.up.weight") || hasKey(h, $"{key}.lokr_w1");
+        bool hasLoraKey(JObject h, string key) => hasKey(h, $"{key}.lora_A.weight") || hasKey(h, $"{key}.lora_A") || hasKey(h, $"{key}.lora_A.default.weight") || hasKey(h, $"{key}.lora_up.weight") || hasKey(h, $"{key}.lora.up.weight") || hasKey(h, $"{key}.lokr_w1") || hasKey(h, $"lora_unet_{key.Replace('.', '_')}.lora_up.weight");
         bool tryGetKey(JObject h, string key, out JToken tok) => h.TryGetValue(key, out tok) || h.TryGetValue($"diffusion_model.{key}", out tok) || h.TryGetValue($"model.diffusion_model.{key}", out tok);
         bool IsAlt(JObject h) => h.ContainsKey("cond_stage_model.roberta.embeddings.word_embeddings.weight");
         bool isV1(JObject h) => h.ContainsKey("cond_stage_model.transformer.text_model.embeddings.position_ids") || h.ContainsKey("cond_stage_model.transformer.embeddings.position_ids");
@@ -978,6 +978,8 @@ public class T2IModelClassSorter
         Remaps["hunyuanvideo1.5_1080p_sr_distilled"] = "hunyuan-video-1_5-sr";
         Remaps["hunyuanvideo1.5_720p_sr_distilled"] = "hunyuan-video-1_5-sr";
         Remaps["hidream_o1_image"] = "hidream-o1";
+        // ====================== kohya ss_network_module remaps ======================
+        Remaps["networks.lora_minimax_h3"] = "minimax-h3/lora";
     }
 
     /// <summary>Returns the model class that matches this model, or null if none.</summary>
@@ -996,7 +998,9 @@ public class T2IModelClassSorter
             ?? fix(header.Value<string>("architecture"))
             ?? fix(header.Value<string>("general.architecture"))
             ?? fix(header?["__metadata__"]?.Value<string>("model_type"))
-            ?? fix(header.Value<string>("model_type"));
+            ?? fix(header.Value<string>("model_type"))
+            ?? fix(header?["__metadata__"]?.Value<string>("ss_network_module"))
+            ?? fix(header.Value<string>("ss_network_module"));
         T2IModelClass matchedClass = null;
         if (arch is not null)
         {
