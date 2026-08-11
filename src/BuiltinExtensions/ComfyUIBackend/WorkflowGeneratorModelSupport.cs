@@ -1370,7 +1370,7 @@ public partial class WorkflowGenerator
                 if (IsLTXV25())
                 {
                     helpers.LoadClip("ltxv", helpers.GetLTX25Gemma4Model());
-                    helpers.DoVaeLoader(null, "lightricks-ltx-video-2", "ltx2-5-video-vae");
+                    helpers.DoVaeLoader(null, (T2IModelCompatClass)null, "ltx2-5-video-vae");
                     helpers.LTXAudioVaeLoad("ltx2-5-audio-vae");
                 }
                 else if (IsLTXV23())
