@@ -379,6 +379,15 @@ public class WorkflowGeneratorSteps
                 });
                 g.LoadingModel = [aitLoad, 0];
             }
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.ModelAttentionBackend, out string attentionBackend))
+            {
+                string attentionNode = g.CreateNode("ModelAttentionBackend", new JObject()
+                {
+                    ["model"] = g.LoadingModel,
+                    ["attention"] = attentionBackend
+                });
+                g.LoadingModel = [attentionNode, 0];
+            }
             if (g.UserInput.TryGet(T2IParamTypes.TorchCompile, out string compileMode) && compileMode != "Disabled")
             {
                 string torchCompile = g.CreateNode("TorchCompileModel", new JObject()
