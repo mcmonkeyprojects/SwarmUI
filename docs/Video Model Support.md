@@ -298,6 +298,14 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
     - Mostly the same as regular LTX-2
     - New prompt guide here: <https://x.com/ltx_model/status/2029927683539325332>
 
+### LTX-2.5
+
+- LTX-2.5 is an official upgraded to LTX-2.3, with some improvements.
+- It has (partial) compatibility with LTX-2.3, eg some loras will cross-apply.
+- Main downloads require accepting license here <https://huggingface.co/Lightricks/LTX-2.5> then downloading from here <https://huggingface.co/Lightricks/LTX-2.5/tree/main/diffusion_models>
+- Parameters:
+    - Mostly the same as regular LTX-2.3
+
 # Wan 2.1
 
 ![wan21_14b](https://github.com/user-attachments/assets/17ace901-bc5f-48d0-ab01-ed8984a1b1dc)
