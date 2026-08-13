@@ -937,6 +937,11 @@ public partial class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "simple";
         }
+        else if (IsMiniMaxMusic3())
+        {
+            defsampler ??= "euler";
+            defscheduler ??= "simple";
+        }
         else if (IsAnima())
         {
             defsampler ??= "er_sde";
@@ -2452,6 +2457,19 @@ public partial class WorkflowGenerator
                 ["min_p"] = 0
             }, id);
         }
+        else if (IsMiniMaxMusic3())
+        {
+            node = CreateNode("MiniMaxMusic3TextEncode", new JObject()
+            {
+                ["clip"] = clip,
+                ["caption"] = UserInput.Get(T2IParamTypes.Text2AudioStyle, ""),
+                ["lyrics"] = prompt,
+                ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0),
+                ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 120), 0.04, 360),
+                ["cfg_scale"] = 1.7,
+                ["top_k"] = 50
+            }, id);
+        }
         else if (IsSana())
         {
             node = CreateNode("SanaTextEncode", new JObject()
@@ -2682,7 +2700,7 @@ public partial class WorkflowGenerator
         }
         if (UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
         {
-            if (IsAceStep15())
+            if (IsAceStep15() || IsMiniMaxMusic3())
             {
                 return true;
             }

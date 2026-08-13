@@ -103,5 +103,6 @@ public static class CommonModels
 
         // Audio VAEs
         Register(new("ace-step-15-vae", "Ace Step 1.5 VAE", "The audio VAE for Ace Step 1.5", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/vae/ace_1.5_vae.safetensors", "6de92e3a862acd287e08b024ac90f0783a8635451b728721a33ff03565bcb2bb", "VAE", "AceStep/ace_1.5_vae.safetensors"));
+        Register(new("minimax-music-3-vae", "MiniMax Music 3 DAV", "The audio decoder VAE for MiniMax Music 3", "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/vae/minimax_music3_dav.safetensors", "2a32155b769be01445fcc2a8663b910fc9e1751e18dc1c3ec528064512d9ef0c", "VAE", "MiniMaxMusic3/minimax_music3_dav.safetensors"));
     }
 }

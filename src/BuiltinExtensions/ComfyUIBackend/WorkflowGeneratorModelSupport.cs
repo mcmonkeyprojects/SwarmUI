@@ -266,6 +266,12 @@ public partial class WorkflowGenerator
         return IsModelCompatClass(T2IModelClassSorter.CompatAceStep15);
     }
 
+    /// <summary>Returns true if the current model is MiniMax Music 3.</summary>
+    public bool IsMiniMaxMusic3()
+    {
+        return IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxMusic3);
+    }
+
     /// <summary>Returns true if the current model primarily operates on audio.</summary>
     public bool IsAudioModel()
     {
@@ -405,6 +411,14 @@ public partial class WorkflowGenerator
             {
                 ["batch_size"] = batchSize,
                 ["seconds"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120)
+            }, id));
+        }
+        else if (IsMiniMaxMusic3())
+        {
+            return resultAudio(CreateNode("EmptyMiniMaxMusic3LatentAudio", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["seconds"] = NodePath("6", 1)
             }, id));
         }
         else if (IsWanVideo22()) // TODO: use VAE Family
@@ -1027,7 +1041,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsAceStep15()) // ??
+                    else if (IsAceStep15() || IsMiniMaxMusic3()) // ??
                     {
                         dtype = "default";
                     }
@@ -1488,6 +1502,12 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip2("kandinsky5", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc());
             helpers.DoVaeLoader(null, "hunyuan-video", "hunyuan-video-vae");
+        }
+        else if (IsMiniMaxMusic3())
+        {
+            helpers.LoadClip("minimax", helpers.RequireClipModel("MiniMaxMusic3/minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "010b7416d2336a08c711bc22ee65849c9623069ddb7d89bec011a75699e52014", null));
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxMusic3, "minimax-music-3-vae");
+            CurrentAudioVae = new WGNodeData([LoadingVAE, 0], this, WGNodeData.DT_AUDIOVAE, CurrentCompat());
         }
         else if (IsAceStep15())
         {
