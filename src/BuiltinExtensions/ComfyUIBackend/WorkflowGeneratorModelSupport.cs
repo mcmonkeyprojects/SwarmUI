@@ -415,10 +415,20 @@ public partial class WorkflowGenerator
         }
         else if (IsMiniMaxMusic3())
         {
+            JProperty encodedNode = NodesOfClass("MiniMaxMusic3TextEncode").FirstOrDefault();
+            JToken targetSeconds;
+            if (encodedNode is not null)
+            {
+                targetSeconds = NodePath(encodedNode.Name, 1);
+            }
+            else
+            {
+                targetSeconds = NodePath("6", 1); // TODO: This is a very wrong hack hardcoding the prompt path. This will break in many practical edge cases. Need to figure out the special routing that applies here.
+            }
             return resultAudio(CreateNode("EmptyMiniMaxMusic3LatentAudio", new JObject()
             {
                 ["batch_size"] = batchSize,
-                ["seconds"] = NodePath("6", 1)
+                ["seconds"] = targetSeconds
             }, id));
         }
         else if (IsWanVideo22()) // TODO: use VAE Family

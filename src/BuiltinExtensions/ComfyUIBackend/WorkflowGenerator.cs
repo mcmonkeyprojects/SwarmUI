@@ -937,11 +937,6 @@ public partial class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "simple";
         }
-        else if (IsMiniMaxMusic3())
-        {
-            defsampler ??= "euler";
-            defscheduler ??= "simple";
-        }
         else if (IsAnima())
         {
             defsampler ??= "er_sde";
@@ -986,12 +981,8 @@ public partial class WorkflowGenerator
             defsampler ??= "lcm";
             defscheduler ??= "simple";
         }
-        else if (IsBoogu())
-        {
-            defscheduler ??= "simple";
-        }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsMageFlow())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3())
         {
             defscheduler ??= "simple";
         }
@@ -2466,6 +2457,7 @@ public partial class WorkflowGenerator
                 ["lyrics"] = prompt,
                 ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0),
                 ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 120), 0.04, 360),
+                // TODO: Parameters for these?
                 ["cfg_scale"] = 1.7,
                 ["top_k"] = 50
             }, id);
