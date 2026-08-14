@@ -99,6 +99,7 @@ public class T2IModelClassSorter
         CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true, ResolutionPrecision = 32 }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
+        CompatMiniMaxMusic3 = RegisterCompat(new() { ID = "minimax-music-3", ShortCode = "MMM3", IsAudioModel = true }),
         // Obscure old random ones
         CompatAuraFlow = RegisterCompat(new() { ID = "auraflow-v1", ShortCode = "Aura", VaeFamily = VaeSdxl }),
         CompatHiDreamI1 = RegisterCompat(new() { ID = "hidream-i1", ShortCode = "HiDrm", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
@@ -278,6 +279,7 @@ public class T2IModelClassSorter
         bool isLongcat(JObject h) => hasKey(h, "double_blocks.0.txt_attn.norm.query_norm.weight") && hasKey(h, "time_in.out_layer.weight") && hasKey(h, "final_layer.adaLN_modulation.1.weight") && hasKey(h, "double_blocks.0.txt_mod.lin.weight");
         // Audio models
         bool isAceStep15(JObject h) => hasKey(h, "encoder.lyric_encoder.layers.0.post_attention_layernorm.weight");
+        bool isMiniMaxMusic3(JObject h) => hasKey(h, "cond_layer_logits") && hasKey(h, "latent_conditioners.0.weight") && hasKey(h, "diffusion_transformer.transformer.layers.0.self_attn.to_qkv.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = CompatSdv1, Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -922,6 +924,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "ace-step-1_5", CompatClass = CompatAceStep15, Name = "Ace Step 1.5", IsThisModelOfClass = (m, h) =>
         {
             return isAceStep15(h);
+        }});
+        Register(new() { ID = "minimax-music-3", CompatClass = CompatMiniMaxMusic3, Name = "MiniMax Music 3", IsThisModelOfClass = (m, h) =>
+        {
+            return isMiniMaxMusic3(h);
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
