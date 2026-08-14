@@ -2458,7 +2458,7 @@ public partial class WorkflowGenerator
                 ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0),
                 ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 120), 0.04, 360),
                 // TODO: Parameters for these?
-                ["cfg_scale"] = 1.7,
+                ["cfg_scale"] = 1.5,
                 ["top_k"] = 50
             }, id);
         }

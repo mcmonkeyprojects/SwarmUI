@@ -43,5 +43,5 @@ Audio models vary in intention and purpose. Some examples include:
             - Will be used as a *max* duration, the LLM song builder may choose to make the song shorter
         - **Audio Style:** write a short description of the music style.
             - They have an official agent skill and template list for style writing <https://github.com/MiniMax-AI/MiniMax-Music3/tree/main/skills/music-caption-rewriter>
-    - **CFG Scale:** 1.7
-    - **Steps:** Normal steps range, 30 is the reference
+    - **CFG Scale:** `1.7` is the official reference
+    - **Steps:** Normal steps range eg `20`, 30 is the official reference
