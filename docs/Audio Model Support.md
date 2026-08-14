@@ -3,7 +3,8 @@
 
 | Model | Year | Author | Scale | Type | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- |
-[Ace Step 1.5](#ace-step-15) | 2026 | StepFun | 2B DiT | Music | No | Modern, Fast, Decent Quality |
+[Ace Step 1.5](#ace-step-15) | 2026 | StepFun | 2B DiT | Music | Modern, Fast, Decent Quality |
+[MiniMax Music 3](#minimax-music-3) | 2026 | Hailuo & MiniMax | 2B DiT | Music | Modern, fast-ish, Decent Quality |
 
 Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above.
 
