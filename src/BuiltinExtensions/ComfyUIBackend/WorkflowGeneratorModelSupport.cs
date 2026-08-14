@@ -794,18 +794,18 @@ public partial class WorkflowGenerator
         public string GetLTX2EmbedClip()
         {
             // TODO: This is cursed and wrong.
-            return RequireClipModel("ltx2/ltx2-embeddings-connector-distill.safetensors", "https://huggingface.co/Kijai/LTXV2_comfy/resolve/main/text_encoders/ltx-2-19b-embeddings_connector_distill_bf16.safetensors", "8990ec3fe88396ca33ac1795c89b1771d88190e51e24084b21f54b25399acbed", null);
-        }
-
-        public string GetLTX25Gemma4Model()
-        {
-            return RequireClipModel("LTX-2/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "https://huggingface.co/mcmonkey/swarm-models/resolve/main/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "09a89e084de1a149c3de60cfe9dfd3e5161967eb09eea39e806fcdeffdd568de", T2IParamTypes.GemmaModel);
+            return RequireClipModel("ltx2-embeddings-connector-distill.safetensors", "https://huggingface.co/Kijai/LTXV2_comfy/resolve/main/text_encoders/ltx-2-19b-embeddings_connector_distill_bf16.safetensors", "8990ec3fe88396ca33ac1795c89b1771d88190e51e24084b21f54b25399acbed", null);
         }
 
         public string GetLTX23TextProjectionClip()
         {
             // TODO: Still cursed!
-            return RequireClipModel("LTX-2/ltx-2.3_text_projection_bf16.safetensors", "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/text_encoders/ltx-2.3_text_projection_bf16.safetensors", "911d59bb4cb7708179c9a0045ea0fe41212ecfb77aed3a02702b7c0a8274911f", null);
+            return RequireClipModel("ltx-2.3_text_projection_bf16.safetensors", "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/text_encoders/ltx-2.3_text_projection_bf16.safetensors", "911d59bb4cb7708179c9a0045ea0fe41212ecfb77aed3a02702b7c0a8274911f", null);
+        }
+
+        public string GetLTX25Gemma4Model()
+        {
+            return RequireClipModel("gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "https://huggingface.co/mcmonkey/swarm-models/resolve/main/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "09a89e084de1a149c3de60cfe9dfd3e5161967eb09eea39e806fcdeffdd568de", T2IParamTypes.GemmaModel);
         }
 
         public void LoadClip(string type, string model)
