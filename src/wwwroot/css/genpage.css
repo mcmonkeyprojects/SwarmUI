@@ -569,10 +569,12 @@ body.small-window > .tab-content.tab-hundred {
 .sui_popover_scrollable {
     max-height: 15rem;
     overflow-y: auto;
+    min-width: 100%;
 }
 .sui_popover_scrollable_tall {
     max-height: calc(max(15rem, 45vh));
     overflow-y: auto;
+    min-width: 100%;
 }
 .sui_popover_reverse {
     display: flex;
