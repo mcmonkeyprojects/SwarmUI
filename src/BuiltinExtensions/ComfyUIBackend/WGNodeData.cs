@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json.Linq;
@@ -361,32 +362,73 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         return this;
     }
 
-    /// <summary>Converts this data to a format fit for sampling, generally some form of latent.</summary>
-    public WGNodeData AsSamplingLatent(WGNodeData vae, WGNodeData audioVae)
+    /// <summary>Adds a masked silent prefix and/or suffix to latent audio (does nothing if audio is not latent, or not present, or the relevant parameters are unset).</summary>
+    public WGNodeData WithAudioSilenceMask(WGNodeData vae, WGNodeData audioVae)
     {
-        WGNodeData withAudio = EnsureHasAudioIfNeeded(vae, audioVae);
-        if (withAudio != this)
+        if (!UserInput.TryGet(T2IParamTypes.AudioSilentPrefixDuration, out double prefix))
         {
-            return withAudio.AsSamplingLatent(vae, audioVae);
+            prefix = 0;
         }
-        if (IsLatentData)
+        if (!UserInput.TryGet(T2IParamTypes.AudioSilentSuffixDuration, out double suffix))
         {
-            WGAssert(vae.Compat.ID == Compat.ID, $"Data is compatible with '{Compat}' but provided VAE is compatible with '{vae.Compat}', cannot encode to sampling latent, ensure correctly decoded first.");
+            suffix = 0;
         }
-        if (IsLatentData && AttachedAudio is null)
+        if (audioVae is null || (prefix <= 0 && suffix <= 0))
         {
             return this;
         }
         if (DataType == DT_LATENT_AUDIOVIDEO)
         {
-            return this;
+            WGNodeData result = AsLatentImage(vae).Duplicate();
+            result.AttachedAudio = result.AttachedAudio?.WithAudioSilenceMask(vae, audioVae);
+            return result;
         }
-        if (DataType == DT_LATENT_VIDEO || DataType == DT_LATENT_IMAGE)
+        if (DataType == DT_LATENT_AUDIO)
         {
-            WGNodeData result = this;
+            string node = Gen.CreateNode("SwarmAudioSilentMaskPrefixSuffix", new JObject()
+            {
+                ["latent"] = Path,
+                ["vae"] = audioVae.Path,
+                ["prefix_duration"] = prefix,
+                ["suffix_duration"] = suffix
+            });
+            return WithPath([node, 0]);
+        }
+        if (AttachedAudio is not null)
+        {
+            WGNodeData result = Duplicate();
+            result.AttachedAudio = AttachedAudio.WithAudioSilenceMask(vae, audioVae);
+            return result;
+        }
+        return this;
+    }
+
+    /// <summary>Converts this data to a format fit for sampling, generally some form of latent.</summary>
+    public WGNodeData AsSamplingLatent(WGNodeData vae, WGNodeData audioVae)
+    {
+        WGNodeData result = EnsureHasAudioIfNeeded(vae, audioVae);
+        if (result != this)
+        {
+            return result.AsSamplingLatent(vae, audioVae);
+        }
+        result = WithAudioSilenceMask(vae, audioVae);
+        if (result.IsLatentData)
+        {
+            WGAssert(vae.Compat.ID == Compat.ID, $"Data is compatible with '{Compat}' but provided VAE is compatible with '{vae.Compat}', cannot encode to sampling latent, ensure correctly decoded first.");
+        }
+        if (result.DataType == DT_LATENT_AUDIO || result.DataType == DT_LATENT_AUDIOVIDEO)
+        {
+            return result;
+        }
+        if (result.IsLatentData && result.AttachedAudio is null)
+        {
+            return result;
+        }
+        if (result.DataType == DT_LATENT_VIDEO || result.DataType == DT_LATENT_IMAGE)
+        {
             if (vae.Compat?.HasJointAVLatents ?? false)
             {
-                if (AttachedAudio.IsRawMedia) // TODO: When is the correct case to do a solid mask on audio? Any raw audio is *probably* mask-worthy, but...??
+                if (result.AttachedAudio.IsRawMedia) // TODO: When is the correct case to do a solid mask on audio? Any raw audio is *probably* mask-worthy, but...??
                 {
                     result = result.WithMaskedAudio(audioVae);
                 }
@@ -399,15 +441,15 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
             }
             return result;
         }
-        if (DataType == DT_IMAGE || DataType == DT_VIDEO)
+        if (result.DataType == DT_IMAGE || result.DataType == DT_VIDEO)
         {
             return EncodeToLatent(vae);
         }
-        if (DataType == DT_AUDIO)
+        if (result.DataType == DT_AUDIO)
         {
             return EncodeToLatent(audioVae);
         }
-        WGAssert(false, $"Cannot convert data of type '{DataType}' to sampling latent.");
+        WGAssert(false, $"Cannot convert data of type '{result.DataType}' to sampling latent.");
         return null;
     }
 

@@ -559,6 +559,7 @@ https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792
     - **Sampler:** Defaults to `res_multistep`, works well, common alternatives might not
     - **Scheduler:** Default (`simple`) is fine
     - **Resolution:** Seems highly adaptable to a wide range. Any aspect ratio is fine, keep side length between about `512` to `1536`, you can go past to eg `2048` with some degredation as you get too high or too low
+    - **Audio Silent Prefix Duration**: This parameter was added because H3 often adds stray noises at the start of a clip due to a mistake in its training. Even a small value, like `0.1`, can suffice to tell the model we want a video to start quietly (and then add audio per the prompt after).
 
 ### MiniMax H3 Image To Video
 
