@@ -982,7 +982,7 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3() || IsSeedVR2())
         {
             defscheduler ??= "simple";
         }
@@ -2814,7 +2814,7 @@ public partial class WorkflowGenerator
         List<T2IModel> priorFinalModelList = FinalLoadedModelList;
         WGNodeData priorModel = CurrentModel, priorTextEnc = CurrentTextEnc, priorVae = CurrentVae;
         bool priorNoVae = NoVAEOverride;
-        int sectionId = isRefiner ? T2IParamInput.SectionID_Refiner : 0;
+        int sectionId = isRefiner ? T2IParamInput.SectionID_Refiner : T2IParamInput.SectionID_SeedVR;
         FinalLoadedModel = seedVrModel;
         FinalLoadedModelList = [seedVrModel];
         NoVAEOverride = true;
@@ -2845,7 +2845,7 @@ public partial class WorkflowGenerator
         string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null) : null);
         string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null) : null);
         int startStep = isRefiner ? (int)Math.Round(steps * (1 - UserInput.Get(T2IParamTypes.RefinerControl, 1))) : 0;
-        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], [cond, 1], latent, cfg, steps, startStep, 10000, seed, false, true, explicitSampler: explicitSampler ?? "euler", explicitScheduler: explicitScheduler ?? "normal", sectionId: sectionId);
+        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], [cond, 1], latent, cfg, steps, startStep, 10000, seed, false, true, explicitSampler: explicitSampler ?? "euler", explicitScheduler: explicitScheduler, sectionId: sectionId);
         JArray sampledLatent = [sampled, 0];
         if (chunkOverlap is not null)
         {
@@ -2861,7 +2861,7 @@ public partial class WorkflowGenerator
         {
             ["images"] = decoded.Path,
             ["original_resized_images"] = resized,
-            ["color_correction_method"] = UserInput.Get(ComfyUIBackendExtension.SeedVRColorCorrectionBehavior, "none")
+            ["color_correction_method"] = UserInput.Get(ComfyUIBackendExtension.SeedVRColorCorrectionBehavior, "lab")
         });
         WGNodeData result = raw.WithPath([post, 0]);
         result.Width = raw.Width;
