@@ -669,8 +669,9 @@ function autoSelectWidth(elem) {
         return;
     }
     let span = document.createElement('span');
+    span.style.font = getComputedStyle(elem).font;
     span.innerText = elem.selectedOptions[0] ? elem.selectedOptions[0].innerText : elem.value;
-    document.body.appendChild(span);
+    document.documentElement.appendChild(span);
     let width = Math.max(50, span.offsetWidth + 30);
     elem.style.width = `${width}px`;
     span.remove();
@@ -681,8 +682,9 @@ function autoNumberWidth(elem) {
         return;
     }
     let span = document.createElement('span');
+    span.style.font = getComputedStyle(elem).font;
     span.innerText = elem.value;
-    document.body.appendChild(span);
+    document.documentElement.appendChild(span);
     let width = Math.max(40, span.offsetWidth + 15);
     elem.style.width = `${width}px`;
     span.remove();

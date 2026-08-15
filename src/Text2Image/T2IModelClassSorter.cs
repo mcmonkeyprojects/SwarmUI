@@ -87,7 +87,7 @@ public class T2IModelClassSorter
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
-        CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
+        CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", VaeFamily = VaeQwenImage }),
         CompatHiDreamO1 = RegisterCompat(new() { ID = "hidream-o1", ShortCode = "HiDrO1", LorasTargetTextEnc = false }),
         CompatLens = RegisterCompat(new() { ID = "lens", ShortCode = "Lens", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
@@ -100,6 +100,7 @@ public class T2IModelClassSorter
         CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true, ResolutionPrecision = 32 }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
+        CompatMiniMaxMusic3 = RegisterCompat(new() { ID = "minimax-music-3", ShortCode = "MMM3", IsAudioModel = true }),
         // Obscure old random ones
         CompatAuraFlow = RegisterCompat(new() { ID = "auraflow-v1", ShortCode = "Aura", VaeFamily = VaeSdxl }),
         CompatHiDreamI1 = RegisterCompat(new() { ID = "hidream-i1", ShortCode = "HiDrm", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
@@ -123,7 +124,7 @@ public class T2IModelClassSorter
     {
         // TODO: This is exponential, but we could instead eg prestrip these prefixes to reduce the exponentiality
         bool hasKey(JObject h, string key) => h.ContainsKey(key) || h.ContainsKey($"diffusion_model.{key}") || h.ContainsKey($"model.diffusion_model.{key}") || h.ContainsKey($"net.{key}") || h.ContainsKey($"transformer.{key}");
-        bool hasLoraKey(JObject h, string key) => hasKey(h, $"{key}.lora_A.weight") || hasKey(h, $"{key}.lora_A") || hasKey(h, $"{key}.lora_A.default.weight") || hasKey(h, $"{key}.lora_up.weight") || hasKey(h, $"{key}.lora.up.weight") || hasKey(h, $"{key}.lokr_w1");
+        bool hasLoraKey(JObject h, string key) => hasKey(h, $"{key}.lora_A.weight") || hasKey(h, $"{key}.lora_A") || hasKey(h, $"{key}.lora_A.default.weight") || hasKey(h, $"{key}.lora_up.weight") || hasKey(h, $"{key}.lora.up.weight") || hasKey(h, $"{key}.lokr_w1") || hasKey(h, $"lora_unet_{key.Replace('.', '_')}.lora_up.weight");
         bool tryGetKey(JObject h, string key, out JToken tok) => h.TryGetValue(key, out tok) || h.TryGetValue($"diffusion_model.{key}", out tok) || h.TryGetValue($"model.diffusion_model.{key}", out tok);
         bool IsAlt(JObject h) => h.ContainsKey("cond_stage_model.roberta.embeddings.word_embeddings.weight");
         bool isV1(JObject h) => h.ContainsKey("cond_stage_model.transformer.text_model.embeddings.position_ids") || h.ContainsKey("cond_stage_model.transformer.embeddings.position_ids");
@@ -196,6 +197,8 @@ public class T2IModelClassSorter
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && h.ContainsKey("transformer.transformer_blocks.37.attn.to_out.0.lora_B.weight");
         bool isMochi(JObject h) => hasKey(h, "blocks.0.attn.k_norm_x.weight");
         bool isMochiVae(JObject h) => h.ContainsKey("encoder.layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("blocks.2.blocks.3.stack.5.weight") || h.ContainsKey("decoder.blocks.2.blocks.3.stack.5.weight");
+        bool isLtxv25(JObject h) => hasKey(h, "keyframes_abs_pos_embedding") && hasKey(h, "audio_patchify_proj.weight") && hasKey(h, "audio_proj_out.weight");
+        bool isLtxv25VideoVae(JObject h) => h.ContainsKey("decoder.conv_in_x_t.weight") && h.ContainsKey("decoder.shared_adaln.proj.weight") && h.ContainsKey("decoder.diff_blocks.0.context_proj.weight");
         bool isLtxv(JObject h) => hasKey(h, "adaln_single.emb.timestep_embedder.linear_1.bias");
         bool isLtxvVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias") && h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias");
         bool isLtxv23Vae(JObject h) => (h.ContainsKey("decoder.conv_in.conv.bias") && !h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias") && !h.ContainsKey("per_channel_statistics.channel"))
@@ -205,7 +208,7 @@ public class T2IModelClassSorter
         bool isLtxv2Lora(JObject h) => (hasLoraKey(h, "transformer_blocks.0.attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.attn2.to_v"))
             || (hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.audio_attn1.to_v"));
         bool isMiniMaxH3(JObject h) => hasKey(h, "video_patch_proj.weight") && hasKey(h, "audio_patch_proj.weight");
-        bool isMiniMaxH3Lora(JObject h) => hasLoraKey(h, "blocks.0.adaln_proj.linear") && hasLoraKey(h, "blocks.49.mlp.fc2") && hasLoraKey(h, "token_refiner.blocks.0.attn.out_proj");
+        bool isMiniMaxH3Lora(JObject h) => (hasLoraKey(h, "blocks.0.adaln_proj.linear") || hasLoraKey(h, "blocks.0.attn.qkv_proj")) && hasLoraKey(h, "blocks.49.mlp.fc2") && hasLoraKey(h, "token_refiner.blocks.0.attn.out_proj");
         bool isMiniMaxH3VideoVae(JObject h) => h.ContainsKey("decoder.transformer_blocks.0.scale1") && h.ContainsKey("encoder.down.5.block.0.conv1.weight");
         bool isMiniMaxH3AudioVae(JObject h) => h.ContainsKey("pre_block.attn.zero_k_bias");
         bool isSana(JObject h) => h.ContainsKey("attention_y_norm.weight") && h.ContainsKey("blocks.0.attn.proj.weight");
@@ -279,6 +282,7 @@ public class T2IModelClassSorter
         bool isLongcat(JObject h) => hasKey(h, "double_blocks.0.txt_attn.norm.query_norm.weight") && hasKey(h, "time_in.out_layer.weight") && hasKey(h, "final_layer.adaLN_modulation.1.weight") && hasKey(h, "double_blocks.0.txt_mod.lin.weight");
         // Audio models
         bool isAceStep15(JObject h) => hasKey(h, "encoder.lyric_encoder.layers.0.post_attention_layernorm.weight");
+        bool isMiniMaxMusic3(JObject h) => hasKey(h, "cond_layer_logits") && hasKey(h, "latent_conditioners.0.weight") && hasKey(h, "diffusion_transformer.transformer.layers.0.self_attn.to_qkv.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = CompatSdv1, Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -707,6 +711,10 @@ public class T2IModelClassSorter
         {
             return isErnie(h);
         }});
+        Register(new() { ID = "ernie-image/lora", CompatClass = CompatErnieImage, Name = "Ernie Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // Probably not worth the bother
+        }});
         // ====================== Mage Flow ======================
         Register(new() { ID = "mage-flow", CompatClass = CompatMageFlow, Name = "Mage Flow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -756,11 +764,19 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "lightricks-ltx-video-2-3", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.3", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isLtxv2(h) && isLtxv23(h);
+            return isLtxv2(h) && isLtxv23(h) && !isLtxv25(h);
         }});
         Register(new() { ID = "lightricks-ltx-video-2-3/vae", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.3 VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isLtxv23Vae(h);
+        }});
+        Register(new() { ID = "lightricks-ltx-video-2-5", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.5", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isLtxv2(h) && isLtxv25(h);
+        }});
+        Register(new() { ID = "lightricks-ltx-video-2-5/vae", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.5 VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isLtxv25VideoVae(h);
         }});
         // ====================== MiniMax H3 ======================
         Register(new() { ID = "minimax-h3", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
@@ -925,6 +941,10 @@ public class T2IModelClassSorter
         {
             return isAceStep15(h);
         }});
+        Register(new() { ID = "minimax-music-3", CompatClass = CompatMiniMaxMusic3, Name = "MiniMax Music 3", IsThisModelOfClass = (m, h) =>
+        {
+            return isMiniMaxMusic3(h);
+        }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
         Register(new() { ID = "stable-diffusion-v1/vae", CompatClass = CompatSdv1, Name = "Stable Diffusion v1 VAE", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
@@ -990,6 +1010,8 @@ public class T2IModelClassSorter
         Remaps["hunyuanvideo1.5_1080p_sr_distilled"] = "hunyuan-video-1_5-sr";
         Remaps["hunyuanvideo1.5_720p_sr_distilled"] = "hunyuan-video-1_5-sr";
         Remaps["hidream_o1_image"] = "hidream-o1";
+        // ====================== kohya ss_network_module remaps ======================
+        Remaps["networks.lora_minimax_h3"] = "minimax-h3/lora";
     }
 
     /// <summary>Returns the model class that matches this model, or null if none.</summary>
@@ -1008,7 +1030,9 @@ public class T2IModelClassSorter
             ?? fix(header.Value<string>("architecture"))
             ?? fix(header.Value<string>("general.architecture"))
             ?? fix(header?["__metadata__"]?.Value<string>("model_type"))
-            ?? fix(header.Value<string>("model_type"));
+            ?? fix(header.Value<string>("model_type"))
+            ?? fix(header?["__metadata__"]?.Value<string>("ss_network_module"))
+            ?? fix(header.Value<string>("ss_network_module"));
         T2IModelClass matchedClass = null;
         if (arch is not null)
         {

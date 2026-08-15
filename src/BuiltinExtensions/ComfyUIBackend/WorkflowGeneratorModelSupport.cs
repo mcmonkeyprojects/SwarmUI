@@ -51,6 +51,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Lightricks LTX Video 2.3.</summary>
     public bool IsLTXV23() => CurrentModelClass()?.ID == "lightricks-ltx-video-2-3";
 
+    /// <summary>Returns true if the current model is Lightricks LTX Video 2.5.</summary>
+    public bool IsLTXV25() => CurrentModelClass()?.ID == "lightricks-ltx-video-2-5";
+
     /// <summary>Returns true if the current model is MiniMax H3.</summary>
     public bool IsMiniMaxH3() => IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxH3);
 
@@ -266,6 +269,12 @@ public partial class WorkflowGenerator
         return IsModelCompatClass(T2IModelClassSorter.CompatAceStep15);
     }
 
+    /// <summary>Returns true if the current model is MiniMax Music 3.</summary>
+    public bool IsMiniMaxMusic3()
+    {
+        return IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxMusic3);
+    }
+
     /// <summary>Returns true if the current model primarily operates on audio.</summary>
     public bool IsAudioModel()
     {
@@ -405,6 +414,24 @@ public partial class WorkflowGenerator
             {
                 ["batch_size"] = batchSize,
                 ["seconds"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120)
+            }, id));
+        }
+        else if (IsMiniMaxMusic3())
+        {
+            JProperty encodedNode = NodesOfClass("MiniMaxMusic3TextEncode").FirstOrDefault();
+            JToken targetSeconds;
+            if (encodedNode is not null)
+            {
+                targetSeconds = NodePath(encodedNode.Name, 1);
+            }
+            else
+            {
+                targetSeconds = NodePath("6", 1); // TODO: This is a very wrong hack hardcoding the prompt path. This will break in many practical edge cases. Need to figure out the special routing that applies here.
+            }
+            return resultAudio(CreateNode("EmptyMiniMaxMusic3LatentAudio", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["seconds"] = targetSeconds
             }, id));
         }
         else if (IsWanVideo22()) // TODO: use VAE Family
@@ -770,13 +797,18 @@ public partial class WorkflowGenerator
         public string GetLTX2EmbedClip()
         {
             // TODO: This is cursed and wrong.
-            return RequireClipModel("ltx2/ltx2-embeddings-connector-distill.safetensors", "https://huggingface.co/Kijai/LTXV2_comfy/resolve/main/text_encoders/ltx-2-19b-embeddings_connector_distill_bf16.safetensors", "8990ec3fe88396ca33ac1795c89b1771d88190e51e24084b21f54b25399acbed", null);
+            return RequireClipModel("ltx2-embeddings-connector-distill.safetensors", "https://huggingface.co/Kijai/LTXV2_comfy/resolve/main/text_encoders/ltx-2-19b-embeddings_connector_distill_bf16.safetensors", "8990ec3fe88396ca33ac1795c89b1771d88190e51e24084b21f54b25399acbed", null);
         }
 
         public string GetLTX23TextProjectionClip()
         {
             // TODO: Still cursed!
-            return RequireClipModel("LTX-2/ltx-2.3_text_projection_bf16.safetensors", "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/text_encoders/ltx-2.3_text_projection_bf16.safetensors", "911d59bb4cb7708179c9a0045ea0fe41212ecfb77aed3a02702b7c0a8274911f", null);
+            return RequireClipModel("ltx-2.3_text_projection_bf16.safetensors", "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/text_encoders/ltx-2.3_text_projection_bf16.safetensors", "911d59bb4cb7708179c9a0045ea0fe41212ecfb77aed3a02702b7c0a8274911f", null);
+        }
+
+        public string GetLTX25Gemma4Model()
+        {
+            return RequireClipModel("gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "https://huggingface.co/mcmonkey/swarm-models/resolve/main/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "09a89e084de1a149c3de60cfe9dfd3e5161967eb09eea39e806fcdeffdd568de", T2IParamTypes.GemmaModel);
         }
 
         public void LoadClip(string type, string model)
@@ -1022,7 +1054,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsAceStep15()) // ??
+                    else if (IsAceStep15() || IsMiniMaxMusic3()) // ??
                     {
                         dtype = "default";
                     }
@@ -1366,17 +1398,26 @@ public partial class WorkflowGenerator
         {
             if (LoadingVAE is null)
             {
-                if (!IsLTXV23())
+                if (IsLTXV25())
+                {
+                    helpers.LoadClip("ltxv", helpers.GetLTX25Gemma4Model());
+                    helpers.DoVaeLoader(null, (T2IModelCompatClass)null, "ltx2-5-video-vae");
+                    helpers.LTXAudioVaeLoad("ltx2-5-audio-vae");
+                }
+                else if (IsLTXV23())
+                {
+                    helpers.LoadClip2("ltxv", helpers.GetGemma3_12bModel(), helpers.GetLTX23TextProjectionClip());
+                    helpers.DoVaeLoader(null, "lightricks-ltx-video-2", "ltx2-3-video-vae");
+                    helpers.LTXAudioVaeLoad("ltx2-3-audio-vae");
+                }
+                else
                 {
                     throw new SwarmUserErrorException("LTX2 requires the safetensors checkpoint format currently due to comfy limitations.");
                 }
-                helpers.LoadClip2("ltxv", helpers.GetGemma3_12bModel(), helpers.GetLTX23TextProjectionClip());
-                helpers.DoVaeLoader(null, "lightricks-ltx-video-2", "ltx2-3-video-vae");
-                helpers.LTXAudioVaeLoad("ltx2-3-audio-vae");
             }
             else
             {
-                helpers.LoadClipAudio(helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
+                helpers.LoadClipAudio(IsLTXV25() ? helpers.GetLTX25Gemma4Model() : helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
                 helpers.AudioVaeLoad(model.ToString(ModelFolderFormat));
             }
         }
@@ -1479,13 +1520,19 @@ public partial class WorkflowGenerator
             helpers.LoadClip2("kandinsky5", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc());
             helpers.DoVaeLoader(null, "hunyuan-video", "hunyuan-video-vae");
         }
+        else if (IsMiniMaxMusic3())
+        {
+            helpers.LoadClip("minimax", helpers.RequireClipModel("minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "010b7416d2336a08c711bc22ee65849c9623069ddb7d89bec011a75699e52014", null));
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxMusic3, "minimax-music-3-vae");
+            CurrentAudioVae = new WGNodeData([LoadingVAE, 0], this, WGNodeData.DT_AUDIOVAE, CurrentCompat());
+        }
         else if (IsAceStep15())
         {
             // TODO: WTF? these twin qwen tencs are wacky.
             if (LoadingClip is null)
             {
-                string qwen06 = helpers.RequireClipModel("AceStep/qwen_0.6b_ace15.safetensors", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors", "fd4590c82153b8ddb67e15a2e7aaa8afa8b83a858c8a9b82a4831063156aa7a7", null);
-                string qwen17 = helpers.RequireClipModel("AceStep/qwen_1.7b_ace15.safetensors", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_1.7b_ace15.safetensors", "ed63e9247d1f55f3ace04fa11e95b085fc82d459c82c5626f0b2e37b91ebd710", T2IParamTypes.QwenModel);
+                string qwen06 = helpers.RequireClipModel("qwen_0.6b_ace15.safetensors", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors", "fd4590c82153b8ddb67e15a2e7aaa8afa8b83a858c8a9b82a4831063156aa7a7", null);
+                string qwen17 = helpers.RequireClipModel("qwen_1.7b_ace15.safetensors", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_1.7b_ace15.safetensors", "ed63e9247d1f55f3ace04fa11e95b085fc82d459c82c5626f0b2e37b91ebd710", T2IParamTypes.QwenModel);
                 helpers.LoadClip2("ace", qwen06, qwen17);
             }
             if (LoadingVAE is null)

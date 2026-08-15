@@ -298,13 +298,9 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - It is lower quality vs the full Flux.2-Dev, but runs much faster. Certain aspects of the quality can actually be better, notably visual quality seems to have been tuned better, overall intelligence is lower.
     - There is a 4B and a 9B variant, while the 9B is larger it often seems like the 4B is smarter.
     - It uses a smaller text encoder (Qwen 4B for Klein 4B, and Qwen 8B for Klein 9B). It will be autodownloaded.
-    - Download [Klein 4b here](<https://huggingface.co/Comfy-Org/flux2-klein-4B/tree/main/split_files/diffusion_models>)
-        - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-4B-GGUF/blob/main/flux-2-klein-4b-Q4_K_M.gguf>) or [base gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-base-4B-GGUF/blob/main/flux-2-klein-base-4b-Q4_K_M.gguf>)
+    - Download [Klein 4b here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-4b-fp8/blob/main/flux-2-klein-4b-fp8.safetensors>) or [4b base here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-base-4b-fp8/blob/main/flux-2-klein-base-4b-fp8.safetensors>)
         - It has a distilled variant (Steps=8, CFG=1), and a "Base" variant (high steps, high CFG)
-    - or [Klein 9b here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/blob/main/flux-2-klein-9b.safetensors>) (you may need to [accept a license here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9B>))
-        - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF/blob/main/flux-2-klein-9b-Q4_K_M.gguf>)
-    - or [klein 9b base here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/blob/main/flux-2-klein-base-9b-fp8.safetensors>)
-        - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-base-9B-GGUF/blob/main/flux-2-klein-base-9b-Q4_K_M.gguf>)
+    - or [Klein 9b here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8/blob/main/flux-2-klein-9b-fp8.safetensors>) or [9b base here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/blob/main/flux-2-klein-base-9b-fp8.safetensors>) (you may need to [accept a license here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9B>))
     - or [klein 9b-kv cache version here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-kv-fp8/blob/main/flux-2-klein-9b-kv-fp8.safetensors>)
         - This version uses "KV Cache" to accelerate image editing.
         - Any model with KV Cache support **MUST HAVE** `9b-kv` in the filename. This is how Swarm detects and applies KV Cache behavior to the model. (There is no way to automatically detect).

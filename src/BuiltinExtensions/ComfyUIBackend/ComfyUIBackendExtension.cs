@@ -543,6 +543,10 @@ public class ComfyUIBackendExtension : Extension
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref SetClipDevices, overrideClipDevice.Select(m => $"{m}"));
             }
+            if (TryGetRequiredInputs(rawObjectInfo, "ModelAttentionBackend", "attention", out JToken modelAttentionBackends))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref ModelAttentionBackends, modelAttentionBackends.Select(m => $"{m}"));
+            }
             if (rawObjectInfo.TryGetValue("Sam2AutoSegmentation", out JToken nodeData))
             {
                 foreach (string size in new string[] { "base_plus", "large", "small" })
@@ -606,7 +610,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice, SeedVRUpscaleMethod, SeedVRColorCorrectionBehavior;
+    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice, ModelAttentionBackend, SeedVRUpscaleMethod, SeedVRColorCorrectionBehavior;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG, SeedVRSplitLatent;
 
@@ -660,7 +664,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static List<string> IPAdapterModels = ["None"], IPAdapterWeightTypes = ["standard", "prompt is more important", "style transfer"];
 
-    public static List<string> GligenModels = ["None"], YoloModels = [], StyleModels = ["None"], SetClipDevices = ["cpu"];
+    public static List<string> GligenModels = ["None"], YoloModels = [], StyleModels = ["None"], SetClipDevices = ["cpu"], ModelAttentionBackends = ["pytorch attention"];
 
     public static List<string> ControlnetUnionTypes = ["auto", "openpose", "depth", "hed/pidi/scribble/ted", "canny/lineart/anime_lineart/mlsd", "normal", "segment", "tile", "repaint"];
 
@@ -868,6 +872,9 @@ public class ComfyUIBackendExtension : Extension
             ));
         SetClipDevice = T2IParamTypes.Register<string>(new("Set CLIP Device", "Override the hardware device that text encoders run on.",
             "cpu", FeatureFlag: "set_clip_device", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => SetClipDevices, OrderPriority: 70
+            ));
+        ModelAttentionBackend = T2IParamTypes.Register<string>(new("Model Attention Backend", "Override which attention implementation the model uses.\n'pytorch attention' is the standard default.\n'comfy kitchen attention' is a new sage-like attention impl from Comfy directly that has better performance, but may not work on all machines.",
+            "pytorch attention", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => ModelAttentionBackends, OrderPriority: 41
             ));
         BackendApiType = Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);
         BackendSelfStartType = Program.Backends.RegisterBackendType<ComfyUISelfStartBackend>("comfyui_selfstart", "ComfyUI Self-Starting", "A backend powered by a pre-existing installation of the ComfyUI, automatically launched and managed by this UI server.", isStandard: true);

@@ -298,6 +298,14 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
     - Mostly the same as regular LTX-2
     - New prompt guide here: <https://x.com/ltx_model/status/2029927683539325332>
 
+### LTX-2.5
+
+- LTX-2.5 is an official upgraded to LTX-2.3, with some improvements.
+- It has (partial) compatibility with LTX-2.3, eg some loras will cross-apply.
+- Main downloads require accepting license here <https://huggingface.co/Lightricks/LTX-2.5> then downloading from here <https://huggingface.co/Lightricks/LTX-2.5/tree/main/diffusion_models>
+- Parameters:
+    - Mostly the same as regular LTX-2.3
+
 # Wan 2.1
 
 ![wan21_14b](https://github.com/user-attachments/assets/17ace901-bc5f-48d0-ab01-ed8984a1b1dc)
@@ -488,6 +496,7 @@ https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792
         - Download here: [Comfy-Org/MiniMax-H3: FL2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors>)
     - Ref2AV (Omni-reference to video) also does text2video, and allows input of text, video, image, audio, as references to include somewhere within a video
         - Download here: [Comfy-Org/MiniMax-H3: Ref2VA Pruned int8](<https://huggingface.co/Comfy-Org/MiniMax-H3/blob/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors>)
+    - There are also Turbo loras (8 step and 4 step) available here: [lightx2v/minimax-h3-turbo](<https://huggingface.co/lightx2v/Minimax-h3-Turbo/tree/main>)
 - It uses Qwen3 VL 32B as a text encoder, Swarm will automatically download an fp4 (16GB) version of it.
 - It has a unique video VAE and a unique separate audio VAE. These will be automatically downloaded for you.
     - The video VAE encodes 2 latents for frameCount=5, and then +5 latents for each 17 additional frames.
@@ -550,14 +559,13 @@ https://github.com/user-attachments/assets/f20a2d4c-a667-47e1-9da8-82b3e1d55792
     - **Sampler:** Defaults to `res_multistep`, works well, common alternatives might not
     - **Scheduler:** Default (`simple`) is fine
     - **Resolution:** Seems highly adaptable to a wide range. Any aspect ratio is fine, keep side length between about `512` to `1536`, you can go past to eg `2048` with some degredation as you get too high or too low
+    - **Audio Silent Prefix Duration**: This parameter was added because H3 often adds stray noises at the start of a clip due to a mistake in its training. Even a small value, like `0.1`, can suffice to tell the model we want a video to start quietly (and then add audio per the prompt after).
 
 ### MiniMax H3 Image To Video
 
 The "FL2VA" model is used for basic image-to-video. Works like any other image2video model (see [Beginner's Guide - Generate Videos With SwarmUI](<https://github.com/mcmonkeyprojects/SwarmUI/discussions/716>)) and supports the "Video End Image" input as well. Remember that the model wants to add audio, so prompt accordingly.
 
 ### MiniMax H3 Reference Model Usage
-
-Full reference support is a work-in-progress, but is almost all working.
 
 When using the reference model, you can attach images freely (up to a max of 10) to the prompt box. In the prompt you can type something like `The person in <Picture 1>` to reference your first picture (and naturally, `<Picture 2>` for the next, etc.).
 

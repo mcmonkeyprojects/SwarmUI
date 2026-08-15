@@ -981,12 +981,8 @@ public partial class WorkflowGenerator
             defsampler ??= "lcm";
             defscheduler ??= "simple";
         }
-        else if (IsBoogu())
-        {
-            defscheduler ??= "simple";
-        }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsMageFlow())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3())
         {
             defscheduler ??= "simple";
         }
@@ -1487,7 +1483,7 @@ public partial class WorkflowGenerator
         public double DefaultCFG = 7;
         public bool HadSpecialCond = false;
         public int ContextID = T2IParamInput.SectionID_Video;
-        public Image VideoEndFrame = null;
+        public Image VideoEndImage = null;
         public JArray DoFirstFrameLatentSwap = null;
         public bool HasFixedMediaLen = false;
 
@@ -1523,9 +1519,9 @@ public partial class WorkflowGenerator
             if (VideoModel.ModelClass?.CompatClass?.ID == T2IModelClassSorter.CompatMiniMaxH3.ID)
             {
                 attachImages = Generator.CurrentMedia.Path;
-                if (VideoEndFrame is not null)
+                if (VideoEndImage is not null)
                 {
-                    WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
+                    WGNodeData endFrame = g.LoadImage(VideoEndImage, "${videoendframe}", false);
                     string batched = g.CreateNode("BatchImagesNode", new JObject()
                     {
                         ["images.image0"] = attachImages,
@@ -1570,9 +1566,9 @@ public partial class WorkflowGenerator
                 });
                 PosCond = [ltxvcond, 0];
                 NegCond = [ltxvcond, 1];
-                if (VideoEndFrame is not null)
+                if (VideoEndImage is not null)
                 {
-                    WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
+                    WGNodeData endFrame = g.LoadImage(VideoEndImage, "${videoendframe}", false);
                     string addedGuide = g.CreateNode("LTXVAddGuide", new JObject()
                     {
                         ["positive"] = PosCond,
@@ -1628,9 +1624,9 @@ public partial class WorkflowGenerator
                 });
                 PosCond = [ltxvcond, 0];
                 NegCond = [ltxvcond, 1];
-                if (VideoEndFrame is not null)
+                if (VideoEndImage is not null)
                 {
-                    WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
+                    WGNodeData endFrame = g.LoadImage(VideoEndImage, "${videoendframe}", false);
                     // TODO: Is this even correct for LTX-2? It works as intended, but it's kinda weird.
                     string addedGuide = g.CreateNode("LTXVAddGuide", new JObject()
                     {
@@ -1674,9 +1670,9 @@ public partial class WorkflowGenerator
                 Frames = MiniMaxH3AlignFrames(Frames ?? 124);
                 origSrcImg = FixMediaLen();
                 JArray endFramePath = null;
-                if (VideoEndFrame is not null)
+                if (VideoEndImage is not null)
                 {
-                    endFramePath = g.LoadImage(VideoEndFrame, "${videoendframe}", false).Path;
+                    endFramePath = g.LoadImage(VideoEndImage, "${videoendframe}", false).Path;
                 }
                 string emptyAV = g.CreateNode("EmptyMiniMaxH3LatentAV", new JObject()
                 {
@@ -1701,7 +1697,7 @@ public partial class WorkflowGenerator
                 VideoFPS ??= 24;
                 Frames ??= 121;
                 origSrcImg = FixMediaLen();
-                if (VideoEndFrame is not null)
+                if (VideoEndImage is not null)
                 {
                     throw new SwarmReadableErrorException("Cosmos end-frame is TODO");
                 }
@@ -1856,9 +1852,9 @@ public partial class WorkflowGenerator
                     });
                     imageIn = [fromBatch, 0];
                 }
-                if (VideoEndFrame is not null)
+                if (VideoEndImage is not null)
                 {
-                    WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
+                    WGNodeData endFrame = g.LoadImage(VideoEndImage, "${videoendframe}", false);
                     string scaled = g.CreateNode("ImageScale", new JObject()
                     {
                         ["image"] = endFrame.Path,
@@ -1947,9 +1943,9 @@ public partial class WorkflowGenerator
                     ["image"] = encodeIn,
                     ["crop"] = "center"
                 });
-                if (VideoEndFrame is not null)
+                if (VideoEndImage is not null)
                 {
-                    WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
+                    WGNodeData endFrame = g.LoadImage(VideoEndImage, "${videoendframe}", false);
                     string scaled = g.CreateNode("ImageScale", new JObject()
                     {
                         ["image"] = endFrame.Path,
@@ -2457,6 +2453,20 @@ public partial class WorkflowGenerator
                 ["min_p"] = 0
             }, id);
         }
+        else if (IsMiniMaxMusic3())
+        {
+            node = CreateNode("MiniMaxMusic3TextEncode", new JObject()
+            {
+                ["clip"] = clip,
+                ["caption"] = UserInput.Get(T2IParamTypes.Text2AudioStyle, ""),
+                ["lyrics"] = prompt,
+                ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0),
+                ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 120), 0.04, 360),
+                // TODO: Parameters for these?
+                ["cfg_scale"] = 1.5,
+                ["top_k"] = 50
+            }, id);
+        }
         else if (IsSana())
         {
             node = CreateNode("SanaTextEncode", new JObject()
@@ -2687,7 +2697,7 @@ public partial class WorkflowGenerator
         }
         if (UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
         {
-            if (IsAceStep15())
+            if (IsAceStep15() || IsMiniMaxMusic3())
             {
                 return true;
             }

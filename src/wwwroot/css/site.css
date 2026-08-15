@@ -665,7 +665,7 @@ textarea, input, select {
     background-color: var(--background-soft);
     text-align: right;
     left: 0;
-    top: calc(100vh - 6rem);
+    bottom: 0;
     font-size: 200%;
     padding-top: 0.5rem;
     padding-right: 1rem;
