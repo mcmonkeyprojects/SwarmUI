@@ -548,7 +548,8 @@ class UIImprovementHandler {
             elem.value = val;
         }
         let buttons = [...elem.options].filter(o => o.style.display != 'none').map(o => { return { key_html: o.dataset.cleanname, title: o.title, key: o.innerText, searchable: `${o.dataset.cleanname} ${o.innerText} ${o.value}`, action: () => { o.selected = true; triggerChangeFor(elem); } }; });
-        this.lastPopover = new AdvancedPopover(popId, buttons, true, rect.x, rect.y, document.body, elem.selectedIndex < 0 ? null : elem.selectedOptions[0].innerText, 0);
+        let root = elem.closest('.modal') || document.body;
+        this.lastPopover = new AdvancedPopover(popId, buttons, true, rect.x, rect.y, root, elem.selectedIndex < 0 ? null : elem.selectedOptions[0].innerText, 0);
         e.preventDefault();
         e.stopPropagation();
         return false;
