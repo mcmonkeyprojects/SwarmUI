@@ -228,20 +228,43 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
             {
                 return WithPath((JArray)srcInputs["audio"], DT_LATENT_AUDIO);
             }
+            string decoded;
             if (IsCompat(T2IModelClassSorter.CompatLtxv2))
             {
-                string audioDecoded = Gen.CreateNode("LTXVAudioVAEDecode", new JObject()
+                decoded = Gen.CreateNode("LTXVAudioVAEDecode", new JObject()
                 {
                     ["audio_vae"] = vae.Path,
                     ["samples"] = Path
                 }, id);
-                return WithPath([audioDecoded, 0], DT_AUDIO, vae.Compat);
             }
-            string decoded = Gen.CreateNode("VAEDecodeAudio", new JObject()
+            else if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _))
             {
-                ["vae"] = vae.Path,
-                ["samples"] = Path
-            }, id);
+                decoded = Gen.CreateNode("VAEDecodeAudioTiled", new JObject()
+                {
+                    ["vae"] = vae.Path,
+                    ["samples"] = Path,
+                    ["tile_size"] = UserInput.Get(T2IParamTypes.VAETileSize, 256),
+                    ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64)
+                }, id);
+            }
+            else if (Gen.IsMiniMaxMusic3())
+            {
+                decoded = Gen.CreateNode("VAEDecodeAudioTiled", new JObject()
+                {
+                    ["vae"] = vae.Path,
+                    ["samples"] = Path,
+                    ["tile_size"] = 1536,
+                    ["overlap"] = 64
+                }, id);
+            }
+            else
+            {
+                decoded = Gen.CreateNode("VAEDecodeAudio", new JObject()
+                {
+                    ["vae"] = vae.Path,
+                    ["samples"] = Path
+                }, id);
+            }
             return WithPath([decoded, 0], DT_AUDIO, vae.Compat);
         }
         WGAssert(false, $"Unknown latent data type '{DataType}', cannot decode.");
