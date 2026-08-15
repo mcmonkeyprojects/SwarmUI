@@ -861,7 +861,7 @@ public class ComfyUIBackendExtension : Extension
             GetValues: (session) => ["None", .. T2IParamTypes.CleanModelList(Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "seedvr2").OrderBy(m => m.Name).Select(m => m.Name))]
             ));
         SeedVRUpscale = T2IParamTypes.Register<double>(new("SeedVR Upscale", "Optional upscale of the image before SeedVR2 runs over it.\nSetting to '1' disables the upscale, and just restores at the current size.",
-            "1", Min: 0.25, Max: 8, ViewMax: 4, Step: 0.25, OrderPriority: -9, ViewType: ParamViewType.SLIDER, FeatureFlag: "comfyui", Group: GroupSeedVR, DoNotPreview: true, Examples: ["1", "1.5", "2"]
+            "1", IgnoreIf: "1", Min: 0.25, Max: 8, ViewMax: 4, Step: 0.25, OrderPriority: -9, ViewType: ParamViewType.SLIDER, FeatureFlag: "comfyui", Group: GroupSeedVR, DoNotPreview: true, Examples: ["1", "1.5", "2"]
             ));
         SeedVRUpscaleMethod = T2IParamTypes.Register<string>(new("SeedVR Upscale Method", "How to upscale the image before SeedVR2 runs over it, if upscaling is used.",
             "pixel-lanczos", OrderPriority: -8, FeatureFlag: "comfyui", Group: GroupSeedVR, ChangeWeight: 1,
@@ -874,7 +874,7 @@ public class ComfyUIBackendExtension : Extension
             "false", IgnoreIf: "false", FeatureFlag: "comfyui", Group: GroupSeedVR, IsAdvanced: true, OrderPriority: 2
             ));
         SeedVRTemporalVideoOverlap = T2IParamTypes.Register<int>(new("SeedVR Temporal Video Overlap", "How many latent frames of overlap to keep between 'SeedVR Split Latent' chunks.\nHigher overlap hides the chunk seams better but takes longer.",
-            "0", Min: 0, Max: 4096, Step: 1, IsAdvanced: true, FeatureFlag: "comfyui", Group: GroupSeedVR, OrderPriority: 3
+            "0", Min: 0, Max: 4096, Step: 1, IsAdvanced: true, FeatureFlag: "comfyui", Group: GroupSeedVR, OrderPriority: 3, DependNonDefault: SeedVRSplitLatent.Type.ID
             ));
         BackendApiType = Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);
         BackendSelfStartType = Program.Backends.RegisterBackendType<ComfyUISelfStartBackend>("comfyui_selfstart", "ComfyUI Self-Starting", "A backend powered by a pre-existing installation of the ComfyUI, automatically launched and managed by this UI server.", isStandard: true);

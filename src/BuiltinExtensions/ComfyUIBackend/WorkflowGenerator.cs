@@ -2891,6 +2891,7 @@ public partial class WorkflowGenerator
         double scale = UserInput.Get(ComfyUIBackendExtension.SeedVRUpscale, 1);
         if (scale != 1)
         {
+            // TODO: Should probably extract a shared upscale logic with the refiner rather than copy/pasted here
             string method = UserInput.Get(ComfyUIBackendExtension.SeedVRUpscaleMethod, "pixel-lanczos");
             int width = (((int)Math.Round((media.Width ?? UserInput.GetImageWidth()) * scale)) / 16) * 16;
             int height = (((int)Math.Round((media.Height ?? UserInput.GetImageHeight()) * scale)) / 16) * 16;
@@ -2930,19 +2931,26 @@ public partial class WorkflowGenerator
                     media.Width = null; // the model's own scale factor is unknown here, so always correct after
                     media.Height = null;
                 }
-                if (media.Width != width || media.Height != height)
+                else if (method.StartsWith("pixel-"))
                 {
-                    string scaled = CreateNode("ImageScale", new JObject()
+                    if (media.Width != width || media.Height != height)
                     {
-                        ["image"] = media.Path,
-                        ["width"] = width,
-                        ["height"] = height,
-                        ["upscale_method"] = method.StartsWith("pixel-") ? method.After("pixel-") : "lanczos",
-                        ["crop"] = "disabled"
-                    });
-                    media = media.WithPath([scaled, 0]);
-                    media.Width = width;
-                    media.Height = height;
+                        string scaled = CreateNode("ImageScale", new JObject()
+                        {
+                            ["image"] = media.Path,
+                            ["width"] = width,
+                            ["height"] = height,
+                            ["upscale_method"] = method.StartsWith("pixel-") ? method.After("pixel-") : "lanczos",
+                            ["crop"] = "disabled"
+                        });
+                        media = media.WithPath([scaled, 0]);
+                        media.Width = width;
+                        media.Height = height;
+                    }
+                }
+                else
+                {
+                    throw new SwarmReadableErrorException($"Unsupported upscale method '{method}' for SeedVR");
                 }
             }
         }
