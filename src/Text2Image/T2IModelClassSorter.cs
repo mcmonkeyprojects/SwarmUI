@@ -708,6 +708,10 @@ public class T2IModelClassSorter
         {
             return isErnie(h);
         }});
+        Register(new() { ID = "ernie-image/lora", CompatClass = CompatErnieImage, Name = "Ernie Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // Probably not worth the bother
+        }});
         // ====================== Mage Flow ======================
         Register(new() { ID = "mage-flow", CompatClass = CompatMageFlow, Name = "Mage Flow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
