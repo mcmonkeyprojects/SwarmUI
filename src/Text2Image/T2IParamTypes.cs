@@ -338,7 +338,7 @@ public class T2IParamTypes
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed, Text2AudioBPM;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale, Text2AudioDuration, AudioSilentPrefixDuration, AudioSilentSuffixDuration, ConditioningMultiplier, NegativeConditioningMultiplier;
-    public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
+    public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndImage;
     public static T2IRegisteredParam<AudioFile> VideoAudioInput;
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, GptOssModel, VideoExtendModel, VideoExtendSwapModel, NegativeModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
@@ -632,7 +632,7 @@ public class T2IParamTypes
         Video2VideoCreativity = Register<double>(new("Video2Video Creativity", "Optional advanced method to start the video diffusion late.\nThis is equivalent to Init Image Creativity.\nSet below 1 to skip some fraction of steps.\nThis only makes sense if the base input is a video.\n'Video Frame's param must have same frame length as the input video.\nIf set to 1, video2video logic is not applied, and the input is treated as a single image.",
             "1", IgnoreIf: "1", Min: 0, Max: 1, Step: 0.05, OrderPriority: 19.5, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true
             ));
-        VideoEndFrame = Register<Image>(new("Video End Image", "An image to use as the 'end frame' of a video.\nOnly some models support end frames (Wan FLF2V, LTX-V), most don't.",
+        VideoEndImage = Register<Image>(new("Video End Image", "An image to use as the 'end frame' of a video.\nOnly some models support end frames (Wan FLF2V, LTX-V), most don't.",
             null, OrderPriority: 30, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: 2, IsAdvanced: true
             ));
         // ================================================ Advanced Video ================================================

@@ -2101,7 +2101,7 @@ public class WorkflowGeneratorSteps
                     BatchIndex = batchInd,
                     BatchLen = batchLen,
                     ContextID = T2IParamInput.SectionID_Video,
-                    VideoEndFrame = g.UserInput.Get(T2IParamTypes.VideoEndFrame, null)
+                    VideoEndImage = g.UserInput.Get(T2IParamTypes.VideoEndImage, null)
                 };
                 if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
                 {
