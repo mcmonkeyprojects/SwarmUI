@@ -47,13 +47,13 @@ class AspectRatio {
     }
 
     read(inWidth, inHeight, doAltLogic = true) {
-        if (this.altLogic && doAltLogic) {
+        let precision = getResolutionPrecision();
+        if (this.altLogic && doAltLogic && precision == 16) {
             let [newWidth, newHeight] = this.altLogic(inWidth, inHeight);
             if (newWidth && newHeight) {
                 return [newWidth, newHeight];
             }
         }
-        let precision = getResolutionPrecision();
         if (inWidth != inHeight) {
             inWidth = roundTo(Math.sqrt(inWidth * inHeight), precision);
             inHeight = inWidth;
