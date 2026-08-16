@@ -376,3 +376,12 @@ H3Attn:
     - parameters
     - nodes
     - beta
+
+ModelPaths:
+    author: Janush1981
+    description: Forwards every model folder under your model root to ComfyUI, not just the fixed set Swarm maps - LLM, insightface, ultralytics, sam, mmaudio, florence2 and the rest - so custom nodes stop re-downloading models you already have.
+    url: https://github.com/Janush1981/SwarmUI-ModelPaths
+    license: MIT
+    ci-test: true
+    tags:
+    - tools
