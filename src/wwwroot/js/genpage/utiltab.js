@@ -177,6 +177,8 @@ class ModelDownloaderUtil {
         this.url = getRequiredElementById('model_downloader_url');
         this.urlStatusArea = getRequiredElementById('model_downloader_status');
         this.type = getRequiredElementById('model_downloader_type');
+        this.versionSelect = getRequiredElementById('model_downloader_version');
+        this.versionWrap = getRequiredElementById('model_downloader_version_wrap');
         this.name = getRequiredElementById('model_downloader_name');
         this.button = getRequiredElementById('model_downloader_button');
         this.metadataZone = getRequiredElementById('model_downloader_metadatazone');
@@ -256,11 +258,11 @@ class ModelDownloaderUtil {
         });
     }
 
-    getCivitaiMetadata(id, versId, callback, identifier = '', validateSafe = true, delayedCallback = null) {
+    getCivitaiMetadata(id, versId, callback, identifier = '', validateSafe = true, delayedCallback = null, preloadedData = null) {
         let doError = (msg = null) => {
             callback(null, null, null, null, null, null, null, msg);
         }
-        if (!id && versId) {
+        if (!id && versId && !preloadedData) {
             genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/model-versions/${versId}` }, (rawData) => {
                 rawData = rawData.response;
                 if (!rawData || !rawData.modelId) {
@@ -273,7 +275,7 @@ class ModelDownloaderUtil {
             });
             return;
         }
-        genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, (rawData) => {
+        let onModelData = (rawData) => {
             rawData = rawData.response;
             if (!rawData) {
                 console.log(`refuse civitai url because response is empty - for model id ${id} / ${identifier}`);
@@ -398,7 +400,12 @@ class ModelDownloaderUtil {
                     applyMetadata('');
                 }
             }
-        }, 0, (status, data) => {
+        };
+        if (preloadedData) {
+            onModelData({ response: preloadedData });
+            return;
+        }
+        genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, onModelData, 0, (status, data) => {
             doError();
         });
     }
@@ -494,6 +501,8 @@ class ModelDownloaderUtil {
         this.metadataZone.dataset.raw = '';
         delete this.metadataZone.dataset.image;
         this.imageSide.innerHTML = '';
+        this.versionSelect.innerHTML = '';
+        this.versionWrap.style.display = 'none';
         let url = this.normalizeCivitaiUrl(this.url.value);
         if (url != this.url.value) {
             this.url.value = url;
@@ -550,7 +559,8 @@ class ModelDownloaderUtil {
             else if (parts.length == 2 && parts[0] == 'models' && !isNaN(parseInt(parts[1]))) {
                 parts = ['models', parts[1], ''];
             }
-            let loadMetadata = (id, versId) => {
+            let loadMetadata = (id, versId, preloadedData = null) => {
+                let requestId = this.urlRequestId;
                 this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs, errMsg) => {
                     if (requestId != this.urlRequestId) {
                         return;
@@ -567,6 +577,17 @@ class ModelDownloaderUtil {
                     this.urlStatusArea.innerText = "URL appears to be a CivitAI link, and has been loaded from Civitai API.";
                     this.name.value = `${rawData.name} - ${rawVersion.name}`.replaceAll(/[\|\\\/\:\*\?\"\<\>\|\,\.\&\!\[\]\(\)]/g, '-');
                     this.nameInput();
+                    let versionOptions = '';
+                    for (let vers of rawData.modelVersions) {
+                        let selected = vers.id == rawVersion.id ? ' selected' : '';
+                        versionOptions += `<option value="${escapeHtml(`${vers.id}`)}"${selected}>${escapeHtml(vers.name)}</option>`;
+                    }
+                    this.versionSelect.innerHTML = versionOptions;
+                    this.versionWrap.style.display = '';
+                    this.versionSelect.onchange = () => {
+                        this.urlRequestId++;
+                        loadMetadata(id, this.versionSelect.value, rawData);
+                    };
                     this.metadataZone.innerHTML = `
                         Found civitai metadata for model ID ${escapeHtml(id)} version id ${escapeHtml(versId)}:
                         <br><b>Model title</b>: ${escapeHtml(rawData.name)}
@@ -580,7 +601,7 @@ class ModelDownloaderUtil {
                     this.applyCivitaiPreview(img, imgs, requestId);
                 }, '', true, (img, imgs) => {
                     this.applyCivitaiPreview(img, imgs, requestId);
-                });
+                }, preloadedData);
             }
             if (parts.length < 3) {
                 this.urlStatusArea.innerText = "URL appears to be a CivitAI link, but not a specific model. Please use the path of a specific model.";

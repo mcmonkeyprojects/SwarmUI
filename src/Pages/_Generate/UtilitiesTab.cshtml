@@ -191,6 +191,9 @@
                     <br><div>@WebUtil.TextPopoverButton("modeldownloaderstatus", "This section will update after you input a URL to inform you if the URL is valid.\nThe box below will display loaded metadata if you use a civitai URL.") <b>Status</b>: <span id="model_downloader_status">(...)</span></div>
                     <div class="model_downloader_metadatazone" id="model_downloader_metadatazone"></div>
                     <div class="model_downloader_imageside" id="model_downloader_imageside"></div>
+                    <div class="model_downloader_version_wrap" id="model_downloader_version_wrap" style="display: none;">
+                    <br>@WebUtil.TextPopoverButton("modeldownloaderversion", "Which Civitai model version to download.\nThis is filled in automatically when you load a Civitai model URL.") <b>Version</b>: <select class="auto-dropdown" id="model_downloader_version" autocomplete="off"></select>
+                    </div>
                     <br>@WebUtil.TextPopoverButton("modeldownloadertype", "The base model sub-type to use, ie what category it gets saved to.\nMake sure this is correct, you don't want a LoRA in your base models folder or similar.\nCivitai links will autoset this when they load metadata.") <b>Model Type</b>: <select class="auto-dropdown" id="model_downloader_type" autocomplete="off">
                         <option value="Stable-Diffusion">Base Model</option>
                         <option value="LoRA">LoRA</option>
