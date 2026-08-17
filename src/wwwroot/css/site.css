@@ -738,6 +738,12 @@ textarea, input, select {
     border: 1px solid var(--shadow);
     min-width: 85px;
 }
+.simple-table tr:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.simple-table tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.03);
+}
 .translate-block-sm {
     display: inline-block;
     width: 2.3rem;
