@@ -2246,7 +2246,7 @@ body.small-window > .tab-content.tab-hundred {
 }
 .model_downloader_metadatazone {
     width: 40rem;
-    max-width: calc(100vw - 42rem);
+    max-width: 100%;
     max-height: 20rem;
     padding: 1rem;
     border: 1px solid var(--light-border);
@@ -2274,6 +2274,7 @@ body.small-window > .tab-content.tab-hundred {
 .model-downloader-section-wrapper {
     display: block;
     width: fit-content;
+    max-width: calc(100% - 20px);
     margin: auto;
 }
 .model-downloader-main-section {
@@ -2281,12 +2282,17 @@ body.small-window > .tab-content.tab-hundred {
     width: 70rem;
     padding-right: 1rem;
     padding-left: 1rem;
-    max-width: calc(100vw - 44rem);
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .model-downloader-right-sidebar {
     display: inline-block;
     vertical-align: top;
     max-width: 42rem;
+}
+.model-downloader-paid {
+    color: var(--red);
+    font-size: 120%;
 }
 .active-model-download-card {
     display: inline-block;

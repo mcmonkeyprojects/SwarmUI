@@ -636,6 +636,7 @@ class ModelDownloaderUtil {
                         <br><b>Version title</b>: ${escapeHtml(rawVersion.name)}
                         <br><b>Base model</b>: ${escapeHtml(rawVersion.baseModel)}
                         <br><b>Date</b>: ${escapeHtml(rawVersion.createdAt)}`
+                        + (rawVersion.paidAccess && rawVersion.paidAccess.endsAt && new Date(rawVersion.paidAccess.endsAt) > new Date() ? `<br><span class="model-downloader-paid"><b>Paid Access</b>: ends ${escapeHtml(rawVersion.paidAccess.endsAt)}</span>` : '')
                         + `<br><b>Model description</b>: ${safeHtmlOnly(rawData.description)}`
                         + (rawVersion.description ? `<br><b>Version description</b>: ${safeHtmlOnly(rawVersion.description)}` : '')
                         + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join("; "))}` : '');
