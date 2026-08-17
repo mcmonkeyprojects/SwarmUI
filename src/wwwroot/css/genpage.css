@@ -2268,6 +2268,9 @@ body.small-window > .tab-content.tab-hundred {
 .model_downloader_imageselector {
     text-align: center;
 }
+.model_downloader_input_wrap {
+    display: contents;
+}
 .model-downloader-section-wrapper {
     display: block;
     width: fit-content;

@@ -179,6 +179,8 @@ class ModelDownloaderUtil {
         this.type = getRequiredElementById('model_downloader_type');
         this.versionSelect = getRequiredElementById('model_downloader_version');
         this.versionWrap = getRequiredElementById('model_downloader_version_wrap');
+        this.fileSelect = getRequiredElementById('model_downloader_file');
+        this.fileWrap = getRequiredElementById('model_downloader_file_wrap');
         this.name = getRequiredElementById('model_downloader_name');
         this.button = getRequiredElementById('model_downloader_button');
         this.metadataZone = getRequiredElementById('model_downloader_metadatazone');
@@ -258,7 +260,7 @@ class ModelDownloaderUtil {
         });
     }
 
-    getCivitaiMetadata(id, versId, callback, identifier = '', validateSafe = true, delayedCallback = null, preloadedData = null) {
+    getCivitaiMetadata(id, versId, callback, identifier = '', validateSafe = true, delayedCallback = null, preloadedData = null, fileId = null) {
         let doError = (msg = null) => {
             callback(null, null, null, null, null, null, null, msg);
         }
@@ -315,16 +317,24 @@ class ModelDownloaderUtil {
                     }
                 }
             }
+            if (fileId) {
+                for (let vFile of rawVersion.files) {
+                    if (vFile.id == fileId) {
+                        file = vFile;
+                        break;
+                    }
+                }
+            }
             if (validateSafe && !file.name.endsWith('.safetensors') && !file.name.endsWith('.sft') && !file.name.endsWith('.gguf')) {
                 console.log(`refuse civitai url because download url is ${file.downloadUrl} / ${file.name} / ${identifier}`);
                 doError(`Cannot download model from that URL because it is not a safetensors or GGUF file. Filename is '${file.name}'`);
                 return;
             }
-            if (rawData.type == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
-            if (['LORA', 'LoCon', 'LyCORIS'].includes(rawData.type)) { modelType = 'LoRA'; }
-            if (rawData.type == 'TextualInversion') { modelType = 'Embedding'; }
-            if (rawData.type == 'ControlNet') { modelType = 'ControlNet'; }
-            if (rawData.type == 'VAE') { modelType = 'VAE'; }
+            if (file.type == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
+            if (['LORA', 'LoCon', 'LyCORIS'].includes(file.type)) { modelType = 'LoRA'; }
+            if (file.type == 'TextualInversion') { modelType = 'Embedding'; }
+            if (file.type == 'ControlNet') { modelType = 'ControlNet'; }
+            if (file.type == 'VAE') { modelType = 'VAE'; }
             let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
             let imgUrls = imgs.map(img => img.url);
             let downloadUrl = file.downloadUrl;
@@ -503,6 +513,8 @@ class ModelDownloaderUtil {
         this.imageSide.innerHTML = '';
         this.versionSelect.innerHTML = '';
         this.versionWrap.style.display = 'none';
+        this.fileSelect.innerHTML = '';
+        this.fileWrap.style.display = 'none';
         let url = this.normalizeCivitaiUrl(this.url.value);
         if (url != this.url.value) {
             this.url.value = url;
@@ -559,7 +571,7 @@ class ModelDownloaderUtil {
             else if (parts.length == 2 && parts[0] == 'models' && !isNaN(parseInt(parts[1]))) {
                 parts = ['models', parts[1], ''];
             }
-            let loadMetadata = (id, versId, preloadedData = null) => {
+            let loadMetadata = (id, versId, preloadedData = null, fileId = null) => {
                 let requestId = this.urlRequestId;
                 this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs, errMsg) => {
                     if (requestId != this.urlRequestId) {
@@ -588,6 +600,36 @@ class ModelDownloaderUtil {
                         this.urlRequestId++;
                         loadMetadata(id, this.versionSelect.value, rawData);
                     };
+                    let validFiles = [];
+                    for (let vFile of rawVersion.files) {
+                        if (vFile.type == 'Text Encoder') {
+                            continue;
+                        }
+                        if (vFile.name.endsWith('.safetensors') || vFile.name.endsWith('.sft') || vFile.name.endsWith('.gguf')) {
+                            validFiles.push(vFile);
+                        }
+                    }
+                    if (validFiles.length > 1) {
+                        let fileOptions = '';
+                        for (let vFile of validFiles) {
+                            let fUrl = vFile.downloadUrl;
+                            if (vFile.name.endsWith('.gguf')) {
+                                fUrl += '#.gguf';
+                            }
+                            let selected = (fileId ? vFile.id == fileId : fUrl == url) ? ' selected' : '';
+                            fileOptions += `<option value="${escapeHtml(`${vFile.id}`)}"${selected}>${escapeHtml(vFile.name)}</option>`;
+                        }
+                        this.fileSelect.innerHTML = fileOptions;
+                        this.fileWrap.style.display = '';
+                        this.fileSelect.onchange = () => {
+                            this.urlRequestId++;
+                            loadMetadata(id, `${rawVersion.id}`, rawData, this.fileSelect.value);
+                        };
+                    }
+                    else {
+                        this.fileSelect.innerHTML = '';
+                        this.fileWrap.style.display = 'none';
+                    }
                     this.metadataZone.innerHTML = `
                         Found civitai metadata for model ID ${escapeHtml(id)} version id ${escapeHtml(versId)}:
                         <br><b>Model title</b>: ${escapeHtml(rawData.name)}
@@ -601,7 +643,7 @@ class ModelDownloaderUtil {
                     this.applyCivitaiPreview(img, imgs, requestId);
                 }, '', true, (img, imgs) => {
                     this.applyCivitaiPreview(img, imgs, requestId);
-                }, preloadedData);
+                }, preloadedData, fileId);
             }
             if (parts.length < 3) {
                 this.urlStatusArea.innerText = "URL appears to be a CivitAI link, but not a specific model. Please use the path of a specific model.";
