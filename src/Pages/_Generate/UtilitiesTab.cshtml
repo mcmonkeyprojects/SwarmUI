@@ -22,16 +22,16 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header">Utilities</div>
             <div class="card-body">
-                <p class="card-text translate">
+                <div class="card-text translate">
                     The "Utilities" tab provides a variety of general utilities and tools in the subtabs above, and the quicktools below.
-                </p>
+                </div>
             </div>
         </div>
         <br>
         <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="reset_metadata">
             <div class="card-header translate">Metadata Utilities</div>
             <div class="card-body">
-                <p class="card-text">
+                <div class="card-text">
                     <div class="card-center-container">
                         <button id="util_massmetadataclear_button" class="basic-button translate" onclick="util_massMetadataClear()">Reset All Metadata</button>
                     </div>
@@ -83,7 +83,7 @@
                         <br>Additional debug info while running can be found in the browser console.
                         <br><b>Be careful!</b> If you have manually edited metadata, you can easily accidentally delete it. There is no undo for unwanted changes, they are applied rapidly in bulk.
                     </span>
-                </p>
+                </div>
             </div>
         </div>
     </div>
@@ -91,12 +91,12 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">CLIP Tokenizer</div>
             <div class="card-body">
-                <p class="card-text translate">
+                <div class="card-text translate">
                     This is a tool to analyze CLIP tokenization for Stable Diffusion models.
                     <br>All current Stable Diffusion models use the same CLIP token set, so this applies to them all.
                     <br>Simply type some text in the box below to see how it gets tokenized.
                     <br>It will show each text-piece, and its numerical ID.
-                </p>
+                </div>
             </div>
         </div>
         <div style="padding: 1rem">
@@ -109,7 +109,7 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">Pickle To Safetensors</div>
             <div class="card-body">
-                <p class="card-text translate">
+                <div class="card-text translate">
                     This is a tool to quickly convert legacy Pickle (.pt, .ckpt, .bin) files to modern Safetensors files.
                     <br><b>WARNING:</b> Pickle files may contain malicious code. Do not use this tool or otherwise load pickle files unless you trust their source.
                     <br>The pickle files will be moved to a "backups" folder, and the safetensors files left in place where the pickles originally were.
@@ -117,7 +117,7 @@
                     <br>Be aware that this may temporarily use a large amount of filespace.
                     <br>This may take some time to process.
                     <br>(You can continue using the UI as normal while this runs)
-                </p>
+                </div>
             </div>
         </div>
         <div class="card-center-container">
@@ -143,7 +143,7 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">LoRA Extractor</div>
             <div class="card-body">
-                <p class="card-text translate">
+                <div class="card-text translate">
                     This is a tool to extract a LoRA from the difference between two models.
                     <br>"Base" should be whatever the common base model is, eg SDXL-1.0-Base.
                     <br>"Other" should be the unique model with information to extract into the LoRA.
@@ -151,7 +151,7 @@
                     <br>
                     <br>Note that LoRA Extraction is an imperfect partial process, and will lose some of the data that makes the model unique.
                     <br>Rank is a number indicating how much detail to try to save. Higher numbers result in bigger files, and only slightly more accurate matching. Small values (eg 16) are usually sufficient.
-                </p>
+                </div>
             </div>
         </div>
         <div class="card-center-container">
@@ -174,13 +174,13 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">Model Downloader</div>
             <div class="card-body">
-                <p class="card-text translate">
+                <div class="card-text translate">
                     This is a tool to download models for you and save them to Swarm's model folder.
                     <br>Note that only <code>.safetensors</code> or <code>.gguf</code> models may be downloaded.
                     <br><b>HuggingFace</b> file URLs are supported.
                     <br><b>Civitai</b> URLs are supported and will automatically download+apply model metadata from the civitai API.
                     <br>For anything else, make sure your URL is a direct download URL (not eg an html page with the info about it).
-                </p>
+                </div>
             </div>
         </div>
         <div class="model-downloader-section-wrapper">

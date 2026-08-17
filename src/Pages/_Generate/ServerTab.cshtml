@@ -25,7 +25,7 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">Server</div>
             <div class="card-body">
-                <p class="card-text">
+                <div class="card-text">
                     The "Server" tab provides access to SwarmUI's server internals, including:
                     <span data-requiredpermission="view_backends_list"><br>&bullet; The <a href="#Settings-Backends" onclick="getRequiredElementById('serverbackendstabbutton').click()">Backends</a> tab, which allows you to configure and manage backends (the underlying engines that provide the generation core, or remote instances of swarm this instance is connected to)</span>
                     <span data-requiredpermission="read_server_settings"><br>&bullet; The <a href="#Settings-Server" onclick="getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab, which allows you to configure and manage Swarm's settings (such as models directory, server host port, etc)</span>
@@ -33,38 +33,38 @@
                     <span data-requiredpermission="view_logs"><br>&bullet; The <a href="#Server-Logs" onclick="getRequiredElementById('logtabbutton').click()">Logs</a> tab, which allows you to view the server logs (eg if you get an error, check Logs -&gt; Debug)</span>
                     <br>
                     <br>This is not to be confused with the <a href="#user_tab" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userconfigtabbutton').click()">User Settings</a> tab, which allows you to configure your user settings (eg save path/format, default VAE choice, etc)
-                </p>
+                </div>
             </div>
         </div>
         <div class="card-collection-inline">
             <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
                 <div class="card-header translate">Local Network</div>
                 <div class="card-body">
-                    <p class="card-text">
+                    <div class="card-text">
                         @if (Program.ServerSettings.Network.Host == "127.0.0.1" || Program.ServerSettings.Network.Host == "localhost")
                         {
-                            <p class="translate">This server is only accessible from this computer.</p>
+                            <span class="translate">This server is only accessible from this computer.</span>
                         }
                         else
                         {
                             string address = Utilities.GetLocalIPAddress();
                             if (address is null)
                             {
-                                <p><span class="translate">Unknown local address, but seems to be open to LAN based on Host setting</span>
-                                <br>'<b>@(Program.ServerSettings.Network.Host)</b>'</p>
+                                <span><span class="translate">Unknown local address, but seems to be open to LAN based on Host setting</span>
+                                <br>'<b>@(Program.ServerSettings.Network.Host)</b>'</span>
                             }
                             else
                             {
-                                <p><span class="translate">This server is likely accessible from LAN on one of the following addresses:</span>
-                                <br>@(address)</p>
+                                <span><span class="translate">This server is likely accessible from LAN on one of the following addresses:</span>
+                                <br>@(address)</span>
                             }
                         }
                         @if (Program.ProxyHandler is not null && Program.ProxyHandler.PublicURL is not null)
                         {
-                            <p><span class="translate">This server is also accessible from the open internet at:</span>
-                            <br>@(Program.ProxyHandler?.PublicURL)</p>
+                            <span><span class="translate">This server is also accessible from the open internet at:</span>
+                            <br>@(Program.ProxyHandler?.PublicURL)</span>
                         }
-                    </p>
+                    </div>
                 </div>
             </div>
             <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
@@ -78,9 +78,9 @@
             <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
                 <div class="card-header translate">Connected Users</div>
                 <div class="card-body">
-                    <p class="card-text" id="connected_users_list">
+                    <div class="card-text" id="connected_users_list">
                         (Loading...)
-                    </p>
+                    </div>
                 </div>
             </div>
             @if (Utilities.DotNetVersMissing is not null)
@@ -88,7 +88,7 @@
                 <div class="card border-red mb-3 card-center-container">
                     <div class="card-header">DotNET @Utilities.DotNetVersMissing Missing</div>
                     <div class="card-body">
-                        <p id="dotnet_missing_message" class="card-text">
+                        <div id="dotnet_missing_message" class="card-text">
                             You do not seem to have DotNET @Utilities.DotNetVersMissing installed - this will be required in a future version of SwarmUI.
                             <br>Please install DotNET SDK @(Utilities.DotNetVersMissing).0 from <a target="_blank" href="https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0">https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0</a>
                             @if (WebUtil.IsWindows())
@@ -97,7 +97,7 @@
                                     <br>Or click here: <button id="dotnet_install_update_button" class="basic-button translate" onclick="genericRequest('InstallDotnetUpdate', {}, () => {});getRequiredElementById('dotnet_install_update_button').disabled = true">Install DotNET SDK @(Utilities.DotNetVersMissing).0</button>
                                 </span>
                             }
-                        </p>
+                        </div>
                     </div>
                 </div>
             }
@@ -106,10 +106,10 @@
                 <div class="card border-red mb-3 card-center-container">
                     <div class="card-header">Git Failed To Load</div>
                     <div class="card-body">
-                        <p id="git_failed_message" class="card-text">
+                        <div id="git_failed_message" class="card-text">
                             You seem to have installed SwarmUI improperly. Many features, including auto-updating, will not work.
                             <br>Please install SwarmUI as explained in <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI?tab=readme-ov-file#installing-on-windows">The readme install instructions.</a>
-                        </p>
+                        </div>
                     </div>
                 </div>
             }
@@ -138,24 +138,24 @@
             <div class="card border-red mb-3 card-center-container" data-requiredpermission="shutdown">
                 <div class="card-header translate">Shutdown</div>
                 <div class="card-body">
-                    <p class="card-text">
+                    <div class="card-text">
                         <span data-requiredpermission="shutdown">
                         <span class="translate">If you want to shut down the server, click the button below.</span>
                         <br><button class="basic-button danger-button translate" onclick="shutdown_server()">Shutdown Server</button>
                         </span>
                         <span id="shutdown_notice_area"></span>
-                    </p>
+                    </div>
                 </div>
             </div>
             <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="control_mem_clean">
                 <div class="card-header translate">Free Memory</div>
                 <div class="card-body">
-                    <p class="card-text">
+                    <div class="card-text">
                         <span class="translate">You can free up the VRAM usage, or system memory usage (cache) from backends with the two buttons below.</span>
                         <br>
                         <button class="basic-button danger-button" onclick="server_clear_vram()">Free VRAM</button>
                         <button class="basic-button danger-button" onclick="server_clear_sysram()">Free System RAM</button>
-                    </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -203,18 +203,18 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">Extensions</div>
             <div class="card-body">
-                <p class="card-text">
+                <div class="card-text">
                     <span class="translate">The "Extensions" tab lets you control your installed Swarm extensions, or install new ones.</span>
-                </p>
+                </div>
             </div>
         </div>
         <div class="card border-warning mb-3 card-center-container" id="extensions_installed_card" style="display:none">
             <div class="card-header translate">New Extensions Installed</div>
             <div class="card-body">
-                <p class="card-text">
+                <div class="card-text">
                     <span class="translate">Extensions installed or updated. Changes will apply the next time you restart the SwarmUI server.</span>
                     <div><button class="basic-button translate" id="extension_restart_button" onclick="extensionsManager.restartServer()">Restart Now</button></div>
-                </p>
+                </div>
             </div>
         </div>
         <center>

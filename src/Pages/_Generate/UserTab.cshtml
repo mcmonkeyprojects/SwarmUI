@@ -91,9 +91,9 @@
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">API Keys</div>
             <div class="card-body">
-                <p class="card-text translate">
+                <div class="card-text translate">
                     To use remote APIs in SwarmUI, you must set the key for it. If you have an API key for any of the below APIs, paste it into the corresponding box and click 'Save'.
-                </p>
+                </div>
                 <table class="simple-table" id="api_keys_table">
                     <tr><th>API</th><th>Status</th><th>Actions</th><th>Link</th><th>Info</th></tr>
                     @foreach (UserUpstreamApiKeys.ApiKeyInfo keyInfo in UserUpstreamApiKeys.KeysByType.Values)
