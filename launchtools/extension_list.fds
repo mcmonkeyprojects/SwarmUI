@@ -379,7 +379,7 @@ H3Attn:
 
 CivitAIBrowser:
     author: genevera
-    description: Adds a CivitAI Browser tab to search, filter, preview, and download models from Civitai.com directly inside Swarm.
+    description: Adds a CivitAI Browser tab to search, filter, preview, and download models from civitai.com directly inside SwarmUI.
     url: https://github.com/genevera/civitai-browser
     license: MIT
     ci-test: true
