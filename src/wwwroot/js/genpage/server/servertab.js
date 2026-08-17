@@ -728,16 +728,16 @@ class ServerStatusManager {
             this.gpuIds = gpuIds;
         }
         let cpuPct = Math.round(data.cpu.usage * 100);
-        this.setMeter(this.cpuMeter, cpuPct, `${cpuPct}% &middot; ${data.cpu.cores} cores`);
+        this.setMeter(this.cpuMeter, cpuPct, `${cpuPct}% &middot; ${data.cpu.cores} cores`, true);
         let ramPct = Math.round(data.system_ram.used / data.system_ram.total * 100);
-        this.setMeter(this.ramMeter, ramPct, `${ramPct}% &middot; ${fileSizeStringify(data.system_ram.used)} / ${fileSizeStringify(data.system_ram.total)}`);
+        this.setMeter(this.ramMeter, ramPct, `${ramPct}% &middot; ${fileSizeStringify(data.system_ram.used)} / ${fileSizeStringify(data.system_ram.total)}`, data.system_ram.total > 0);
         for (let gpu of gpus) {
             let row = this.gpuRows[gpu.id];
             row.name.innerHTML = `GPU ${gpu.id} &middot; ${escapeHtml(gpu.name)}`;
             row.temp.innerHTML = `${gpu.temperature}&deg;C`;
-            this.setMeter(row.core, gpu.utilization_gpu, `${gpu.utilization_gpu}%`);
+            this.setMeter(row.core, gpu.utilization_gpu, `${gpu.utilization_gpu}%`, true);
             let vramPct = Math.round(gpu.used_memory / gpu.total_memory * 100);
-            this.setMeter(row.vram, vramPct, `${vramPct}% &middot; ${fileSizeStringify(gpu.used_memory)} / ${fileSizeStringify(gpu.total_memory)}`);
+            this.setMeter(row.vram, vramPct, `${vramPct}% &middot; ${fileSizeStringify(gpu.used_memory)} / ${fileSizeStringify(gpu.total_memory)}`, gpu.total_memory > 0);
         }
     }
 
@@ -832,9 +832,10 @@ class ServerStatusManager {
     }
 
     /** Updates a meter's fill width and value text. */
-    setMeter(meter, percent, text) {
+    setMeter(meter, percent, text, show) {
         meter.fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
         meter.value.innerHTML = text;
+        meter.root.style.display = show ? '' : 'none';
     }
 
     refreshLoop() {
