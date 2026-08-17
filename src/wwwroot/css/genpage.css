@@ -2244,50 +2244,90 @@ body.small-window > .tab-content.tab-hundred {
     height: 40rem;
     width: 50%;
 }
-.model_downloader_metadatazone {
-    width: 40rem;
-    max-width: 100%;
-    max-height: 20rem;
-    padding: 1rem;
+.model-downloader-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    margin: 0.45rem 0;
+}
+.model-downloader-field > b {
+    min-width: 6.5rem;
+    flex-shrink: 0;
+}
+.model-downloader-field .auto-text-wide, .model-downloader-field .auto-dropdown, .model-downloader-field .model-downloader-status {
+    flex: 1 1 12rem;
+    min-width: 0;
+    width: auto;
+}
+.model-downloader-status {
+    color: var(--text-soft);
+}
+.model-downloader-preview {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin: 0.6rem 0;
+    padding: 0.75rem;
     border: 1px solid var(--light-border);
     border-radius: 0.5rem;
+    background-color: var(--background-soft);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.model_downloader_metadatazone {
+    flex: 1;
+    min-width: 0;
+    max-height: 22rem;
     overflow: auto;
-    display: inline-block;
-    vertical-align: top;
+}
+.model_downloader_metadatazone img {
+    max-width: 100%;
+    height: auto;
 }
 .model_downloader_imageside {
-    display: inline-block;
-    width: 20rem;
-    vertical-align: top;
+    width: 16rem;
+    flex-shrink: 0;
 }
 .model_downloader_imageside img {
     max-width: 100%;
-    max-height: 20rem;
+    max-height: 18rem;
     object-fit: contain;
 }
 .model_downloader_imageselector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+.model_downloader_imageindex {
+    min-width: 3.5rem;
     text-align: center;
+    font-size: 85%;
+    color: var(--text-soft);
 }
 .model_downloader_input_wrap {
     display: contents;
 }
 .model-downloader-section-wrapper {
-    display: block;
-    width: fit-content;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
     max-width: calc(100% - 20px);
     margin: auto;
 }
 .model-downloader-main-section {
-    display: inline-block;
-    width: 70rem;
+    width: 56rem;
     padding-right: 1rem;
     padding-left: 1rem;
     max-width: 100%;
     box-sizing: border-box;
 }
 .model-downloader-right-sidebar {
-    display: inline-block;
-    vertical-align: top;
     max-width: 42rem;
 }
 .model-downloader-paid {
@@ -2300,12 +2340,21 @@ body.small-window > .tab-content.tab-hundred {
 }
 .active-model-download-card img {
     width: 10rem;
-    margin-left: 5rem;
     max-height: 10rem;
     object-fit: contain;
+    display: block;
+    margin: 0.5rem auto;
 }
 .active-model-download-card .status-text {
     font-size: 80%;
+}
+@media (max-width: 768px) {
+    .model-downloader-preview {
+        flex-direction: column;
+    }
+    .model_downloader_imageside {
+        width: 100%;
+    }
 }
 .ext-danger-license {
     background-color: rgba(255, 0, 0, 0.2);

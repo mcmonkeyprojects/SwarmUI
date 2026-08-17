@@ -186,29 +186,27 @@
         <div class="model-downloader-section-wrapper">
             <div class="model-downloader-main-section">
                 <div style="width: 100%">
-                    <br>@WebUtil.TextPopoverButton("modeldownloaderurl", "Exact web URL to the model.\nCivitai URLs are fully supported and will load metadata.\nHuggingFace URLs will be recognized.\nFor anything else, make sure the URL is a direct download URL, not a webpage.\nNote only '.safetensors' or '.gguf' models are allowed.") <b>URL</b>: <input type="text" id="model_downloader_url" class="auto-text auto-text-wide" placeholder="Model URL" oninput="modelDownloader.urlInput()" autocomplete="off" />
-                    <br>
-                    <br><div>@WebUtil.TextPopoverButton("modeldownloaderstatus", "This section will update after you input a URL to inform you if the URL is valid.\nThe box below will display loaded metadata if you use a civitai URL.") <b>Status</b>: <span id="model_downloader_status">(...)</span></div>
-                    <div class="model_downloader_metadatazone" id="model_downloader_metadatazone"></div>
-                    <div class="model_downloader_imageside" id="model_downloader_imageside"></div>
+                    <div class="model-downloader-field">@WebUtil.TextPopoverButton("modeldownloaderurl", "Exact web URL to the model.\nCivitai URLs are fully supported and will load metadata.\nHuggingFace URLs will be recognized.\nFor anything else, make sure the URL is a direct download URL, not a webpage.\nNote only '.safetensors' or '.gguf' models are allowed.") <b>URL</b> <input type="text" id="model_downloader_url" class="auto-text auto-text-wide" placeholder="Model URL" oninput="modelDownloader.urlInput()" autocomplete="off" /></div>
+                    <div class="model-downloader-field">@WebUtil.TextPopoverButton("modeldownloaderstatus", "This section will update after you input a URL to inform you if the URL is valid.\nThe box below will display loaded metadata if you use a civitai URL.") <b>Status</b> <span class="model-downloader-status" id="model_downloader_status">(...)</span></div>
+                    <div class="model-downloader-preview">
+                        <div class="model_downloader_metadatazone" id="model_downloader_metadatazone"></div>
+                        <div class="model_downloader_imageside" id="model_downloader_imageside"></div>
+                    </div>
                     <div class="model_downloader_input_wrap" id="model_downloader_version_wrap" style="display: none;">
-                    <br>@WebUtil.TextPopoverButton("modeldownloaderversion", "Which Civitai model version to download.\nThis is filled in automatically when you load a Civitai model URL.") <b>Version</b>: <select class="auto-dropdown" id="model_downloader_version" autocomplete="off"></select>
+                    <div class="model-downloader-field">@WebUtil.TextPopoverButton("modeldownloaderversion", "Which Civitai model version to download.\nThis is filled in automatically when you load a Civitai model URL.") <b>Version</b> <select class="auto-dropdown" id="model_downloader_version" autocomplete="off"></select></div>
                     </div>
                     <div class="model_downloader_input_wrap" id="model_downloader_file_wrap" style="display: none;">
-                    <br>@WebUtil.TextPopoverButton("modeldownloaderfile", "Which file to download from this Civitai version.\nSome versions include multiple variants or optional files.") <b>File</b>: <select class="auto-dropdown" id="model_downloader_file" autocomplete="off"></select>
+                    <div class="model-downloader-field">@WebUtil.TextPopoverButton("modeldownloaderfile", "Which file to download from this Civitai version.\nSome versions include multiple variants or optional files.") <b>File</b> <select class="auto-dropdown" id="model_downloader_file" autocomplete="off"></select></div>
                     </div>
-                    <br>@WebUtil.TextPopoverButton("modeldownloadertype", "The base model sub-type to use, ie what category it gets saved to.\nMake sure this is correct, you don't want a LoRA in your base models folder or similar.\nCivitai links will autoset this when they load metadata.") <b>Model Type</b>: <select class="auto-dropdown" id="model_downloader_type" autocomplete="off">
+                    <div class="model-downloader-field">@WebUtil.TextPopoverButton("modeldownloadertype", "The base model sub-type to use, ie what category it gets saved to.\nMake sure this is correct, you don't want a LoRA in your base models folder or similar.\nCivitai links will autoset this when they load metadata.") <b>Model Type</b> <select class="auto-dropdown" id="model_downloader_type" autocomplete="off">
                         <option value="Stable-Diffusion">Base Model</option>
                         <option value="LoRA">LoRA</option>
                         <option value="VAE">VAE</option>
                         <option value="Embedding">Embedding</option>
                         <option value="ControlNet">ControlNet</option>
-                    </select>
-                    <br>@WebUtil.TextPopoverButton("modeldownloaderfolder", "What folder to put the model in.\nTo create new folders, simply type paths with '/' in them into the 'Save as:' name box below.") <b>Folder</b>: <select class="auto-dropdown" id="model_downloader_folder" autocomplete="off"></select>
-                    <br>
-                    <br>@WebUtil.TextPopoverButton("modeldownloadersaveas", "File name to save as. Don't include the '.safetensors' file extension, just the name.\nYou can use a folder path with the '/' symbol.") <b>Save as</b>: <input type="text" id="model_downloader_name" class="auto-text auto-text-wide" placeholder="Model Name" autocomplete="off" oninput="modelDownloader.nameInput()" />
-                    <br>
-                    <br>
+                    </select></div>
+                    <div class="model-downloader-field">@WebUtil.TextPopoverButton("modeldownloaderfolder", "What folder to put the model in.\nTo create new folders, simply type paths with '/' in them into the 'Save as:' name box below.") <b>Folder</b> <select class="auto-dropdown" id="model_downloader_folder" autocomplete="off"></select></div>
+                    <div class="model-downloader-field">@WebUtil.TextPopoverButton("modeldownloadersaveas", "File name to save as. Don't include the '.safetensors' file extension, just the name.\nYou can use a folder path with the '/' symbol.") <b>Save as</b> <input type="text" id="model_downloader_name" class="auto-text auto-text-wide" placeholder="Model Name" autocomplete="off" oninput="modelDownloader.nameInput()" /></div>
                     <center>
                         <button id="model_downloader_button" class="basic-button translate" onclick="modelDownloader.run()" disabled>Download</button>
                     </center>

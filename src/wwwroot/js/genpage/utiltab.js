@@ -330,11 +330,12 @@ class ModelDownloaderUtil {
                 doError(`Cannot download model from that URL because it is not a safetensors or GGUF file. Filename is '${file.name}'`);
                 return;
             }
-            if (file.type == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
-            if (['LORA', 'LoCon', 'LyCORIS'].includes(file.type)) { modelType = 'LoRA'; }
-            if (file.type == 'TextualInversion') { modelType = 'Embedding'; }
-            if (file.type == 'ControlNet') { modelType = 'ControlNet'; }
-            if (file.type == 'VAE') { modelType = 'VAE'; }
+            let typeId = file.type && file.type != 'Model' ? file.type : rawData.type;
+            if (typeId == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
+            if (['LORA', 'LoCon', 'LyCORIS'].includes(typeId)) { modelType = 'LoRA'; }
+            if (typeId == 'TextualInversion') { modelType = 'Embedding'; }
+            if (typeId == 'ControlNet') { modelType = 'ControlNet'; }
+            if (typeId == 'VAE') { modelType = 'VAE'; }
             let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
             let imgUrls = imgs.map(img => img.url);
             let downloadUrl = file.downloadUrl;
@@ -460,19 +461,22 @@ class ModelDownloaderUtil {
             this.metadataZone.dataset.image = img;
             this.imageSide.innerHTML = `<img src="${img}"/>`;
             if (imgs.length > 1) {
-                this.imageSide.innerHTML += `<br><div class="model_downloader_imageselector">
-                        <button class="image-select-prev basic-button">Previous</button>
-                        <button class="image-select-next basic-button">Next</button>
+                this.imageSide.innerHTML += `<div class="model_downloader_imageselector">
+                        <button class="image-select-prev basic-button small-button" title="Previous">&lt;</button>
+                        <span class="model_downloader_imageindex">1 / ${imgs.length}</span>
+                        <button class="image-select-next basic-button small-button" title="Next">&gt;</button>
                     </div>`;
                 let imgElem = this.imageSide.querySelector('img');
                 let prevButton = this.imageSide.querySelector('.image-select-prev');
                 let nextButton = this.imageSide.querySelector('.image-select-next');
+                let indexLabel = this.imageSide.querySelector('.model_downloader_imageindex');
                 let imgIndex = 0;
                 let updateImage = () => {
                     if (requestId != this.urlRequestId) {
                         return;
                     }
                     imgIndex = (imgIndex + imgs.length) % imgs.length;
+                    indexLabel.innerText = `${imgIndex + 1} / ${imgs.length}`;
                     let ind = imgIndex;
                     let url = imgs[imgIndex];
                     if (url.startsWith('data:')) {
@@ -637,9 +641,9 @@ class ModelDownloaderUtil {
                         <br><b>Base model</b>: ${escapeHtml(rawVersion.baseModel)}
                         <br><b>Date</b>: ${escapeHtml(rawVersion.createdAt)}`
                         + (rawVersion.paidAccess && rawVersion.paidAccess.endsAt && new Date(rawVersion.paidAccess.endsAt) > new Date() ? `<br><span class="model-downloader-paid"><b>Paid Access</b>: ends ${escapeHtml(rawVersion.paidAccess.endsAt)}</span>` : '')
+                        + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join("; "))}` : '')
                         + `<br><b>Model description</b>: ${safeHtmlOnly(rawData.description)}`
-                        + (rawVersion.description ? `<br><b>Version description</b>: ${safeHtmlOnly(rawVersion.description)}` : '')
-                        + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join("; "))}` : '');
+                        + (rawVersion.description ? `<br><b>Version description</b>: ${safeHtmlOnly(rawVersion.description)}` : '');
                     this.metadataZone.dataset.raw = `${JSON.stringify(metadata, null, 2)}`;
                     this.applyCivitaiPreview(img, imgs, requestId);
                 }, '', true, (img, imgs) => {
