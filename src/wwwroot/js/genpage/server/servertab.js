@@ -696,6 +696,87 @@ function adminInterruptUser(userId) {
     genericRequest('AdminInterruptUser', { 'name': userId }, data => {});
 }
 
+/** Manages the Resource Usage card on the Server Info tab. Builds the DOM once, then updates values in place. */
+class ServerResourceUsage {
+    constructor() {
+        this.area = getRequiredElementById('resource_usage_area');
+        this.gpuIds = null;
+        this.cpuMeter = null;
+        this.ramMeter = null;
+        this.gpuRows = {};
+    }
+
+    /** Fetches current resource usage from the server and applies it. */
+    refresh() {
+        genericRequest('GetServerResourceInfo', {}, data => this.update(data));
+    }
+
+    /** Applies a GetServerResourceInfo payload. Rebuilds only when the GPU set changes. */
+    update(data) {
+        let gpus = data.gpus ? Object.values(data.gpus) : [];
+        let gpuIds = gpus.map(gpu => gpu.id).join(',');
+        if (this.gpuIds != gpuIds) {
+            this.build(gpus);
+            this.gpuIds = gpuIds;
+        }
+        let cpuPct = Math.round(data.cpu.usage * 100);
+        this.setMeter(this.cpuMeter, cpuPct, `${cpuPct}% &middot; ${data.cpu.cores} cores`);
+        let ramPct = Math.round(data.system_ram.used / data.system_ram.total * 100);
+        this.setMeter(this.ramMeter, ramPct, `${ramPct}% &middot; ${fileSizeStringify(data.system_ram.used)} / ${fileSizeStringify(data.system_ram.total)}`);
+        for (let gpu of gpus) {
+            let row = this.gpuRows[gpu.id];
+            row.name.innerHTML = `GPU ${gpu.id} &middot; ${escapeHtml(gpu.name)}`;
+            row.temp.innerHTML = `${gpu.temperature}&deg;C`;
+            this.setMeter(row.core, gpu.utilization_gpu, `${gpu.utilization_gpu}%`);
+            let vramPct = Math.round(gpu.used_memory / gpu.total_memory * 100);
+            this.setMeter(row.vram, vramPct, `${vramPct}% &middot; ${fileSizeStringify(gpu.used_memory)} / ${fileSizeStringify(gpu.total_memory)}`);
+        }
+    }
+
+    /** Builds the meter DOM for the current GPU set. */
+    build(gpus) {
+        this.gpuRows = {};
+        let list = createDiv(null, 'server-resource-list');
+        this.cpuMeter = this.makeMeter('CPU');
+        this.ramMeter = this.makeMeter('RAM');
+        list.appendChild(this.cpuMeter.root);
+        list.appendChild(this.ramMeter.root);
+        for (let gpu of gpus) {
+            let block = createDiv(null, 'server-resource-gpu');
+            let head = createDiv(null, 'server-resource-gpu-head');
+            let name = document.createElement('span');
+            name.className = 'server-resource-gpu-name';
+            let temp = document.createElement('span');
+            temp.className = 'server-resource-gpu-temp';
+            head.appendChild(name);
+            head.appendChild(temp);
+            let core = this.makeMeter('Core');
+            let vram = this.makeMeter('VRAM');
+            block.appendChild(head);
+            block.appendChild(core.root);
+            block.appendChild(vram.root);
+            list.appendChild(block);
+            this.gpuRows[gpu.id] = { name, temp, core, vram };
+        }
+        this.area.innerHTML = '';
+        this.area.appendChild(list);
+    }
+
+    /** Creates a labeled meter row with a fill bar. */
+    makeMeter(labelText) {
+        let root = createDiv(null, 'server-resource-meter', `<div class="server-resource-meter-head"><span class="server-resource-meter-label">${escapeHtml(labelText)}</span><span class="server-resource-meter-value"></span></div><div class="server-resource-meter-bar"><div class="server-resource-meter-fill"></div></div>`);
+        return { root, value: root.querySelector('.server-resource-meter-value'), fill: root.querySelector('.server-resource-meter-fill') };
+    }
+
+    /** Updates a meter's fill width and value text. */
+    setMeter(meter, percent, text) {
+        meter.fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+        meter.value.innerHTML = text;
+    }
+}
+
+serverResourceUsage = new ServerResourceUsage();
+
 function serverResourceLoop() {
     if (isVisible(getRequiredElementById('server_tab'))) {
         fixTabHeights();
@@ -710,23 +791,7 @@ function serverResourceLoop() {
                 getRequiredElementById('updates_available_notice_area').innerText = 'Automatic update checks disabled in Server Configuration';
             }
         }
-        genericRequest('GetServerResourceInfo', {}, data => {
-            let target = getRequiredElementById('resource_usage_area');
-            let priorWidth = 0;
-            if (target.style.minWidth) {
-                priorWidth = parseFloat(target.style.minWidth.replaceAll('px', ''));
-            }
-            target.style.minWidth = `${Math.max(priorWidth, target.offsetWidth)}px`;
-            if (data.gpus) {
-                let html = '<table class="simple-table"><tr><th>Resource</th><th>ID</th><th>Temp</th><th>Usage</th><th>Mem Usage</th><th>Used Mem</th><th>Free Mem</th><th>Total Mem</th></tr>';
-                html += `<tr><td>CPU</td><td>...</td><td>...</td><td>${Math.round(data.cpu.usage * 100)}% (${data.cpu.cores} cores)</td><td>${Math.round(data.system_ram.used / data.system_ram.total * 100)}%</td><td>${fileSizeStringify(data.system_ram.used)}</td><td>${fileSizeStringify(data.system_ram.free)}</td><td>${fileSizeStringify(data.system_ram.total)}</td></tr>`;
-                for (let gpu of Object.values(data.gpus)) {
-                    html += `<tr><td>${gpu.name}</td><td>${gpu.id}</td><td>${gpu.temperature}&deg;C</td><td>${gpu.utilization_gpu}% Core, ${gpu.utilization_memory}% Mem</td><td>${Math.round(gpu.used_memory / gpu.total_memory * 100)}%</td><td>${fileSizeStringify(gpu.used_memory)}</td><td>${fileSizeStringify(gpu.free_memory)}</td><td>${fileSizeStringify(gpu.total_memory)}</td></tr>`;
-                }
-                html += '</table>';
-                target.innerHTML = html;
-            }
-        });
+        serverResourceUsage.refresh();
         genericRequest('ListConnectedUsers', {}, data => {
             let target = getRequiredElementById('connected_users_list');
             let priorWidth = 0;

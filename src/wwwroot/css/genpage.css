@@ -2112,6 +2112,43 @@ body.small-window > .tab-content.tab-hundred {
     vertical-align: top;
     text-align: left;
 }
+.server-resource-list {
+    min-width: 18rem;
+    text-align: left;
+}
+.server-resource-meter {
+    margin-bottom: 0.55rem;
+}
+.server-resource-meter-head, .server-resource-gpu-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.2rem;
+}
+.server-resource-meter-value, .server-resource-gpu-temp {
+    color: var(--text-soft);
+    white-space: nowrap;
+}
+.server-resource-meter-bar {
+    height: 0.4rem;
+    background-color: var(--light-border);
+    overflow: hidden;
+}
+.server-resource-meter-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--emphasis);
+}
+.server-resource-gpu {
+    margin-top: 0.75rem;
+}
+.server-resource-gpu-head {
+    margin-bottom: 0.4rem;
+}
+.server-resource-gpu-name {
+    font-weight: bold;
+}
 @media screen and (max-width:768px) {
     .input-sidebar {
         width: calc(16rem - 5px);
