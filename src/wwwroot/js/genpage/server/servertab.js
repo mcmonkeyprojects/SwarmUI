@@ -696,27 +696,35 @@ function adminInterruptUser(userId) {
     genericRequest('AdminInterruptUser', { 'name': userId }, data => {});
 }
 
-/** Manages the Resource Usage card on the Server Info tab. Builds the DOM once, then updates values in place. */
-class ServerResourceUsage {
+/** Manages the Server Status pane on the Server Info tab. Builds the DOM once, then updates values in place. */
+class ServerStatusManager {
     constructor() {
-        this.area = getRequiredElementById('resource_usage_area');
+        this.resourceArea = getRequiredElementById('resource_usage_area');
+        this.usersArea = getRequiredElementById('connected_users_list');
         this.gpuIds = null;
+        this.userIds = null;
         this.cpuMeter = null;
         this.ramMeter = null;
         this.gpuRows = {};
+        this.userRows = {};
+        this.loopInterval = null;
+        sessionReadyCallbacks.push(() => {
+            this.loopInterval = setInterval(this.refreshLoop, 1000);
+        });
     }
 
-    /** Fetches current resource usage from the server and applies it. */
+    /** Fetches current server status reports from the server and applies them. */
     refresh() {
-        genericRequest('GetServerResourceInfo', {}, data => this.update(data));
+        genericRequest('GetServerResourceInfo', {}, data => this.updateResources(data));
+        genericRequest('ListConnectedUsers', {}, data => this.updateUsers(data));
     }
 
-    /** Applies a GetServerResourceInfo payload. Rebuilds only when the GPU set changes. */
-    update(data) {
+    /** Applies a GetServerResourceInfo payload. Rebuilds fully if the GPU set changes. */
+    updateResources(data) {
         let gpus = data.gpus ? Object.values(data.gpus) : [];
         let gpuIds = gpus.map(gpu => gpu.id).join(',');
         if (this.gpuIds != gpuIds) {
-            this.build(gpus);
+            this.buildResources(gpus);
             this.gpuIds = gpuIds;
         }
         let cpuPct = Math.round(data.cpu.usage * 100);
@@ -733,8 +741,26 @@ class ServerResourceUsage {
         }
     }
 
-    /** Builds the meter DOM for the current GPU set. */
-    build(gpus) {
+    /** Applies a ListConnectedUsers payload. Rebuilds fully if the user set changes. */
+    updateUsers(data) {
+        let users = data.users;
+        let userIds = users.map(user => user.id).join(',');
+        if (this.userIds != userIds) {
+            this.buildUsers(users);
+            this.userIds = userIds;
+        }
+        for (let user of users) {
+            let row = this.userRows[user.id];
+            row.lastActive.innerText = user.last_active;
+            row.sessions.innerText = user.active_sessions.map(sess => `${sess.count}x from ${sess.address}`).join(', ');
+            row.gens.innerHTML = currentGenString(user.waiting_gens, user.loading_models, user.live_gens, user.waiting_backends);
+            let busy = user.waiting_gens != 0 || user.loading_models != 0 || user.waiting_backends != 0 || user.live_gens != 0;
+            row.button.style.display = busy ? '' : 'none';
+        }
+    }
+
+    /** Rebuilds the resource usage meters fully. */
+    buildResources(gpus) {
         this.gpuRows = {};
         let list = createDiv(null, 'server-resource-list');
         this.cpuMeter = this.makeMeter('CPU');
@@ -758,8 +784,45 @@ class ServerResourceUsage {
             list.appendChild(block);
             this.gpuRows[gpu.id] = { name, temp, core, vram };
         }
-        this.area.innerHTML = '';
-        this.area.appendChild(list);
+        this.resourceArea.innerHTML = '';
+        this.resourceArea.appendChild(list);
+    }
+
+    /** Rebuilds the connected-users table fully. */
+    buildUsers(users) {
+        this.userRows = {};
+        let table = document.createElement('table');
+        table.className = 'simple-table';
+        let header = document.createElement('tr');
+        for (let title of ['Name', 'Last Active', 'Active Sessions', 'Current Gens']) {
+            let th = document.createElement('th');
+            th.innerText = title;
+            header.appendChild(th);
+        }
+        table.appendChild(header);
+        for (let user of users) {
+            let tr = document.createElement('tr');
+            let name = document.createElement('td');
+            name.innerText = user.id;
+            let lastActive = document.createElement('td');
+            let sessions = document.createElement('td');
+            let gensCell = document.createElement('td');
+            let gens = document.createElement('span');
+            let button = document.createElement('button');
+            button.className = 'basic-button';
+            button.innerText = 'Interrupt';
+            button.addEventListener('click', () => adminInterruptUser(user.id));
+            gensCell.appendChild(gens);
+            gensCell.appendChild(button);
+            tr.appendChild(name);
+            tr.appendChild(lastActive);
+            tr.appendChild(sessions);
+            tr.appendChild(gensCell);
+            table.appendChild(tr);
+            this.userRows[user.id] = { lastActive, sessions, gens, button };
+        }
+        this.usersArea.innerHTML = '';
+        this.usersArea.appendChild(table);
     }
 
     /** Creates a labeled meter row with a fill bar. */
@@ -773,42 +836,27 @@ class ServerResourceUsage {
         meter.fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
         meter.value.innerHTML = text;
     }
-}
 
-serverResourceUsage = new ServerResourceUsage();
-
-function serverResourceLoop() {
-    if (isVisible(getRequiredElementById('server_tab'))) {
-        fixTabHeights();
-    }
-    if (isVisible(getRequiredElementById('Server-Info'))) {
-        if (!hasEverCheckedForUpdates) {
-            if (window.checkForUpdatesAutomatically) {
-                check_for_updates();
-            }
-            else {
-                hasEverCheckedForUpdates = true;
-                getRequiredElementById('updates_available_notice_area').innerText = 'Automatic update checks disabled in Server Configuration';
-            }
+    refreshLoop() {
+        if (isVisible(getRequiredElementById('server_tab'))) {
+            fixTabHeights();
         }
-        serverResourceUsage.refresh();
-        genericRequest('ListConnectedUsers', {}, data => {
-            let target = getRequiredElementById('connected_users_list');
-            let priorWidth = 0;
-            if (target.style.minWidth) {
-                priorWidth = parseFloat(target.style.minWidth.replaceAll('px', ''));
+        if (isVisible(getRequiredElementById('Server-Info'))) {
+            if (!hasEverCheckedForUpdates) {
+                if (window.checkForUpdatesAutomatically) {
+                    check_for_updates();
+                }
+                else {
+                    hasEverCheckedForUpdates = true;
+                    getRequiredElementById('updates_available_notice_area').innerText = 'Automatic update checks disabled in Server Configuration';
+                }
             }
-            target.style.minWidth = `${Math.max(priorWidth, target.offsetWidth)}px`;
-            let html = '<table class="simple-table"><tr><th>Name</th><th>Last Active</th><th>Active Sessions</th><th>Current Gens</th></tr>';
-            for (let user of data.users) {
-                let button = (user.waiting_gens == 0 && user.loading_models == 0 && user.waiting_backends == 0 && user.live_gens == 0) ? '' : `<button class="basic-button" onclick="adminInterruptUser('${escapeHtml(user.id)}')">Interrupt</button>`;
-                html += `<tr><td>${user.id}</td><td>${user.last_active}</td><td>${user.active_sessions.map(sess => `${sess.count}x from ${sess.address}`).join(', ')}</td><td>${currentGenString(user.waiting_gens, user.loading_models, user.live_gens, user.waiting_backends)}${button}</td></tr>`;
-            }
-            html += '</table>';
-            target.innerHTML = html;
-        });
-    }
-    if (isVisible(backendsListView)) {
-        backendLoopUpdate();
+            serverStatusManager.refresh();
+        }
+        if (isVisible(backendsListView)) {
+            backendLoopUpdate();
+        }
     }
 }
+
+serverStatusManager = new ServerStatusManager();

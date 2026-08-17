@@ -1,5 +1,9 @@
 
+/** Current user session ID (not login session), or null if none. */
 let session_id = getCookie('session_id') || null;
+/** List of functions to fire when the main generate page has fully loaded. */
+let sessionReadyCallbacks = [];
+/** Current User ID, or null if none. */
 let user_id = null;
 let outputAppendUser = null;
 

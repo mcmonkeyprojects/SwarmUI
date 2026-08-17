@@ -2149,6 +2149,27 @@ body.small-window > .tab-content.tab-hundred {
 .server-resource-gpu-name {
     font-weight: bold;
 }
+.server-status-section-title {
+    font-weight: bold;
+    margin-bottom: 0.4rem;
+}
+.server-status-section + .server-status-section {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--light-border);
+}
+.server-status-section .simple-table {
+    width: 100%;
+}
+.server-manage-section.border-secondary, .server-manage-section.border-success {
+    border-style: solid;
+    border-width: 1px;
+    padding: 0.4rem;
+}
+.server-manage-shutdown {
+    border: 1px solid var(--red);
+    padding: 0.5rem 0.6rem;
+}
 @media screen and (max-width:768px) {
     .input-sidebar {
         width: calc(16rem - 5px);

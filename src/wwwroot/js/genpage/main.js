@@ -10,8 +10,6 @@ let num_waiting_gens = 0, num_models_loading = 0, num_live_gens = 0, num_backend
 
 let shouldApplyDefault = false;
 
-let sessionReadyCallbacks = [];
-
 let allModels = [];
 
 let coreModelMap = {};
@@ -974,6 +972,5 @@ function genpageLoad() {
             swarmHasLoaded = true;
         });
         reviseStatusInterval = setInterval(reviseStatusBar, 2000);
-        window.resLoopInterval = setInterval(serverResourceLoop, 1000);
     });
 }

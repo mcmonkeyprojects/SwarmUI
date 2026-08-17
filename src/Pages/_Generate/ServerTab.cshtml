@@ -37,52 +37,6 @@
             </div>
         </div>
         <div class="card-collection-inline">
-            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
-                <div class="card-header translate">Local Network</div>
-                <div class="card-body">
-                    <div class="card-text">
-                        @if (Program.ServerSettings.Network.Host == "127.0.0.1" || Program.ServerSettings.Network.Host == "localhost")
-                        {
-                            <span class="translate">This server is only accessible from this computer.</span>
-                        }
-                        else
-                        {
-                            string address = Utilities.GetLocalIPAddress();
-                            if (address is null)
-                            {
-                                <span><span class="translate">Unknown local address, but seems to be open to LAN based on Host setting</span>
-                                <br>'<b>@(Program.ServerSettings.Network.Host)</b>'</span>
-                            }
-                            else
-                            {
-                                <span><span class="translate">This server is likely accessible from LAN on one of the following addresses:</span>
-                                <br>@(address)</span>
-                            }
-                        }
-                        @if (Program.ProxyHandler is not null && Program.ProxyHandler.PublicURL is not null)
-                        {
-                            <span><span class="translate">This server is also accessible from the open internet at:</span>
-                            <br>@(Program.ProxyHandler?.PublicURL)</span>
-                        }
-                    </div>
-                </div>
-            </div>
-            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
-                <div class="card-header translate">Resource Usage</div>
-                <div class="card-body">
-                    <div class="card-text" id="resource_usage_area">
-                        (Loading...)
-                    </div>
-                </div>
-            </div>
-            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
-                <div class="card-header translate">Connected Users</div>
-                <div class="card-body">
-                    <div class="card-text" id="connected_users_list">
-                        (Loading...)
-                    </div>
-                </div>
-            </div>
             @if (Utilities.DotNetVersMissing is not null)
             {
                 <div class="card border-red mb-3 card-center-container">
@@ -113,48 +67,94 @@
                     </div>
                 </div>
             }
-        </div>
-        <div class="card-collection-inline">
-            <div class="card border-secondary mb-3 card-center-container" id="server_updates_card" data-requiredpermission="restart" style="min-width: 400px;">
-                <div class="card-header translate">Update</div>
+            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
+            <div class="card-header translate">Server Status</div>
                 <div class="card-body">
-                    <span class="card-text">
-                        @if (Program.VersionUpdateMessageShort is not null)
-                        {
-                            <div>@(new HtmlString(Program.VersionUpdateMessageShort))</div>
-                        }
-                        <span id="updates_available_notice_area" style="white-space:pre-wrap">(Loading...)</span>
-                        <hr>
-                        <input class="form-check-input" type="checkbox" id="server_update_aggressive" autocomplete="off"> <label for="server_update_aggressive" class="translate">Aggressive Update</label>
-                        &emsp;
-                        <input class="form-check-input" type="checkbox" id="server_update_force_restart" autocomplete="off"> <label for="server_update_force_restart" class="translate">Force Restart</label>
-                        <br><br>
-                        <button class="basic-button translate" onclick="check_for_updates()">Check For Updates</button>
-                        <button class="basic-button danger-button translate" id="update_and_restart_button" onclick="update_and_restart_server()" disabled>Update and Restart Server</button>
-                        <span id="update_server_notice_area"></span>
-                    </span>
-                </div>
-            </div>
-            <div class="card border-red mb-3 card-center-container" data-requiredpermission="shutdown">
-                <div class="card-header translate">Shutdown</div>
-                <div class="card-body">
-                    <div class="card-text">
-                        <span data-requiredpermission="shutdown">
-                        <span class="translate">If you want to shut down the server, click the button below.</span>
-                        <br><button class="basic-button danger-button translate" onclick="shutdown_server()">Shutdown Server</button>
-                        </span>
-                        <span id="shutdown_notice_area"></span>
+                    <div class="server-status-section">
+                        <div class="server-status-section-title translate">Local Network</div>
+                        <div class="card-text">
+                            @if (Program.ServerSettings.Network.Host == "127.0.0.1" || Program.ServerSettings.Network.Host == "localhost")
+                            {
+                                <span class="translate">This server is only accessible from this computer.</span>
+                            }
+                            else
+                            {
+                                string address = Utilities.GetLocalIPAddress();
+                                if (address is null)
+                                {
+                                    <span><span class="translate">Unknown local address, but seems to be open to LAN based on Host setting</span>
+                                    <br>'<b>@(Program.ServerSettings.Network.Host)</b>'</span>
+                                }
+                                else
+                                {
+                                    <span><span class="translate">This server is likely accessible from LAN on one of the following addresses:</span>
+                                    <br>@(address)</span>
+                                }
+                            }
+                            @if (Program.ProxyHandler is not null && Program.ProxyHandler.PublicURL is not null)
+                            {
+                                <span><span class="translate">This server is also accessible from the open internet at:</span>
+                                <br>@(Program.ProxyHandler?.PublicURL)</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="server-status-section">
+                        <div class="server-status-section-title translate">Resource Usage</div>
+                        <div class="card-text" id="resource_usage_area">
+                            (Loading...)
+                        </div>
+                    </div>
+                    <div class="server-status-section">
+                        <div class="server-status-section-title translate">Connected Users</div>
+                        <div class="card-text" id="connected_users_list">
+                            (Loading...)
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="control_mem_clean">
-                <div class="card-header translate">Free Memory</div>
+            <div class="card border-secondary mb-3 card-center-container" style="min-width: 400px;">
+                <div class="card-header translate">Manage Server</div>
                 <div class="card-body">
-                    <div class="card-text">
-                        <span class="translate">You can free up the VRAM usage, or system memory usage (cache) from backends with the two buttons below.</span>
-                        <br>
-                        <button class="basic-button danger-button" onclick="server_clear_vram()">Free VRAM</button>
-                        <button class="basic-button danger-button" onclick="server_clear_sysram()">Free System RAM</button>
+                    <div class="server-manage-section border-secondary" id="server_updates_card" data-requiredpermission="restart">
+                        <div class="server-status-section-title translate">Update</div>
+                        <span class="card-text">
+                            @if (Program.VersionUpdateMessageShort is not null)
+                            {
+                                <div>@(new HtmlString(Program.VersionUpdateMessageShort))</div>
+                            }
+                            <span id="updates_available_notice_area" style="white-space:pre-wrap">(Loading...)</span>
+                            <hr>
+                            <input class="form-check-input" type="checkbox" id="server_update_aggressive" autocomplete="off"> <label for="server_update_aggressive" class="translate">Aggressive Update</label>
+                            &emsp;
+                            <input class="form-check-input" type="checkbox" id="server_update_force_restart" autocomplete="off"> <label for="server_update_force_restart" class="translate">Force Restart</label>
+                            <br><br>
+                            <button class="basic-button translate" onclick="check_for_updates()">Check For Updates</button>
+                            <button class="basic-button danger-button translate" id="update_and_restart_button" onclick="update_and_restart_server()" disabled>Update and Restart Server</button>
+                            <span id="update_server_notice_area"></span>
+                        </span>
+                    </div>
+                    <div class="server-manage-section" data-requiredpermission="control_mem_clean">
+                        <hr>
+                        <div class="server-status-section-title translate">Free Memory</div>
+                        <div class="card-text">
+                            <span class="translate">You can free up the VRAM usage, or system memory usage (cache) from backends with the two buttons below.</span>
+                            <br>
+                            <button class="basic-button danger-button" onclick="server_clear_vram()">Free VRAM</button>
+                            <button class="basic-button danger-button" onclick="server_clear_sysram()">Free System RAM</button>
+                        </div>
+                    </div>
+                    <div class="server-manage-section" data-requiredpermission="shutdown">
+                        <hr>
+                        <div class="server-manage-shutdown">
+                            <div class="server-status-section-title translate">Shutdown</div>
+                            <div class="card-text">
+                                <span data-requiredpermission="shutdown">
+                                <span class="translate">If you want to shut down the server, click the button below.</span>
+                                <br><button class="basic-button danger-button translate" onclick="shutdown_server()">Shutdown Server</button>
+                                </span>
+                                <span id="shutdown_notice_area"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
