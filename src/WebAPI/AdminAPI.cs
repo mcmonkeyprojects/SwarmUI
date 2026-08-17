@@ -582,12 +582,11 @@ public static class AdminAPI
         return new JObject() { ["users"] = list };
     }
 
-    public static async Task<JObject> GetUpdatesDataFor(string folder, bool nullOnNone, bool tryPatches = true, string headTarget = null)
+    public static async Task<JObject> GetUpdatesDataFor(string folder, bool nullOnNone, bool tryPatches = true, string latestTarget = null)
     {
-        headTarget ??= "HEAD";
         string fetchResult = await Utilities.RunGitProcess("fetch", folder);
         Logs.Debug($"Git fetch of {folder} says: {fetchResult}");
-        string commitRaw = (await Utilities.RunGitProcess($"rev-list {headTarget}..origin", folder)).Trim().Replace("\r", "");
+        string commitRaw = (await Utilities.RunGitProcess($"rev-list HEAD..{(latestTarget ?? "origin")}", folder)).Trim().Replace("\r", "");
         string[] commits;
         if (commitRaw.StartsWith("fatal: "))
         {
@@ -596,7 +595,7 @@ public static class AdminAPI
             {
                 string autofixme = await Utilities.RunGitProcess("remote set-head origin --auto", folder);
                 Logs.Debug($"Autofix for git rev-list failure: {autofixme}");
-                return await GetUpdatesDataFor(folder, nullOnNone, false, headTarget);
+                return await GetUpdatesDataFor(folder, nullOnNone, false, latestTarget);
             }
             commits = ["(unknown revisions, see error in logs. Use Aggressive Update to auto-resolve most issues.)"];
             return new JObject() { ["count"] = 1, ["preview"] = JArray.FromObject(commits) };

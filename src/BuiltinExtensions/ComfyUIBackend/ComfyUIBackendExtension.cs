@@ -930,14 +930,14 @@ public class ComfyUIBackendExtension : Extension
             {
                 tasks.Add(Utilities.RunCheckedTask(async () =>
                 {
-                    string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
-                    JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true, headTarget: headTarget);
+                    string nodeName = Path.GetFileName(folder);
+                    string latestTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(nodeName, out string pinCommit) ? pinCommit : null;
+                    JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true, latestTarget: latestTarget);
                     if (nodeUpdates is null)
                     {
                         Logs.Debug($"Check for updates found no updates for ComfyUI node at {folder}");
                         return;
                     }
-                    string nodeName = Path.GetFileName(folder);
                     lock (locker)
                     {
                         backendsData[$"Comfy Node: {nodeName}"] = nodeUpdates;
@@ -971,7 +971,7 @@ public class ComfyUIBackendExtension : Extension
             {
                 tasks.Add(Utilities.RunCheckedTask(async () =>
                 {
-                    string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
+                    string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(nodeName, out string pinCommit) ? pinCommit : null;
                     await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail, targetCommit: headTarget);
                 }));
             }
