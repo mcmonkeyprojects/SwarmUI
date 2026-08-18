@@ -570,8 +570,12 @@ function rightClickImageInBatch(e, div) {
     let src = div.dataset.src;
     let fullsrc = getImageFullSrc(src);
     let metadata = div.dataset.metadata;
+    let mediaType = getMediaType(src);
     let popoverActions = [];
     for (let added of buttonsForImage(fullsrc, src, metadata)) {
+        if (added.multi_only || (added.media_types && !added.media_types.includes(mediaType))) {
+            continue;
+        }
         if (added.href) {
             popoverActions.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
         }
