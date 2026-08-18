@@ -467,7 +467,7 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         }
         if (result.DataType == DT_IMAGE || result.DataType == DT_VIDEO)
         {
-            return EncodeToLatent(vae);
+            return EncodeToLatent(vae).AsSamplingLatent(vae, audioVae);
         }
         if (result.DataType == DT_AUDIO)
         {
