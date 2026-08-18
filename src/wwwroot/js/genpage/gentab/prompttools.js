@@ -535,7 +535,7 @@ class PromptPlusButton {
             this.regionModalProcessChanges();
             $('#text_prompt_region_modal').modal('show');
         }});
-        buttons.push({ key: 'image', key_html: 'Upload Prompt Image/Video/Audio', title: "Upload an image, video, or audio file to use as a prompt input", action: () => {
+        buttons.push({ key: 'image', key_html: 'Add Temporary Image/Video/Audio', title: "Add an image, video, or audio file to use as a prompt input (transient temporary, not saved to file)", action: () => {
             this.autoHideMenu();
             let input = document.createElement('input');
             input.type = 'file';
@@ -548,7 +548,7 @@ class PromptPlusButton {
             };
             input.click();
         }});
-        buttons.push({ key: 'select_image', key_html: 'Select Prompt Image/Video/Audio', title: "Select an image, video, or audio prompt input from the inputs browser", action: () => {
+        buttons.push({ key: 'select_image', key_html: 'Select or Upload Image/Video/Audio', title: "Select an image, video, or audio prompt input from the inputs browser (saved to a persistent folder)", action: () => {
             this.autoHideMenu();
             inputBrowserHelper.openInputBrowser(null, ['image', 'video', 'audio'], file => {
                 imagePromptAddImageData(file.data.src, getMediaType(file.name), file.name, file.name);
