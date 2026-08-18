@@ -2889,6 +2889,29 @@ public partial class WorkflowGenerator
         long seed = UserInput.Get(T2IParamTypes.Seed) + 500;
         WGNodeData media = CurrentMedia;
         double scale = UserInput.Get(ComfyUIBackendExtension.SeedVRUpscale, 1);
+        double downscale = UserInput.Get(ComfyUIBackendExtension.SeedVRPreDownscale, 1);
+        if (downscale <= 0)
+        {
+            throw new SwarmReadableErrorException($"Invalid SeedVR pre-downscale value {downscale}. Must be greater than 0.");
+        }
+        if (downscale < 1)
+        {
+            media = media.AsRawImage(vae);
+            int downWidth = (int)Math.Round((media.Width ?? UserInput.GetImageWidth()) * downscale);
+            int downHeight = (int)Math.Round((media.Height ?? UserInput.GetImageHeight()) * downscale);
+            string scaledDown = CreateNode("ImageScale", new JObject()
+            {
+                ["image"] = media.Path,
+                ["width"] = downWidth,
+                ["height"] = downHeight,
+                ["upscale_method"] = "bilinear",
+                ["crop"] = "disabled"
+            });
+            media = media.WithPath([scaledDown, 0]);
+            media.Width = downWidth;
+            media.Height = downHeight;
+            scale /= downscale;
+        }
         if (scale != 1)
         {
             // TODO: Should probably extract a shared upscale logic with the refiner rather than copy/pasted here
