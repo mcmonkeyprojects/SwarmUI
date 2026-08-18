@@ -369,18 +369,10 @@ function updatePresetList() {
     view.innerHTML = '';
     for (let param of gen_param_types) {
         let elem = getRequiredElementById(`input_${param.id}`);
-        elem.disabled = false;
-        let rangeSlider = document.getElementById(`input_${param.id}_rangeslider`);
-        if (rangeSlider) {
-            rangeSlider.disabled = false;
-        }
         let container = findParentOfClass(elem, 'auto-input');
         if (container) {
             container.classList.remove('preset-overridden');
             container.title = '';
-        }
-        if (param.toggleable) {
-            getRequiredElementById(`input_${param.id}_toggle`).disabled = false;
         }
     }
     let overrideCount = 0;
@@ -402,16 +394,7 @@ function updatePresetList() {
             let param = gen_param_types.filter(p => p.id == key)[0];
             if (param) {
                 if (param.type != "text" || !preset.param_map[key].includes("{value}")) {
-                    let elem = getRequiredElementById(`input_${param.id}`);
                     overrideCount += 1;
-                    elem.disabled = true;
-                    let rangeSlider = document.getElementById(`input_${param.id}_rangeslider`);
-                    if (rangeSlider) {
-                        rangeSlider.disabled = true;
-                    }
-                    if (param.toggleable) {
-                        getRequiredElementById(`input_${param.id}_toggle`).disabled = true;
-                    }
                     if (!paramOverrides[param.id]) {
                         paramOverrides[param.id] = { names: [], value: null };
                     }

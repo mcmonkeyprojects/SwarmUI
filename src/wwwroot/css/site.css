@@ -707,9 +707,11 @@ textarea, input, select {
 .auto-input.preset-overridden {
     opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: auto;
 }
-.auto-input.preset-overridden input[type="range"] {
+.auto-input.preset-overridden input, .auto-input.preset-overridden select {
     cursor: not-allowed;
+    pointer-events: auto;
 }
 .card-center-container {
     width: fit-content;
