@@ -303,6 +303,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 - LTX-2.5 is an official upgraded to LTX-2.3, with some improvements.
 - It has (partial) compatibility with LTX-2.3, eg some loras will cross-apply.
 - Main downloads require accepting license here <https://huggingface.co/Lightricks/LTX-2.5> then downloading from here <https://huggingface.co/Lightricks/LTX-2.5/tree/main/diffusion_models>
+    - Save in `diffusion_models` folder
 - Parameters:
     - Mostly the same as regular LTX-2.3
 

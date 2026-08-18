@@ -237,7 +237,8 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                     ["samples"] = Path
                 }, id);
             }
-            else if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _))
+            // NOTE: decode audio tiled does not work for some models (eg H3) so for now whitelist which models are valid
+            else if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) && Gen.IsMiniMaxMusic3())
             {
                 decoded = Gen.CreateNode("VAEDecodeAudioTiled", new JObject()
                 {
