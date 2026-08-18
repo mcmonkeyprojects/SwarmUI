@@ -1505,7 +1505,7 @@ public class WorkflowGeneratorSteps
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                     {
-                        g.CurrentMedia.DecodeLatents(origVae, false, "24").SaveOutput(null, null, id: "29");
+                        g.CurrentMedia.DecodeLatents(origVae, false, "24").SaveOutput(null, g.CurrentAudioVae, id: "29");
                     }
                     WGNodeData pidDecoded = g.CreatePixelDecode(refineModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 1, isRefiner: true);
                     if (g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double pidUpscale) && pidUpscale != 1)
@@ -1562,7 +1562,7 @@ public class WorkflowGeneratorSteps
                     WGNodeData decoded = g.CreatePixelDecode(pidModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 2);
                     if (doSave)
                     {
-                        decoded.SaveOutput(null, null, id: "29");
+                        decoded.SaveOutput(null, g.CurrentAudioVae, id: "29");
                     }
                     if (decoded.Width != width || decoded.Height != height)
                     {
@@ -1593,7 +1593,7 @@ public class WorkflowGeneratorSteps
                     g.CurrentMedia = decoded;
                     if (doSave)
                     {
-                        decoded.SaveOutput(null, null, id: "29");
+                        decoded.SaveOutput(null, g.CurrentAudioVae, id: "29");
                     }
                     if (doPixelUpscale)
                     {
