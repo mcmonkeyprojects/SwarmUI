@@ -808,7 +808,7 @@ public partial class WorkflowGenerator
 
         public string GetLTX25Gemma4Model()
         {
-            return RequireClipModel("gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "https://huggingface.co/mcmonkey/swarm-models/resolve/main/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors", "09a89e084de1a149c3de60cfe9dfd3e5161967eb09eea39e806fcdeffdd568de", T2IParamTypes.GemmaModel);
+            return RequireClipModel("gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot-v2.safetensors", "https://huggingface.co/mcmonkey/swarm-models/resolve/main/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot-v2.safetensors", "6ce688a0aa98a5fa36a9f1e6c3f42152a498cc2b53ee8c15674c64244f91487f", T2IParamTypes.GemmaModel);
         }
 
         public void LoadClip(string type, string model)
@@ -1424,7 +1424,7 @@ public partial class WorkflowGenerator
         else if (IsMiniMaxH3())
         {
             helpers.LoadClip("minimax", helpers.GetQwen3vl_32bMiniMaxModel());
-            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxH3, "minimax-h3-video-vae");
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxH3, "minimax-h3-video-int8-vae");
             helpers.StandardAudioVaeLoad("minimax-h3-audio-vae");
             string shiftNode = CreateNode("MiniMaxH3SigmaShift", new JObject()
             {
