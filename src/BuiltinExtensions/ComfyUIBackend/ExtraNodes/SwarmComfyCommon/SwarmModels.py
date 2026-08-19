@@ -1,4 +1,4 @@
-import folder_paths
+import folder_paths, torch, comfy
 import comfy.utils, comfy.sd, nodes, node_helpers
 from comfy_api.latest import io
 
@@ -79,7 +79,57 @@ class SwarmMiniMaxH3AddKeyframes(io.ComfyNode):
             })
         return io.NodeOutput(conditioning,)
 
+def align_frame_count(n):
+    while n % 17 != 5:
+        n += 1
+    return n
+
+def video_latent_t(frame_count):
+    return 2 if frame_count <= 5 else ((frame_count - 5) // 17) * 5 + 2
+
+H3_FPS = 24
+H3_AUDIO_LATENT_FPS = 40
+
+def temporal_shape(length):
+    if length == 1:
+        return 1, 1, 2
+    elif length == 2:
+        return 2, 2, 3
+    frame_count = align_frame_count(max(5, length))
+    duration = frame_count / H3_FPS
+    return frame_count, video_latent_t(frame_count), round(duration * H3_AUDIO_LATENT_FPS)
+
+def _empty_av_latent(width, height, length, batch_size=1):
+    frame_count, latent_t, audio_t = temporal_shape(length)
+    video = torch.zeros([batch_size, 24, latent_t, height // 16, width // 16],
+                        device=comfy.model_management.intermediate_device())
+    audio = torch.zeros([batch_size, 32, 2, audio_t],
+                        device=comfy.model_management.intermediate_device())
+    return {"samples": comfy.nested_tensor.NestedTensor((video, audio))}, frame_count
+
+class SwarmEmptyMiniMaxH3LatentAV(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="SwarmEmptyMiniMaxH3LatentAV",
+            display_name="Swarm Empty MiniMax H3 AV Latent",
+            category="SwarmUI/video",
+            description="Joint video+audio latent for MiniMax H3.",
+            inputs=[
+                io.Int.Input("width", default=1344, min=32, max=nodes.MAX_RESOLUTION, step=32),
+                io.Int.Input("height", default=768, min=32, max=nodes.MAX_RESOLUTION, step=32),
+                io.Int.Input("length", default=124, min=1, max=3600, step=1, tooltip="Frame count at 24 fps, snapped up to the model's 17k+5 grid (124 = ~5s; trained range is ~124-362, longer is untested)"),
+            ],
+            outputs=[io.Latent.Output()],
+        )
+
+    @classmethod
+    def execute(cls, width, height, length) -> io.NodeOutput:
+        latent, _ = _empty_av_latent(width, height, length)
+        return io.NodeOutput(latent)
+
 NODE_CLASS_MAPPINGS = {
     "SwarmLTXVAudioVAELoader": SwarmLTXVAudioVAELoader,
     "SwarmMiniMaxH3AddKeyframes": SwarmMiniMaxH3AddKeyframes,
+    "SwarmEmptyMiniMaxH3LatentAV": SwarmEmptyMiniMaxH3LatentAV,
 }

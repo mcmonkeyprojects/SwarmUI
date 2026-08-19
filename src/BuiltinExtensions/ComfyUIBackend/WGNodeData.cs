@@ -170,7 +170,7 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                     ["samples"] = Path
                 }, id);
             }
-            if (Gen.IsMiniMaxH3() && Frames == 1)
+            if (Gen.IsMiniMaxH3() && Frames == 2)
             {
                 decoded = Gen.CreateNode("ImageFromBatch", new JObject()
                 {

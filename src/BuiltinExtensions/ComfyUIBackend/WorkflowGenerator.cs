@@ -1674,7 +1674,7 @@ public partial class WorkflowGenerator
                 {
                     endFramePath = g.LoadImage(VideoEndImage, "${videoendframe}", false).Path;
                 }
-                string emptyAV = g.CreateNode("EmptyMiniMaxH3LatentAV", new JObject()
+                string emptyAV = g.CreateNode("SwarmEmptyMiniMaxH3LatentAV", new JObject()
                 {
                     ["length"] = Frames,
                     ["height"] = Height,
