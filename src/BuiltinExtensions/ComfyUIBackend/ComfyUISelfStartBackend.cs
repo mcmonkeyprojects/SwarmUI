@@ -98,7 +98,6 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("kornia", "kornia"),
         ("sentencepiece", "sentencepiece"),
         ("spandrel", "spandrel"),
-        ("av", "av"),
         ("pydantic", "pydantic"),
         ("pydantic_settings", "pydantic-settings"),
         ("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}"),
@@ -128,6 +127,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("spandrel", "spandrel", ">=", "0.4.1"),
         ("transformers", "transformers", ">=", "4.57.3"),
         ("pyopengl", "pyopengl", ">=", "3.1.8"),
+        ("av", "av", ">=", "18.1.0"), // Comfy eventually began depending on 16.x after general installs had 14.x
         ("ultralytics", "ultralytics", "==", "8.3.197"), // This is hard-pinned due to the malicious 8.3.41 incident, only manual updates when needed until security practices are improved.
         ("pip", "pip", ">=", "25.0") // Don't need latest, just can't be too old, this is mostly just here for a sanity check.
     ];
