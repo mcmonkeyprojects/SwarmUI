@@ -3,8 +3,10 @@ using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.WebAPI;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -703,11 +705,44 @@ public static class Utilities
     /// <summary>Reusable general web client with a very long timeout, for <see cref="DownloadFile"/> in particular to use.</summary>
     public static HttpClient DownloaderWebClient = NetworkBackendUtils.MakeHttpClient(120);
 
+    /// <summary>Adds the current user's relevant API key to a download URL or its request headers.</summary>
+    public static void ApplyDownloadAPIKey(ref string url, Dictionary<string, string> headers, Session session)
+    {
+        if (session?.User is null)
+        {
+            return;
+        }
+        if (url.StartsWith("https://civitai.com/"))
+        {
+            url = $"https://civitai.red/{url["https://civitai.com/".Length..]}";
+        }
+        if (url.StartsWith("https://civitai.red/"))
+        {
+            string civitaiApiKey = session.User.GetGenericData("civitai_api", "key");
+            if (!string.IsNullOrEmpty(civitaiApiKey) && !url.Contains("?token=") && !url.Contains("&token="))
+            {
+                url += (url.Contains('?') ? "&token=" : "?token=") + ModelsAPI.TokenTextLimiter.TrimToMatches(civitaiApiKey);
+                Logs.Debug("Added Civitai API Key to download request.");
+            }
+        }
+        else if (url.StartsWith("https://huggingface.co/"))
+        {
+            string hfApiKey = session.User.GetGenericData("huggingface_api", "key");
+            if (!string.IsNullOrEmpty(hfApiKey))
+            {
+                headers["Authorization"] = $"Bearer {ModelsAPI.TokenTextLimiter.TrimToMatches(hfApiKey)}";
+                Logs.Debug("Added HuggingFace API Key to download request.");
+            }
+        }
+    }
+
     /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
-    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null, Dictionary<string, string> headers = null)
+    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null, Dictionary<string, string> headers = null, Session session = null)
     {
         altUrl ??= url;
         cancel ??= new();
+        headers ??= [];
+        ApplyDownloadAPIKey(ref url, headers, session);
         using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancel.Token);
         Directory.CreateDirectory(Path.GetDirectoryName(filepath));
         using FileStream writer = File.OpenWrite(filepath);

@@ -334,7 +334,7 @@ public static class BasicAPIFeatures
         }
         try
         {
-            await Installation.Install(socket, theme, installed_for, backend, models, install_amd, language, make_shortcut);
+            await Installation.Install(socket, theme, installed_for, backend, models, install_amd, language, make_shortcut, session);
         }
         catch (SwarmReadableErrorException ex)
         {

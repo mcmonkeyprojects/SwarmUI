@@ -1,5 +1,6 @@
 using System.IO;
 using FreneticUtilities.FreneticExtensions;
+using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Utils;
 
@@ -19,7 +20,7 @@ public static class CommonModels
     public record class ModelInfo(string ID, string DisplayName, string Description, string URL, string Hash, string FolderType, string FileName)
     {
         /// <summary>Trigger a download of this model.</summary>
-        public async Task DownloadNow(Action<long, long, long> updateProgress = null)
+        public async Task DownloadNow(Action<long, long, long> updateProgress = null, Session session = null)
         {
             string folder = Program.T2IModelSets[FolderType].DownloadFolderPath;
             string path = $"{folder}/{FileName}";
@@ -28,7 +29,7 @@ public static class CommonModels
                 Logs.Warning($"Attempted re-download of pre-existing model '{FileName}', skipping.");
                 return;
             }
-            await Utilities.DownloadFile(URL, path, updateProgress, verifyHash: Hash);
+            await Utilities.DownloadFile(URL, path, updateProgress, verifyHash: Hash, session: session);
         }
     }
 
