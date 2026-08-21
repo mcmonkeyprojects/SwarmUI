@@ -606,32 +606,7 @@ public static class ModelsAPI
         }
         string originalUrl = url;
         url = url.Before('#');
-        if (url.StartsWith("https://civitai.com/"))
-        {
-            url = $"https://civitai.red/{url["https://civitai.com/".Length..]}";
-        }
         Dictionary<string, string> headers = [];
-        if (url.StartsWith("https://civitai.red/"))
-        {
-            string civitaiApiKey = session.User.GetGenericData("civitai_api", "key");
-            if (!string.IsNullOrEmpty(civitaiApiKey))
-            {
-                if (!url.Contains("?token=") && !url.Contains("&token="))
-                {
-                    url += (url.Contains('?') ? "&token=" : "?token=") + TokenTextLimiter.TrimToMatches(civitaiApiKey);
-                    Logs.Debug($"Added Civitai API Key to download request. Original URL: {originalUrl}");
-                }
-            }
-        }
-        else if (url.StartsWith("https://huggingface.co/"))
-        {
-            string hfApiKey = session.User.GetGenericData("huggingface_api", "key");
-            if (!string.IsNullOrEmpty(hfApiKey))
-            {
-                headers["Authorization"] = $"Bearer {TokenTextLimiter.TrimToMatches(hfApiKey)}";
-                Logs.Debug($"Added HuggingFace API Key to download request.");
-            }
-        }
         try
         {
             string outPath = $"{folder}/{name}.{extension}";
@@ -656,7 +631,7 @@ public static class ModelsAPI
                     ["overall_percent"] = 0.2,
                     ["per_second"] = perSec
                 }, API.WebsocketTimeout).Wait();
-            }, canceller, originalUrl, headers: headers);
+            }, canceller, originalUrl, headers: headers, session: session);
             Task listenForSignal = Utilities.RunCheckedTask(async () =>
             {
                 while (true)

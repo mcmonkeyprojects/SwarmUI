@@ -272,7 +272,7 @@ public partial class WorkflowGenerator
                         // TODO: Send a signal back so a progress bar can be displayed on a UI
                         nextPerc = Math.Round(perc / 0.05) * 0.05 + 0.05;
                     }
-                }, verifyHash: hash).Wait();
+                }, verifyHash: hash, session: UserInput.SourceSession).Wait();
                 File.Move(tmpPath, filePath);
             }
             catch (Exception ex)

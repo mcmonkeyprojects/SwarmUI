@@ -584,7 +584,7 @@ public partial class WorkflowGenerator
                     throw new SwarmUserErrorException("No default VAE for this model found, please download its VAE and set it as default in User Settings");
                 }
                 vaeFile = knownFile.FileName;
-                knownFile.DownloadNow().Wait();
+                knownFile.DownloadNow(session: g.UserInput.SourceSession).Wait();
                 Program.RefreshAllModelSets();
             }
             g.LoadingVAE = g.CreateVAELoader(vaeFile, nodeId);
@@ -605,7 +605,7 @@ public partial class WorkflowGenerator
             string vaeFile = knownFile.FileName;
             if (!Program.T2IModelSets["VAE"].Models.ContainsKey(vaeFile))
             {
-                knownFile.DownloadNow().Wait();
+                knownFile.DownloadNow(session: g.UserInput.SourceSession).Wait();
                 Program.RefreshAllModelSets();
             }
             string avaeLoader = g.CreateNode("SwarmLTXVAudioVAELoader", new JObject()
@@ -622,7 +622,7 @@ public partial class WorkflowGenerator
             string vaeFile = knownFile.FileName;
             if (!Program.T2IModelSets["VAE"].Models.ContainsKey(vaeFile))
             {
-                knownFile.DownloadNow().Wait();
+                knownFile.DownloadNow(session: g.UserInput.SourceSession).Wait();
                 Program.RefreshAllModelSets();
             }
             g.CurrentAudioVae = new WGNodeData(g.CreateVAELoader(vaeFile), g, WGNodeData.DT_AUDIOVAE, g.CurrentCompat());
