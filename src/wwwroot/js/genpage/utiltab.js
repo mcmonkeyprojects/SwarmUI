@@ -828,6 +828,10 @@ class ActiveModelDownload {
                 this.setBorderColor('#aa0000');
                 hintInfo = "";
             }
+            else if (e.includes("got response code 401") || e.includes("got response code 403")) {
+                this.setBorderColor('#aa0000');
+                hintInfo = `Set or check your <a href="#" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userinfotabbutton').click();">API Key</a> in User Settings.`;
+            }
             else {
                 this.setBorderColor('#aa0000');
             }
