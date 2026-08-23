@@ -2378,17 +2378,13 @@ public partial class WorkflowGenerator
         {
             defaultGuidance = 1;
         }
-        bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels() || attachImages is not null);
-        JArray qwenImage;
-        if (attachImages is null && isPositive && IsMiniMaxH3())
+        JArray minimaxRefs = null;
+        if (isPositive && IsMiniMaxH3())
         {
-            // TODO: Compatible with SwarmCustom. Maybe a "ref items" passable unit of some form.
             JObject refData = new()
             {
-                ["clip"] = clip,
                 ["vae"] = CurrentVae.Path,
                 ["audio_vae"] = CurrentAudioVae.Path,
-                ["prompt"] = prompt,
                 ["width"] = width,
                 ["height"] = height,
                 ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 124),
@@ -2426,11 +2422,11 @@ public partial class WorkflowGenerator
             }
             if (hasAny)
             {
-                node = CreateNode("MiniMaxH3ReferenceToVideo", refData);
-                NodeHelpers[trackerId] = node;
-                return [node, 0];
+                minimaxRefs = NodePath(CreateNode("SwarmMiniMaxH3CollectReferences", refData), 0);
             }
         }
+        bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels() || attachImages is not null || minimaxRefs is not null);
+        JArray qwenImage;
         if (IsAceStep15())
         {
             node = CreateNode("TextEncodeAceStepAudio1.5", new JObject()
@@ -2622,7 +2618,8 @@ public partial class WorkflowGenerator
                 ["target_width"] = width,
                 ["target_height"] = height,
                 ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
-                ["images"] = attachImages
+                ["images"] = attachImages,
+                ["minimax_refs"] = minimaxRefs
             }, id);
         }
         else if (model is not null && model.ModelClass is not null && model.ModelClass.ID == "stable-diffusion-xl-v1-base")
