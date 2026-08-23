@@ -593,7 +593,7 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
     let parent = findParentOfClass(elem, 'auto-input');
     let preview = parent.querySelector('.auto-input-preview');
     let label = parent.querySelector('.auto-file-input-filename');
-    elem.dataset.filedata = src;
+    elem.dataset.filedata = isValidMediaPath(longName) ? longName : src;
     let button = `<button class="interrupt-button auto-input-remove-button" title="Remove ${type}">&times;</button>`;
     let img;
     if (type == 'image') {

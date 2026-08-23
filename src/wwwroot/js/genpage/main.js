@@ -476,6 +476,7 @@ function installTensorRT() {
 function clearPromptImages(hideRevision = true) {
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     promptImageArea.innerHTML = '';
+    persistPromptMediaParams();
     let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
     clearButton.style.display = 'none';
     if (hideRevision) {
@@ -572,6 +573,7 @@ function imagePromptSplitVideoAudio(video) {
 /** Removes one prompt media attachment and updates the surrounding UI. */
 function imagePromptRemoveMedia(media) {
     media.closest('.alt-prompt-image-container').remove();
+    persistPromptMediaParams();
     updatePromptMediaTitles();
     autoRevealRevision();
     genTabLayout.altPromptSizeHandle();
@@ -712,6 +714,7 @@ function imagePromptAddImageData(data, mediaType, fileData = data, fileName = nu
     clearButton.style.display = '';
     showRevisionInputs(true);
     genTabLayout.altPromptSizeHandle();
+    persistPromptMediaParams();
 }
 
 function imagePromptInputHandler() {
