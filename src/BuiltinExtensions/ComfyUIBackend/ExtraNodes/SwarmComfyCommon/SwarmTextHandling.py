@@ -1,4 +1,4 @@
-import torch, comfy
+import torch, comfy, node_helpers
 from nodes import MAX_RESOLUTION
 
 
@@ -39,6 +39,7 @@ class SwarmClipTextEncodeAdvanced:
                 "llama_template": ("STRING", {"default": "", "multiline": True, "tooltip": "Template for the LLaMA model, if applicable."}),
                 "clip_vision_output": ("CLIP_VISION_OUTPUT", {"default": None, "tooltip": "Optional CLIP Vision Output to use for the LLaMA model, if applicable."}),
                 "images": ("IMAGE", {"default": None, "tooltip": "Optional images to use for a text-vision model, if applicable."}),
+                "minimax_refs": ("MiniMaxReferences", {"default": None, "tooltip": "Optional MiniMax H3 references (images, videos, audio)."}),
             }
         }
 
@@ -47,7 +48,7 @@ class SwarmClipTextEncodeAdvanced:
     FUNCTION = "encode"
     DESCRIPTION = "Acts like the regular CLIPTextEncode, but supports more advanced special features like '<break>', '[from:to:when]', '[alter|nate]', ..."
 
-    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None, images = None):
+    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None, images = None, minimax_refs = None):
         append_images = False
         prepend_images = False
         fix_images = True
@@ -69,8 +70,11 @@ class SwarmClipTextEncodeAdvanced:
 
         def tokenize(text: str):
             nonlocal images
+            extra = {}
+            if minimax_refs is not None:
+                extra["minimax_ref_items"] = minimax_refs["ref_items"]
             if clip_vision_output is not None:
-                return clip.tokenize(text, llama_template=llama_template if llama_template else None, image_embeds=clip_vision_output.mm_projected)
+                return clip.tokenize(text, llama_template=llama_template if llama_template else None, image_embeds=clip_vision_output.mm_projected, **extra)
             elif images is not None:
                 if append_images:
                     image_prompt = ""
@@ -83,9 +87,9 @@ class SwarmClipTextEncodeAdvanced:
                         text = image_prompt + text
                     else:
                         text = text + image_prompt
-                return clip.tokenize(text, llama_template=llama_template if llama_template else None, images=images)
+                return clip.tokenize(text, llama_template=llama_template if llama_template else None, images=images, **extra)
             else:
-                return clip.tokenize(text)
+                return clip.tokenize(text, **extra)
 
         encoding_cache = {}
 
@@ -202,23 +206,27 @@ class SwarmClipTextEncodeAdvanced:
         get_chunks(prompt)
 
         if not any[0]:
-            return (text_to_cond(prompt, 0, 1), )
-
-        conds_out = []
-        last_text = ""
-        start_perc = 0
-        for i in range(steps):
-            perc = i / steps
-            text = ""
-            for chunk in chunks:
-                if i in chunk['applies_to']:
-                    text += chunk['text']
-            if text != last_text or i == 0:
-                if i != 0:
-                    conds_out.extend(text_to_cond(last_text, start_perc - 0.001, perc + 0.001))
-                last_text = text
-                start_perc = perc
-        conds_out.extend(text_to_cond(last_text, start_perc - 0.001, 1))
+            conds_out = text_to_cond(prompt, 0, 1)
+        else:
+            conds_out = []
+            last_text = ""
+            start_perc = 0
+            for i in range(steps):
+                perc = i / steps
+                text = ""
+                for chunk in chunks:
+                    if i in chunk['applies_to']:
+                        text += chunk['text']
+                if text != last_text or i == 0:
+                    if i != 0:
+                        conds_out.extend(text_to_cond(last_text, start_perc - 0.001, perc + 0.001))
+                    last_text = text
+                    start_perc = perc
+            conds_out.extend(text_to_cond(last_text, start_perc - 0.001, 1))
+        if minimax_refs is not None:
+            ref_blocks = minimax_refs["ref_blocks"]
+            if ref_blocks:
+                conds_out = node_helpers.conditioning_set_values(conds_out, {"minimax_refs": ref_blocks})
         return (conds_out, )
 
 
