@@ -705,12 +705,42 @@ public static class Utilities
     /// <summary>Reusable general web client with a very long timeout, for <see cref="DownloadFile"/> in particular to use.</summary>
     public static HttpClient DownloaderWebClient = NetworkBackendUtils.MakeHttpClient(120);
 
-    /// <summary>Adds the current user's relevant API key to a download URL or its request headers.</summary>
-    public static void ApplyDownloadAPIKey(ref string url, Dictionary<string, string> headers, Session session)
+    /// <summary>Extracts the server's stated reason from a failed HTTP response, if it provides one in a recognizable format. Returns null if none.</summary>
+    public static async Task<string> GetResponseErrorReason(HttpResponseMessage response)
+    {
+        if (response.Headers.TryGetValues("x-error-message", out IEnumerable<string> errHeader))
+        {
+            string headerReason = errHeader.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(headerReason))
+            {
+                return CleanTrashTextForDebug(headerReason);
+            }
+        }
+        if (response.Content?.Headers.ContentType?.MediaType == "application/json")
+        {
+            try
+            {
+                JObject data = JObject.Parse(await response.Content.ReadAsStringAsync());
+                string reason = data.Value<string>("message") ?? data.Value<string>("error");
+                if (!string.IsNullOrWhiteSpace(reason))
+                {
+                    return CleanTrashTextForDebug(reason);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logs.Verbose($"Could not parse an error reason from failed download response body: {ex.ReadableString()}");
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Adds the current user's relevant API key to a download URL or its request headers. Returns a hint to show the user if the server refuses the download with an auth error, or null.</summary>
+    public static string ApplyDownloadAPIKey(ref string url, Dictionary<string, string> headers, Session session)
     {
         if (session?.User is null)
         {
-            return;
+            return null;
         }
         if (url.StartsWith("https://civitai.com/"))
         {
@@ -719,11 +749,15 @@ public static class Utilities
         if (url.StartsWith("https://civitai.red/"))
         {
             string civitaiApiKey = session.User.GetGenericData("civitai_api", "key");
-            if (!string.IsNullOrEmpty(civitaiApiKey) && !url.Contains("?token=") && !url.Contains("&token="))
+            bool hasToken = url.Contains("?token=") || url.Contains("&token=");
+            if (!string.IsNullOrEmpty(civitaiApiKey) && !hasToken)
             {
                 url += (url.Contains('?') ? "&token=" : "?token=") + ModelsAPI.TokenTextLimiter.TrimToMatches(civitaiApiKey);
                 Logs.Debug("Added Civitai API Key to download request.");
+                hasToken = true;
             }
+            return hasToken ? "Civitai refused this download despite your API key. Make sure your Civitai API key in the User Settings page is valid, and that your Civitai account has access to this model (early access may require a purchase or subscription)."
+                : "Civitai refused this download, and you do not have a Civitai API key set. If this model is gated or early-access, set your Civitai API key in the User Settings page to download it.";
         }
         else if (url.StartsWith("https://huggingface.co/"))
         {
@@ -732,17 +766,20 @@ public static class Utilities
             {
                 headers["Authorization"] = $"Bearer {ModelsAPI.TokenTextLimiter.TrimToMatches(hfApiKey)}";
                 Logs.Debug("Added HuggingFace API Key to download request.");
+                return "Hugging Face refused this download despite your API key. Make sure your Hugging Face API key in the User Settings page is valid, and that your account has been granted access to this model (gated models require accepting the terms on the model's page).";
             }
+            return "Hugging Face refused this download, and you do not have a Hugging Face API key set. If this model is gated or private, set your Hugging Face API key in the User Settings page to download it.";
         }
+        return null;
     }
 
-    /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
+    /// <summary>Downloads a file from a given URL and saves it to a given filepath. Auth errors (401/403) get a hint appended to the error message to tell the user how to fix it.</summary>
     public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null, Dictionary<string, string> headers = null, Session session = null)
     {
         altUrl ??= url;
         cancel ??= new();
         headers ??= [];
-        ApplyDownloadAPIKey(ref url, headers, session);
+        string authHint = ApplyDownloadAPIKey(ref url, headers, session) ?? "This may be gated or private content that requires an API key. You can set API keys in the User Settings page.";
         using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancel.Token);
         Directory.CreateDirectory(Path.GetDirectoryName(filepath));
         using FileStream writer = File.OpenWrite(filepath);
@@ -760,7 +797,13 @@ public static class Utilities
         ConcurrentQueue<(long, long, long, bool)> progUpdates = new();
         if (response.StatusCode != HttpStatusCode.OK)
         {
-            throw new SwarmReadableErrorException($"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}");
+            string message = $"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}";
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                string reason = await GetResponseErrorReason(response);
+                message += reason is null ? $". {authHint}" : $" (\"{reason}\"). {authHint}";
+            }
+            throw new SwarmReadableErrorException(message);
         }
         using Stream dlStream = await response.Content.ReadAsStreamAsync();
         Task loadData = Task.Run(async () =>
@@ -844,7 +887,13 @@ public static class Utilities
                             workingResponse = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
                             if (workingResponse.StatusCode != HttpStatusCode.PartialContent)
                             {
-                                throw new SwarmReadableErrorException($"Failed to download {altUrl} (expecting Partial range continue): got response code {(int)workingResponse.StatusCode} {workingResponse.StatusCode}");
+                                string message = $"Failed to download {altUrl} (expecting Partial range continue): got response code {(int)workingResponse.StatusCode} {workingResponse.StatusCode}";
+                                if (workingResponse.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                                {
+                                    string reason = await GetResponseErrorReason(workingResponse);
+                                    message += reason is null ? $". {authHint}" : $" (\"{reason}\"). {authHint}";
+                                }
+                                throw new SwarmReadableErrorException(message);
                             }
                             workingStream = await workingResponse.Content.ReadAsStreamAsync();
                             continue;
