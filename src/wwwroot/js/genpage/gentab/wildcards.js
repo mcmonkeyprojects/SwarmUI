@@ -156,6 +156,7 @@ class WildcardHelpers {
             lines = [];
             lines.push(...getTextContent(this.contentsElem).trim().split('\n'));
         }
+        lines = lines.flatMap(line => line.split('\n'));
         if (lines.length == 0) {
             lines = [''];
         }
