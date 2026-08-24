@@ -223,6 +223,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                                 AddLoadStatus($"Node pull response for {pathSimple}: {response.Trim()}");
                                 string response2 = await Utilities.RunGitProcess($"reset --hard {hash}", toUse);
                                 AddLoadStatus($"Node reset to {hash} response for {pathSimple}: {response2.Trim()}");
+                                string response3 = await Utilities.RunGitProcess($"clean -fd", toUse);
+                                AddLoadStatus($"Node clean response for {pathSimple}: {response3.Trim()}");
                             }
                         }
                         else
@@ -446,6 +448,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                         {
                             string fixStatus = await Utilities.RunGitProcess("reset --hard HEAD", path);
                             AddLoadStatus($"Comfy git fix (fast-forward curse) response: {fixStatus.Trim()}");
+                            string cleanStatus = await Utilities.RunGitProcess("clean -fd", path);
+                            AddLoadStatus($"Comfy git clean response: {cleanStatus.Trim()}");
                             string repullResponse = await Utilities.RunGitProcess("pull --autostash", path);
                             AddLoadStatus($"Comfy git re-pull response: {repullResponse.Trim()}");
                         }

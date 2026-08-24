@@ -732,6 +732,8 @@ public static class AdminAPI
             Logs.Debug($"Aggressive add: {addAny}");
             string reset = await Utilities.RunGitProcess("reset --hard HEAD", folder);
             Logs.Debug($"Aggressive reset: {reset}");
+            string clean = await Utilities.RunGitProcess("clean -fd", folder);
+            Logs.Debug($"Aggressive clean: {clean}");
             string repull = await Utilities.RunGitProcess("pull --autostash", folder); // Should already be good, but make sure
             Logs.Debug($"Aggressive repull: {repull}");
         }
@@ -758,6 +760,8 @@ public static class AdminAPI
         {
             string resetBack = await Utilities.RunGitProcess($"reset --hard {targetCommit}", folder);
             Logs.Debug($"Reset back to target commit {targetCommit}: {resetBack}");
+            string cleanBack = await Utilities.RunGitProcess("clean -fd", folder);
+            Logs.Debug($"Clean after reset to target commit: {cleanBack}");
         }
         string localHash = (await Utilities.RunGitProcess("rev-parse HEAD", folder)).Trim();
         Logs.Debug($"Updater: prior hash was {priorHash}, new hash is {localHash}");
