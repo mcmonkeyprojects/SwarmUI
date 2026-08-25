@@ -1,6 +1,6 @@
 import comfy.model_management
 import safetensors.torch
-import torch, os, comfy, json
+import torch, comfy, json
 
 # ATTRIBUTION: This code is a mix of code from kohya-ss, comfy, and Swarm. It would be annoying to disentangle but it's all FOSS and relatively short so it's fine.
 

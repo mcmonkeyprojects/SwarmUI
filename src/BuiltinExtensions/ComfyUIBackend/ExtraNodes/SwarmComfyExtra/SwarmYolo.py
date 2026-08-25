@@ -1,4 +1,4 @@
-import torch, folder_paths, comfy
+import torch, folder_paths
 from PIL import Image
 import numpy as np
 

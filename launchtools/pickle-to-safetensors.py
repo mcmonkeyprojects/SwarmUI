@@ -80,6 +80,6 @@ for file in files:
         rel = os.path.relpath(file, path)
         os.makedirs(os.path.dirname(f"{path}/backups/{rel}"), exist_ok=True)
         os.rename(file, f"{path}/backups/{rel}")
-    except Exception as e:
+    except Exception:
         print(f"Failed to convert {file}:")
         traceback.print_exc()
