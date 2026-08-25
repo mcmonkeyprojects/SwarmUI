@@ -1424,7 +1424,7 @@ public partial class WorkflowGenerator
         else if (IsMiniMaxH3())
         {
             helpers.LoadClip("minimax", helpers.GetQwen3vl_32bMiniMaxModel());
-            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxH3, "minimax-h3-video-int8-vae");
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultMiniMaxH3VAE, T2IModelClassSorter.CompatMiniMaxH3, "minimax-h3-video-int8-vae");
             helpers.StandardAudioVaeLoad("minimax-h3-audio-vae");
             string shiftNode = CreateNode("MiniMaxH3SigmaShift", new JObject()
             {
