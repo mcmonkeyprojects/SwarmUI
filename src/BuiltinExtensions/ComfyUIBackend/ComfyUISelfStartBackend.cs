@@ -86,7 +86,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     };
 
     /// <summary>The current version of the comfy frontend package that has been confirmed to not break.</summary>
-    public static string SwarmValidatedFrontendVersion = "1.47.12";
+    public static string SwarmValidatedFrontendVersion = "1.51.9";
 
     /// <summary>The current known version of PyTorch.</summary>
     public static string CurrentTorchVersion = "2.13.0";
