@@ -612,7 +612,7 @@ public static class T2IAPI
                 baseName = "video";
             }
             T2IParamInput outputInput = new(session);
-            outputInput.Set(T2IParamTypes.OverrideOutpathFormat, $"inputs/extracted_audio/{baseName}-audio-[number]");
+            outputInput.Set(T2IParamTypes.OverrideOutpathFormat, $"inputs/extracted_audio/{baseName.Replace('/', '_')}-audio-[number]");
             string metadata = T2IParamInput.MetadataToString(new JObject()
             {
                 ["sui_image_params"] = new JObject(),
@@ -678,7 +678,7 @@ public static class T2IAPI
                 baseName = "video";
             }
             T2IParamInput outputInput = new(session);
-            outputInput.Set(T2IParamTypes.OverrideOutpathFormat, $"inputs/edited_video/{baseName}-edited-[number]");
+            outputInput.Set(T2IParamTypes.OverrideOutpathFormat, $"inputs/edited_video/{baseName.Replace('/', '_')}-edited-[number]");
             string metadata = T2IParamInput.MetadataToString(new JObject()
             {
                 ["sui_image_params"] = new JObject(),
