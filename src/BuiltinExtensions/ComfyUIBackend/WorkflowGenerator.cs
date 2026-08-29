@@ -2417,6 +2417,16 @@ public partial class WorkflowGenerator
                 {
                     hasAny = true;
                     WGNodeData videoNode = LoadVideo(video[i], "${promptvideos." + i + "}", false);
+                    int fps = Text2VideoFPS();
+                    string resampleNode = CreateNode("SwarmVideoResampleFPS", new JObject()
+                    {
+                        ["images"] = videoNode.Path,
+                        ["fps_in"] = videoNode.FPS,
+                        ["fps_out"] = fps,
+                        ["method"] = "linear"
+                    });
+                    videoNode = videoNode.WithPath([resampleNode, 0]);
+                    videoNode.FPS = fps;
                     refData[$"ref_videos.ref_video_{i}"] = videoNode.Path;
                 }
             }
