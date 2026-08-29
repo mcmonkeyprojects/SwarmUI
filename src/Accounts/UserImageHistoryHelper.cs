@@ -57,7 +57,7 @@ public class UserImageHistoryHelper
     }
 
     /// <summary>Ffmpeg can get weird with overlapping calls, so max one at a time.</summary>
-    public static ManyReadOneWriteLock FfmpegLock = new(1);
+    public static SemaphoreSlim FfmpegLock = new(1, 1);
 
     /// <summary>Use ffmpeg to generate a preview for a video file.</summary>
     /// <param name="file">The video file.</param>
@@ -70,8 +70,16 @@ public class UserImageHistoryHelper
         }
         else
         {
-            using ManyReadOneWriteLock.WriteClaim claim = FfmpegLock.LockWrite();
-            await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]);
+            await FfmpegLock.WaitAsync();
+            try
+            {
+                string output = await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]);
+                Logs.Verbose($"ffmpeg output: {output}");
+            }
+            finally
+            {
+                FfmpegLock.Release();
+            }
             if (Program.ServerSettings.UI.AllowAnimatedPreviews)
             {
                 await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]);
@@ -89,10 +97,18 @@ public class UserImageHistoryHelper
         string outputFile = Path.Combine(Program.TempDir, $"swarm-ffmpeg-output-{Guid.NewGuid():N}.{extension}");
         try
         {
-            using ManyReadOneWriteLock.WriteClaim claim = FfmpegLock.LockWrite();
             arguments.Add(outputFile);
             int exitCode = -1;
-            string report = await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, [.. arguments], setExitCode: code => exitCode = code);
+            string report;
+            await FfmpegLock.WaitAsync();
+            try
+            {
+                report = await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, [.. arguments], setExitCode: code => exitCode = code);
+            }
+            finally
+            {
+                FfmpegLock.Release();
+            }
             Logs.Verbose($"Raw ffmpeg report: {report}");
             if (exitCode != 0 || !File.Exists(outputFile) || new FileInfo(outputFile).Length == 0)
             {
