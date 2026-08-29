@@ -570,7 +570,7 @@ public partial class WorkflowGenerator
             }
             if (string.IsNullOrWhiteSpace(vaeFile))
             {
-                vaeModel = compatClass is null ? null : Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass?.ID == compatClass);
+                vaeModel = compatClass is null ? null : Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass?.ID == compatClass && (m.ModelClass?.ID?.EndsWith("/vae") ?? false));
                 if (vaeModel is not null)
                 {
                     Logs.Debug($"Auto-selected first available VAE of compat class '{compatClass}', VAE '{vaeModel.Name}' will be applied");

@@ -789,11 +789,11 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "minimax-h3/vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Video VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isMiniMaxH3VideoVae(h);
+            return isMiniMaxH3VideoVae(h) && !isMiniMaxH3AudioVae(h);
         }});
         Register(new() { ID = "minimax-h3/audio-vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Audio VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isMiniMaxH3AudioVae(h);
+            return isMiniMaxH3AudioVae(h) && !isMiniMaxH3VideoVae(h);
         }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "chroma", CompatClass = CompatChroma, Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
