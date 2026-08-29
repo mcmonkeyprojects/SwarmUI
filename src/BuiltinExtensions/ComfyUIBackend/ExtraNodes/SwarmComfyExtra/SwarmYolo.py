@@ -1,6 +1,8 @@
-import torch, folder_paths
-from PIL import Image
+import folder_paths
 import numpy as np
+import torch
+from PIL import Image
+
 
 class SwarmYoloDetection:
     @classmethod

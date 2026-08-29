@@ -1,6 +1,9 @@
+import json
+
+import comfy
 import comfy.model_management
 import safetensors.torch
-import torch, comfy, json
+import torch
 
 # ATTRIBUTION: This code is a mix of code from kohya-ss, comfy, and Swarm. It would be annoying to disentangle but it's all FOSS and relatively short so it's fine.
 
@@ -126,10 +129,8 @@ class SwarmExtractLora:
         base_data = base_model.model_state_dict()
         other_data = other_model.model_state_dict()
         def clean_key(k):
-            if k.startswith("model."):
-                k = k[len("model."):]
-            if k.startswith("diffusion_model."):
-                k = k[len("diffusion_model."):]
+            k = k.removeprefix("model.")
+            k = k.removeprefix("diffusion_model.")
             return k
         base_data = {clean_key(k): v for k, v in base_data.items()}
         other_data = {clean_key(k): v for k, v in other_data.items()}
@@ -146,7 +147,7 @@ class SwarmExtractLora:
         # Can't easily autodetect all the correct modelspec info, but at least supply some basics
         out_metadata = {
             "modelspec.title": f"(Extracted LoRA) {save_filename}",
-            "modelspec.description": f"LoRA extracted in SwarmUI"
+            "modelspec.description": "LoRA extracted in SwarmUI"
         }
         if metadata:
             out_metadata.update(json.loads(metadata))

@@ -1,7 +1,10 @@
 # Internally called by SwarmUI
 # python -s launchtools/pickle-to-safetensors.py <path> <fp16(true/false)>
 
-import os, sys, glob, traceback
+import glob
+import os
+import sys
+import traceback
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -64,9 +67,7 @@ for file in files:
                     del tens["sd_checkpoint_name"]
             # General cleanup
             for k, v in dict(tens).items():
-                if k.startswith("loss."): # VAE stray data
-                    del tens[k]
-                elif k.startswith("model_ema."): # Stable-Diffusion checkpoint model stray data
+                if k.startswith("loss.") or k.startswith("model_ema."): # VAE stray data
                     del tens[k]
                 elif type(v) != torch.Tensor:
                     raw_data = str(v)
