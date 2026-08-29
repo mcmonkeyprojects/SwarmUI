@@ -6,6 +6,7 @@ class VideoEditorInterface {
         this.modalJq = $(this.modal);
         this.video = getRequiredElementById('video_editor_video');
         this.videoControls = new VideoControls(this.video);
+        this.resolutionText = getRequiredElementById('video_editor_resolution');
         this.cropOverlay = getRequiredElementById('video_editor_crop_overlay');
         this.cropSelection = getRequiredElementById('video_editor_crop_selection');
         this.timeline = getRequiredElementById('video_editor_timeline');
@@ -18,6 +19,7 @@ class VideoEditorInterface {
         this.trimStartText = getRequiredElementById('video_editor_trim_start');
         this.currentTimeText = getRequiredElementById('video_editor_current_time');
         this.trimEndText = getRequiredElementById('video_editor_trim_end');
+        this.durationText = getRequiredElementById('video_editor_duration');
         this.resetCropButton = getRequiredElementById('video_editor_reset_crop');
         this.saveAudioButton = getRequiredElementById('video_editor_save_audio');
         this.saveVideoButton = getRequiredElementById('video_editor_save_video');
@@ -107,6 +109,7 @@ class VideoEditorInterface {
         this.trimEnd = this.duration;
         this.saveAudioButton.style.display = this.sourceVideo && this.hasAudio(this.sourceVideo) ? '' : 'none';
         this.updateTimeline();
+        this.updateResolution();
     }
 
     /** Formats seconds for timeline labels. */
@@ -141,6 +144,7 @@ class VideoEditorInterface {
         this.trimStartText.textContent = `Start: ${this.formatTime(this.trimStart)}`;
         this.currentTimeText.textContent = `Position: ${this.formatTime(this.video.currentTime)}`;
         this.trimEndText.textContent = `End: ${this.formatTime(this.trimEnd)}`;
+        this.durationText.textContent = `Duration: ${this.formatTime(this.trimEnd - this.trimStart)}`;
     }
 
     /** Starts timeline seeking or trim dragging. */
@@ -209,6 +213,23 @@ class VideoEditorInterface {
         this.cropSelection.style.width = `${(this.cropBounds.right - this.cropBounds.left) * 100}%`;
         this.cropSelection.style.height = `${(this.cropBounds.bottom - this.cropBounds.top) * 100}%`;
         this.saveVideoButton.disabled = false;
+        this.updateResolution();
+    }
+
+    /** Shows the cropped output resolution and aspect ratio. */
+    updateResolution() {
+        let width = this.video.videoWidth;
+        let height = this.video.videoHeight;
+        if (width <= 0 || height <= 0) {
+            this.resolutionText.textContent = '';
+            return;
+        }
+        let crop = this.getCropRequest();
+        if (crop.cropWidth && crop.cropHeight) {
+            width = crop.cropWidth;
+            height = crop.cropHeight;
+        }
+        this.resolutionText.textContent = `${width}x${height} (${describeAspectRatio(width, height)})`;
     }
 
     /** Starts dragging a crop corner. */

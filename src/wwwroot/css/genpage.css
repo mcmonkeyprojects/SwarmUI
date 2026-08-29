@@ -1112,7 +1112,10 @@ body.small-window > .tab-content.tab-hundred {
     }
 }
 .video_editor_body {
-    width: min(42rem, 45vw);
+    width: min(80rem, 85vw);
+}
+.modal-dialog:has(.video_editor_body) {
+    max-width: 90vw;
 }
 .video_editor_stage {
     height: min(50vh, 30rem);
@@ -1130,6 +1133,10 @@ body.small-window > .tab-content.tab-hundred {
 .video_editor_video_wrap video {
     max-width: 100%;
     max-height: min(50vh, 30rem);
+}
+.video_editor_resolution {
+    padding-bottom: 0.25rem;
+    font-family: var(--font-monospace);
 }
 .video_editor_crop_overlay {
     position: absolute;

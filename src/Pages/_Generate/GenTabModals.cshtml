@@ -280,6 +280,7 @@
 
 @WebUtil.ModalHeader("video_editor_modal", "Advanced Video Editor")
     <div class="modal-body video_editor_body">
+        <div class="video_editor_resolution" id="video_editor_resolution"></div>
         <div class="video_editor_stage">
             <div class="video-container video_editor_video_wrap">
                 <video id="video_editor_video"></video>
@@ -305,6 +306,7 @@
             <span id="video_editor_trim_start">Start: 0:00.00</span>
             <span id="video_editor_current_time">Position: 0:00.00</span>
             <span id="video_editor_trim_end">End: 0:00.00</span>
+            <span id="video_editor_duration">Duration: 0:00.00</span>
         </div>
     </div>
     <div class="modal-footer">
