@@ -30,6 +30,7 @@ public static class T2IAPI
         API.RegisterAPICall(GenerateText2ImageWS, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(AddImageToHistory, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(ExtractVideoAudio, true, Permissions.BasicImageGeneration);
+        API.RegisterAPICall(EditVideo, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(ListImages, false, Permissions.ViewImageHistory);
         API.RegisterAPICall(ToggleImageStarred, true, Permissions.UserStarImages);
         API.RegisterAPICall(OpenImageFolder, true, Permissions.LocalImageFolder);
@@ -520,17 +521,8 @@ public static class T2IAPI
         return new() { ["images"] = new JArray() { new JObject() { ["image"] = path, ["batch_index"] = "0", ["request_id"] = $"{user_input.UserRequestId}", ["metadata"] = metadata } } };
     }
 
-    [API.APIDescription("Extracts the audio track from a video, saves it under inputs/extracted_audio, and returns the saved audio.",
-        """
-            "audio":
-            {
-                "path": "inputs/extracted_audio/video-audio-1.mp3",
-                "src": "View/local/inputs/extracted_audio/video-audio-1.mp3"
-            }
-        """)]
-    public static async Task<JObject> ExtractVideoAudio(Session session,
-        [API.APIParameter("Video data URL or reusable server media path.")] string video,
-        [API.APIParameter("Original video filename, used to name the extracted audio.")] string filename = null)
+    /// <summary>Resolves a video data URL or reusable media path to a local file.</summary>
+    private static async Task<(string inputFile, string temporaryInput, string sourceName)> ResolveVideoSource(Session session, string video, string filename, string action)
     {
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
         string temporaryInput = null;
@@ -540,20 +532,13 @@ public static class T2IAPI
             string inputFile;
             if (video.StartsWith("data:"))
             {
-                VideoFile videoFile;
-                try
+                string mimeType = video.Before(";base64,").After("data:");
+                if (!MediaType.TypesByMimeType.TryGetValue(mimeType, out MediaType mediaType) || mediaType.MetaType != MediaMetaType.Video)
                 {
-                    videoFile = VideoFile.FromDataString(video);
+                    throw new SwarmUserErrorException("The supplied data is not a recognized video type.");
                 }
-                catch (Exception)
-                {
-                    throw new SwarmUserErrorException("Invalid video data supplied for audio extraction.");
-                }
-                if (videoFile.Type.MetaType != MediaMetaType.Video)
-                {
-                    throw new SwarmUserErrorException("The supplied media is not a video.");
-                }
-                temporaryInput = Path.Combine(Path.GetTempPath(), $"swarm-audio-source-{Guid.NewGuid():N}.{videoFile.Type.Extension}");
+                VideoFile videoFile = VideoFile.FromDataString(video);
+                temporaryInput = Path.Combine(Program.TempDir, $"swarm-video-source-{Guid.NewGuid():N}.{videoFile.Type.Extension}");
                 await File.WriteAllBytesAsync(temporaryInput, videoFile.RawData);
                 inputFile = temporaryInput;
             }
@@ -561,7 +546,7 @@ public static class T2IAPI
             {
                 if (!video.StartsWith("inputs/") && !video.StartsWith("raw/") && !video.StartsWith("Starred/"))
                 {
-                    throw new SwarmUserErrorException("Invalid video path supplied for audio extraction.");
+                    throw new SwarmUserErrorException($"Invalid video path supplied for {action}.");
                 }
                 (string checkedPath, string consoleError, string userError) = WebServer.CheckFilePath(root, video);
                 if (consoleError is not null)
@@ -579,18 +564,49 @@ public static class T2IAPI
                 string fullInputPath = Path.GetFullPath(inputFile);
                 if (Session.StillSavingFiles.TryGetValue(fullInputPath, out Task<byte[]> pendingData))
                 {
-                    temporaryInput = Path.Combine(Path.GetTempPath(), $"swarm-audio-source-{Guid.NewGuid():N}.{extension}");
-                    await File.WriteAllBytesAsync(temporaryInput, await pendingData);
-                    inputFile = temporaryInput;
+                    await pendingData;
                 }
-                else if (!File.Exists(inputFile))
+                if (!File.Exists(inputFile))
                 {
                     throw new SwarmUserErrorException("The video file does not exist.");
                 }
             }
-            sourceName ??= "video";
-            byte[] audioData = await UserImageHistoryHelper.ExtractVideoAudio(inputFile);
-            string baseName = Utilities.StrictFilenameClean(Path.GetFileNameWithoutExtension(sourceName));
+            return (inputFile, temporaryInput, sourceName ?? "video");
+        }
+        catch
+        {
+            if (temporaryInput is not null && File.Exists(temporaryInput))
+            {
+                File.Delete(temporaryInput);
+            }
+            throw;
+        }
+    }
+
+    [API.APIDescription("Extracts the audio track from a video, saves it under inputs/extracted_audio, and returns the saved audio.",
+        """
+            "result": "inputs/extracted_audio/video-audio-1.mp3"
+        """)]
+    public static async Task<JObject> ExtractVideoAudio(Session session,
+        [API.APIParameter("Video data URL or reusable server media path.")] string video,
+        [API.APIParameter("Original video filename, used to name the extracted audio.")] string filename = null,
+        [API.APIParameter("Trim start in milliseconds.")] int startMilliseconds = 0,
+        [API.APIParameter("Trim end in milliseconds, or -1 for the end of the video.")] int endMilliseconds = -1)
+    {
+        if (startMilliseconds < 0 || endMilliseconds < -1 || (endMilliseconds >= 0 && endMilliseconds <= startMilliseconds))
+        {
+            throw new SwarmUserErrorException("Invalid video trim range.");
+        }
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        (string inputFile, string temporaryInput, string sourceName) = await ResolveVideoSource(session, video, filename, "audio extraction");
+        try
+        {
+            byte[] audioData = await UserImageHistoryHelper.ExtractVideoAudio(inputFile, startMilliseconds / 1000.0, endMilliseconds / 1000.0);
+            string baseName = Utilities.StrictFilenameClean(sourceName);
+            if (baseName.Length > 64)
+            {
+                baseName = baseName[..60];
+            }
             if (string.IsNullOrWhiteSpace(baseName))
             {
                 baseName = "video";
@@ -602,7 +618,7 @@ public static class T2IAPI
                 ["sui_image_params"] = new JObject(),
                 ["sui_extra_data"] = new JObject()
                 {
-                    ["source video"] = sourceName,
+                    ["source video"] = filename ?? "raw data",
                     ["operation applied"] = "Split Audio"
                 }
             });
@@ -615,11 +631,75 @@ public static class T2IAPI
             }
             string inputPath = Path.GetRelativePath(root, localPath).Replace('\\', '/');
             Logs.Info($"User {session.User.UserID} extracted audio from '{sourceName}' to '{inputPath}'.");
-            JObject audio = new() { ["path"] = inputPath, ["src"] = src };
             return new()
             {
-                ["audio"] = audio,
-                ["images"] = new JArray() { new JObject() { ["image"] = src, ["batch_index"] = "0", ["request_id"] = $"{outputInput.UserRequestId}", ["metadata"] = metadata } }
+                ["result"] = inputPath
+            };
+        }
+        finally
+        {
+            if (temporaryInput is not null && File.Exists(temporaryInput))
+            {
+                File.Delete(temporaryInput);
+            }
+        }
+    }
+
+    [API.APIDescription("Trims and optionally crops a video, saves it under inputs/edited_video, and returns the saved video.",
+        """
+            "result": "inputs/edited_video/video-edited-1.mp4"
+        """)]
+    public static async Task<JObject> EditVideo(Session session,
+        [API.APIParameter("Video data URL or reusable server media path.")] string video,
+        [API.APIParameter("Original video filename, used to name the edited video.")] string filename = null,
+        [API.APIParameter("Trim start in milliseconds.")] int startMilliseconds = 0,
+        [API.APIParameter("Trim end in milliseconds, or -1 for the end of the video.")] int endMilliseconds = -1,
+        [API.APIParameter("Crop left coordinate in pixels.")] int cropX = 0,
+        [API.APIParameter("Crop top coordinate in pixels.")] int cropY = 0,
+        [API.APIParameter("Crop width in pixels, or zero to retain the full frame.")] int cropWidth = 0,
+        [API.APIParameter("Crop height in pixels, or zero to retain the full frame.")] int cropHeight = 0)
+    {
+        if (startMilliseconds < 0 || endMilliseconds < -1 || (endMilliseconds >= 0 && endMilliseconds <= startMilliseconds))
+        {
+            throw new SwarmUserErrorException("Invalid video trim range.");
+        }
+        if (cropX < 0 || cropY < 0 || cropWidth < 0 || cropHeight < 0 || (cropWidth == 0) != (cropHeight == 0) || cropWidth % 2 != 0 || cropHeight % 2 != 0)
+        {
+            throw new SwarmUserErrorException("Invalid video crop bounds.");
+        }
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        (string inputFile, string temporaryInput, string sourceName) = await ResolveVideoSource(session, video, filename, "video editing");
+        try
+        {
+            byte[] videoData = await UserImageHistoryHelper.EditVideo(inputFile, startMilliseconds / 1000.0, endMilliseconds / 1000.0, cropX, cropY, cropWidth, cropHeight);
+            string baseName = Utilities.StrictFilenameClean(sourceName);
+            if (string.IsNullOrWhiteSpace(baseName))
+            {
+                baseName = "video";
+            }
+            T2IParamInput outputInput = new(session);
+            outputInput.Set(T2IParamTypes.OverrideOutpathFormat, $"inputs/edited_video/{baseName}-edited-[number]");
+            string metadata = T2IParamInput.MetadataToString(new JObject()
+            {
+                ["sui_image_params"] = new JObject(),
+                ["sui_extra_data"] = new JObject()
+                {
+                    ["source video"] = filename ?? "raw data",
+                    ["operation applied"] = "Video Edit"
+                }
+            });
+            VideoFile videoFile = new(videoData, MediaType.VideoMp4);
+            T2IEngine.ImageOutput outputVideo = new() { File = videoFile };
+            (string src, string localPath) = session.SaveImage(outputVideo, 0, outputInput, metadata);
+            if (src == "ERROR" || localPath is null)
+            {
+                throw new SwarmUserErrorException("Failed to save the edited video. Ensure file saving is enabled.");
+            }
+            string inputPath = Path.GetRelativePath(root, localPath).Replace('\\', '/');
+            Logs.Info($"User {session.User.UserID} edited video '{sourceName}' to '{inputPath}'.");
+            return new()
+            {
+                ["result"] = inputPath
             };
         }
         finally

@@ -276,6 +276,45 @@
     </div>
 @WebUtil.ModalFooter()
 
+<!-- =================================== Video Editor Modal =================================== -->
+
+@WebUtil.ModalHeader("video_editor_modal", "Advanced Video Editor")
+    <div class="modal-body video_editor_body">
+        <div class="video_editor_stage">
+            <div class="video-container video_editor_video_wrap">
+                <video id="video_editor_video"></video>
+                <div class="video_editor_crop_overlay" id="video_editor_crop_overlay">
+                    <div class="video_editor_crop_selection" id="video_editor_crop_selection">
+                        <div class="video_editor_crop_handle video_editor_crop_handle_nw" data-crop-handle="nw"></div>
+                        <div class="video_editor_crop_handle video_editor_crop_handle_ne" data-crop-handle="ne"></div>
+                        <div class="video_editor_crop_handle video_editor_crop_handle_sw" data-crop-handle="sw"></div>
+                        <div class="video_editor_crop_handle video_editor_crop_handle_se" data-crop-handle="se"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="video_editor_timeline" id="video_editor_timeline">
+            <div class="video_editor_timeline_selection" id="video_editor_timeline_selection"></div>
+            <div class="video_editor_timeline_excluded" id="video_editor_timeline_excluded_left"></div>
+            <div class="video_editor_timeline_excluded" id="video_editor_timeline_excluded_right"></div>
+            <div class="video_editor_timeline_cursor" id="video_editor_timeline_cursor"></div>
+            <div class="video_editor_trim_handle" data-trim-handle="left"></div>
+            <div class="video_editor_trim_handle" data-trim-handle="right"></div>
+        </div>
+        <div class="video_editor_time_row">
+            <span id="video_editor_trim_start">Start: 0:00.00</span>
+            <span id="video_editor_current_time">Position: 0:00.00</span>
+            <span id="video_editor_trim_end">End: 0:00.00</span>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary basic-button translate" id="video_editor_reset_crop">Reset Cropping</button>
+        <button type="button" class="btn btn-primary basic-button translate" id="video_editor_save_audio">Save Split Audio</button>
+        <button type="button" class="btn btn-primary basic-button translate" id="video_editor_save_video">Save Video</button>
+        <button type="button" class="btn btn-secondary basic-button translate" id="video_editor_close">Close</button>
+    </div>
+@WebUtil.ModalFooter()
+
 <!-- =================================== Debug Modals =================================== -->
 
 @WebUtil.ModalHeader("image_editor_debug_modal", "Debug Images")

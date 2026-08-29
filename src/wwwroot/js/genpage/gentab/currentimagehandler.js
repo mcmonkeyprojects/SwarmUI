@@ -399,12 +399,7 @@ class ImageFullViewHelper {
             new AudioControls(this.getImg());
         }
         if (mediaType == 'video' || mediaType == 'audio') {
-            let curImgElem = currentImageHelper.getCurrentImage();
-            if (curImgElem) {
-                if (curImgElem.tagName == 'VIDEO' || curImgElem.tagName == 'AUDIO') {
-                    curImgElem.pause();
-                }
-            }
+            currentImageHelper.doAutoPause();
         }
         if (this.fixButtonDelay) {
             clearTimeout(this.fixButtonDelay);
@@ -489,6 +484,15 @@ class CurrentImageHelper {
             return img.parentElement;
         }
         return img;
+    }
+
+    doAutoPause() {
+        let curImgElem = this.getCurrentImage();
+        if (curImgElem) {
+            if (curImgElem.tagName == 'VIDEO' || curImgElem.tagName == 'AUDIO') {
+                curImgElem.pause();
+            }
+        }
     }
 }
 

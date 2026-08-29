@@ -558,15 +558,16 @@ function imagePromptAddImage(file) {
 }
 
 /** Extracts a prompt video's audio on the server and attaches the saved audio result. */
-function imagePromptSplitVideoAudio(video) {
-    genericRequest('ExtractVideoAudio', { video: video.dataset.filedata, filename: video.dataset.filename || '' }, result => {
-        imagePromptAddImageData(result.audio.src, 'audio', result.audio.path, result.audio.path);
+function imagePromptSplitVideoAudio(video, startMilliseconds = 0, endMilliseconds = -1, onComplete = null) {
+    genericRequest('ExtractVideoAudio', { video: video.dataset.filedata, filename: video.dataset.filename || '', startMilliseconds, endMilliseconds }, result => {
+        imagePromptAddImageData(`${getImageOutPrefix()}/${result.result}`, 'audio', result.result, result.result);
         if (inputBrowserHelper.inputImageBrowser) {
             inputBrowserHelper.inputImageBrowser.lightRefresh();
         }
-        mainGenHandler.gotImageResult(result.images[0].image, result.images[0].metadata, '0');
+        onComplete?.(true);
     }, 0, error => {
         showError(error);
+        onComplete?.(false);
     });
 }
 
@@ -587,6 +588,11 @@ function showPromptMediaMenu(media, menuButton, x = null, y = null) {
             key: 'Split Audio',
             title: "Extract this video's audio and attach it as a separate prompt audio input",
             action: () => imagePromptSplitVideoAudio(media)
+        });
+        buttons.push({
+            key: 'Advanced Video Editor',
+            title: 'Trim or crop this video and save the result',
+            action: () => videoEditorInterface.open(media)
         });
     }
     buttons.push({

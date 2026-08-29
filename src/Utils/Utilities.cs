@@ -160,7 +160,7 @@ public static class Utilities
     public static AsciiMatcher ControlCodesMatcher = new(c => c < 32);
 
     /// <summary>Matcher for characters banned or specialcased by Windows or other OS's.</summary>
-    public static AsciiMatcher FilePathForbidden = new(c => c < 32 || "<>:\"\\|?*~&@;#$^".Contains(c));
+    public static AsciiMatcher FilePathForbidden = new(c => c < 32 || "<>:\"\\|?*~&@;#$^%".Contains(c));
 
     public static HashSet<string> ReservedFilenames = ["con", "prn", "aux", "nul"];
 
@@ -1282,7 +1282,7 @@ public static class Utilities
     public static MultiSemaphoreSet<string> GitOverlapLocks = new(32);
 
     /// <summary>Quick and simple run a process async and get the result.</summary>
-    public static async Task<string> QuickRunProcess(string process, string[] args, string workingDirectory = null)
+    public static async Task<string> QuickRunProcess(string process, string[] args, string workingDirectory = null, Action<int> setExitCode = null)
     {
         ProcessStartInfo start = new(process, args)
         {
@@ -1298,6 +1298,7 @@ public static class Utilities
         Task<string> stdOutRead = p.StandardOutput.ReadToEndAsync();
         Task<string> stdErrRead = p.StandardError.ReadToEndAsync();
         await p.WaitForExitAsync(Program.GlobalProgramCancel);
+        setExitCode?.Invoke(p.ExitCode);
         string stdout = await stdOutRead;
         string stderr = await stdErrRead;
         string result = stdout;
