@@ -1217,6 +1217,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         imageEditor.setBaseImage(img);
         imageEditor.activate();
     }, '', 'Opens an Image Editor for this image', ['image']);
+    includeButton('Edit Video', () => {
+        videoEditorInterface.open(img);
+    }, '', 'Opens a Video Editor to trim or crop this video', ['video']);
     includeButton('Upscale 2x', () => {
         toDataURL(img.src, (url => {
             let [width, height] = naturalDim();

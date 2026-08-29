@@ -22,6 +22,8 @@ class VideoEditorInterface {
         this.saveAudioButton = getRequiredElementById('video_editor_save_audio');
         this.saveVideoButton = getRequiredElementById('video_editor_save_video');
         this.sourceVideo = null;
+        this.videoData = null;
+        this.filename = '';
         this.duration = 0;
         this.trimStart = 0;
         this.trimEnd = 0;
@@ -48,17 +50,19 @@ class VideoEditorInterface {
         this.modalJq.on('hidden.bs.modal', () => this.cleanup());
     }
 
-    /** Opens the editor for a prompt video. */
+    /** Opens the editor for a video. */
     open(video) {
         currentImageHelper.doAutoPause();
         this.sourceVideo = video;
+        this.videoData = video.dataset.filedata || getImageFullSrc(video.dataset.src || video.currentSrc || video.src);
+        this.filename = video.dataset.filename || (isValidMediaPath(this.videoData) ? this.videoData : '');
         this.duration = 0;
         this.trimStart = 0;
         this.trimEnd = 0;
         this.resetCrop();
         this.setSaving(false);
         this.saveAudioButton.style.display = this.hasAudio(video) ? '' : 'none';
-        this.video.src = video.currentSrc || video.src;
+        this.video.src = video.currentSrc || video.src || video.dataset.src;
         this.video.load();
         this.modalJq.modal('show');
         this.saveVideoButton.disabled = true;
@@ -70,6 +74,8 @@ class VideoEditorInterface {
         this.video.removeAttribute('src');
         this.video.load();
         this.sourceVideo = null;
+        this.videoData = null;
+        this.filename = '';
         this.timelinePointer = null;
         this.cropPointer = null;
     }
@@ -273,31 +279,40 @@ class VideoEditorInterface {
         this.saveVideoButton.disabled = saving;
     }
 
-    /** Saves the trimmed audio as a prompt attachment. */
+    /** Adds a saved edit to the Batch View. */
+    addOutputToBatch(result) {
+        mainGenHandler.gotImageResult(`${getImageOutPrefix()}/${result.result}`, '{}', '0');
+        if (inputBrowserHelper.inputImageBrowser) {
+            inputBrowserHelper.inputImageBrowser.lightRefresh();
+        }
+    }
+
+    /** Saves the trimmed audio as a Batch View output. */
     saveAudio() {
-        if (!this.sourceVideo || this.duration <= 0) {
+        if (!this.videoData || this.duration <= 0) {
             return;
         }
         this.setSaving(true);
         let trim = this.getTrimRequest();
-        imagePromptSplitVideoAudio(this.sourceVideo, trim.startMilliseconds, trim.endMilliseconds, success => {
+        genericRequest('ExtractVideoAudio', { video: this.videoData, filename: this.filename, ...trim }, result => {
+            this.addOutputToBatch(result);
             this.setSaving(false);
             this.saveAudioButton.style.display = 'none';
+        }, 0, error => {
+            this.setSaving(false);
+            showError(error);
         });
     }
 
-    /** Saves the edited video as a prompt attachment. */
+    /** Saves the edited video as a Batch View output. */
     saveVideo() {
-        if (!this.sourceVideo || this.duration <= 0) {
+        if (!this.videoData || this.duration <= 0) {
             return;
         }
         this.setSaving(true);
-        let request = { video: this.sourceVideo.dataset.filedata, filename: this.sourceVideo.dataset.filename || '', ...this.getTrimRequest(), ...this.getCropRequest() };
+        let request = { video: this.videoData, filename: this.filename, ...this.getTrimRequest(), ...this.getCropRequest() };
         genericRequest('EditVideo', request, result => {
-            imagePromptAddImageData(`${getImageOutPrefix()}/${result.result}`, 'video', result.result, result.result);
-            if (inputBrowserHelper.inputImageBrowser) {
-                inputBrowserHelper.inputImageBrowser.lightRefresh();
-            }
+            this.addOutputToBatch(result);
             this.setSaving(false);
             this.saveVideoButton.disabled = true;
         }, 0, error => {
