@@ -168,7 +168,10 @@ public class UserImageHistoryHelper
         List<string> filters = [];
         if (cropWidth > 0)
         {
-            filters.Add($"crop={cropWidth}:{cropHeight}:{cropX}:{cropY}");
+            int leftPad = Math.Max(0, -cropX);
+            int topPad = Math.Max(0, -cropY);
+            filters.Add($"pad={leftPad}+max(iw\\,{cropX + cropWidth}):{topPad}+max(ih\\,{cropY + cropHeight}):{leftPad}:{topPad}:black");
+            filters.Add($"crop={cropWidth}:{cropHeight}:{cropX + leftPad}:{cropY + topPad}");
         }
         if (scale != 1)
         {

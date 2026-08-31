@@ -13,6 +13,7 @@ class VideoEditorInterface {
         this.scaleInput = getRequiredElementById('video_editor_scale');
         this.scaleInput.addEventListener('input', () => this.onScaleChanged());
         this.scaleInput.addEventListener('change', () => this.onScaleChanged());
+        this.stage = this.modal.querySelector('.video_editor_stage');
         this.cropOverlay = getRequiredElementById('video_editor_crop_overlay');
         this.cropSelection = getRequiredElementById('video_editor_crop_selection');
         this.timeline = getRequiredElementById('video_editor_timeline');
@@ -286,8 +287,17 @@ class VideoEditorInterface {
             return;
         }
         let rect = this.cropOverlay.getBoundingClientRect();
-        let x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-        let y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        let stageRect = this.stage.getBoundingClientRect();
+        let stageMinX = (stageRect.left - rect.left) / rect.width;
+        let stageMaxX = (stageRect.right - rect.left) / rect.width;
+        let stageMinY = (stageRect.top - rect.top) / rect.height;
+        let stageMaxY = (stageRect.bottom - rect.top) / rect.height;
+        let x = Math.max(stageMinX, Math.min(stageMaxX, (e.clientX - rect.left) / rect.width));
+        let y = Math.max(stageMinY, Math.min(stageMaxY, (e.clientY - rect.top) / rect.height));
+        if (!e.shiftKey) {
+            x = roundTo(x * this.video.videoWidth, 8) / this.video.videoWidth;
+            y = roundTo(y * this.video.videoHeight, 8) / this.video.videoHeight;
+        }
         let minX = this.video.videoWidth > 0 ? 2 / this.video.videoWidth : 0.001;
         let minY = this.video.videoHeight > 0 ? 2 / this.video.videoHeight : 0.001;
         if (this.cropPointer.corner.includes('w')) {

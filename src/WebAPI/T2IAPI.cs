@@ -664,7 +664,7 @@ public static class T2IAPI
         {
             throw new SwarmUserErrorException("Invalid video trim range.");
         }
-        if (cropX < 0 || cropY < 0 || cropWidth < 0 || cropHeight < 0 || (cropWidth == 0) !=  (cropHeight == 0) || cropWidth % 2 != 0 || cropHeight % 2 != 0)
+        if (cropWidth < 0 || cropHeight < 0 || (cropWidth == 0) != (cropHeight == 0) || cropWidth % 2 != 0 || cropHeight % 2 != 0)
         {
             throw new SwarmUserErrorException("Invalid video crop bounds.");
         }
