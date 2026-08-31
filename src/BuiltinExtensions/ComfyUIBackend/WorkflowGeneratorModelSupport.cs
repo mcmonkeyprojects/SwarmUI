@@ -1573,7 +1573,7 @@ public partial class WorkflowGenerator
                     ["width"] = UserInput.GetImageWidth(),
                     ["height"] = UserInput.GetImageHeight(),
                     ["max_shift"] = shiftVal,
-                    ["base_shift"] = 0.5 // TODO: Does this need an input?
+                    ["base_shift"] = IsKrea2() ? shiftVal : 0.5 // TODO: Does this need an input?
                 });
                 LoadingModel = [samplingNode, 0];
             }
