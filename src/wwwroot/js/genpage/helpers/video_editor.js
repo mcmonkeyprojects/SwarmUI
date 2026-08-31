@@ -7,6 +7,12 @@ class VideoEditorInterface {
         this.video = getRequiredElementById('video_editor_video');
         this.videoControls = new VideoControls(this.video);
         this.resolutionText = getRequiredElementById('video_editor_resolution');
+        this.scaleBox = getRequiredElementById('video_editor_scale_box');
+        this.scaleBox.innerHTML = makeSliderInput(null, 'video_editor_scale', 'scale', 'Scale', '', 1, 0, 16, 0, 2, 0.025, false, false, false, 0.01);
+        enableSlidersIn(this.scaleBox);
+        this.scaleInput = getRequiredElementById('video_editor_scale');
+        this.scaleInput.addEventListener('input', () => this.onScaleChanged());
+        this.scaleInput.addEventListener('change', () => this.onScaleChanged());
         this.cropOverlay = getRequiredElementById('video_editor_crop_overlay');
         this.cropSelection = getRequiredElementById('video_editor_crop_selection');
         this.timeline = getRequiredElementById('video_editor_timeline');
@@ -62,6 +68,7 @@ class VideoEditorInterface {
         this.trimStart = 0;
         this.trimEnd = 0;
         this.resetCrop();
+        this.resetScale();
         this.setSaving(false);
         this.saveAudioButton.style.display = this.hasAudio(video) ? '' : 'none';
         this.video.src = video.currentSrc || video.src || video.dataset.src;
@@ -216,10 +223,12 @@ class VideoEditorInterface {
         this.updateResolution();
     }
 
-    /** Shows the cropped output resolution and aspect ratio. */
+    /** Shows the cropped and scaled output resolution and aspect ratio. */
     updateResolution() {
-        let width = this.video.videoWidth;
-        let height = this.video.videoHeight;
+        let origWidth = this.video.videoWidth;
+        let origHeight = this.video.videoHeight;
+        let width = origWidth;
+        let height = origHeight;
         if (width <= 0 || height <= 0) {
             this.resolutionText.textContent = '';
             return;
@@ -229,7 +238,34 @@ class VideoEditorInterface {
             width = crop.cropWidth;
             height = crop.cropHeight;
         }
-        this.resolutionText.textContent = `${width}x${height} (${describeAspectRatio(width, height)})`;
+        let scale = this.getScale();
+        if (scale != 1) {
+            width = Math.max(8, roundTo(width * scale, 8));
+            height = Math.max(8, roundTo(height * scale, 8));
+        }
+        this.resolutionText.textContent = `${origWidth}x${origHeight} (${describeAspectRatio(origWidth, origHeight)}) → ${width}x${height} (${describeAspectRatio(width, height)})`;
+    }
+
+    /** Returns the current output scale factor. */
+    getScale() {
+        let scale = parseFloat(this.scaleInput.value);
+        if (!Number.isFinite(scale)) {
+            return 1;
+        }
+        return Math.max(0, Math.min(8, scale));
+    }
+
+    /** Resets scale to 1 (no resize). */
+    resetScale() {
+        this.scaleInput.value = 1;
+        this.scaleInput.dispatchEvent(new Event('input'));
+        this.updateResolution();
+    }
+
+    /** Updates resolution when the scale slider changes. */
+    onScaleChanged() {
+        this.updateResolution();
+        this.saveVideoButton.disabled = false;
     }
 
     /** Starts dragging a crop corner. */
@@ -331,7 +367,7 @@ class VideoEditorInterface {
             return;
         }
         this.setSaving(true);
-        let request = { video: this.videoData, filename: this.filename, ...this.getTrimRequest(), ...this.getCropRequest() };
+        let request = { video: this.videoData, filename: this.filename, ...this.getTrimRequest(), ...this.getCropRequest(), scale: this.getScale() };
         genericRequest('EditVideo', request, result => {
             this.addOutputToBatch(result);
             this.setSaving(false);

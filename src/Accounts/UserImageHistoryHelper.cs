@@ -145,7 +145,7 @@ public class UserImageHistoryHelper
         return await RunFfmpegToData(arguments, "mp3", "Cannot split video audio because ffmpeg is not available.", "The video does not contain a readable audio track or can't be parsed.");
     }
 
-    /// <summary>Use ffmpeg to trim and crop a video into MP4 data.</summary>
+    /// <summary>Use ffmpeg to trim, crop, and scale a video into MP4 data.</summary>
     /// <param name="file">The video file.</param>
     /// <param name="start">Trim start in seconds.</param>
     /// <param name="end">Trim end in seconds, or negative for the remaining video.</param>
@@ -153,7 +153,8 @@ public class UserImageHistoryHelper
     /// <param name="cropY">Crop top coordinate in pixels.</param>
     /// <param name="cropWidth">Crop width in pixels, or zero for the full frame.</param>
     /// <param name="cropHeight">Crop height in pixels, or zero for the full frame.</param>
-    public static async Task<byte[]> EditVideo(string file, double start, double end, int cropX, int cropY, int cropWidth, int cropHeight)
+    /// <param name="scale">Output scale factor. 1 leaves the cropped size unchanged.</param>
+    public static async Task<byte[]> EditVideo(string file, double start, double end, int cropX, int cropY, int cropWidth, int cropHeight, double scale = 1)
     {
         List<string> arguments = ["-y", "-i", file];
         if (start > 0)
@@ -164,8 +165,17 @@ public class UserImageHistoryHelper
         {
             arguments.AddRange(["-t", $"{end - start:0.###}"]);
         }
-        string videoFilter = cropWidth > 0 ? $"crop={cropWidth}:{cropHeight}:{cropX}:{cropY},pad=ceil(iw/2)*2:ceil(ih/2)*2" : "pad=ceil(iw/2)*2:ceil(ih/2)*2";
-        arguments.AddRange(["-map", "0:v:0", "-map", "0:a?", "-vf", videoFilter, "-c:v", "libx264", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart"]);
+        List<string> filters = [];
+        if (cropWidth > 0)
+        {
+            filters.Add($"crop={cropWidth}:{cropHeight}:{cropX}:{cropY}");
+        }
+        if (scale != 1)
+        {
+            filters.Add($"scale=max(16\\,16*round(iw*{scale}/16)):max(16\\,16*round(ih*{scale}/16))");
+        }
+        filters.Add("pad=ceil(iw/2)*2:ceil(ih/2)*2");
+        arguments.AddRange(["-map", "0:v:0", "-map", "0:a?", "-vf", string.Join(',', filters), "-c:v", "libx264", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart"]);
         return await RunFfmpegToData(arguments, "mp4", "Cannot edit video because ffmpeg is not available.", "ffmpeg could not produce the edited video.");
     }
 }

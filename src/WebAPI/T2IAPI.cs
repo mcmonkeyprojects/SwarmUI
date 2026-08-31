@@ -645,7 +645,7 @@ public static class T2IAPI
         }
     }
 
-    [API.APIDescription("Trims and optionally crops a video, saves it under inputs/edited_video, and returns the saved video.",
+    [API.APIDescription("Trims, optionally crops, optionally scales a video, saves it under inputs/edited_video, and returns the saved video.",
         """
             "result": "inputs/edited_video/video-edited-1.mp4"
         """)]
@@ -657,21 +657,26 @@ public static class T2IAPI
         [API.APIParameter("Crop left coordinate in pixels.")] int cropX = 0,
         [API.APIParameter("Crop top coordinate in pixels.")] int cropY = 0,
         [API.APIParameter("Crop width in pixels, or zero to retain the full frame.")] int cropWidth = 0,
-        [API.APIParameter("Crop height in pixels, or zero to retain the full frame.")] int cropHeight = 0)
+        [API.APIParameter("Crop height in pixels, or zero to retain the full frame.")] int cropHeight = 0,
+        [API.APIParameter("Output scale factor. 1 leaves the cropped size unchanged.")] double scale = 1)
     {
         if (startMilliseconds < 0 || endMilliseconds < -1 || (endMilliseconds >= 0 && endMilliseconds <= startMilliseconds))
         {
             throw new SwarmUserErrorException("Invalid video trim range.");
         }
-        if (cropX < 0 || cropY < 0 || cropWidth < 0 || cropHeight < 0 || (cropWidth == 0) != (cropHeight == 0) || cropWidth % 2 != 0 || cropHeight % 2 != 0)
+        if (cropX < 0 || cropY < 0 || cropWidth < 0 || cropHeight < 0 || (cropWidth == 0) !=  (cropHeight == 0) || cropWidth % 2 != 0 || cropHeight % 2 != 0)
         {
             throw new SwarmUserErrorException("Invalid video crop bounds.");
+        }
+        if (scale < 0 || scale > 16)
+        {
+            throw new SwarmUserErrorException("Invalid video scale.");
         }
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
         (string inputFile, string temporaryInput, string sourceName) = await ResolveVideoSource(session, video, filename, "video editing");
         try
         {
-            byte[] videoData = await UserImageHistoryHelper.EditVideo(inputFile, startMilliseconds / 1000.0, endMilliseconds / 1000.0, cropX, cropY, cropWidth, cropHeight);
+            byte[] videoData = await UserImageHistoryHelper.EditVideo(inputFile, startMilliseconds / 1000.0, endMilliseconds / 1000.0, cropX, cropY, cropWidth, cropHeight, scale);
             string baseName = Utilities.StrictFilenameClean(sourceName);
             if (string.IsNullOrWhiteSpace(baseName))
             {

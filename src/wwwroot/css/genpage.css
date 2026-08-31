@@ -1138,6 +1138,13 @@ body.small-window > .tab-content.tab-hundred {
     padding-bottom: 0.25rem;
     font-family: var(--font-monospace);
 }
+.video_editor_scale_box .auto-input {
+    max-width: none;
+}
+.video_editor_scale_box .auto-slider-range-wrapper {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+}
 .video_editor_crop_overlay {
     position: absolute;
     inset: 0;
