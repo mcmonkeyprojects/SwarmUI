@@ -795,10 +795,6 @@ public class T2IPromptHandling
         {
             return null;
         }
-        if (context.Input?.SourceSession?.User?.Settings?.ParamParsing?.ParseAlternativePromptSyntaxes ?? true)
-        {
-            val = LegacyPromptParser.Convert(val);
-        }
         string addBefore = "", addAfter = "";
         int baseSectionId = context.SectionID;
         void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set, int setId)
@@ -876,7 +872,12 @@ public class T2IPromptHandling
             }
             val = val.Replace("\0triggerextra", triggerPhrase);
         }
-        return addBefore + val + addAfter;
+        val = addBefore + val + addAfter;
+        if (context.Input?.SourceSession?.User?.Settings?.ParamParsing?.ParseAlternativePromptSyntaxes ?? true)
+        {
+            val = LegacyPromptParser.Convert(val);
+        }
+        return val;
     }
 
     public static string ProcessPromptLikeForLength(string val)
