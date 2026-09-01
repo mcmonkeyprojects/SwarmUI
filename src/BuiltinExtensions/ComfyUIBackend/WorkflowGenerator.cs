@@ -285,6 +285,16 @@ public partial class WorkflowGenerator
         }
     }
 
+
+    /// <summary>Saves an intermediate output image, if requested by the user.</summary>
+    public void SaveOptionalIntermediate(string id = null)
+    {
+        if (UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
+        {
+            CurrentMedia.SaveOutput(CurrentVae, CurrentAudioVae, id: id ?? GetStableDynamicID(50000, 0));
+        }
+    }
+
     /// <summary>Loads and applies LoRAs in the user parameters for the given LoRA confinement ID, as a Set CLIP Hooks node.</summary>
     public JArray CreateHookLorasForConfinement(int confinement, JArray clip)
     {
@@ -2898,10 +2908,7 @@ public partial class WorkflowGenerator
             return;
         }
         WGNodeData vae = vaeOverride ?? CurrentVae;
-        if (UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-        {
-            CurrentMedia.SaveOutput(vae, CurrentAudioVae, GetStableDynamicID(50000, 0));
-        }
+        SaveOptionalIntermediate();
         long seed = UserInput.Get(T2IParamTypes.Seed) + 500;
         WGNodeData media = CurrentMedia;
         double scale = UserInput.Get(ComfyUIBackendExtension.SeedVRUpscale, 1);

@@ -1503,10 +1503,7 @@ public class WorkflowGeneratorSteps
                 }
                 if (refineModel.ModelClass?.CompatClass?.ID == "pid")
                 {
-                    if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-                    {
-                        g.CurrentMedia.DecodeLatents(origVae, false, "24").SaveOutput(null, g.CurrentAudioVae, id: "29");
-                    }
+                    g.SaveOptionalIntermediate("29");
                     WGNodeData pidDecoded = g.CreatePixelDecode(refineModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 1, isRefiner: true);
                     if (g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double pidUpscale) && pidUpscale != 1)
                     {
@@ -1755,10 +1752,7 @@ public class WorkflowGeneratorSteps
             if (parts.Any())
             {
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(g.CurrentVae);
-                if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-                {
-                    g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: g.GetStableDynamicID(50000, 0));
-                }
+                g.SaveOptionalIntermediate();
                 T2IModel t2iModel = g.FinalLoadedModel;
                 WGNodeData model = g.CurrentModel, clip = g.CurrentTextEnc, vae = g.CurrentVae;
                 if (g.UserInput.TryGet(T2IParamTypes.SegmentModel, out T2IModel segmentModel))
@@ -1941,10 +1935,7 @@ public class WorkflowGeneratorSteps
             g.CurrentMedia = g.CurrentMedia.DecodeLatents(g.CurrentVae, null);
             foreach (PromptRegion.Part part in parts)
             {
-                if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-                {
-                    g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, g.GetStableDynamicID(50000, 0));
-                }
+                g.SaveOptionalIntermediate();
                 string segmentNode = g.CreateNode("SwarmClipSeg", new JObject()
                 {
                     ["images"] = g.CurrentMedia.Path,
