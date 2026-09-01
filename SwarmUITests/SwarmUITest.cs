@@ -19,6 +19,6 @@ public abstract class SwarmUITest
     /// <param name="message">The message to display if they aren't roughly equal.</param>
     public static void AssertAreRoughlyEqual(double expected, double actual, string message)
     {
-        Assert.That((long)Math.Round(expected * 10000) == (long)Math.Round(actual * 10000), message);
+        Assert.That((long)Math.Round(expected * 10000), Is.EqualTo((long)Math.Round(actual * 10000)), message);
     }
 }

@@ -18,33 +18,33 @@ public class UtilitiesTests : SwarmUITest
     [Test]
     public static void TestStrictFilenameClean()
     {
-        Assert.That(Utilities.StrictFilenameClean("hello") == "hello");
-        Assert.That(Utilities.StrictFilenameClean("My File") == "My File");
-        Assert.That(Utilities.StrictFilenameClean("abc123") == "abc123");
-        Assert.That(Utilities.StrictFilenameClean("foo-bar_baz") == "foo-bar_baz");
-        Assert.That(Utilities.StrictFilenameClean("") == "");
-        Assert.That(Utilities.StrictFilenameClean("file.txt") == "filetxt");
-        Assert.That(Utilities.StrictFilenameClean("...") == "");
-        Assert.That(Utilities.StrictFilenameClean("folder/sub/file") == "folder/sub/file");
-        Assert.That(Utilities.StrictFilenameClean("folder\\sub\\file") == "folder/sub/file");
-        Assert.That(Utilities.StrictFilenameClean("/leading/slash") == "leading/slash");
-        Assert.That(Utilities.StrictFilenameClean("foo//bar///baz") == "foo/bar/baz");
-        Assert.That(Utilities.StrictFilenameClean("../secret") == "secret");
-        Assert.That(Utilities.StrictFilenameClean("foo/./bar") == "foo/bar");
-        Assert.That(Utilities.StrictFilenameClean("foo/") == "foo");
-        Assert.That(Utilities.StrictFilenameClean("  padded  ") == "padded");
-        Assert.That(Utilities.StrictFilenameClean("hello<>world") == "helloworld");
-        Assert.That(Utilities.StrictFilenameClean("a:b") == "ab");
-        Assert.That(Utilities.StrictFilenameClean("hello%20world") == "hello20world");
-        Assert.That(Utilities.StrictFilenameClean("name*?") == "name");
-        Assert.That(Utilities.StrictFilenameClean("hello\nworld") == "helloworld");
-        Assert.That(Utilities.StrictFilenameClean("con") == "con_");
-        Assert.That(Utilities.StrictFilenameClean("CON") == "CON_");
-        Assert.That(Utilities.StrictFilenameClean("prn") == "prn_");
-        Assert.That(Utilities.StrictFilenameClean("com1") == "com1_");
-        Assert.That(Utilities.StrictFilenameClean("lpt9") == "lpt9_");
-        Assert.That(Utilities.StrictFilenameClean("models/con/file") == "models/con_/file");
-        Assert.That(Utilities.StrictFilenameClean("hello\u200bworld") == "helloworld");
-        Assert.That(Utilities.StrictFilenameClean("hello\ufeffworld") == "helloworld");
+        Assert.That(Utilities.StrictFilenameClean("hello"), Is.EqualTo("hello"));
+        Assert.That(Utilities.StrictFilenameClean("My File"), Is.EqualTo("My File"));
+        Assert.That(Utilities.StrictFilenameClean("abc123"), Is.EqualTo("abc123"));
+        Assert.That(Utilities.StrictFilenameClean("foo-bar_baz"), Is.EqualTo("foo-bar_baz"));
+        Assert.That(Utilities.StrictFilenameClean(""), Is.EqualTo(""));
+        Assert.That(Utilities.StrictFilenameClean("file.txt"), Is.EqualTo("filetxt"));
+        Assert.That(Utilities.StrictFilenameClean("..."), Is.EqualTo(""));
+        Assert.That(Utilities.StrictFilenameClean("folder/sub/file"), Is.EqualTo("folder/sub/file"));
+        Assert.That(Utilities.StrictFilenameClean("folder\\sub\\file"), Is.EqualTo("folder/sub/file"));
+        Assert.That(Utilities.StrictFilenameClean("/leading/slash"), Is.EqualTo("leading/slash"));
+        Assert.That(Utilities.StrictFilenameClean("foo//bar///baz"), Is.EqualTo("foo/bar/baz"));
+        Assert.That(Utilities.StrictFilenameClean("../secret"), Is.EqualTo("secret"));
+        Assert.That(Utilities.StrictFilenameClean("foo/./bar"), Is.EqualTo("foo/bar"));
+        Assert.That(Utilities.StrictFilenameClean("foo/"), Is.EqualTo("foo"));
+        Assert.That(Utilities.StrictFilenameClean("  padded  "), Is.EqualTo("padded"));
+        Assert.That(Utilities.StrictFilenameClean("hello<>world"), Is.EqualTo("helloworld"));
+        Assert.That(Utilities.StrictFilenameClean("a:b"), Is.EqualTo("ab"));
+        Assert.That(Utilities.StrictFilenameClean("hello%20world"), Is.EqualTo("hello20world"));
+        Assert.That(Utilities.StrictFilenameClean("name*?"), Is.EqualTo("name"));
+        Assert.That(Utilities.StrictFilenameClean("hello\nworld"), Is.EqualTo("helloworld"));
+        Assert.That(Utilities.StrictFilenameClean("con"), Is.EqualTo("con_"));
+        Assert.That(Utilities.StrictFilenameClean("CON"), Is.EqualTo("CON_"));
+        Assert.That(Utilities.StrictFilenameClean("prn"), Is.EqualTo("prn_"));
+        Assert.That(Utilities.StrictFilenameClean("com1"), Is.EqualTo("com1_"));
+        Assert.That(Utilities.StrictFilenameClean("lpt9"), Is.EqualTo("lpt9_"));
+        Assert.That(Utilities.StrictFilenameClean("models/con/file"), Is.EqualTo("models/con_/file"));
+        Assert.That(Utilities.StrictFilenameClean("hello\u200bworld"), Is.EqualTo("helloworld"));
+        Assert.That(Utilities.StrictFilenameClean("hello\ufeffworld"), Is.EqualTo("helloworld"));
     }
 }
