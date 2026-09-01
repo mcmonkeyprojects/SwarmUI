@@ -106,6 +106,20 @@ public class T2IPromptHandling
         return [.. output.Select(v => v.Trim())];
     }
 
+    /// <summary>Joins values so <see cref="SplitSmart"/> will split them back apart correctly.</summary>
+    public static string JoinSmart(string[] vals)
+    {
+        if (vals.Any(v => v.Contains('|')))
+        {
+            return vals.JoinString("||");
+        }
+        if (vals.Any(v => v.Contains(',')))
+        {
+            return vals.JoinString("|");
+        }
+        return vals.JoinString(",");
+    }
+
     /// <summary>Mapping of prompt tag prefixes, to allow for registration of custom prompt tags.</summary>
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagProcessors = [];
 
