@@ -1067,6 +1067,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         {
             input.Set(T2IParamTypes.Steps, 0);
             input.Set(T2IParamTypes.DoNotSave, true);
+            input.Set(T2IParamTypes.JustLoadModel, true);
         }
         else
         {
