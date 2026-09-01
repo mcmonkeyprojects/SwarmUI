@@ -69,7 +69,9 @@ Agents never run their own builds, the user does it themselves. Agents may check
 
 This repo is complex, and made of many interlinked parts not easily mockable, and heavily depends on slow expensive GPU operations.
 
-Automated tests are not currently used in this repo. Agents cannot run any form of testing. Developers must manually run the live software to verify things. Agents should do their best to logically validate through static analysis and step-by-step execution logic tracking before the developer spends time testing.
+NUnit unit tests live in the `SwarmUITests` project. Run them with `launchtools/run_tests.bat` (Windows) or `launchtools/run_tests.sh` (Linux/macOS). A GitHub Action runs these on push and pull request.
+
+These tests cover isolated C# logic. Live GPU-backed behavior is not covered. Developers must still manually run the live software to verify those. Agents cannot run most forms of testing. Agents should do their best to logically validate through static analysis and step-by-step execution logic tracking before the developer spends time testing.
 
 ## General Edit Strategy
 
@@ -90,6 +92,7 @@ This project contains multiple parts all in one repo. Please observe unique expe
 - `src/wwwroot/css`: CSS stylesheets for the browser frontend.
 - `src/Pages`: `.cshtml` C# Razor Pages, HTML for the browser frontend.
 - `src/*.cs`: general C# main server code.
+- `SwarmUITests/`: NUnit unit tests. Not included in general builds. Run via `launchtools/run_tests.bat` / `launchtools/run_tests.sh`.
 - `src/BuiltinExtensions`: extensions to SwarmUI that are built in and part of the main repo.
 - `src/Extensions`: externally downloaded extensions. If you are asked to work within an extension, contain your work only to that extension's folder. If you were not asked to work there, do not modify anything in the extensions folder.
 
