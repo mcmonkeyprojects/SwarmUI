@@ -2372,7 +2372,7 @@ public partial class WorkflowGenerator
         int width = UserInput.GetImageWidth();
         int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
-        bool needsAdvancedEncode = (prompt.Contains('[') && prompt.Contains(']')) || prompt.Contains("<break>");
+        bool needsAdvancedEncode = prompt.Contains("<break>") || prompt.Contains("<weight") || prompt.Contains("<embed") || prompt.Contains("<fromto") || prompt.Contains("<alternate") || prompt.Contains("<alt:") || prompt.Contains("<alt[");
         double defaultGuidance = -1;
         if (IsHunyuanVideoSkyreels())
         {
@@ -2498,7 +2498,7 @@ public partial class WorkflowGenerator
                 });
                 imageNode = [batched, 0];
             }
-            node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+            node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,
                 ["steps"] = UserInput.Get(T2IParamTypes.Steps),
@@ -2536,7 +2536,7 @@ public partial class WorkflowGenerator
                         qwenImage = [batched2, 0];
                     }
                 }
-                node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+                node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
                 {
                     ["clip"] = clip,
                     ["steps"] = UserInput.Get(T2IParamTypes.Steps),
@@ -2591,7 +2591,7 @@ public partial class WorkflowGenerator
             });
             if (wantsSwarmCustom)
             {
-                node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+                node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
                 {
                     ["clip"] = clip,
                     ["steps"] = UserInput.Get(T2IParamTypes.Steps),
@@ -2618,7 +2618,7 @@ public partial class WorkflowGenerator
         }
         else if (wantsSwarmCustom)
         {
-            node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+            node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,
                 ["steps"] = UserInput.Get(T2IParamTypes.Steps),

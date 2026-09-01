@@ -805,7 +805,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
     public static string CreateWorkflow(T2IParamInput user_input, Func<string, string> initImageFixer, string ModelFolderFormat = null, HashSet<string> features = null)
     {
         // note: gently break any standard embed with a space, *require* swarm format embeds, as comfy's raw syntax has unwanted behaviors
-        user_input.ProcessPromptEmbeds(x => $"<embedding:{x.Replace("/", ModelFolderFormat)}>", p => p.Replace("embedding:", "embedding :", StringComparison.OrdinalIgnoreCase));
+        user_input.ProcessPromptEmbeds(x => $"<embed:{x.Replace("/", ModelFolderFormat)}>", p => p.Replace("embedding:", "embedding :", StringComparison.OrdinalIgnoreCase));
         string workflow = GetRawWorkflowFrom(user_input);
         if (workflow is not null && !user_input.Get(T2IParamTypes.ControlNetPreviewOnly))
         {

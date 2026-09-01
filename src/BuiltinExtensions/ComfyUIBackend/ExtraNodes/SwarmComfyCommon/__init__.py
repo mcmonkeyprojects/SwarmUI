@@ -1,6 +1,6 @@
 import os, folder_paths, traceback
 
-from . import SwarmBlending, SwarmImages, SwarmInternalUtil, SwarmKSampler, SwarmLoadImageB64, SwarmLoraLoader, SwarmMasks, SwarmSaveImageWS, SwarmTiling, SwarmExtractLora, SwarmUnsampler, SwarmLatents, SwarmInputNodes, SwarmTextHandling, SwarmReference, SwarmMath, SwarmSam2, SwarmAudio, SwarmVideo, SwarmModels
+from . import SwarmBlending, SwarmImages, SwarmInternalUtil, SwarmKSampler, SwarmLoadImageB64, SwarmLoraLoader, SwarmMasks, SwarmSaveImageWS, SwarmTiling, SwarmExtractLora, SwarmUnsampler, SwarmLatents, SwarmInputNodes, SwarmTextHandling, SwarmText, SwarmReference, SwarmMath, SwarmSam2, SwarmAudio, SwarmVideo, SwarmModels
 
 WEB_DIRECTORY = "./web"
 
@@ -19,6 +19,7 @@ NODE_CLASS_MAPPINGS = (
     | SwarmLatents.NODE_CLASS_MAPPINGS
     | SwarmInputNodes.NODE_CLASS_MAPPINGS
     | SwarmTextHandling.NODE_CLASS_MAPPINGS
+    | SwarmText.NODE_CLASS_MAPPINGS
     | SwarmReference.NODE_CLASS_MAPPINGS
     | SwarmMath.NODE_CLASS_MAPPINGS
     | SwarmSam2.NODE_CLASS_MAPPINGS

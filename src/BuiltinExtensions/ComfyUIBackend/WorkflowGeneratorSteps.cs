@@ -2380,6 +2380,6 @@ public class WorkflowGeneratorSteps
     [
         "VAEDecode", "VAEDecodeTiled", "VAEEncode", "CLIPTextEncode", "CLIPTextEncodeSDXL",
         "LTXVAudioVAEDecode", "LTXVSeparateAVLatent", "LTXVConditioning", "LTXVEmptyLatentAudio", "LTXVConcatAVLatent", "LTXVReferenceAudio",
-        "SwarmCountFrames", "SwarmClipTextEncodeAdvanced"
+        "SwarmCountFrames", "SwarmClipTextEncodeAdvanced", "SwarmTextEncodeAdvanced"
     ];
 }
