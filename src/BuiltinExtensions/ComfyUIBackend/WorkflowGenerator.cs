@@ -815,7 +815,7 @@ public partial class WorkflowGenerator
                 }
             }
         }
-        else if (IsHiDreamO1())
+        else if (IsHiDreamO1() || IsSenseNovaU15())
         {
             List<JArray> refImages = [];
             int count = Math.Min(images.Count, 10);
