@@ -16,8 +16,8 @@ public static class LegacyPromptParser
         {
             return val;
         }
-        val = ConvertParenWeights(val);
         val = ConvertBracketSyntaxes(val);
+        val = ConvertParenWeights(val);
         return val;
     }
 
@@ -172,6 +172,7 @@ public static class LegacyPromptParser
         end = -1;
         converted = null;
         int nest = 0;
+        int parenNest = 0;
         List<int> colons = [];
         List<int> pipes = [];
         for (int i = start + 1; i < val.Length; i++)
@@ -204,11 +205,19 @@ public static class LegacyPromptParser
                 }
                 nest--;
             }
-            else if (val[i] == ':' && nest == 0 && pipes.Count == 0)
+            else if (val[i] == '(')
+            {
+                parenNest++;
+            }
+            else if (val[i] == ')' && parenNest > 0)
+            {
+                parenNest--;
+            }
+            else if (val[i] == ':' && nest == 0 && parenNest == 0 && pipes.Count == 0)
             {
                 colons.Add(i);
             }
-            else if (val[i] == '|' && nest == 0 && colons.Count == 0)
+            else if (val[i] == '|' && nest == 0 && parenNest == 0 && colons.Count == 0)
             {
                 pipes.Add(i);
             }
@@ -245,7 +254,7 @@ public static class LegacyPromptParser
             converted = val[start..(end + 1)];
             return true;
         }
-        converted = ConvertBracketSyntaxes(control);
+        converted = val[start..(end + 1)];
         return true;
     }
 
