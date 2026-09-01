@@ -680,7 +680,19 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                             Program.RequestRestart();
                         }
                     }
-                    throw new SwarmReadableErrorException($"ComfyUI execution error: {actualMessage}{note}");
+                    JObject errData = msg[1] as JObject;
+                    string context = "";
+                    if (errData.TryGetValue("node_id", out JToken nodeId) && !string.IsNullOrWhiteSpace($"{nodeId}"))
+                    {
+                        string nodeType = $"{errData["node_type"]}";
+                        context += string.IsNullOrWhiteSpace(nodeType) ? $" (Node {nodeId})" : $" (Node {nodeId}: {nodeType})";
+                    }
+                    T2IModel model = userInput.Get(T2IParamTypes.Model);
+                    if (model is not null)
+                    {
+                        context += $" (Model={model.Name})";
+                    }
+                    throw new SwarmReadableErrorException($"ComfyUI execution error{context}: {actualMessage}{note}");
                 }
             }
         }
