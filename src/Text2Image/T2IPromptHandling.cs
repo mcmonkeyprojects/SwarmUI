@@ -266,7 +266,7 @@ public class T2IPromptHandling
             {
                 rawVals[i] = context.Parse(rawVals[i]);
             }
-            return $"[{rawVals.Select(EscapeForTextHandler).JoinString("|")}]";
+            return $"<alternate:{JoinSmart(rawVals)}>";
         };
         PromptTagProcessors["alt"] = PromptTagProcessors["alternate"];
         PromptTagLengthEstimators["alternate"] = PromptTagLengthEstimators["random"];
@@ -289,7 +289,7 @@ public class T2IPromptHandling
             {
                 rawVals[i] = context.Parse(rawVals[i]);
             }
-            return $"[{rawVals.Select(EscapeForTextHandler).JoinString(":")}:{stepIndex}]";
+            return $"<fromto[{stepIndex:0.######}]:{JoinSmart(rawVals)}>";
         };
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
         PromptTagProcessors["weight"] = (data, context) =>
@@ -300,7 +300,7 @@ public class T2IPromptHandling
                 context.TrackWarning($"Weight input 'weight[{context.PreData}]:{data}' has invalid predata weight value (not a number) and will be ignored.");
                 return null;
             }
-            return $"<weight[{weightVal}]:{context.Parse(data)}>";
+            return $"<weight[{weightVal:0.######}]:{context.Parse(data)}>";
         };
         PromptTagLengthEstimators["weight"] = (data, context) =>
         {
@@ -794,6 +794,10 @@ public class T2IPromptHandling
         if (val is null)
         {
             return null;
+        }
+        if (context.Input?.SourceSession?.User?.Settings?.ParamParsing?.ParseAlternativePromptSyntaxes ?? true)
+        {
+            val = LegacyPromptParser.Convert(val);
         }
         string addBefore = "", addAfter = "";
         int baseSectionId = context.SectionID;

@@ -391,34 +391,49 @@ function textPromptAddKeydownHandler(elem) {
             mid = mid.substring(0, mid.length - 1);
             after = " " + after;
         }
-        if (mid.startsWith("(")) {
-            before += mid.substring(0, 1);
-            mid = mid.substring(1);
+        let weightPrefix = before.match(/<weight\[([0-9.-]*)\]:$/);
+        if (weightPrefix && after.startsWith('>')) {
+            before = before.substring(0, before.length - weightPrefix[0].length);
+            strength = parseFloat(weightPrefix[1]);
+            after = after.substring(1);
         }
-        // Sorry for the regex. Matches ends with ":1.5)" or just ")". Or Just ":1.5". Also forbids backslash prefix. Also empty, so that needs a check after.
-        let matched = mid.trim().match(/(?<![\\])(?:\:[0-9.-]*)?\)?$/);
-        if (matched && matched[0]) {
-            after = mid.substring(mid.length - matched[0].length) + after;
-            mid = mid.substring(0, mid.length - matched[0].length);
-        }
-        if (before.trimEnd().endsWith("(") && after.trimStart().startsWith(":")) {
-            let postColon = after.trimStart().substring(1);
-            let paren = postColon.indexOf(')');
-            while (paren > 0 && postColon.substring(paren - 1).startsWith('\\)')) {
-                paren = postColon.indexOf(')', paren + 1);
+        else {
+            let parsedWeight = mid.match(/^<weight\[([0-9.-]*)\]:(.*)>$/);
+            if (parsedWeight) {
+                strength = parseFloat(parsedWeight[1]);
+                mid = parsedWeight[2];
             }
-            if (paren != -1) {
-                before = before.trimEnd();
-                before = before.substring(0, before.length - 1);
-                strength = parseFloat(postColon.substring(0, paren).trim());
-                after = postColon.substring(paren + 1);
+            else {
+                if (mid.startsWith("(")) {
+                    before += mid.substring(0, 1);
+                    mid = mid.substring(1);
+                }
+                // Sorry for the regex. Matches ends with ":1.5)" or just ")". Or Just ":1.5". Also forbids backslash prefix. Also empty, so that needs a check after.
+                let matched = mid.trim().match(/(?<![\\])(?:\:[0-9.-]*)?\)?$/);
+                if (matched && matched[0]) {
+                    after = mid.substring(mid.length - matched[0].length) + after;
+                    mid = mid.substring(0, mid.length - matched[0].length);
+                }
+                if (before.trimEnd().endsWith("(") && after.trimStart().startsWith(":")) {
+                    let postColon = after.trimStart().substring(1);
+                    let paren = postColon.indexOf(')');
+                    while (paren > 0 && postColon.substring(paren - 1).startsWith('\\)')) {
+                        paren = postColon.indexOf(')', paren + 1);
+                    }
+                    if (paren != -1) {
+                        before = before.trimEnd();
+                        before = before.substring(0, before.length - 1);
+                        strength = parseFloat(postColon.substring(0, paren).trim());
+                        after = postColon.substring(paren + 1);
+                    }
+                }
+                else if (before.trimEnd().endsWith("(") && after.trimStart().startsWith(")")) {
+                    before = before.trimEnd();
+                    before = before.substring(0, before.length - 1);
+                    strength = 1.1;
+                    after = after.trimStart().substring(1);
+                }
             }
-        }
-        else if (before.trimEnd().endsWith("(") && after.trimStart().startsWith(")")) {
-            before = before.trimEnd();
-            before = before.substring(0, before.length - 1);
-            strength = 1.1;
-            after = after.trimStart().substring(1);
         }
         strength += up ? 0.1 : -0.1;
         strength = `${formatNumberClean(strength, 5)}`;
@@ -427,8 +442,9 @@ function textPromptAddKeydownHandler(elem) {
             setTextSelRange(elem, before.length, before.length + mid.length);
         }
         else {
-            setTextContent(elem, `${before}(${mid}:${strength})${after}`);
-            setTextSelRange(elem, before.length + 1, before.length + mid.length + 1);
+            let tagStart = `<weight[${strength}]:`;
+            setTextContent(elem, `${before}${tagStart}${mid}>${after}`);
+            setTextSelRange(elem, before.length + tagStart.length, before.length + tagStart.length + mid.length);
         }
         triggerChangeFor(elem);
     }

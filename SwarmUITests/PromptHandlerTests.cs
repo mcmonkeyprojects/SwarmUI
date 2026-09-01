@@ -56,5 +56,25 @@ public class PromptHandlerTests : SwarmUITest
         Assert.That(T2IPromptHandling.JoinSmart(["a, b, c", "d, e"]), Is.EqualTo("a, b, c|d, e"));
         Assert.That(T2IPromptHandling.JoinSmart(["a|b", "c"]), Is.EqualTo("a|b||c"));
     }
+
+    /// <summary>Tests <see cref="LegacyPromptParser.Convert(string)"/>.</summary>
+    [Test]
+    public static void TestLegacyParser()
+    {
+        Assert.That(LegacyPromptParser.Convert("a, b"), Is.EqualTo("a, b"));
+        Assert.That(LegacyPromptParser.Convert("<weight[1.5]:hello world!>"), Is.EqualTo("<weight[1.5]:hello world!>"));
+        Assert.That(LegacyPromptParser.Convert("(hello world!:1.5)"), Is.EqualTo("<weight[1.5]:hello world!>"));
+        Assert.That(LegacyPromptParser.Convert("(hello world!)"), Is.EqualTo("<weight[1.1]:hello world!>"));
+        Assert.That(LegacyPromptParser.Convert("((hello world!))"), Is.EqualTo("<weight[1.21]:hello world!>"));
+        Assert.That(LegacyPromptParser.Convert("(some (hello world!) text)"), Is.EqualTo("<weight[1.1]:some <weight[1.1]:hello world!> text>"));
+        Assert.That(LegacyPromptParser.Convert("[a|b]"), Is.EqualTo("<alternate:a,b>"));
+        Assert.That(LegacyPromptParser.Convert("[a|b|c|d]"), Is.EqualTo("<alternate:a,b,c,d>"));
+        Assert.That(LegacyPromptParser.Convert("[a|b|c|d,e]"), Is.EqualTo("<alternate:a|b|c|d,e>"));
+        Assert.That(LegacyPromptParser.Convert("[a:b:0.5]"), Is.EqualTo("<fromto[0.5]:a,b>"));
+        Assert.That(LegacyPromptParser.Convert("some (weighted:1.3) and [from:to:0.25] and [alter|nating] text"), Is.EqualTo("some <weight[1.3]:weighted> and <fromto[0.25]:from,to> and <alternate:alter,nating> text"));
+        Assert.That(LegacyPromptParser.Convert("(layers of [a|b] features:1.5)"), Is.EqualTo("<weight[1.5]:layers of <alternate:a,b> features>"));
+        Assert.That(LegacyPromptParser.Convert("(<weight[2]:layers of [a|b] features>:1.5)"), Is.EqualTo("<weight[1.5]:<weight[2]:layers of <alternate:a,b> features>>"));
+        Assert.That(LegacyPromptParser.Convert("(<weight[2]:layers of [some (weighted:3)|b] features>:1.5)"), Is.EqualTo("<weight[1.5]:<weight[2]:layers of <alternate:some <weight[3]:weighted>,b> features>>"));
+
     }
 }
