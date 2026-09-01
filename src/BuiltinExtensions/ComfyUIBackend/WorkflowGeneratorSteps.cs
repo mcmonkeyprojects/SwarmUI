@@ -1928,7 +1928,7 @@ public class WorkflowGeneratorSteps
             RunSegmentationProcessing(g, isBeforeRefiner: false);
         }, 5);
         #endregion
-        #region SaveImage
+        #region Segmentation
         AddStep(g =>
         {
             PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.ClearSegment)];
@@ -1968,72 +1968,37 @@ public class WorkflowGeneratorSteps
                 });
                 g.CurrentMedia = g.CurrentMedia.WithPath([joined, 0]);
             }
-            if (g.UserInput.Get(T2IParamTypes.RemoveBackground, false))
-            {
-                if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-                {
-                    g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: g.GetStableDynamicID(50000, 0));
-                }
-                string removed = g.CreateNode("SwarmRemBg", new JObject()
-                {
-                    ["images"] = g.CurrentMedia.Path
-                });
-                g.CurrentMedia = g.CurrentMedia.WithPath([removed, 0]);
-            }
+        }, 7);
+        #endregion
+        #region Save Image Before Video
+        AddStep(g =>
+        {
+            // TODO: Arguably this whole block could just be a SaveOptionalIntermediate before the Video Model run?
             if (g.UserInput.SourceSession is null && g.UserInput.Get(T2IParamTypes.DoNotSave, false) && g.UserInput.Get(T2IParamTypes.Steps) == 0 && !g.UserInput.TryGet(T2IParamTypes.RefinerModel, out _))
             {
                 // We don't actually want an image we're just aggressively loading a model or something
+                return;
             }
-            else
+            if (g.UserInput.Get(T2IParamTypes.JustLoadModel, false))
             {
-                bool willHaveFollowupVideo = g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
-                // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
-                bool formedFromSingleImage = g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _);
-                if (!willHaveFollowupVideo)
+                return;
+            }
+            // TODO: This is a weird hack.
+            bool willHaveFollowupVideo = g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
+            // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
+            bool formedFromSingleImage = g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _);
+            string nodeId = "9";
+            if (willHaveFollowupVideo)
+            {
+                nodeId = "30";
+                if (formedFromSingleImage)
                 {
-                    g.RunSeedVR2Stage();
+                    nodeId = null;
                 }
-                if (g.IsVideoModel() && !formedFromSingleImage && !willHaveFollowupVideo)
-                {
-                    if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
-                    {
-                        string trimNode = g.CreateNode("SwarmTrimFrames", new JObject()
-                        {
-                            ["image"] = g.CurrentMedia.Path,
-                            ["trim_start"] = g.UserInput.Get(T2IParamTypes.TrimVideoStartFrames, 0),
-                            ["trim_end"] = g.UserInput.Get(T2IParamTypes.TrimVideoEndFrames, 0)
-                        });
-                        g.CurrentMedia = g.CurrentMedia.WithPath([trimNode, 0]);
-                    }
-                    if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
-                        && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1
-                        && g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 99) > 1)
-                    {
-                        if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-                        {
-                            g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: g.GetStableDynamicID(50000, 0));
-                        }
-                        JArray newInterp = g.DoInterpolation(g.CurrentMedia.Path, method, mult);
-                        g.CurrentMedia = g.CurrentMedia.WithPath(newInterp);
-                        int fps = g.CurrentMedia.GetRawFPS() ?? g.Text2VideoFPS();
-                        fps *= mult;
-                        g.CurrentMedia.FPS = fps;
-                        g.T2VFPSOverride = fps;
-                    }
-                }
-                string nodeId = "9";
-                if (willHaveFollowupVideo)
-                {
-                    nodeId = "30";
-                    if (formedFromSingleImage)
-                    {
-                        nodeId = null;
-                    }
-                }
-                if (nodeId is not null)
-                {
-                    g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, nodeId);
-                }
+            }
+            if (nodeId is not null)
+            {
+                g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, nodeId);
             }
         }, 10);
         #endregion
@@ -2115,26 +2080,13 @@ public class WorkflowGeneratorSteps
                 g.CreateImageToVideo(genInfo);
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(genInfo.Vae);
                 bool hasExtend = prompt.Contains("<extend:");
-                if (!hasExtend)
-                {
-                    g.RunSeedVR2Stage(genInfo.Vae);
-                }
                 if (!hasExtend && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
-                    if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
-                    {
-                        g.CurrentMedia.SaveOutput(genInfo.Vae, g.CurrentAudioVae, g.GetStableDynamicID(50000, 0));
-                    }
+                    g.SaveOptionalIntermediate();
                     JArray interpolated = g.DoInterpolation(g.CurrentMedia.Path, method, mult);
                     g.CurrentMedia = g.CurrentMedia.WithPath(interpolated);
                     g.CurrentMedia.FPS = genInfo.VideoFPS.HasValue ? genInfo.VideoFPS.Value * mult : null;
                 }
-                string nodeId = "9";
-                if (hasExtend)
-                {
-                    nodeId = $"{g.GetStableDynamicID(50000, 0)}";
-                }
-                g.CurrentMedia.SaveOutput(genInfo.Vae, g.CurrentAudioVae, nodeId);
             }
         }, 11);
         #endregion
@@ -2172,6 +2124,7 @@ public class WorkflowGeneratorSteps
             string fullRawPrompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
             if (fullRawPrompt.Contains("<extend:"))
             {
+                g.SaveOptionalIntermediate();
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(g.CurrentVae);
                 string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 600;
@@ -2269,7 +2222,6 @@ public class WorkflowGeneratorSteps
                 }
                 g.CurrentMedia = conjoinedLast;
                 g.CurrentMedia.FPS = videoFps ?? g.CurrentMedia.FPS;
-                g.RunSeedVR2Stage(extendVae);
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (saveIntermediate)
@@ -2281,9 +2233,160 @@ public class WorkflowGeneratorSteps
                     videoFps *= mult;
                     g.CurrentMedia.FPS = videoFps;
                 }
-                g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, "9");
             }
         }, 12);
+        #endregion
+        #region SeedVR
+        AddStep(g =>
+        {
+            if (!g.UserInput.TryGet(ComfyUIBackendExtension.SeedVRModel, out T2IModel seedVrModel) || seedVrModel is null)
+            {
+                return;
+            }
+            WGNodeData vae = g.CurrentVae;
+            g.SaveOptionalIntermediate();
+            long seed = g.UserInput.Get(T2IParamTypes.Seed) + 500;
+            WGNodeData media = g.CurrentMedia;
+            double scale = g.UserInput.Get(ComfyUIBackendExtension.SeedVRUpscale, 1);
+            double downscale = g.UserInput.Get(ComfyUIBackendExtension.SeedVRPreDownscale, 1);
+            if (downscale <= 0)
+            {
+                throw new SwarmReadableErrorException($"Invalid SeedVR pre-downscale value {downscale}. Must be greater than 0.");
+            }
+            if (downscale < 1)
+            {
+                media = media.AsRawImage(vae);
+                int downWidth = (int)Math.Round((media.Width ?? g.UserInput.GetImageWidth()) * downscale);
+                int downHeight = (int)Math.Round((media.Height ?? g.UserInput.GetImageHeight()) * downscale);
+                string scaledDown = g.CreateNode("ImageScale", new JObject()
+                {
+                    ["image"] = media.Path,
+                    ["width"] = downWidth,
+                    ["height"] = downHeight,
+                    ["upscale_method"] = "bilinear",
+                    ["crop"] = "disabled"
+                });
+                media = media.WithPath([scaledDown, 0]);
+                media.Width = downWidth;
+                media.Height = downHeight;
+                scale /= downscale;
+            }
+            if (scale != 1)
+            {
+                // TODO: Should probably extract a shared upscale logic with the refiner rather than copy/pasted here
+                string method = g.UserInput.Get(ComfyUIBackendExtension.SeedVRUpscaleMethod, "pixel-lanczos");
+                int width = (((int)Math.Round((media.Width ?? g.UserInput.GetImageWidth()) * scale)) / 16) * 16;
+                int height = (((int)Math.Round((media.Height ?? g.UserInput.GetImageHeight()) * scale)) / 16) * 16;
+                if (method.StartsWith("latent-"))
+                {
+                    media = media.AsLatentImage(vae);
+                    string latentUpscaled = g.CreateNode("LatentUpscaleBy", new JObject()
+                    {
+                        ["samples"] = media.Path,
+                        ["upscale_method"] = method.After("latent-"),
+                        ["scale_by"] = scale
+                    });
+                    media = media.WithPath([latentUpscaled, 0]);
+                    media.Width = width;
+                    media.Height = height;
+                }
+                else
+                {
+                    media = media.AsRawImage(vae);
+                    if (method.StartsWith("pidmodel-"))
+                    {
+                        T2IModel pidModel = ComfyUIBackendExtension.GetPidModel(method.After("pidmodel-"), g.UserInput.SourceSession);
+                        media = g.CreatePixelDecode(pidModel, media, vae, seed);
+                    }
+                    else if (method.StartsWith("model-"))
+                    {
+                        string loaderNode = g.CreateNode("UpscaleModelLoader", new JObject()
+                        {
+                            ["model_name"] = method.After("model-")
+                        });
+                        string upscaledNode = g.CreateNode("ImageUpscaleWithModel", new JObject()
+                        {
+                            ["upscale_model"] = NodePath(loaderNode, 0),
+                            ["image"] = media.Path
+                        });
+                        media = media.WithPath([upscaledNode, 0]);
+                        media.Width = null; // the model's own scale factor is unknown here, so always correct after
+                        media.Height = null;
+                    }
+                    else if (method.StartsWith("pixel-"))
+                    {
+                        if (media.Width != width || media.Height != height)
+                        {
+                            string scaled = g.CreateNode("ImageScale", new JObject()
+                            {
+                                ["image"] = media.Path,
+                                ["width"] = width,
+                                ["height"] = height,
+                                ["upscale_method"] = method.StartsWith("pixel-") ? method.After("pixel-") : "lanczos",
+                                ["crop"] = "disabled"
+                            });
+                            media = media.WithPath([scaled, 0]);
+                            media.Width = width;
+                            media.Height = height;
+                        }
+                    }
+                    else
+                    {
+                        throw new SwarmReadableErrorException($"Unsupported upscale method '{method}' for SeedVR");
+                    }
+                }
+            }
+            g.CurrentMedia = g.CreateSeedVR2Restore(seedVrModel, media, vae, seed);
+        }, 40);
+        #endregion
+        #region Final Cleanups
+        AddStep(g =>
+        {
+            if (g.IsVideoModel())
+            {
+                if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
+                {
+                    string trimNode = g.CreateNode("SwarmTrimFrames", new JObject()
+                    {
+                        ["image"] = g.CurrentMedia.Path,
+                        ["trim_start"] = g.UserInput.Get(T2IParamTypes.TrimVideoStartFrames, 0),
+                        ["trim_end"] = g.UserInput.Get(T2IParamTypes.TrimVideoEndFrames, 0)
+                    });
+                    g.CurrentMedia = g.CurrentMedia.WithPath([trimNode, 0]);
+                }
+                if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
+                    && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1
+                    && g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 99) > 1)
+                {
+                    g.SaveOptionalIntermediate();
+                    JArray newInterp = g.DoInterpolation(g.CurrentMedia.Path, method, mult);
+                    g.CurrentMedia = g.CurrentMedia.WithPath(newInterp);
+                    int fps = g.CurrentMedia.GetRawFPS() ?? g.Text2VideoFPS();
+                    fps *= mult;
+                    g.CurrentMedia.FPS = fps;
+                    g.T2VFPSOverride = fps;
+                }
+            }
+            if (g.UserInput.Get(T2IParamTypes.RemoveBackground, false))
+            {
+                g.SaveOptionalIntermediate();
+                string removed = g.CreateNode("SwarmRemBg", new JObject()
+                {
+                    ["images"] = g.CurrentMedia.Path
+                });
+                g.CurrentMedia = g.CurrentMedia.WithPath([removed, 0]);
+            }
+        }, 50);
+        #endregion
+        #region True Final Save
+        AddStep(g =>
+        {
+            if (g.UserInput.Get(T2IParamTypes.JustLoadModel, false))
+            {
+                return;
+            }
+            g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, "9");
+        }, 100);
         #endregion
         #region Post-Cleanup
         AddStep(g =>
