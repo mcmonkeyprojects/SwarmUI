@@ -16,6 +16,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('fromto[0.5]', 'Have the prompt change after a given timestep.', (prefix) => {
             return ['\nSpecify in the brackets a timestep like 10 (for step 10) or 0.5 (for halfway through).', '\nIn the data area specify the before and the after separate by "," or "|".', '\nFor example, "<fromto[10]:cat,dog>" switches from "cat" to "dog" at step 10.'];
         });
+        this.registerPrefix('weight[1.5]', 'Change how strongly the model attends to a section of the prompt.', (prefix) => {
+            return ['\nUse like "<weight[1.5]:some text>" to apply a weight of 1.5 to "some text".', '\nValues above 1 are more important, values below 1 (eg 0.5) are less important.', '\nSome text encoders such as CLIP natively support weighting. Others it is hacked-in with conditioning multiplication (this may have side effects!).', '\nYou can also hold Control and press the up/down arrow keys to change the weight of selected text.'];
+        });
         this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             let colonInd = prefixLow.indexOf(':');

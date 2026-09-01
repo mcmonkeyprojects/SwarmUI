@@ -476,6 +476,9 @@ public class Settings : AutoConfiguration
         {
             [ConfigComment("Whether LoRAs can be added to a generation multiple times.\nIf false, the firstmost usage of a LoRA will be kept and others will be discarded.")]
             public bool AllowLoraStacking = true;
+
+            [ConfigComment("If enabled, Comfy and some Auto1111 prompt syntaxes such as (word:1.5), [a|b], and [from:to:when] are auto-converted to Swarm tags (<weight[1.5]:word>, <alternate:a, b>, <fromto[when]:from, to>).\nIf disabled, only Swarm <tag:value> syntax is parsed.")]
+            public bool ParseAlternativePromptSyntaxes = true;
         }
 
         [ConfigComment("Settings related to the parsing of generation parameters.")]

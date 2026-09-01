@@ -292,6 +292,20 @@ public class T2IPromptHandling
             return $"[{rawVals.Select(EscapeForTextHandler).JoinString(":")}:{stepIndex}]";
         };
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
+        PromptTagProcessors["weight"] = (data, context) =>
+        {
+            double? weightVal = InterpretNumber(context.PreData, context);
+            if (!weightVal.HasValue)
+            {
+                context.TrackWarning($"Weight input 'weight[{context.PreData}]:{data}' has invalid predata weight value (not a number) and will be ignored.");
+                return null;
+            }
+            return $"<weight[{weightVal}]:{context.Parse(data)}>";
+        };
+        PromptTagLengthEstimators["weight"] = (data, context) =>
+        {
+            return ProcessPromptLikeForLength(data);
+        };
         PromptTagProcessors["wildcard"] = (data, context) =>
         {
             data = context.Parse(data);

@@ -4,12 +4,11 @@
 
 ![img](/docs/images/prompt-weight.jpg)
 
-- Prompt weighting, eg `an (orange) cat` or `an (orange:1.5) cat`. Anything in `(parens)` has its weighting modified - meaning, the model will pay more attention to that part of the prompt. Values above `1` are more important, values below `1` (eg `0.5`) are less important.
+- Prompt weighting, eg `an <weight[1.1]:orange> cat` or `an <weight[1.5]:orange> cat`. The model will pay more or less attention to that part of the prompt. Values above `1` are more important, values below `1` (eg `0.5`) are less important.
     - You can also hold Control and press the up/down arrow keys to change the weight of selected text.
     - Note: this presumes a default Comfy backend.
-    - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, but newer models based on T5 or an LLM TextEnc do not.
-        - Basically, SDXL and SD3 are the last models this was properly relevant to.
-        - For other models, the syntax is non-present. Parentheses will not be parsed at all, and instead simply forwarded directly to the model.
+    - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, models based on T5 do not work very well, newer models based on LLM TextEncs will instead treat weighting as a direct multiplication on the conditioning which can have highly variable results depending on the specific model itself.
+    - Comfy/Auto1111 syntax such as `(orange:1.5)` is parsed if the default-on **Parse Alternative Prompt Syntaxes** is enabled in User Settings.
 
 ## Alternating
 
@@ -18,6 +17,7 @@
 - You can use `<alternate:cat, dog>` to alternate every step between `cat` and `dog`, creating a merge/mixture of the two concepts.
     - Similar to `random` you can instead use `|` or `||` to separate entries, eg `<alternate:cat || dog>`. You can have as many unique words as you want, eg `<alternate:cat, dog, horse, wolf, taco>` has 5 words so it will cycle through them every 5 steps.
     - You can shorthand this as `<alt:cat,dog>`
+    - Auto1111 syntax like `[cat|dog]` is parsed if the default-on **Parse Alternative Prompt Syntaxes** is enabled in User Settings.
 
 ## From-To
 
@@ -27,6 +27,7 @@
     - The timestep can be like `10` for step 10, or like `0.5` for halfway-through.
     - Similar to `random` you can instead use `|` or `||` to separate entries. Must have exactly two entries.
     - For example, `<fromto[0.5]:cat, dog>` swaps from `cat` to `dog` halfway through a generation.
+    - Auto1111 syntax like `[cat:dog:0.5]` is parsed if the default-on **Parse Alternative Prompt Syntaxes** is enabled in User Settings.
 
 ## Random
 
