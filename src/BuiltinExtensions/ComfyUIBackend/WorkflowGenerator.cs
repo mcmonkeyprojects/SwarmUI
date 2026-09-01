@@ -894,7 +894,7 @@ public partial class WorkflowGenerator
         {
             (_, negativeModel, _, _) = CreateModelLoader(negModel, "negative", sectionId: sectionId);
         }
-        if (IsKrea2())
+        if (IsKrea2() && UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
         {
             string attnWeights = CreateNode("SwarmAttnTokenWeights", new JObject()
             {

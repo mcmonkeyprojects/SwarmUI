@@ -241,6 +241,19 @@ def stamp_token_weight(tokens, weight):
     return out
 
 
+def multiply_cond_by_token_weights(cond_arr, tokens):
+    applied = False
+    for entry in cond_arr:
+        pairs = token_weights_from_tokens(tokens, entry[0].shape[1])
+        if not pairs:
+            continue
+        tensor = entry[0]
+        for pos, w in pairs:
+            tensor[:, pos] = tensor[:, pos] * w
+        applied = True
+    return applied
+
+
 def token_weights_from_tokens(tokens, cond_len):
     batch = tokens[next(iter(tokens))][0] if isinstance(tokens, dict) else tokens[0]
     visible_start = len(batch) - cond_len
@@ -256,9 +269,10 @@ def token_weights_from_tokens(tokens, cond_len):
 def attn1_token_weight_patch(q, k, v, extra_options=None, pe=None, attn_mask=None, **kwargs):
     extra_options = extra_options or {}
     weights = extra_options.get("attn_token_weights")
-    if not weights:
-        return {"q": q, "k": k, "v": v, "pe": pe, "attn_mask": attn_mask}
+    img_slice = extra_options.get("img_slice")
     seq = v.shape[2]
+    if not weights or img_slice is None or len(img_slice) < 2 or seq != img_slice[1]:
+        return {"q": q, "k": k, "v": v, "pe": pe, "attn_mask": attn_mask}
     batch = v.shape[0]
     cu = extra_options.get("cond_or_uncond")
     if cu is None:
@@ -429,8 +443,6 @@ def combine_leaves(clip, leaves, tokenize_fn, per_leaf=False):
             apply = token_batches_have_weights(wp)
         if apply:
             applied = True
-        elif per_leaf and want_weight:
-            applied = True
         groups = [g for g in (calc_leaf(sd, leaf, apply) for leaf in leaves) if g]
         clip_empty = empty_map[key]
         if len(flatten_content(sd, clip_empty)) > len(flatten_content(sd, sd.tokenize_with_weights(""))) + 4:
@@ -528,21 +540,31 @@ class SwarmTextEncodeAdvanced:
                 return clip.tokenize(text, **extra)
 
         def encode_leaves(leaves):
-            want_attn_weights = use_attn_token_weights and any(leaf.weight != 1.0 for leaf in leaves)
-            tokens, weights_applied = combine_leaves(clip, leaves, tokenize, per_leaf=want_attn_weights)
             w = uniform_weight(leaves)
-            if not want_attn_weights and not weights_applied and w is not None and w != 1.0:
+            want_weight = any(leaf.weight != 1.0 for leaf in leaves)
+            per_leaf = use_attn_token_weights and want_weight
+            tokens, weights_applied = combine_leaves(clip, leaves, tokenize, per_leaf=per_leaf)
+            if not use_attn_token_weights and not weights_applied and w is not None and w != 1.0:
                 tokens = stamp_token_weight(tokens, w)
                 weights_applied = True
             cond_arr = clip.encode_from_tokens_scheduled(tokens)
-            if want_attn_weights:
+            if per_leaf and not weights_applied:
+                if multiply_cond_by_token_weights(cond_arr, tokens):
+                    weights_applied = True
+            if use_attn_token_weights and w is None and want_weight:
                 pairs = token_weights_from_tokens(tokens, cond_arr[0][0].shape[1])
                 if pairs:
                     cond_arr[0][1]["attn_token_weights"] = pairs
                     weights_applied = True
             if not weights_applied and w is not None and w != 1.0:
-                for entry in cond_arr:
-                    entry[0] = entry[0] * w
+                scaled = []
+                for t in cond_arr:
+                    values = {}
+                    pooled_output = t[1].get("pooled_output", None)
+                    if pooled_output is not None:
+                        values["pooled_output"] = pooled_output * w
+                    scaled.append(node_helpers.conditioning_set_values([[t[0] * w, t[1]]], values)[0])
+                cond_arr = scaled
             return cond_arr
 
         encoding_cache = {}

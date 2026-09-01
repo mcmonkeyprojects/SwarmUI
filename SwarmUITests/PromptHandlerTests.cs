@@ -75,6 +75,8 @@ public class PromptHandlerTests : SwarmUITest
         Assert.That(LegacyPromptParser.Convert("(layers of [a|b] features:1.5)"), Is.EqualTo("<weight[1.5]:layers of <alternate:a,b> features>"));
         Assert.That(LegacyPromptParser.Convert("(<weight[2]:layers of [a|b] features>:1.5)"), Is.EqualTo("<weight[1.5]:<weight[2]:layers of <alternate:a,b> features>>"));
         Assert.That(LegacyPromptParser.Convert("(<weight[2]:layers of [some (weighted:3)|b] features>:1.5)"), Is.EqualTo("<weight[1.5]:<weight[2]:layers of <alternate:some <weight[3]:weighted>,b> features>>"));
-
+        Assert.That(LegacyPromptParser.Convert("\\(hello world!:1.5\\)"), Is.EqualTo("(hello world!:1.5)"));
+        Assert.That(LegacyPromptParser.Convert("\\(hello (world:2)!:1.5\\)"), Is.EqualTo("(hello <weight[2]:world>!:1.5)"));
+        Assert.That(LegacyPromptParser.Convert("\\(hello (world \\(and all who inhabit it\\):2)!:1.5\\)"), Is.EqualTo("(hello <weight[2]:world (and all who inhabit it)>!:1.5)"));
     }
 }
