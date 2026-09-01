@@ -206,6 +206,8 @@ def join_text(leaves, weighted):
 def token_batches_have_weights(batches):
     if not batches:
         return False
+    if isinstance(batches, dict):
+        return any(token_batches_have_weights(v) for v in batches.values())
     for batch in batches:
         for item in batch:
             if isinstance(item, (list, tuple)) and len(item) > 1 and item[1] != 1.0:
@@ -499,7 +501,6 @@ class SwarmTextEncodeAdvanced:
         append_images = False
         prepend_images = False
         fix_images = True
-        use_attn_token_weights = llama_template == "krea2"
         if llama_template == "hunyuan_image":
             llama_template = PROMPT_TEMPLATE_ENCODE_VIDEO_I2V
             fix_images = False
@@ -538,6 +539,8 @@ class SwarmTextEncodeAdvanced:
                 return clip.tokenize(text, llama_template=llama_template if llama_template else None, images=images, **extra)
             else:
                 return clip.tokenize(text, **extra)
+
+        use_attn_token_weights = not token_batches_have_weights(tokenize("(x:2)"))
 
         def encode_leaves(leaves):
             w = uniform_weight(leaves)
