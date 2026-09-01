@@ -894,6 +894,15 @@ public partial class WorkflowGenerator
         {
             (_, negativeModel, _, _) = CreateModelLoader(negModel, "negative", sectionId: sectionId);
         }
+        if (IsKrea2())
+        {
+            string attnWeights = CreateNode("SwarmAttnTokenWeights", new JObject()
+            {
+                ["model"] = model,
+                ["conditioning"] = pos
+            });
+            model = [attnWeights, 0];
+        }
         if (IsVideoModel())
         {
             previews ??= UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");

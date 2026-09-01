@@ -7,7 +7,7 @@
 - Prompt weighting, eg `an <weight[1.1]:orange> cat` or `an <weight[1.5]:orange> cat`. The model will pay more or less attention to that part of the prompt. Values above `1` are more important, values below `1` (eg `0.5`) are less important.
     - You can also hold Control and press the up/down arrow keys to change the weight of selected text.
     - Note: this presumes a default Comfy backend.
-    - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, models based on T5 do not work very well, newer models based on LLM TextEncs will instead treat weighting as a direct multiplication on the conditioning which can have highly variable results depending on the specific model itself.
+    - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, models based on T5 do not work very well, newer models based on LLM TextEncs will instead treat weighting as a direct multiplication on the conditioning which can have highly variable results depending on the specific model itself, many models will do nothing. Some models (eg Krea 2) have dedicated model-specific hacks.
     - Comfy/Auto1111 syntax such as `(orange:1.5)` is parsed if the default-on **Parse Alternative Prompt Syntaxes** is enabled in User Settings.
 
 ## Alternating

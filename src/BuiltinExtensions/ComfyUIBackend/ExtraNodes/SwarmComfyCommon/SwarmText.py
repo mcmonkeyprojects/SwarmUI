@@ -241,6 +241,49 @@ def stamp_token_weight(tokens, weight):
     return out
 
 
+def token_weights_from_tokens(tokens, cond_len):
+    batch = tokens[next(iter(tokens))][0] if isinstance(tokens, dict) else tokens[0]
+    visible_start = len(batch) - cond_len
+    pairs = []
+    for i in range(cond_len):
+        item = batch[visible_start + i]
+        w = item[1] if isinstance(item, (list, tuple)) and len(item) > 1 else 1.0
+        if w != 1.0:
+            pairs.append((int(i), float(w)))
+    return pairs
+
+
+def attn1_token_weight_patch(q, k, v, extra_options=None, pe=None, attn_mask=None, **kwargs):
+    extra_options = extra_options or {}
+    weights = extra_options.get("attn_token_weights")
+    if not weights:
+        return {"q": q, "k": k, "v": v, "pe": pe, "attn_mask": attn_mask}
+    seq = v.shape[2]
+    batch = v.shape[0]
+    cu = extra_options.get("cond_or_uncond")
+    if cu is None:
+        slots = list(range(batch))
+    else:
+        n = max(batch // len(cu), 1)
+        slots = []
+        for i, flag in enumerate(cu):
+            if flag == 0:
+                slots.extend(range(i * n, min((i + 1) * n, batch)))
+    v = v.clone()
+    for pos, w in weights:
+        if w < 1.0 and pos < seq:
+            for b in slots:
+                v[b, :, pos] = v[b, :, pos] * w
+    if any(w > 1.0 for _, w in weights):
+        bias = q.new_zeros(batch, 1, 1, k.shape[2])
+        for pos, w in weights:
+            if w > 1.0 and pos < k.shape[2]:
+                for b in slots:
+                    bias[b, 0, 0, pos] = (w - 1.0) * 2.0
+        attn_mask = bias
+    return {"q": q, "k": k, "v": v, "pe": pe, "attn_mask": attn_mask}
+
+
 def tokenizer_for_key(root, key):
     if hasattr(root, '_try_get_embedding'):
         return root
@@ -332,7 +375,7 @@ def pack_batches(sd, groups):
 def calc_leaf(sd, leaf, apply_weights):
     if leaf.embed is not None:
         embed, _, _ = sd._try_get_embedding(leaf.embed)
-        return embed_token_items(embed, leaf.weight if apply_weights else 1.0)
+        return embed_token_items(embed, leaf.weight)
     if not leaf.text:
         return []
     prompt = leaf.text
@@ -343,7 +386,10 @@ def calc_leaf(sd, leaf, apply_weights):
             prompt = f"({escaped}:{leaf.weight})"
     else:
         extra["disable_weights"] = True
-    return flatten_content(sd, sd.tokenize_with_weights(prompt, **extra))
+    items = flatten_content(sd, sd.tokenize_with_weights(prompt, **extra))
+    if not apply_weights and leaf.weight != 1.0:
+        return [(t, leaf.weight) for t, _ in items]
+    return items
 
 
 def wrap_in_shell(empty_batches, probe_batches, content):
@@ -356,10 +402,10 @@ def wrap_in_shell(empty_batches, probe_batches, content):
     return [empty[:idx] + content + empty[idx:]]
 
 
-def combine_leaves(clip, leaves, tokenize_fn):
+def combine_leaves(clip, leaves, tokenize_fn, per_leaf=False):
     want_weight = any(leaf.weight != 1.0 for leaf in leaves)
     has_embed = any(leaf.embed is not None for leaf in leaves)
-    if not has_embed:
+    if not has_embed and not per_leaf:
         tokens = tokenize_fn(join_text(leaves, False))
         applied = False
         if want_weight:
@@ -382,6 +428,8 @@ def combine_leaves(clip, leaves, tokenize_fn):
             wp = weight_probe[key] if isinstance(weight_probe, dict) else weight_probe
             apply = token_batches_have_weights(wp)
         if apply:
+            applied = True
+        elif per_leaf and want_weight:
             applied = True
         groups = [g for g in (calc_leaf(sd, leaf, apply) for leaf in leaves) if g]
         clip_empty = empty_map[key]
@@ -439,6 +487,7 @@ class SwarmTextEncodeAdvanced:
         append_images = False
         prepend_images = False
         fix_images = True
+        use_attn_token_weights = llama_template == "krea2"
         if llama_template == "hunyuan_image":
             llama_template = PROMPT_TEMPLATE_ENCODE_VIDEO_I2V
             fix_images = False
@@ -479,12 +528,18 @@ class SwarmTextEncodeAdvanced:
                 return clip.tokenize(text, **extra)
 
         def encode_leaves(leaves):
-            tokens, weights_applied = combine_leaves(clip, leaves, tokenize)
+            want_attn_weights = use_attn_token_weights and any(leaf.weight != 1.0 for leaf in leaves)
+            tokens, weights_applied = combine_leaves(clip, leaves, tokenize, per_leaf=want_attn_weights)
             w = uniform_weight(leaves)
-            if not weights_applied and w is not None and w != 1.0:
+            if not want_attn_weights and not weights_applied and w is not None and w != 1.0:
                 tokens = stamp_token_weight(tokens, w)
                 weights_applied = True
             cond_arr = clip.encode_from_tokens_scheduled(tokens)
+            if want_attn_weights:
+                pairs = token_weights_from_tokens(tokens, cond_arr[0][0].shape[1])
+                if pairs:
+                    cond_arr[0][1]["attn_token_weights"] = pairs
+                    weights_applied = True
             if not weights_applied and w is not None and w != 1.0:
                 for entry in cond_arr:
                     entry[0] = entry[0] * w
@@ -541,6 +596,36 @@ class SwarmTextEncodeAdvanced:
         return (conds_out, )
 
 
+class SwarmAttnTokenWeights:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "conditioning": ("CONDITIONING",),
+            }
+        }
+
+    CATEGORY = "SwarmUI/clip"
+    RETURN_TYPES = ("MODEL",)
+    FUNCTION = "patch"
+    DESCRIPTION = "Applies per-token prompt weights through Comfy's attn1_patch (value scale / attention bias) instead of replacing attention.forward."
+
+    def patch(self, model, conditioning):
+        pairs = None
+        if conditioning and conditioning[0][1]:
+            pairs = conditioning[0][1].get("attn_token_weights")
+        if not pairs:
+            return (model,)
+        model_clone = model.clone()
+        transformer_options = model_clone.model_options.get("transformer_options", {}).copy()
+        transformer_options["attn_token_weights"] = pairs
+        model_clone.model_options["transformer_options"] = transformer_options
+        model_clone.set_model_attn1_patch(attn1_token_weight_patch)
+        return (model_clone,)
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmTextEncodeAdvanced": SwarmTextEncodeAdvanced,
+    "SwarmAttnTokenWeights": SwarmAttnTokenWeights,
 }
