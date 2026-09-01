@@ -78,5 +78,10 @@ public class PromptHandlerTests : SwarmUITest
         Assert.That(LegacyPromptParser.Convert("\\(hello world!:1.5\\)"), Is.EqualTo("(hello world!:1.5)"));
         Assert.That(LegacyPromptParser.Convert("\\(hello (world:2)!:1.5\\)"), Is.EqualTo("(hello <weight[2]:world>!:1.5)"));
         Assert.That(LegacyPromptParser.Convert("\\(hello (world \\(and all who inhabit it\\):2)!:1.5\\)"), Is.EqualTo("(hello <weight[2]:world (and all who inhabit it)>!:1.5)"));
+        Assert.That(LegacyPromptParser.Convert("(some \\) paren text)"), Is.EqualTo("<weight[1.1]:some ) paren text>"));
+        Assert.That(LegacyPromptParser.Convert("[ab]"), Is.EqualTo("[ab]"));
+        Assert.That(LegacyPromptParser.Convert("[a,b]"), Is.EqualTo("[a,b]"));
+        Assert.That(LegacyPromptParser.Convert("[a:b:c]"), Is.EqualTo("[a:b:c]"));
+        Assert.That(LegacyPromptParser.Convert("(some:text)"), Is.EqualTo("<weight[1.1]:some:text>"));
     }
 }

@@ -245,7 +245,7 @@ public static class LegacyPromptParser
             converted = val[start..(end + 1)];
             return true;
         }
-        converted = ConvertBracketSyntaxes(control);
+        converted = $"[{ConvertBracketSyntaxes(control)}]";
         return true;
     }
 
