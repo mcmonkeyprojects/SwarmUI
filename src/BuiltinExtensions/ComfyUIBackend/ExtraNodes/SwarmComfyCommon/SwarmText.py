@@ -258,13 +258,13 @@ def multiply_cond_by_token_weights(cond_arr, tokens):
 
 def token_weights_from_tokens(tokens, cond_len):
     batch = tokens[next(iter(tokens))][0] if isinstance(tokens, dict) else tokens[0]
-    visible_start = len(batch) - cond_len
+    offset = cond_len - len(batch)
     pairs = []
-    for i in range(cond_len):
-        item = batch[visible_start + i]
+    for i, item in enumerate(batch):
         w = item[1] if isinstance(item, (list, tuple)) and len(item) > 1 else 1.0
-        if w != 1.0:
-            pairs.append((int(i), float(w)))
+        pos = offset + i
+        if w != 1.0 and 0 <= pos < cond_len:
+            pairs.append((int(pos), float(w)))
     return pairs
 
 
@@ -550,7 +550,7 @@ class SwarmTextEncodeAdvanced:
             if not use_attn_token_weights and not weights_applied and w is not None and w != 1.0:
                 tokens = stamp_token_weight(tokens, w)
                 weights_applied = True
-            cond_arr = clip.encode_from_tokens_scheduled(tokens)
+            cond_arr = clip.encode_from_tokens_scheduled(stamp_token_weight(tokens, 1.0) if per_leaf and not weights_applied else tokens)
             if per_leaf and not weights_applied:
                 if multiply_cond_by_token_weights(cond_arr, tokens):
                     weights_applied = True
