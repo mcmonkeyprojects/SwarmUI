@@ -89,6 +89,7 @@ public class T2IModelClassSorter
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", VaeFamily = VaeQwenImage }),
         CompatHiDreamO1 = RegisterCompat(new() { ID = "hidream-o1", ShortCode = "HiDrO1", LorasTargetTextEnc = false }),
+        CompatSenseNovaU15 = RegisterCompat(new() { ID = "sensenova-u1.5", ShortCode = "SNU15", LorasTargetTextEnc = false }),
         CompatLens = RegisterCompat(new() { ID = "lens", ShortCode = "Lens", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatPiD = RegisterCompat(new() { ID = "pid", ShortCode = "PiD", LorasTargetTextEnc = false }),
         CompatPixelDiT = RegisterCompat(new() { ID = "pixeldit", ShortCode = "PixDiT", LorasTargetTextEnc = false }),
@@ -246,6 +247,7 @@ public class T2IModelClassSorter
         bool isHiDreamLora(JObject h) => hasKey(h, "double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
         bool isHiDreamO1(JObject h) => (h.ContainsKey("model.t_embedder1.mlp.0.weight") && h.ContainsKey("model.t_embedder1.mlp.0.bias"));
         bool isHiDreamO1Lora(JObject h) => hasLoraKey(h, "final_layer2.linear") && hasLoraKey(h, "language_model.layers.0.self_attn.q_proj");
+        bool isSenseNovaU15(JObject h) => tryGetKey(h, "fm_modules.vision_model_mot_gen.embeddings.patch_embedding.weight", out JToken visionTok) && visionTok["shape"].ToArray()[0].Value<long>() == 1024 && tryGetKey(h, "language_model.model.layers.0.self_attn.q_proj_mot_gen.weight", out JToken queryTok) && queryTok["shape"].ToArray()[0].Value<long>() == 4096;
         bool isChroma(JObject h) => hasKey(h, "distilled_guidance_layer.in_proj.bias") && hasKey(h, "double_blocks.0.img_attn.proj.bias");
         bool isChromaRadiance(JObject h) => hasKey(h, "nerf_image_embedder.embedder.0.bias");
         bool isPiD(JObject h) => h.ContainsKey("net.lq_proj.latent_proj.0.weight") && h.ContainsKey("net.pixel_blocks.0.attn.q_norm.weight") && h.ContainsKey("net.pixel_blocks.0.compress_to_attn.weight");
@@ -857,6 +859,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "hidream-o1", CompatClass = CompatHiDreamO1, Name = "HiDream O1 Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return isHiDreamO1(h);
+        }});
+        Register(new() { ID = "sensenova-u1.5", CompatClass = CompatSenseNovaU15, Name = "SenseNova U1.5", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isSenseNovaU15(h);
         }});
         Register(new() { ID = "hidream-o1/lora", CompatClass = CompatHiDreamO1, Name = "HiDream O1 LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
