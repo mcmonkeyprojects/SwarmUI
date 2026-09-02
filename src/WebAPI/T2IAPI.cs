@@ -727,13 +727,14 @@ public static class T2IAPI
 
     public enum ImageHistorySortMode { Name, Date }
 
-    private static JObject GetListAPIInternal(Session session, string rawPath, string root, HashSet<string> extensions, Func<string, bool> isAllowed, int depth, ImageHistorySortMode sortBy, bool sortReverse)
+    private static JObject GetListAPIInternal(Session session, string rawPath, string root, HashSet<string> extensions, Func<string, bool> isAllowed, int depth, ImageHistorySortMode sortBy, bool sortReverse, string filter = null)
     {
         int maxInHistory = session.User.Settings.MaxImagesInHistory;
         int maxScanned = session.User.Settings.MaxImagesScannedInHistory;
-        Logs.Verbose($"User {session.User.UserID} wants to list images in '{rawPath}', maxDepth={depth}, sortBy={sortBy}, reverse={sortReverse}, maxInHistory={maxInHistory}, maxScanned={maxScanned}");
+        bool hasFilter = !string.IsNullOrWhiteSpace(filter);
+        Logs.Verbose($"User {session.User.UserID} wants to list images in '{rawPath}', maxDepth={depth}, sortBy={sortBy}, reverse={sortReverse}, maxInHistory={maxInHistory}, maxScanned={maxScanned}, filter={(hasFilter ? filter : "none")}");
         long timeStart = Environment.TickCount64;
-        int limit = sortBy == ImageHistorySortMode.Name ? maxInHistory : Math.Max(maxInHistory, maxScanned);
+        int limit = sortBy == ImageHistorySortMode.Name && !hasFilter ? maxInHistory : Math.Max(maxInHistory, maxScanned);
         (string path, string consoleError, string userError) = WebServer.CheckFilePath(root, rawPath);
         path = UserImageHistoryHelper.GetRealPathFor(session.User, path, root: root);
         if (consoleError is not null)
@@ -846,6 +847,10 @@ public static class T2IAPI
                 IEnumerable<string> newFileNames = subFiles.Select(f => f.Replace('\\', '/')).Where(isAllowed).Where(f => !f.AfterLast('/').StartsWithFast('.') && extensions.Contains(f.AfterLast('.')) && !f.EndsWith(".swarmpreview.jpg") && !f.EndsWith(".swarmpreview.webp"));
                 List<ImageHistoryHelper> localFiles = [.. newFileNames.Select(f => new ImageHistoryHelper(prefix + f.AfterLast('/'), OutputMetadataTracker.GetMetadataFor(f, root, starNoFolders))).Where(f => f.Metadata is not null)];
                 int leftOver = Interlocked.Add(ref remaining, -localFiles.Count);
+                if (hasFilter)
+                {
+                    localFiles = [.. localFiles.Where(f => ImageHistoryMatchesFilter(f, filter))];
+                }
                 sortList(localFiles);
                 filesConc.TryAdd(localId, localFiles);
                 if (leftOver <= 0)
@@ -892,6 +897,58 @@ public static class T2IAPI
 
     public record struct ImageHistoryHelper(string Name, OutputMetadataTracker.OutputMetadataEntry Metadata);
 
+    /// <summary>True if the image name or metadata contains the filter text (case-insensitive).</summary>
+    private static bool ImageHistoryMatchesFilter(ImageHistoryHelper file, string filter)
+    {
+        if (file.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        string meta = file.Metadata?.Metadata;
+        if (string.IsNullOrEmpty(meta))
+        {
+            return false;
+        }
+        if (meta.Contains(filter, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        if (!meta.StartsWithFast('{'))
+        {
+            return false;
+        }
+        try
+        {
+            Dictionary<string, object> parms = ImageFile.GetSUIMetadata(meta)?.ToBasicObject();
+            if (parms is null)
+            {
+                return false;
+            }
+            foreach ((string key, object val) in parms)
+            {
+                if (val is List<object> list)
+                {
+                    foreach (object entry in list)
+                    {
+                        if ($"{key}: {entry}".Contains(filter, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else if ($"{key}: {val}".Contains(filter, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+        return false;
+    }
+
     [API.APIDescription("Gets a list of images in a saved image history folder.",
         """
             "folders": ["Folder1", "Folder2"],
@@ -907,14 +964,15 @@ public static class T2IAPI
         [API.APIParameter("The folder path to start the listing in. Use an empty string for root.")] string path,
         [API.APIParameter("Maximum depth (number of recursive folders) to search.")] int depth,
         [API.APIParameter("What to sort the list by - `Name` or `Date`.")] string sortBy = "Name",
-        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false)
+        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false,
+        [API.APIParameter("Optional case-insensitive text filter. When set, scans up to MaxImagesScannedInHistory and returns matching files.")] string filter = null)
     {
         if (!Enum.TryParse(sortBy, true, out ImageHistorySortMode sortMode))
         {
             return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
         }
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        return GetListAPIInternal(session, path, root, HistoryExtensions, f => true, depth, sortMode, sortReverse);
+        return GetListAPIInternal(session, path, root, HistoryExtensions, f => true, depth, sortMode, sortReverse, filter);
     }
 
     [API.APIDescription("Open an image folder in the file explorer. Used for local users directly.", "\"success\": true")]

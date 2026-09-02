@@ -588,8 +588,11 @@ public class Settings : AutoConfiguration
         [ConfigComment("How many images the history view should stop trying to load after.")]
         public int MaxImagesInHistory = 1000;
 
-        [ConfigComment("How many images the history view should scan server-side before deciding the list is sufficient for sorting. Not relevant when sorting by filename.")]
+        [ConfigComment("How many images the history view should scan server-side before deciding the list is sufficient for sorting or filtering.")]
         public int MaxImagesScannedInHistory = 10000;
+
+        [ConfigComment("If true, Image History text filter will query the server (up to MaxImagesScannedInHistory) to find more results.\nIf false, only images already loaded in the browser are filtered.")]
+        public bool ImageHistoryServerFilter = true;
 
         [ConfigComment("If true, the Image History view will cache small preview thumbnails of images.\nThis should make things run faster. You can turn it off if you don't want that.")]
         public bool ImageHistoryUsePreviews = true;
