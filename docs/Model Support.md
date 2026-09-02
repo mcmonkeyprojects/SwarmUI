@@ -43,7 +43,7 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 [MageFlow](/docs/Obscure%20Model%20Support.md#mageflow) | MMDiT | 2026 | Microsoft | 4B | No | Very bad quality compared to contemporary models |
 [ERNIE](/docs/Obscure%20Model%20Support.md#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
 [Lens](/docs/Obscure%20Model%20Support.md#lens) | MMDiT | 2026 | Microsoft | 4B | Minimal | Modern, lightweight, eh quality |
-[SenseNova-U1](/docs/Obscure%20Model%20Support.md#sensenova) | "Pixel UiT" | 2026 | SenseNova | 8B | Minimal | Modern, bad |
+[SenseNova-U1](/docs/Obscure%20Model%20Support.md#sensenova) | "Pixel UiT" | 2026 | SenseNova | 8B | Minimal | Modern, very intelligent but bad details |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
