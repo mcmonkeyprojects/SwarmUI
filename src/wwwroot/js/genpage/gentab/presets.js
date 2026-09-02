@@ -611,6 +611,7 @@ function describePreset(preset) {
         { label: 'Toggle', onclick: () => selectPreset(preset) },
         { label: 'Direct Apply', onclick: () => applyOnePreset(preset.data) },
         { label: preset.data.is_starred ? 'Unstar' : 'Star', onclick: () => togglePresetStar(preset) },
+        { label: 'Browse History', onclick: () => browseModelHistory('presets_used', { name: preset.data.title }) },
         { label: 'Edit Preset', onclick: () => editPreset(preset.data) },
         { label: 'Duplicate Preset', onclick: () => duplicatePreset(preset.data) },
         { label: 'Export Preset', onclick: () => exportOnePresetButton(preset.data) },

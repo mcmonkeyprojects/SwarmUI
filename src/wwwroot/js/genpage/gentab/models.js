@@ -734,10 +734,14 @@ class ModelBrowserWrapper {
         else if (this.subType == 'LoRA') {
             buttons.push({ label: 'Browse History', onclick: () => browseModelHistory('LoRAs', model.data) });
         }
+        else if (this.subType == 'Embedding') {
+            buttons.push({ label: 'Browse History', onclick: () => browseModelHistory('used_embeddings', model.data) });
+        }
         let name = cleanModelName(model.data.name);
         let display = (model.data.display || name).replaceAll('/', ' / ');
         if (this.subType == 'Wildcards') {
             buttons = [starButton];
+            buttons.push({ label: 'Browse History', onclick: () => browseModelHistory('used_wildcards', model.data) });
             if (permissions.hasPermission('edit_wildcards')) {
                 buttons.push({ label: 'Edit Wildcard', onclick: () => wildcardHelpers.editWildcard(model.data) });
                 buttons.push({ label: 'Duplicate Wildcard', onclick: () => wildcardHelpers.duplicateWildcard(model.data), can_multi: true });

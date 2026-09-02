@@ -897,6 +897,8 @@ public static class T2IAPI
 
     public record struct ImageHistoryHelper(string Name, OutputMetadataTracker.OutputMetadataEntry Metadata);
 
+    public static string[] MetadataFilterTargetSections = ["sui_image_params", "sui_extra_data"];
+
     /// <summary>True if the image name or metadata contains the filter text (case-insensitive).</summary>
     private static bool ImageHistoryMatchesFilter(ImageHistoryHelper file, string filter)
     {
@@ -919,26 +921,29 @@ public static class T2IAPI
         }
         try
         {
-            Dictionary<string, object> parms = ImageFile.GetSUIMetadata(meta)?.ToBasicObject();
-            if (parms is null)
+            JObject parsed = meta.ParseToJson();
+            foreach (string section in MetadataFilterTargetSections)
             {
-                return false;
-            }
-            foreach ((string key, object val) in parms)
-            {
-                if (val is List<object> list)
+                if (parsed[section] is not JObject values)
                 {
-                    foreach (object entry in list)
+                    continue;
+                }
+                foreach (JProperty prop in values.Properties())
+                {
+                    if (prop.Value is JArray list)
                     {
-                        if ($"{key}: {entry}".Contains(filter, StringComparison.OrdinalIgnoreCase))
+                        foreach (JToken entry in list)
                         {
-                            return true;
+                            if ($"{prop.Name}: {entry}".Contains(filter, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
                         }
                     }
-                }
-                else if ($"{key}: {val}".Contains(filter, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
+                    else if ($"{prop.Name}: {prop.Value}".Contains(filter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
                 }
             }
         }

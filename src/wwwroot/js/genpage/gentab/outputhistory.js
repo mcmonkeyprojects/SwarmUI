@@ -259,8 +259,10 @@ function describeOutputFile(image) {
     let dragImage = forceImage ?? `${image.data.src}`;
     let imageSrc = forcePreview ?? `${image.data.src}?preview=true${allowAnimToggle}`;
     let searchable = `${image.data.name}, ${image.data.metadata}, ${image.data.fullsrc}`;
-    if (parsedMeta.sui_image_params) {
-        searchable += `\n${Object.entries(parsedMeta.sui_image_params).map(([key, value]) => Array.isArray(value) ? `${key}: ${value.map(v => `${key}: ${v}`).join('\n')}` : `${key}: ${value}`).join('\n')}`;
+    for (let section of ['sui_image_params', 'sui_extra_data']) {
+        if (parsedMeta[section]) {
+            searchable += `\n${Object.entries(parsedMeta[section]).map(([key, value]) => Array.isArray(value) ? `${key}: ${value.map(v => `${key}: ${v}`).join('\n')}` : `${key}: ${value}`).join('\n')}`;
+        }
     }
     let detail_list = [escapeHtml(image.data.name), formattedMetadata.replaceAll('<br>', '&emsp;')];
     let aspectRatio = parsedMeta.sui_image_params?.width && parsedMeta.sui_image_params?.height ? parsedMeta.sui_image_params.width / parsedMeta.sui_image_params.height : null;
@@ -308,9 +310,6 @@ function scheduleImageHistoryServerFilter() {
 
 /** Requests a longer server-side Image History scan for the current filter. */
 function runImageHistoryServerFilter() {
-    if (!getUserSetting('ImageHistoryServerFilter', true)) {
-        return;
-    }
     let folder = imageHistoryBrowser.folder;
     let filter = imageHistoryBrowser.filter;
     if (!filter) {
@@ -321,7 +320,7 @@ function runImageHistoryServerFilter() {
         if (reqId != imageHistoryServerFilterRequestId) {
             return;
         }
-        if (!getUserSetting('ImageHistoryServerFilter', true) || imageHistoryBrowser.folder != folder || imageHistoryBrowser.filter != filter) {
+        if (imageHistoryBrowser.folder != folder || imageHistoryBrowser.filter != filter) {
             return;
         }
         imageHistoryBrowser.build(folder, null, files);
