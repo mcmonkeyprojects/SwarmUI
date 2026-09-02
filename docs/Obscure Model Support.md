@@ -310,6 +310,8 @@ Microsoft's [Mage Flow](https://huggingface.co/microsoft/Mage-Flow) is supported
     - **CFG Scale:** normal CFG ranges (around `5`)
     - **Steps:** Normal ranges (around `20`)
     - **Sigma Shift:** Default is `3`, but higher values such as `7` can help recover detail quality
+    - **Resolution:** Side length `2048` is the model's standard, but a wide range works well.
+        - Because of the aggressive patch scaling, 2048 on this model looks more like 1024 on most other models. 1024 on this model looks noticeably worse. Going above 2048 will have some color distortion.
 
 --------------------------------------------------------------------------
 

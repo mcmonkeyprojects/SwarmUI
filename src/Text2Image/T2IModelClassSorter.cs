@@ -860,7 +860,7 @@ public class T2IModelClassSorter
         {
             return isHiDreamO1(h);
         }});
-        Register(new() { ID = "sensenova-u1.5", CompatClass = CompatSenseNovaU15, Name = "SenseNova U1.5", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "sensenova-u1.5", CompatClass = CompatSenseNovaU15, Name = "SenseNova U1.5", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return isSenseNovaU15(h);
         }});
