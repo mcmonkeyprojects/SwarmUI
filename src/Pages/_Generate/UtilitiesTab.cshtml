@@ -33,9 +33,11 @@
             <div class="card-body">
                 <div class="card-text">
                     <div class="card-center-container">
-                        <button id="util_massmetadataclear_button" class="basic-button translate" onclick="util_massMetadataClear()">Reset All Metadata</button>
+                        <button id="util_massmetadataclear_image_button" class="basic-button translate" onclick="util_massMetadataClear('image')">Reset Image Metadata</button>
+                        &emsp;
+                        <button id="util_massmetadataclear_model_button" class="basic-button translate" onclick="util_massMetadataClear('model')">Reset Model Metadata</button>
                     </div>
-                    <br>If you click this button, all Model and Image metadata datastores will be reset, and they will be reloaded from source files.
+                    <br>If you click this button, all Model or Image metadata datastores will be reset, and they will be reloaded from source files.
                     <br>This is useful for example if you've externally modified your model or image files and want to clean out or update Swarm's metadata tracking.
                     <br>Note that this does not remove metadata from the models or images themselves, just from the databases that keep an efficient tracker of them.
                     <br>This may take a moment to run.

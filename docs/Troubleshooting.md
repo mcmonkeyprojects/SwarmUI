@@ -117,7 +117,7 @@ Most importantly after reinstalling:
 ### Newly Supported Model Isn't Working
 
 If you're trying a new model class that Swarm supports, but it's not working, the most common cause is: you forgot to update first! So, update SwarmUI via the Server Info tab.
-- If you have updated already SwarmUI, but you downloaded the model before that update, you can hit Utilities -> Reset All Metadata, which will cause Swarm to re-scan the model and re-detect what architecture it uses.
+- If you have updated already SwarmUI, but you downloaded the model before that update, you can hit Utilities -> Reset Model Metadata, which will cause Swarm to re-scan the model and re-detect what architecture it uses.
 - If that doesn't fix it, look in the Models tab of the Generate tab. Is the `Type:` listed correct? If not, hit the `☰` hamburger menu then `Edit Metadata`, then change the Architecture to the correct value for the model.
 
 ## Other

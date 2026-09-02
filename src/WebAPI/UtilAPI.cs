@@ -150,43 +150,57 @@ public static class UtilAPI
     }
 
     [API.APIDescription("Trigger a mass metadata reset.", "\"success\": true")]
-    public static async Task<JObject> WipeMetadata()
+    public static async Task<JObject> WipeMetadata(
+        [API.APIParameter("What metadata to reset: `image` for image/output history metadata, `model` for model metadata, or `all` for both.")] string type = "all")
     {
-        BackendHandler.BackendData[] backends = [.. Program.Backends.AllBackends.Values];
-        foreach (BackendHandler.BackendData backend in backends)
+        type = type.ToLowerFast();
+        bool wipeModels = type == "all" || type == "model";
+        bool wipeImages = type == "all" || type == "image";
+        if (!wipeModels && !wipeImages)
         {
-            Interlocked.Add(ref backend.Usages, backend.AbstractBackend.MaxUsages);
+            return new JObject() { ["error"] = $"Invalid type '{type}'." };
         }
-        try
+        if (wipeModels)
         {
-            int ticks = 0;
-            while (Program.Backends.AllBackends.Values.Any(b => b.Usages > b.AbstractBackend.MaxUsages))
-            {
-                if (Program.GlobalProgramCancel.IsCancellationRequested)
-                {
-                    return null;
-                }
-                await Task.Delay(TimeSpan.FromSeconds(0.5));
-                if (ticks > 240)
-                {
-                    Logs.Info($"Reset All Metadata: stuck waiting for backends to be clear too long, will just do it anyway.");
-                    break;
-                }
-            }
-            foreach (T2IModelHandler handler in Program.T2IModelSets.Values)
-            {
-                handler.MassRemoveMetadata();
-            }
-        }
-        finally
-        {
+            BackendHandler.BackendData[] backends = [.. Program.Backends.AllBackends.Values];
             foreach (BackendHandler.BackendData backend in backends)
             {
-                Interlocked.Add(ref backend.Usages, -backend.AbstractBackend.MaxUsages);
+                Interlocked.Add(ref backend.Usages, backend.AbstractBackend.MaxUsages);
             }
+            try
+            {
+                int ticks = 0;
+                while (Program.Backends.AllBackends.Values.Any(b => b.Usages > b.AbstractBackend.MaxUsages))
+                {
+                    if (Program.GlobalProgramCancel.IsCancellationRequested)
+                    {
+                        return null;
+                    }
+                    await Task.Delay(TimeSpan.FromSeconds(0.5));
+                    if (ticks > 240)
+                    {
+                        Logs.Info($"Reset All Metadata: stuck waiting for backends to be clear too long, will just do it anyway.");
+                        break;
+                    }
+                }
+                foreach (T2IModelHandler handler in Program.T2IModelSets.Values)
+                {
+                    handler.MassRemoveMetadata();
+                }
+            }
+            finally
+            {
+                foreach (BackendHandler.BackendData backend in backends)
+                {
+                    Interlocked.Add(ref backend.Usages, -backend.AbstractBackend.MaxUsages);
+                }
+            }
+            T2IAPI.LastRefreshed = Environment.TickCount64 - 20000;
         }
-        OutputMetadataTracker.MassRemoveMetadata();
-        T2IAPI.LastRefreshed = Environment.TickCount64 - 20000;
+        if (wipeImages)
+        {
+            OutputMetadataTracker.MassRemoveMetadata();
+        }
         return new JObject() { ["success"] = true };
     }
 }

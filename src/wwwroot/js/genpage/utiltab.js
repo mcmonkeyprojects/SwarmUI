@@ -83,16 +83,23 @@ function pickle2safetensor_run(type) {
     });
 }
 
-function util_massMetadataClear() {
-    let button = getRequiredElementById('util_massmetadataclear_button');
+/** Triggers a mass reset of image or model metadata caches. */
+function util_massMetadataClear(type) {
+    let button = getRequiredElementById(`util_massmetadataclear_${type}_button`);
     button.disabled = true;
-    genericRequest('WipeMetadata', {}, data => {
-        genericRequest('TriggerRefresh', {}, data => {
+    genericRequest('WipeMetadata', { type: type }, data => {
+        if (type == 'model') {
+            genericRequest('TriggerRefresh', {}, data => {
+                button.disabled = false;
+                for (let browser of allModelBrowsers) {
+                    browser.browser.refresh();
+                }
+            });
+        }
+        else {
             button.disabled = false;
-            for (let browser of allModelBrowsers) {
-                browser.browser.refresh();
-            }
-        });
+            imageHistoryBrowser.refresh();
+        }
     });
 }
 
