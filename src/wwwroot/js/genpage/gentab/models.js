@@ -458,6 +458,14 @@ function cleanModelName(name) {
     return name.endsWith('.safetensors') ? name.substring(0, name.length - '.safetensors'.length) : name;
 }
 
+/** Switches to the History tab and filters to images generated with the given model. */
+function browseModelHistory(type, model) {
+    let filterInput = getRequiredElementById('imagehistorybrowser_filter_input');
+    filterInput.value = `${type}: ${cleanModelName(model.name)}`;
+    filterInput.dispatchEvent(new Event('input'));
+    getRequiredElementById('imagehistorytabclickable').click();
+}
+
 class ModelBrowserWrapper {
     constructor(subType, subIds, container, id, selectOne, extraHeader = '') {
         this.subType = subType;
@@ -720,6 +728,12 @@ class ModelBrowserWrapper {
         let isStarred = this.isStarred(model.data.name);
         let starButton = { label: isStarred ? 'Unstar' : 'Star', onclick: () => { this.toggleStar(model.data.name); } };
         buttons.push(starButton);
+        if (this.subType == 'Stable-Diffusion') {
+            buttons.push({ label: 'Browse History', onclick: () => browseModelHistory('Model', model.data) });
+        }
+        else if (this.subType == 'LoRA') {
+            buttons.push({ label: 'Browse History', onclick: () => browseModelHistory('LoRAs', model.data) });
+        }
         let name = cleanModelName(model.data.name);
         let display = (model.data.display || name).replaceAll('/', ' / ');
         if (this.subType == 'Wildcards') {
