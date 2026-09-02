@@ -1549,8 +1549,8 @@ public partial class WorkflowGenerator
                     attachImages = [batched, 0];
                 }
             }
-            PosCond = g.CreateConditioning(promptText, clip.Path, VideoModel, true, isVideo: true, attachImages: attachImages);
-            NegCond = g.CreateConditioning(NegativePrompt, clip.Path, VideoModel, false, isVideo: true);
+            PosCond = g.CreateConditioning(promptText, clip.Path, VideoModel, true, isVideo: true, attachImages: attachImages, steps: Steps);
+            NegCond = g.CreateConditioning(NegativePrompt, clip.Path, VideoModel, false, isVideo: true, steps: Steps);
         }
 
         public void PrepFullCond(WorkflowGenerator g, WGNodeData origSrcImg)
@@ -2188,8 +2188,8 @@ public partial class WorkflowGenerator
             (T2IModel swapModel, WGNodeData swapVideoModel, WGNodeData clip, _) = CreateModelLoader(genInfo.VideoSwapModel, "image2video", null, true, sectionId: genInfo.ContextID);
             double cfg = genInfo.VideoCFG.Value;
             int steps = genInfo.Steps;
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip.Path, swapModel, true, isVideo: true, isVideoSwap: true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip.Path, swapModel, false, isVideo: true, isVideoSwap: true);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip.Path, swapModel, true, isVideo: true, isVideoSwap: true, steps: steps);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip.Path, swapModel, false, isVideo: true, isVideoSwap: true, steps: steps);
             genInfo.HasFixedMediaLen = false;
             CurrentMedia = srcImage;
             genInfo.PrepFullCond(this, srcImage);
@@ -2379,9 +2379,12 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input.</summary>
-    public JArray CreateConditioningDirect(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null, JArray attachImages = null)
+    public JArray CreateConditioningDirect(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null, JArray attachImages = null, int steps = -1)
     {
-        int steps = IsRefinerStage ? UserInput.Get(T2IParamTypes.RefinerSteps, UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner) : UserInput.Get(T2IParamTypes.Steps);
+        if (steps == -1)
+        {
+            steps = UserInput.Get(T2IParamTypes.Steps, 20);
+        }
         string trackerId = $"__cond_direct____{clip[0]}_{clip[1]}_{isPositive}____{prompt}_{attachImages}_{steps}";
         if (id is null && NodeHelpers.TryGetValue(trackerId, out string nodeId))
         {
@@ -2688,22 +2691,22 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, with support for '&lt;break&gt;' syntax.</summary>
-    public JArray CreateConditioningLine(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null, JArray attachImages = null)
+    public JArray CreateConditioningLine(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null, JArray attachImages = null, int steps = -1)
     {
         if (Features.Contains("variation_seed"))
         {
-            return CreateConditioningDirect(prompt, clip, model, isPositive, id, attachImages);
+            return CreateConditioningDirect(prompt, clip, model, isPositive, id, attachImages, steps);
         }
         // Backup to at least process "<break>" for if Swarm nodes are missing
         string[] breaks = prompt.Split("<break>", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         if (breaks.Length <= 1)
         {
-            return CreateConditioningDirect(prompt, clip, model, isPositive, id, attachImages: attachImages);
+            return CreateConditioningDirect(prompt, clip, model, isPositive, id, attachImages: attachImages, steps: steps);
         }
-        JArray first = CreateConditioningDirect(breaks[0], clip, model, isPositive, attachImages: attachImages);
+        JArray first = CreateConditioningDirect(breaks[0], clip, model, isPositive, attachImages: attachImages, steps: steps);
         for (int i = 1; i < breaks.Length; i++)
         {
-            JArray second = CreateConditioningDirect(breaks[i], clip, model, isPositive, attachImages: attachImages);
+            JArray second = CreateConditioningDirect(breaks[i], clip, model, isPositive, attachImages: attachImages, steps: steps);
             string concatted = CreateNode("ConditioningConcat", new JObject()
             {
                 ["conditioning_to"] = first,
@@ -2794,8 +2797,9 @@ public partial class WorkflowGenerator
         (FinalLoadedModel, CurrentModel, CurrentTextEnc, CurrentVae) = CreateModelLoader(pidModel, isRefiner ? "Refiner" : "PixelDecoder", sectionId: sectionId);
         IsPixelDecoderStage = false;
         NoVAEOverride = priorNoVae;
-        JArray pos = CreateConditioning(UserInput.Get(T2IParamTypes.Prompt), CurrentTextEnc.Path, pidModel, true, isRefiner: isRefiner, isPixelDecoder: !isRefiner);
-        JArray neg = CreateConditioning(UserInput.Get(T2IParamTypes.NegativePrompt), CurrentTextEnc.Path, pidModel, false, isRefiner: isRefiner, isPixelDecoder: !isRefiner);
+        int steps = UserInput.GetNullable(T2IParamTypes.Steps, sectionId, false) ?? (isRefiner ? UserInput.GetNullable(T2IParamTypes.RefinerSteps) : null) ?? 4;
+        JArray pos = CreateConditioning(UserInput.Get(T2IParamTypes.Prompt), CurrentTextEnc.Path, pidModel, true, isRefiner: isRefiner, isPixelDecoder: !isRefiner, steps: steps);
+        JArray neg = CreateConditioning(UserInput.Get(T2IParamTypes.NegativePrompt), CurrentTextEnc.Path, pidModel, false, isRefiner: isRefiner, isPixelDecoder: !isRefiner, steps: steps);
         string cond = CreateNode("PiDConditioning", new JObject()
         {
             ["positive"] = pos,
@@ -2811,7 +2815,6 @@ public partial class WorkflowGenerator
             ["width"] = width,
             ["height"] = height
         });
-        int steps = UserInput.GetNullable(T2IParamTypes.Steps, sectionId, false) ?? (isRefiner ? UserInput.GetNullable(T2IParamTypes.RefinerSteps) : null) ?? 4;
         double cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, sectionId, false) ?? (isRefiner ? UserInput.GetNullable(T2IParamTypes.RefinerCFGScale) : null) ?? 1;
         string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null) : null);
         string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null) : null);
@@ -2902,7 +2905,7 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
-    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false, bool isPixelDecoder = false, JArray attachImages = null)
+    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false, bool isPixelDecoder = false, JArray attachImages = null, int steps = -1)
     {
         PromptRegion regionalizer = new(prompt);
         string globalPromptText = regionalizer.GlobalPrompt;
@@ -2926,7 +2929,7 @@ public partial class WorkflowGenerator
         {
             globalPromptText = $"{globalPromptText} {regionalizer.BasePrompt}";
         }
-        JArray globalCond = CreateConditioningLine(globalPromptText.Trim(), clip, model, isPositive, firstId, attachImages: attachImages);
+        JArray globalCond = CreateConditioningLine(globalPromptText.Trim(), clip, model, isPositive, firstId, attachImages: attachImages, steps: steps);
         if (!isPositive && string.IsNullOrWhiteSpace(prompt) && ShouldZeroNegative())
         {
             string zeroed = CreateNode("ConditioningZeroOut", new JObject()
@@ -2973,7 +2976,7 @@ public partial class WorkflowGenerator
         foreach (PromptRegion.Part part in parts)
         {
             JArray subClip = part.ContextID <= 1 ? clip : CreateHookLorasForConfinement(part.ContextID, clip);
-            JArray partCond = CreateConditioningLine(part.Prompt, subClip, model, isPositive, attachImages: attachImages);
+            JArray partCond = CreateConditioningLine(part.Prompt, subClip, model, isPositive, attachImages: attachImages, steps: steps);
             string regionNode = CreateNode("SwarmSquareMaskFromPercent", new JObject()
             {
                 ["x"] = part.X,
@@ -3019,7 +3022,7 @@ public partial class WorkflowGenerator
             ["exclude_mask"] = lastMergedMask
         });
         string backgroundPrompt = string.IsNullOrWhiteSpace(regionalizer.BackgroundPrompt) ? regionalizer.GlobalPrompt : regionalizer.BackgroundPrompt;
-        JArray backgroundCond = CreateConditioningLine(backgroundPrompt, clip, model, isPositive, attachImages: attachImages);
+        JArray backgroundCond = CreateConditioningLine(backgroundPrompt, clip, model, isPositive, attachImages: attachImages, steps: steps);
         string mainConditioning = CreateNode("ConditioningSetMask", new JObject()
         {
             ["conditioning"] = backgroundCond,

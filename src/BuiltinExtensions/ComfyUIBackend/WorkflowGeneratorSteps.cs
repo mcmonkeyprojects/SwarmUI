@@ -1487,6 +1487,7 @@ public class WorkflowGeneratorSteps
                 T2IModel baseModel = g.UserInput.Get(T2IParamTypes.Model);
                 T2IModel refineModel = baseModel;
                 string loaderNodeId = null;
+                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
                 if (g.UserInput.TryGet(T2IParamTypes.RefinerModel, out T2IModel altRefineModel) && altRefineModel is not null)
                 {
                     refineModel = altRefineModel;
@@ -1540,8 +1541,8 @@ public class WorkflowGeneratorSteps
                     g.FinalLoadedModelList = [refineModel];
                     (g.FinalLoadedModel, g.CurrentModel, g.CurrentTextEnc, g.CurrentVae) = g.CreateModelLoader(refineModel, "Refiner", loaderNodeId, sectionId: T2IParamInput.SectionID_Refiner);
                     g.NoVAEOverride = false;
-                    prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, true, isRefiner: true);
-                    negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, false, isRefiner: true);
+                    prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, true, isRefiner: true, steps: steps);
+                    negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.CurrentTextEnc.Path, g.FinalLoadedModel, false, isRefiner: true, steps: steps);
                 }
                 bool doSave = g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false);
                 bool doUpscale = g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1;
@@ -1717,7 +1718,6 @@ public class WorkflowGeneratorSteps
                     model = model.WithPath([hyperTileNode, 0]);
                 }
                 g.CurrentMedia = g.CurrentMedia.AsSamplingLatent(g.CurrentVae, g.CurrentAudioVae);
-                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
                 double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
                 string explicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
                 string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
@@ -1889,10 +1889,10 @@ public class WorkflowGeneratorSteps
                         model = model.WithPath(newModel);
                         clip = clip.WithPath(newClip);
                     }
-                    JArray prompt = g.CreateConditioning(part.Prompt, clip.Path, t2iModel, true);
-                    string neg = negativeParts.FirstOrDefault(p => p.DataText == part.DataText)?.Prompt ?? negativeRegion.GlobalPrompt;
-                    JArray negPrompt = g.CreateConditioning(neg, clip.Path, t2iModel, false);
                     int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.SegmentSteps, part.ContextID) ?? g.UserInput.GetNullable(T2IParamTypes.RefinerSteps, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: part.ContextID);
+                    JArray prompt = g.CreateConditioning(part.Prompt, clip.Path, t2iModel, true, steps: steps);
+                    string neg = negativeParts.FirstOrDefault(p => p.DataText == part.DataText)?.Prompt ?? negativeRegion.GlobalPrompt;
+                    JArray negPrompt = g.CreateConditioning(neg, clip.Path, t2iModel, false, steps: steps);
                     int startStep = (int)Math.Round(steps * (1 - part.Strength2));
                     long seed = g.UserInput.Get(T2IParamTypes.Seed) + 2 + i;
                     double cfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.SegmentCFGScale, part.ContextID) ?? g.UserInput.GetNullable(T2IParamTypes.RefinerCFGScale, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: part.ContextID);
