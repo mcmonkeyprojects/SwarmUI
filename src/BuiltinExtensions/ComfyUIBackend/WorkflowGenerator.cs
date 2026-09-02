@@ -2381,7 +2381,8 @@ public partial class WorkflowGenerator
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input.</summary>
     public JArray CreateConditioningDirect(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null, JArray attachImages = null)
     {
-        string trackerId = $"__cond_direct____{clip[0]}_{clip[1]}_{isPositive}____{prompt}_{attachImages}";
+        int steps = IsRefinerStage ? UserInput.Get(T2IParamTypes.RefinerSteps, UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner) : UserInput.Get(T2IParamTypes.Steps);
+        string trackerId = $"__cond_direct____{clip[0]}_{clip[1]}_{isPositive}____{prompt}_{attachImages}_{steps}";
         if (id is null && NodeHelpers.TryGetValue(trackerId, out string nodeId))
         {
             return [nodeId, 0];
@@ -2520,7 +2521,7 @@ public partial class WorkflowGenerator
             node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,
-                ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                ["steps"] = steps,
                 ["prompt"] = prompt,
                 ["width"] = width,
                 ["height"] = height,
@@ -2558,7 +2559,7 @@ public partial class WorkflowGenerator
                 node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
                 {
                     ["clip"] = clip,
-                    ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                    ["steps"] = steps,
                     ["prompt"] = prompt,
                     ["width"] = width,
                     ["height"] = height,
@@ -2613,7 +2614,7 @@ public partial class WorkflowGenerator
                 node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
                 {
                     ["clip"] = clip,
-                    ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                    ["steps"] = steps,
                     ["prompt"] = content,
                     ["width"] = width,
                     ["height"] = height,
@@ -2640,7 +2641,7 @@ public partial class WorkflowGenerator
             node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,
-                ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                ["steps"] = steps,
                 ["prompt"] = prompt,
                 ["width"] = enhance ? (int)Utilities.RoundToPrecision(width * mult, 64) : width,
                 ["height"] = enhance ? (int)Utilities.RoundToPrecision(height * mult, 64) : height,
