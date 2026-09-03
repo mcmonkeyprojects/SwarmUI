@@ -388,22 +388,14 @@ def pack_batches(sd, groups):
     return batched
 
 
-def calc_leaf(sd, leaf, apply_weights):
+def calc_leaf(sd, leaf):
     if leaf.embed is not None:
         embed, _, _ = sd._try_get_embedding(leaf.embed)
         return embed_token_items(embed, leaf.weight)
     if not leaf.text:
         return []
-    prompt = leaf.text
-    extra = {}
-    if apply_weights:
-        if leaf.weight != 1.0:
-            escaped = leaf.text.replace('(', '\\(').replace(')', '\\)')
-            prompt = f"({escaped}:{leaf.weight})"
-    else:
-        extra["disable_weights"] = True
-    items = flatten_content(sd, sd.tokenize_with_weights(prompt, **extra))
-    if not apply_weights and leaf.weight != 1.0:
+    items = flatten_content(sd, sd.tokenize_with_weights(leaf.text, disable_weights=True))
+    if leaf.weight != 1.0:
         return [(t, leaf.weight) for t, _ in items]
     return items
 
@@ -422,15 +414,9 @@ def combine_leaves(clip, leaves, tokenize_fn, per_leaf=False):
     want_weight = any(leaf.weight != 1.0 for leaf in leaves)
     has_embed = any(leaf.embed is not None for leaf in leaves)
     if not has_embed and not per_leaf:
-        tokens = tokenize_fn(join_text(leaves, False))
-        applied = False
-        if want_weight:
-            tokens, applied = apply_comfy_token_weights(tokens, tokenize_fn(join_text(leaves, True)))
-        return tokens, applied
+        return tokenize_fn(join_text(leaves, False)), False
     empty = tokenize_fn("")
     probe = tokenize_fn("x")
-    weight_probe = tokenize_fn("(x:2)") if want_weight else None
-    applied = False
     keys = probe if isinstance(probe, dict) else {None: probe}
     empty_map = empty if isinstance(empty, dict) else {None: empty}
     out = {}
@@ -439,13 +425,7 @@ def combine_leaves(clip, leaves, tokenize_fn, per_leaf=False):
         if sd is None:
             out[key] = probe_batches
             continue
-        apply = False
-        if want_weight and weight_probe is not None:
-            wp = weight_probe[key] if isinstance(weight_probe, dict) else weight_probe
-            apply = token_batches_have_weights(wp)
-        if apply:
-            applied = True
-        groups = [g for g in (calc_leaf(sd, leaf, apply) for leaf in leaves) if g]
+        groups = [g for g in (calc_leaf(sd, leaf) for leaf in leaves) if g]
         clip_empty = empty_map[key]
         if len(flatten_content(sd, clip_empty)) > len(flatten_content(sd, sd.tokenize_with_weights(""))) + 4:
             content = []
@@ -455,8 +435,8 @@ def combine_leaves(clip, leaves, tokenize_fn, per_leaf=False):
         else:
             out[key] = pack_batches(sd, groups)
     if not isinstance(probe, dict):
-        return out[None], applied
-    return out, applied
+        return out[None], want_weight
+    return out, want_weight
 
 
 def uniform_weight(leaves):
@@ -540,20 +520,23 @@ class SwarmTextEncodeAdvanced:
             else:
                 return clip.tokenize(text, **extra)
 
-        use_attn_token_weights = not token_batches_have_weights(tokenize("(x:2)"))
+        use_attn_token_weights = not token_batches_have_weights(clip.tokenize("(x:2)"))
 
         def encode_leaves(leaves):
             w = uniform_weight(leaves)
             want_weight = any(leaf.weight != 1.0 for leaf in leaves)
-            per_leaf = use_attn_token_weights and want_weight
+            per_leaf = True
             tokens, weights_applied = combine_leaves(clip, leaves, tokenize, per_leaf=per_leaf)
             if not use_attn_token_weights and not weights_applied and w is not None and w != 1.0:
                 tokens = stamp_token_weight(tokens, w)
                 weights_applied = True
-            cond_arr = clip.encode_from_tokens_scheduled(stamp_token_weight(tokens, 1.0) if per_leaf and not weights_applied else tokens)
-            if per_leaf and not weights_applied:
+            if use_attn_token_weights and want_weight:
+                cond_arr = clip.encode_from_tokens_scheduled(stamp_token_weight(tokens, 1.0))
+                weights_applied = False
                 if multiply_cond_by_token_weights(cond_arr, tokens):
                     weights_applied = True
+            else:
+                cond_arr = clip.encode_from_tokens_scheduled(tokens)
             if use_attn_token_weights and w is None and want_weight:
                 pairs = token_weights_from_tokens(tokens, cond_arr[0][0].shape[1])
                 if pairs:
