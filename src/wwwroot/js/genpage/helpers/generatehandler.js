@@ -107,7 +107,7 @@ class GenerateHandler {
             vid = document.createElement('video');
             vid.classList.add('image-block-img-inner');
             vid.loop = true;
-            vid.autoplay = true;
+            vid.autoplay = !imgHolder.div.closest('#current_image_batch') || playBatchVideosElem.checked;
             vid.muted = true;
             vid.width = 16 * 10;
             let sourceObj = document.createElement('source');

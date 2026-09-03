@@ -545,6 +545,23 @@ function toggleSeparateBatches() {
     localStorage.setItem('separateBatches', `${separateBatchesElem.checked}`);
 }
 
+/** Reference to the play-batch-videos toggle checkbox. */
+let playBatchVideosElem = getRequiredElementById('play_batch_videos_checkbox');
+playBatchVideosElem.checked = localStorage.getItem('playBatchVideos') != 'false';
+/** Called when the user changes play-batch-videos toggle to update local storage. */
+function togglePlayBatchVideos() {
+    localStorage.setItem('playBatchVideos', `${playBatchVideosElem.checked}`);
+    for (let vid of getRequiredElementById('current_image_batch').getElementsByTagName('video')) {
+        vid.autoplay = playBatchVideosElem.checked;
+        if (playBatchVideosElem.checked) {
+            vid.play().catch(() => {});
+        }
+        else {
+            vid.pause();
+        }
+    }
+}
+
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
@@ -1390,7 +1407,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     if (isVideo) {
         img = document.createElement('video');
         img.loop = true;
-        img.autoplay = true;
+        img.autoplay = !container.closest('#current_image_batch') || playBatchVideosElem.checked;
         img.muted = true;
         img.width = 16 * 10;
         let sourceObj = document.createElement('source');
