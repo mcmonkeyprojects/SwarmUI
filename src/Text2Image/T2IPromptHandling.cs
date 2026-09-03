@@ -873,7 +873,7 @@ public class T2IPromptHandling
             val = val.Replace("\0triggerextra", triggerPhrase);
         }
         val = addBefore + val + addAfter;
-        if (context.Input?.SourceSession?.User?.Settings?.ParamParsing?.ParseAlternativePromptSyntaxes ?? true)
+        if (isMain && (context.Input?.SourceSession?.User?.Settings?.ParamParsing?.ParseAlternativePromptSyntaxes ?? true))
         {
             val = LegacyPromptParser.Convert(val);
         }
