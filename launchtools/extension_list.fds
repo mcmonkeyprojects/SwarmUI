@@ -3,7 +3,7 @@
 # Author should be your name.
 # Description should be a short description of what the extension does.
 # URL should be a link to the GitHub repo. Do not use a sublink, do not end with '/'. This URL is used to git clone the repo.
-# If CI-Test is true, the extension will be downloaded and compile-checked for new Swarm commits.
+# If CI-Test is true, the extension will be downloaded and compile-checked for new Swarm commits. A pull request should never add CI-Test, that is a maintainer decision only.
 
 # License is the shortname of the license, (eg MIT, LGPL, ...).
 # If deciding on a license, MIT is strongly recommended.
