@@ -10,7 +10,7 @@
     <Product>SwarmUI</Product>
     <Authors>Alex "mcmonkey" Goodwin</Authors>
     <Copyright>Copyright (c) 2024-2026 Alex "mcmonkey" Goodwin</Copyright>
-    <Description>SwarmUI, an AI Image Generation User-Interface</Description>
+    <Description>SwarmUI, an AI Media Generation User-Interface</Description>
     <OutputType>exe</OutputType>
     <ApplicationIcon>wwwroot/favicon.ico</ApplicationIcon>
     <RollForward>Major</RollForward>

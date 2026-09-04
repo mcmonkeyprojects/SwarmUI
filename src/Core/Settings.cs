@@ -42,9 +42,9 @@ public class Settings : AutoConfiguration
     [ConfigComment("Ratelimit, in milliseconds, between Nvidia GPU status queries. Default is 1000 ms (1 second).")]
     public long NvidiaQueryRateLimitMS = 1000;
 
-    [ConfigComment("How to launch the UI. If 'none', just quietly launch.\nIf 'web', launch your web-browser to the page.\nIf 'webinstall', launch web-browser to the install page.\nIf 'electron', launch the UI in an electron window (NOT YET IMPLEMENTED).")]
-    [ManualSettingsOptions(Impl = null, Vals = ["none", "web", "webinstall", "electron"])]
-    public string LaunchMode = "webinstall";
+    [ConfigComment("How to launch the UI. If 'none', just quietly launch.\nIf 'web', launch your web-browser to the page.\nIf 'install', launch to the install page through browser or app depending on context.\nIf 'app', launch the UI as a desktop application.")]
+    [ManualSettingsOptions(Impl = null, Vals = ["none", "web", "install", "app"])]
+    public string LaunchMode = "install";
 
     [ConfigComment("If set true, some additional debugging data will be attached where relevant, such as in image metadata.")]
     public bool AddDebugData = false;

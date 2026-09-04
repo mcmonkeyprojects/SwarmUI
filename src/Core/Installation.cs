@@ -295,9 +295,16 @@ public class Installation
         Program.ServerSettings.IsInstalled = true;
         Program.ServerSettings.InstallDate = $"{DateTimeOffset.Now:yyyy-MM-dd}";
         Program.ServerSettings.InstallVersion = Utilities.Version;
-        if (Program.ServerSettings.LaunchMode == "webinstall")
+        if (Program.ServerSettings.LaunchMode == "install")
         {
-            Program.ServerSettings.LaunchMode = "web";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Program.ServerSettings.LaunchMode = "app";
+            }
+            else
+            {
+                Program.ServerSettings.LaunchMode = "web";
+            }
         }
         Program.SaveSettingsFile();
     }

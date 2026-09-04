@@ -59,7 +59,7 @@ public class Program
     /// <summary>Central web server core.</summary>
     public static WebServer Web;
 
-    /// <summary>User-requested launch mode (web, electron, none).</summary>
+    /// <summary>User-requested launch mode (web, app, none).</summary>
     public static string LaunchMode;
 
     /// <summary>Event triggered when a user wants to refresh the models list.</summary>
@@ -375,17 +375,25 @@ public class Program
                 switch (LaunchMode.Trim().ToLowerFast())
                 {
                     case "web":
+                    case "webinstall": // Historical, pre-0.9.8
                         Logs.Init("Launch web browser...");
                         Process.Start(new ProcessStartInfo(WebServer.PageURL) { UseShellExecute = true });
                         break;
-                    case "webinstall":
-                        Logs.Init("Launch web browser to install page...");
-                        Process.Start(new ProcessStartInfo(WebServer.PageURL + "/Install") { UseShellExecute = true });
+                    case "install":
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            LaunchDesktopApp();
+                        }
+                        else
+                        {
+                            Process.Start(new ProcessStartInfo(WebServer.PageURL) { UseShellExecute = true });
+                        }
                         break;
-                    case "electron":
-                        Logs.Init("Electron launch not yet implemented.");
-                        // TODO: Electron.NET seems not to function properly, need to get it working.
+                    case "app":
+                    {
+                        LaunchDesktopApp();
                         break;
+                    }
                 }
             }
             catch (Exception ex)
@@ -432,6 +440,32 @@ public class Program
             });
         }
         WebServer.WebApp.WaitForShutdown();
+        Shutdown();
+    }
+
+    /// <summary>Launch a Desktop application to host SwarmUI in a window.</summary>
+    public static void LaunchDesktopApp()
+    {
+        Logs.Init("Building desktop app...");
+        string desktopOut = Path.GetFullPath("src/bin/desktop_release");
+        int desktopBuildCode = 0;
+        string desktopBuildOut = Utilities.QuickRunProcess("dotnet", ["build", "Desktop/Desktop.csproj", "--configuration", "Release", "-o", desktopOut], setExitCode: code => desktopBuildCode = code).Result;
+        if (desktopBuildCode != 0)
+        {
+            throw new Exception($"Desktop build failed (code {desktopBuildCode}): {desktopBuildOut}");
+        }
+        Logs.Init("Launch desktop app...");
+        string desktopExe = $"{desktopOut}/SwarmUIDesktopView{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : "")}";
+        if (!File.Exists(desktopExe))
+        {
+            throw new Exception($"Desktop build succeeded but exe not found at '{desktopExe}'");
+        }
+        Process desktopProc = Process.Start(new ProcessStartInfo(desktopExe, [WebServer.PageURL, Path.GetFullPath($"{DataDir}/Web")]) { UseShellExecute = false, WorkingDirectory = desktopOut }) ?? throw new Exception("Failed to start desktop app process.");
+        PreShutdownEvent += () =>
+        {
+            Utilities.KillProcess(desktopProc, 10);
+        };
+        desktopProc.WaitForExit();
         Shutdown();
     }
 
