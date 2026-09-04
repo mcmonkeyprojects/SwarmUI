@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <AssemblyName>SwarmUIDesktopView</AssemblyName>
+        <Title>SwarmUI Desktop</Title>
+        <Product>SwarmUI Desktop</Product>
+        <Authors>Alex "mcmonkey" Goodwin</Authors>
+        <Copyright>Copyright (c) 2026 Alex "mcmonkey" Goodwin</Copyright>
+        <Description>A desktop interface for SwarmUI, an AI Media Generation User-Interface.</Description>
+        <OutputType>exe</OutputType>
+        <ApplicationIcon>../src/wwwroot/favicon.ico</ApplicationIcon>
+        <RollForward>Major</RollForward>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.1.1" />
+        <PackageReference Include="Avalonia.Controls.WebView" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+        <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
+            <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+            <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+</Project>

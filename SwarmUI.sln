@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwarmUI", "src\SwarmUI.cspr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwarmUITests", "SwarmUITests\SwarmUITests.csproj", "{C4E71B8A-9D32-4F06-B5A1-8E7C6D5F4A30}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Desktop", "Desktop\Desktop.csproj", "{2F7D07BB-865D-4449-9DAE-28929CE60F84}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{C4E71B8A-9D32-4F06-B5A1-8E7C6D5F4A30}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4E71B8A-9D32-4F06-B5A1-8E7C6D5F4A30}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4E71B8A-9D32-4F06-B5A1-8E7C6D5F4A30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F7D07BB-865D-4449-9DAE-28929CE60F84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F7D07BB-865D-4449-9DAE-28929CE60F84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F7D07BB-865D-4449-9DAE-28929CE60F84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F7D07BB-865D-4449-9DAE-28929CE60F84}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
