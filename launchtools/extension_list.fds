@@ -381,8 +381,7 @@ RTXVideo:
     author: BetaDoggo
     description: Adds RTX Video (NVIDIA AI video super resolution + SDR-to-HDR) parameters for image and video outputs.
     url: https://github.com/BetaDoggo/SwarmUI-RTX-Video
-    license: MIT
-    ci-test: true
+    license: Mixed
     tags:
     - parameters
     - nodes
