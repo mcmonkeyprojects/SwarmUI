@@ -25,7 +25,6 @@ Those interested in helping push Swarm to a Full ready-for-anything perfected Re
 
 Key feature targets not yet implemented:
 - LLM-assisted prompting (there's an extension for it, but LLM control should be natively supported)
-- convenient direct-distribution of Swarm as a Desktop program (probably as your classic embedded webapp dealio)
 
 # Donate
 
@@ -59,9 +58,10 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
     - It should open a command prompt and install itself.
     - If it closes without going further, try running it again, it sometimes needs to run twice. (TODO: Fix that)
     - It will place an icon on your desktop that you can use to re-launch the server at any time.
-    - When the installer completes, it will automatically launch the SwarmUI server, and open a browser window to the install page.
+    - When the installer completes, it will automatically launch the SwarmUI server, and then after a moment show you the install UI.
     - Follow the install instructions on the page.
     - After you submit, be patient, some of the install processing take a few minutes (downloading models and etc).
+    - See the [Basic Usage Guide](/docs/Basic%20Usage.md) to go from there.
 
 (TODO): Even easier self-contained pre-installer, a `.msi` or `.exe` that provides a general install screen and lets you pick folder and all.
 
@@ -92,6 +92,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
         - `chmod +x install-linux.sh`
 - Run the `./install-linux.sh` script, it will install everything for you and eventually open the webpage in your browser.
 - Follow the install instructions on-page.
+- See the [Basic Usage Guide](/docs/Basic%20Usage.md) to go from there.
 
 ### Linux Manual Install
 
@@ -129,6 +130,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Clone the SwarmUI GitHub repository: `git clone https://github.com/mcmonkeyprojects/SwarmUI`.
 - `cd SwarmUI` and run the installation script: `./launch-macos.sh`.
 - Wait for the web browser to open, and follow the install instructions on-page.
+- See the [Basic Usage Guide](/docs/Basic%20Usage.md) to go from there.
 
 # Installing With Docker
 

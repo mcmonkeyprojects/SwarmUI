@@ -34,6 +34,8 @@ If you have pre-existing Stable Diffusion files, you'll want to configure settin
 
 ![img](/docs/images/servermodelpath.png)
 
+You might want to find `Launch Mode` near the top of the server configuration page, and set it to your choice of `app` (a desktop application, only verified working on Windows), `web` (launch a web browser tab for you), or `none` (let you open your own browser tab when you want).
+
 ## Your First Image
 
 - Open the `Generate` tab at the top
