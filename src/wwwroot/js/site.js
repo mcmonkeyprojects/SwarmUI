@@ -1353,7 +1353,7 @@ function describeAspectRatio(width, height) {
     else if (roundTo(hw, 0.01) % 1 == 0) {
         return `1:${Math.round(hw)}`;
     }
-    for (let i = 2; i < 50; i++) {
+    for (let i of [2, 3, 4, 9]) {
         if (roundTo(wh * i, 0.01) % 1 == 0) {
             return `${Math.round(wh * i)}:${i}`;
         }
