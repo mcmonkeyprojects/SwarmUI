@@ -93,6 +93,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Run the `./install-linux.sh` script, it will install everything for you and eventually open the webpage in your browser.
 - Follow the install instructions on-page.
 - See the [Basic Usage Guide](/docs/Basic%20Usage.md) to go from there.
+- If you want to use Desktop app mode, it is not tested for Linux, but you probably need to install WPE Webkit: <https://wpewebkit.org/about/get-wpe.html#install-it-from-your-linux-distribution>
 
 ### Linux Manual Install
 

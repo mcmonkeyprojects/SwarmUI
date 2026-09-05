@@ -28,6 +28,6 @@ public class DesktopProgram
 
     public static AppBuilder BuildAvaloniaApp()
     {
-        return AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace();
+        return AppBuilder.Configure<App>().UsePlatformDetect().UseWaylandWithFallback().WithInterFont().LogToTrace();
     }
 }
