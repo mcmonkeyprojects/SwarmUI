@@ -443,7 +443,7 @@ public class WorkflowGeneratorSteps
                     {
                         ["image"] = g.BasicInputImage.Path,
                         ["amount"] = initNoise,
-                        ["seed"] = g.UserInput.Get(T2IParamTypes.Seed, 0) + 327
+                        ["seed"] = g.UserInput.Get(T2IParamTypes.Seed, 0, sectionId: T2IParamInput.SectionID_BaseOnly) + 327
                     };
                     if (currentMask is not null)
                     {
@@ -1431,7 +1431,7 @@ public class WorkflowGeneratorSteps
             {
                 g.CurrentMedia = g.CurrentMedia.AsSamplingLatent(g.CurrentVae, g.CurrentAudioVae);
                 g.CreateKSampler(g.CurrentModel.Path, g.FinalPrompt, g.FinalNegativePrompt, g.CurrentMedia.Path, cfg, steps, startStep, endStep,
-                    g.UserInput.Get(T2IParamTypes.Seed), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true, sectionId: T2IParamInput.SectionID_BaseOnly);
+                    g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed), sectionId: T2IParamInput.SectionID_BaseOnly), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true, sectionId: T2IParamInput.SectionID_BaseOnly);
                 g.CurrentMedia = g.CurrentMedia.WithPath(["10", 0]);
                 if (g.UserInput.Get(T2IParamTypes.UseReferenceOnly, false))
                 {
@@ -1488,6 +1488,7 @@ public class WorkflowGeneratorSteps
                 T2IModel refineModel = baseModel;
                 string loaderNodeId = null;
                 int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                long seed = g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed) + 1, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false);
                 if (g.UserInput.TryGet(T2IParamTypes.RefinerModel, out T2IModel altRefineModel) && altRefineModel is not null)
                 {
                     refineModel = altRefineModel;
@@ -1505,7 +1506,7 @@ public class WorkflowGeneratorSteps
                 if (refineModel.ModelClass?.CompatClass?.ID == "pid")
                 {
                     g.SaveOptionalIntermediate("29");
-                    WGNodeData pidDecoded = g.CreatePixelDecode(refineModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 1, isRefiner: true);
+                    WGNodeData pidDecoded = g.CreatePixelDecode(refineModel, g.CurrentMedia, origVae, seed, isRefiner: true);
                     if (g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double pidUpscale) && pidUpscale != 1)
                     {
                         int targetWidth = ((int)Math.Round(g.UserInput.GetImageWidth() * pidUpscale) / 16) * 16;
@@ -1700,7 +1701,7 @@ public class WorkflowGeneratorSteps
                 }
                 if (isSeedVr)
                 {
-                    g.CurrentMedia = g.CreateSeedVR2Restore(refineModel, g.CurrentMedia, origVae, g.UserInput.Get(T2IParamTypes.Seed) + 1, isRefiner: true);
+                    g.CurrentMedia = g.CreateSeedVR2Restore(refineModel, g.CurrentMedia, origVae, seed, isRefiner: true);
                     g.IsRefinerStage = false;
                     return;
                 }
@@ -1722,7 +1723,7 @@ public class WorkflowGeneratorSteps
                 string explicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
                 string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
                 g.CreateKSampler(model.Path, prompt, negPrompt, g.CurrentMedia.Path, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
-                    g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
+                    seed, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
                     explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
                 g.CurrentMedia = g.CurrentMedia.WithPath(["23", 0]);
                 g.IsRefinerStage = false;
@@ -1738,7 +1739,7 @@ public class WorkflowGeneratorSteps
                 {
                     throw new SwarmUserErrorException($"Pixel Decoder Model is set to '{pixelDecoder.Name}', but that is not a PiD model.");
                 }
-                g.CurrentMedia = g.CreatePixelDecode(pixelDecoder, g.CurrentMedia, g.CurrentVae, g.UserInput.Get(T2IParamTypes.Seed) + 3);
+                g.CurrentMedia = g.CreatePixelDecode(pixelDecoder, g.CurrentMedia, g.CurrentVae, g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed) + 3, sectionId: T2IParamInput.SectionID_PixelDecoder, includeBase: false));
             }
             g.CurrentMedia = g.CurrentMedia.DecodeLatents(g.CurrentVae, null, "8");
             JArray maskShrinkApply = doMaskShrinkApply(g, g.CurrentMedia.Path);
@@ -1894,7 +1895,7 @@ public class WorkflowGeneratorSteps
                     string neg = negativeParts.FirstOrDefault(p => p.DataText == part.DataText)?.Prompt ?? negativeRegion.GlobalPrompt;
                     JArray negPrompt = g.CreateConditioning(neg, clip.Path, t2iModel, false, steps: steps);
                     int startStep = (int)Math.Round(steps * (1 - part.Strength2));
-                    long seed = g.UserInput.Get(T2IParamTypes.Seed) + 2 + i;
+                    long seed = g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed) + 2 + i, sectionId: part.ContextID, includeBase: false);
                     double cfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.SegmentCFGScale, part.ContextID) ?? g.UserInput.GetNullable(T2IParamTypes.RefinerCFGScale, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: part.ContextID);
                     WGNodeData beforeImage = g.CurrentMedia;
                     string sampler = g.CreateKSampler(model.Path, prompt, negPrompt, [g.MaskShrunkInfo.MaskedLatent, 0], cfg, steps, startStep, 10000, seed, false, true, sectionId: part.ContextID);
@@ -2012,7 +2013,7 @@ public class WorkflowGeneratorSteps
                 double? videoCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_Video, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, T2IParamInput.SectionID_Video);
                 int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_Video, false) ?? g.UserInput.Get(T2IParamTypes.VideoSteps, 20, sectionId: T2IParamInput.SectionID_Video);
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
-                long seed = g.UserInput.Get(T2IParamTypes.Seed) + 42;
+                long seed = g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed) + 42, sectionId: T2IParamInput.SectionID_Video, includeBase: false);
                 string prompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
                 string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");
                 int batchInd = -1, batchLen = -1;
@@ -2154,6 +2155,7 @@ public class WorkflowGeneratorSteps
                     double cfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.CFGScale, 7);
                     int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoSteps, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.Steps, 20);
                     seed++;
+                    long partSeed = g.UserInput.Get(T2IParamTypes.Seed, seed + i, sectionId: part.ContextID, includeBase: false);
                     int? frames = int.Parse(part.DataText);
                     string prompt = part.Prompt;
                     string frameCountNode = g.CreateNode("SwarmCountFrames", new JObject()
@@ -2189,7 +2191,7 @@ public class WorkflowGeneratorSteps
                         Prompt = prompt,
                         NegativePrompt = negPrompt,
                         Steps = steps,
-                        Seed = seed,
+                        Seed = partSeed,
                         BatchIndex = 0,
                         BatchLen = frameExtendOverlap,
                         ContextID = part.ContextID
@@ -2245,7 +2247,7 @@ public class WorkflowGeneratorSteps
             }
             WGNodeData vae = g.CurrentVae;
             g.SaveOptionalIntermediate();
-            long seed = g.UserInput.Get(T2IParamTypes.Seed) + 500;
+            long seed = g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed) + 9, sectionId: T2IParamInput.SectionID_SeedVR, includeBase: false);
             WGNodeData media = g.CurrentMedia;
             double scale = g.UserInput.Get(ComfyUIBackendExtension.SeedVRUpscale, 1);
             double downscale = g.UserInput.Get(ComfyUIBackendExtension.SeedVRPreDownscale, 1);
