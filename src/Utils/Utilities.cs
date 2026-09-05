@@ -774,12 +774,12 @@ public static class Utilities
     }
 
     /// <summary>Optional fast path for large downloads. Failures fall back to the normal downloader.</summary>
-    private static class ParallelDownloader
+    public static class ParallelDownloader
     {
-        private const int PartSize = 16 * 1024 * 1024, MaxParallelRequests = 64;
+        public const int PartSize = 16 * 1024 * 1024, MaxParallelRequests = 64;
 
         /// <summary>Downloads a file in parallel when stable byte ranges are supported, otherwise returns false.</summary>
-        public static async Task<bool> TryDownloadFile(HttpClient client, string url, string filepath, Dictionary<string, string> headers, Action<long, long, long> progressUpdate, string verifyHash, CancellationToken cancel, string altUrl)
+        public static async Task<bool> TryDownloadFile(HttpClient client, string url, string filepath, Dictionary<string, string> headers, Action<long, long, long> progressUpdate, string verifyHash, string altUrl, CancellationToken cancel)
         {
             Uri source = new(url);
             HttpRequestMessage makeRequest(Uri target, long start, long end)
@@ -804,8 +804,7 @@ public static class Utilities
                 using HttpResponseMessage response = await client.SendAsync(probe, HttpCompletionOption.ResponseHeadersRead, cancel);
                 ContentRangeHeaderValue range = response.Content.Headers.ContentRange;
                 EntityTagHeaderValue etag = response.Headers.ETag;
-                if (response.StatusCode != HttpStatusCode.PartialContent || range?.Unit != "bytes" || range.From != 0 || range.To != 0
-                    || range.Length is not long length || length < PartSize * 2L || etag is null || etag.IsWeak || response.Content.Headers.ContentEncoding.Count != 0)
+                if (response.StatusCode != HttpStatusCode.PartialContent || range?.Unit != "bytes" || range.From != 0 || range.To != 0 || range.Length is not long length || length < PartSize * 2L || etag is null || etag.IsWeak || response.Content.Headers.ContentEncoding.Count != 0)
                 {
                     return false;
                 }
@@ -826,8 +825,7 @@ public static class Utilities
                     request.Headers.IfRange = new(etag);
                     using HttpResponseMessage chunk = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
                     ContentRangeHeaderValue chunkRange = chunk.Content.Headers.ContentRange;
-                    if (chunk.StatusCode != HttpStatusCode.PartialContent || chunkRange?.Unit != "bytes" || chunkRange.From != start || chunkRange.To != end || chunkRange.Length != length
-                        || !etag.Equals(chunk.Headers.ETag) || chunk.Content.Headers.ContentEncoding.Count != 0)
+                    if (chunk.StatusCode != HttpStatusCode.PartialContent || chunkRange?.Unit != "bytes" || chunkRange.From != start || chunkRange.To != end || chunkRange.Length != length || !etag.Equals(chunk.Headers.ETag) || chunk.Content.Headers.ContentEncoding.Count != 0)
                     {
                         throw new InvalidDataException("Server did not return the requested file range and version.");
                     }
@@ -879,7 +877,7 @@ public static class Utilities
                 if (verifyHash is not null)
                 {
                     writer.Position = 0;
-                    string hash = Utilities.BytesToHex(await SHA256.HashDataAsync(writer, cancel));
+                    string hash = BytesToHex(await SHA256.HashDataAsync(writer, cancel));
                     Logs.Verbose($"Raw file hash for {altUrl} is {hash}");
                     if (!hash.Equals(verifyHash, StringComparison.OrdinalIgnoreCase))
                     {
@@ -920,7 +918,7 @@ public static class Utilities
         string authHint = ApplyDownloadAPIKey(ref url, headers, session) ?? "This may be gated or private content that requires an API key. You can set API keys in the User Settings page.";
         using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancel.Token);
         Directory.CreateDirectory(Path.GetDirectoryName(filepath));
-        if (url.StartsWith("https://huggingface.co/") && await ParallelDownloader.TryDownloadFile(UtilWebClient, url, filepath, headers, progressUpdate, verifyHash, combinedCancel.Token, altUrl))
+        if (url.StartsWith("https://huggingface.co/") && await ParallelDownloader.TryDownloadFile(DownloaderWebClient, url, filepath, headers, progressUpdate, verifyHash, altUrl, combinedCancel.Token))
         {
             return;
         }
@@ -933,7 +931,7 @@ public static class Utilities
                 request.Headers.Add(key, value);
             }
         }
-        HttpResponseMessage response = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, combinedCancel.Token);
+        HttpResponseMessage response = await DownloaderWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, combinedCancel.Token);
         long length = response.Content.Headers.ContentLength ?? 0;
         ConcurrentQueue<byte[]> chunks = new();
         ConcurrentQueue<(long, long, long, bool)> progUpdates = new();
@@ -1026,7 +1024,7 @@ public static class Utilities
                                 }
                             }
                             request.Headers.Range = new(totalRead, length - 1);
-                            workingResponse = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, combinedCancel.Token);
+                            workingResponse = await DownloaderWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, combinedCancel.Token);
                             if (workingResponse.StatusCode != HttpStatusCode.PartialContent)
                             {
                                 string message = $"Failed to download {altUrl} (expecting Partial range continue): got response code {(int)workingResponse.StatusCode} {workingResponse.StatusCode}";

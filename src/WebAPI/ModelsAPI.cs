@@ -606,7 +606,6 @@ public static class ModelsAPI
         }
         string originalUrl = url;
         url = url.Before('#');
-        Dictionary<string, string> headers = [];
         try
         {
             string outPath = $"{folder}/{name}.{extension}";
@@ -631,7 +630,7 @@ public static class ModelsAPI
                     ["overall_percent"] = 0.2,
                     ["per_second"] = perSec
                 }, API.WebsocketTimeout).Wait();
-            }, canceller, originalUrl, headers: headers, session: session);
+            }, canceller, originalUrl, session: session);
             Task listenForSignal = Utilities.RunCheckedTask(async () =>
             {
                 while (true)
