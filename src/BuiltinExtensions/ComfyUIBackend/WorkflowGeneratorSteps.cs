@@ -1385,7 +1385,7 @@ public class WorkflowGeneratorSteps
             {
                 startStep = (int)Math.Round(steps * (1 - creativity));
             }
-            if (g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out string method) && method == "StepSwap" && g.UserInput.TryGet(T2IParamTypes.RefinerControl, out double refinerControl))
+            if (g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out string method) && (method == "StepSwap" || method == "StepSwapNoisy") && g.UserInput.TryGet(T2IParamTypes.RefinerControl, out double refinerControl))
             {
                 endStep = (int)Math.Round(steps * (1 - refinerControl));
             }
