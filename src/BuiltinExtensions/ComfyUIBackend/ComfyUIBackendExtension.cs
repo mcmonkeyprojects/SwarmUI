@@ -933,6 +933,10 @@ public class ComfyUIBackendExtension : Extension
             {
                 tasks.Add(Utilities.RunCheckedTask(async () =>
                 {
+                    if (!Directory.Exists($"{folder}/.git"))
+                    {
+                        return;
+                    }
                     string nodeName = Path.GetFileName(folder);
                     string latestTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(nodeName, out string pinCommit) ? pinCommit : null;
                     JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true, latestTarget: latestTarget);
@@ -974,6 +978,10 @@ public class ComfyUIBackendExtension : Extension
             {
                 tasks.Add(Utilities.RunCheckedTask(async () =>
                 {
+                    if (!Directory.Exists($"{folder}/.git"))
+                    {
+                        return;
+                    }
                     string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(nodeName, out string pinCommit) ? pinCommit : null;
                     await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail, targetCommit: headTarget);
                 }));
