@@ -610,7 +610,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice, ModelAttentionBackend, SeedVRUpscaleMethod, SeedVRColorCorrectionBehavior, EnableReferenceLatents, TextEncodedImage;
+    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice, ModelAttentionBackend, UseSparseAttention, SeedVRUpscaleMethod, SeedVRColorCorrectionBehavior, EnableReferenceLatents, TextEncodedImage;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG, SeedVRSplitLatent;
 
@@ -854,11 +854,14 @@ public class ComfyUIBackendExtension : Extension
         NunchakuCacheThreshold = T2IParamTypes.Register<double>(new("Nunchaku Cache Threshold", "What threshold to use with Nunchaku block caching.\nThis makes Nunchaku gens faster at the cost of quality.\nOnly applicable to Nunchaku models.\nGenerally 0 to 0.2 is the reasonable range, above that you can start noticing quality drop.",
             "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "nunchaku", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 16
             ));
-        SetClipDevice = T2IParamTypes.Register<string>(new("Set CLIP Device", "Override the hardware device that text encoders run on.",
-            "cpu", FeatureFlag: "set_clip_device", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => SetClipDevices, OrderPriority: 70
-            ));
         ModelAttentionBackend = T2IParamTypes.Register<string>(new("Model Attention Backend", "Override which attention implementation the model uses.\n'pytorch attention' is the standard default.\n'comfy kitchen attention' is a new sage-like attention impl from Comfy directly that has better performance, but may not work on all machines.",
             "pytorch attention", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => ModelAttentionBackends, OrderPriority: 41
+            ));
+        UseSparseAttention = T2IParamTypes.Register<string>(new("Use Sparse Attention", "Apply block-sparse attention to speed up generation with large inputs (especially video model such as H3).\nSol-Attn (adaptive tau) (TODO: Explain this) a training-free adaptive threshold (good general default).\n'Top-K (SLA)' (TODO: Explain this)\n'VSA' is Video Sparse Attention, (TODO: Explain this) only for VSA trained models.",
+            "None", IgnoreIf: "None", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => ["None", "sol///Sol-Attn", "topk///Top-K (SLA)", "vsa///VSA"], OrderPriority: 42
+            ));
+        SetClipDevice = T2IParamTypes.Register<string>(new("Set CLIP Device", "Override the hardware device that text encoders run on.",
+            "cpu", FeatureFlag: "set_clip_device", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => SetClipDevices, OrderPriority: 70
             ));
         // ================================================ SeedVR ================================================
         GroupSeedVR = new T2IParamGroup("SeedVR", Toggles: true, Open: false, OrderPriority: -2.5, Description: "SeedVR2 is a one-step restoration model, run over the result of the normal generation.");

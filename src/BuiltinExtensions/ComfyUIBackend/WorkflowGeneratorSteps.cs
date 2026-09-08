@@ -388,6 +388,33 @@ public class WorkflowGeneratorSteps
                 });
                 g.LoadingModel = [attentionNode, 0];
             }
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.UseSparseAttention, out string sparseAttention) && sparseAttention != "None")
+            {
+                JObject sparseInputs = new JObject()
+                {
+                    ["model"] = g.LoadingModel,
+                    ["start_percent"] = sparseAttention == "vsa" ? 0.0 : 0.2,
+                    ["end_percent"] = 1.0,
+                    ["extra_tokens"] = sparseAttention == "vsa" ? 0 : 256
+                };
+                if (sparseAttention == "sol")
+                {
+                    sparseInputs["selection"] = "sol-attn";
+                    sparseInputs["selection.tau"] = 1.3;
+                }
+                else if (sparseAttention == "topk")
+                {
+                    sparseInputs["selection"] = "sla";
+                    sparseInputs["selection.keep_percent"] = 15.0;
+                }
+                else if (sparseAttention == "vsa")
+                {
+                    sparseInputs["selection"] = "vsa";
+                    sparseInputs["selection.keep_percent"] = 10.0;
+                }
+                string sparseNode = g.CreateNode("BlockSparseAttention", sparseInputs);
+                g.LoadingModel = [sparseNode, 0];
+            }
             if (g.UserInput.TryGet(T2IParamTypes.TorchCompile, out string compileMode) && compileMode != "Disabled")
             {
                 string torchCompile = g.CreateNode("TorchCompileModel", new JObject()
