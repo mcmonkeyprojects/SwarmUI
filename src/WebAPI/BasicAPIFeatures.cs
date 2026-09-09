@@ -386,7 +386,8 @@ public static class BasicAPIFeatures
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
             ["model_preset_links"] = JObject.Parse(session.User.GetGenericData("modelpresetlinks", "full") ?? "{}"),
-            ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens && !session.User.Settings.ParamParsing.ParseAlternativePromptSyntaxes, settings.Suffix, settings.SpacingMode))
+            // TODO: Paren escaping is model-specific now, so maybe the escape should be handled elsewhere?
+            ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens && session.User.Settings.ParamParsing.ParseAlternativePromptSyntaxes, settings.Suffix, settings.SpacingMode))
         };
     }
 

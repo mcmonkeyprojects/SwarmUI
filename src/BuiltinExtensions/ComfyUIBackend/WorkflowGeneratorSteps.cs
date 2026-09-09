@@ -390,7 +390,7 @@ public class WorkflowGeneratorSteps
             }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.UseSparseAttention, out string sparseAttention) && sparseAttention != "None")
             {
-                JObject sparseInputs = new JObject()
+                JObject sparseInputs = new()
                 {
                     ["model"] = g.LoadingModel,
                     ["start_percent"] = sparseAttention == "vsa" ? 0.0 : 0.2,
