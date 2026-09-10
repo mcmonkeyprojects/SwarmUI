@@ -8,6 +8,8 @@ API routes for actual text-to-image processing and directly related features.
 
 - HTTP Route [AddImageToHistory](#http-route-apiaddimagetohistory)
 - HTTP Route [DeleteImage](#http-route-apideleteimage)
+- HTTP Route [EditVideo](#http-route-apieditvideo)
+- HTTP Route [ExtractVideoAudio](#http-route-apiextractvideoaudio)
 - HTTP Route [GenerateText2Image](#http-route-apigeneratetext2image)
 - WebSocket Route [GenerateText2ImageWS](#websocket-route-apigeneratetext2imagews)
 - HTTP Route [ListImages](#http-route-apilistimages)
@@ -67,6 +69,61 @@ Delete an image from history.
 
 ```js
 "success": true
+```
+
+## HTTP Route /API/EditVideo
+
+#### Description
+
+Trims, optionally crops, optionally scales a video, saves it under inputs/edited_video, and returns the saved video.
+
+#### Permission Flag
+
+`basic_image_generation` - `Basic Image Generation` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| video | String | Video data URL or reusable server media path. | **(REQUIRED)** |
+| filename | String | Original video filename, used to name the edited video. | (null) |
+| startMilliseconds | Int32 | Trim start in milliseconds. | `0` |
+| endMilliseconds | Int32 | Trim end in milliseconds, or -1 for the end of the video. | `-1` |
+| cropX | Int32 | Crop left coordinate in pixels. | `0` |
+| cropY | Int32 | Crop top coordinate in pixels. | `0` |
+| cropWidth | Int32 | Crop width in pixels, or zero to retain the full frame. | `0` |
+| cropHeight | Int32 | Crop height in pixels, or zero to retain the full frame. | `0` |
+| scale | Double | Output scale factor. 1 leaves the cropped size unchanged. | `1` |
+
+#### Return Format
+
+```js
+    "result": "inputs/edited_video/video-edited-1.mp4"
+```
+
+## HTTP Route /API/ExtractVideoAudio
+
+#### Description
+
+Extracts the audio track from a video, saves it under inputs/extracted_audio, and returns the saved audio.
+
+#### Permission Flag
+
+`basic_image_generation` - `Basic Image Generation` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| video | String | Video data URL or reusable server media path. | **(REQUIRED)** |
+| filename | String | Original video filename, used to name the extracted audio. | (null) |
+| startMilliseconds | Int32 | Trim start in milliseconds. | `0` |
+| endMilliseconds | Int32 | Trim end in milliseconds, or -1 for the end of the video. | `-1` |
+
+#### Return Format
+
+```js
+    "result": "inputs/extracted_audio/video-audio-1.mp3"
 ```
 
 ## HTTP Route /API/GenerateText2Image
@@ -173,6 +230,7 @@ Gets a list of images in a saved image history folder.
 | depth | Int32 | Maximum depth (number of recursive folders) to search. | **(REQUIRED)** |
 | sortBy | String | What to sort the list by - `Name` or `Date`. | `Name` |
 | sortReverse | Boolean | If true, the sorting should be done in reverse. | `False` |
+| filter | String | Optional case-insensitive text filter. When set, scans up to MaxImagesScannedInHistory and returns matching files. | (null) |
 
 #### Return Format
 
@@ -246,10 +304,20 @@ Get a list of available T2I parameters.
         "parent": "idhere" // or null
     }
 ],
+"model_compat_classes":
+{
+    "stable-diffusion-xl-v1": {"shortcode": "SDXL", ... },
+    // etc
+},
+"model_classes":
+{
+    "stable-diffusion-xl-v1-base": {"compat_class": "stable-diffusion-xl-v1", ... },
+    // etc
+}
 "models":
 {
-    "Stable-Diffusion": ["model1", "model2"],
-    "LoRA": ["model1", "model2"],
+    "Stable-Diffusion": [["model1", "archid"], ["model2", "archid"]],
+    "LoRA": [["model1", "archid"], ["model2", "archid"]],
     // etc
 },
 "wildcards": ["wildcard1", "wildcard2"],
@@ -267,7 +335,7 @@ Open an image folder in the file explorer. Used for local users directly.
 
 #### Permission Flag
 
-`local_image_folder` - `Local Image Folder` in group `Admin`
+`local_image_folder` - `Local Image Folder` in group `Special`
 
 #### Parameters
 
@@ -318,6 +386,7 @@ Trigger a refresh of the server's data, returning parameter data. Requires permi
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | strong | Boolean | If true, fully refresh everything. If false, just grabs the list of current available parameters (waiting for any pending refreshes first). | `True` |
+| refreshType | String | Optional type of data to refresh. If unspecified, runs a general refresh. Valid options: ['wildcards'] | (null) |
 
 #### Return Format
 

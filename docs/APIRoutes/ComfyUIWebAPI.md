@@ -9,10 +9,13 @@
 - HTTP Route [ComfyDeleteWorkflow](#http-route-apicomfydeleteworkflow)
 - HTTP Route [ComfyEnsureRefreshable](#http-route-apicomfyensurerefreshable)
 - HTTP Route [ComfyGetGeneratedWorkflow](#http-route-apicomfygetgeneratedworkflow)
+- HTTP Route [ComfyGetNodeTypesForBackend](#http-route-apicomfygetnodetypesforbackend)
 - HTTP Route [ComfyInstallFeatures](#http-route-apicomfyinstallfeatures)
+- HTTP Route [ComfyListTorchInstalls](#http-route-apicomfylisttorchinstalls)
 - HTTP Route [ComfyListWorkflows](#http-route-apicomfylistworkflows)
 - HTTP Route [ComfyReadWorkflow](#http-route-apicomfyreadworkflow)
 - HTTP Route [ComfySaveWorkflow](#http-route-apicomfysaveworkflow)
+- HTTP Route [ComfyUpdateTorch](#http-route-apicomfyupdatetorch)
 - WebSocket Route [DoLoraExtractionWS](#websocket-route-apidoloraextractionws)
 - WebSocket Route [DoTensorRTCreateWS](#websocket-route-apidotensorrtcreatews)
 
@@ -80,6 +83,28 @@
 (RETURN INFO NOT SET)
 ```
 
+## HTTP Route /API/ComfyGetNodeTypesForBackend
+
+#### Description
+
+(ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`view_backends_list` - `View Backends List` in group `Backends Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| backend | Int32 | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+(RETURN INFO NOT SET)
+```
+
 ## HTTP Route /API/ComfyInstallFeatures
 
 #### Description
@@ -95,6 +120,26 @@
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | features | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+(RETURN INFO NOT SET)
+```
+
+## HTTP Route /API/ComfyListTorchInstalls
+
+#### Description
+
+(ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`install_features` - `Install New Features` in group `Control`
+
+#### Parameters
+
+**None.**
 
 #### Return Format
 
@@ -174,6 +219,28 @@
 (RETURN INFO NOT SET)
 ```
 
+## HTTP Route /API/ComfyUpdateTorch
+
+#### Description
+
+(ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`install_features` - `Install New Features` in group `Control`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| backendId | Int32 | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+(RETURN INFO NOT SET)
+```
+
 ## WebSocket Route /API/DoLoraExtractionWS
 
 #### Description
@@ -218,6 +285,7 @@
 | aspectRange | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 | optBatch | Int32 | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 | maxBatch | Int32 | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| contextLen | Int32 | (PARAMETER DESCRIPTION NOT SET) | `75` |
 
 #### Return Format
 

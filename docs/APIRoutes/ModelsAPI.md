@@ -12,8 +12,10 @@ API routes related to handling models (including loras, wildcards, etc).
 - WebSocket Route [DoModelDownloadWS](#websocket-route-apidomodeldownloadws)
 - HTTP Route [EditModelMetadata](#http-route-apieditmodelmetadata)
 - HTTP Route [EditWildcard](#http-route-apieditwildcard)
+- HTTP Route [ForwardImageRequest](#http-route-apiforwardimagerequest)
 - HTTP Route [ForwardMetadataRequest](#http-route-apiforwardmetadatarequest)
 - HTTP Route [GetModelHash](#http-route-apigetmodelhash)
+- HTTP Route [GetModelHeaders](#http-route-apigetmodelheaders)
 - HTTP Route [ListLoadedModels](#http-route-apilistloadedmodels)
 - HTTP Route [ListModels](#http-route-apilistmodels)
 - HTTP Route [RenameModel](#http-route-apirenamemodel)
@@ -164,7 +166,7 @@ Modifies the metadata of a model. Returns before the file update is necessarily 
 | trigger_phrase | String | New model `trigger_phrase` metadata value. | **(REQUIRED)** |
 | prediction_type | String | New model `prediction_type` metadata value. | **(REQUIRED)** |
 | tags | String | New model `tags` metadata value (comma-separated list). | **(REQUIRED)** |
-| preview_image | String | New model `preview_image` metadata value (image-data-string format, or null to not change). | (null) |
+| preview_image | String | New model `preview_image` metadata value (image-data-string format, 'clear' to remove, or null to not change). | (null) |
 | preview_image_metadata | String | Optional raw text of metadata to inject to the preview image. | (null) |
 | is_negative_embedding | Boolean | New model `is_negative_embedding` metadata value. | `False` |
 | lora_default_weight | String | New model `lora_default_weight` metadata value. | (Empty String) |
@@ -193,13 +195,35 @@ Edits a wildcard file.
 | --- | --- | --- | --- |
 | card | String | Exact filepath name of the wildcard. | **(REQUIRED)** |
 | options | String | Newline-separated string listing of wildcard options. | **(REQUIRED)** |
-| preview_image | String | Image-data-string of a preview, or null to not change. | (null) |
+| preview_image | String | Image-data-string of a preview, 'clear' to remove, or null to not change. | (null) |
 | preview_image_metadata | String | Optional raw text of metadata to inject to the preview image. | (null) |
 
 #### Return Format
 
 ```js
 "success": true
+```
+
+## HTTP Route /API/ForwardImageRequest
+
+#### Description
+
+Forwards an image file request, eg to civitai image CDN.
+
+#### Permission Flag
+
+`edit_model_metadata` - `Edit Model Metadata` in group `Control`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| url | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+"image": "data:image/jpeg;base64,..."
 ```
 
 ## HTTP Route /API/ForwardMetadataRequest
@@ -245,6 +269,29 @@ Gets or creates a valid tensor hash for the requested model.
 
 ```js
 "hash": "0xABC123"
+```
+
+## HTTP Route /API/GetModelHeaders
+
+#### Description
+
+Gets the raw headers of a model as raw JSON.
+
+#### Permission Flag
+
+`edit_model_metadata` - `Edit Model Metadata` in group `Control`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| model | String | Exact filepath name of the model. | **(REQUIRED)** |
+| subtype | String | The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc. | `Stable-Diffusion` |
+
+#### Return Format
+
+```js
+"headers": { "diffusion_model.some.key": { "dtype": "BF16", ... }, ... }
 ```
 
 ## HTTP Route /API/ListLoadedModels

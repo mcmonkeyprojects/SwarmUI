@@ -9,8 +9,10 @@ Basic general API routes, primarily for users and session handling.
 - HTTP Route [AddNewPreset](#http-route-apiaddnewpreset)
 - HTTP Route [ChangePassword](#http-route-apichangepassword)
 - HTTP Route [ChangeUserSettings](#http-route-apichangeusersettings)
+- HTTP Route [CreateAuthToken](#http-route-apicreateauthtoken)
 - HTTP Route [DeletePreset](#http-route-apideletepreset)
 - HTTP Route [DuplicatePreset](#http-route-apiduplicatepreset)
+- HTTP Route [ExportUserPresets](#http-route-apiexportuserpresets)
 - HTTP Route [GetAPIKeyStatus](#http-route-apigetapikeystatus)
 - HTTP Route [GetCurrentStatus](#http-route-apigetcurrentstatus)
 - HTTP Route [GetLanguage](#http-route-apigetlanguage)
@@ -19,11 +21,16 @@ Basic general API routes, primarily for users and session handling.
 - HTTP Route [GetUserSettings](#http-route-apigetusersettings)
 - WebSocket Route [InstallConfirmWS](#websocket-route-apiinstallconfirmws)
 - HTTP Route [InterruptAll](#http-route-apiinterruptall)
+- HTTP Route [ListMyAuthTokens](#http-route-apilistmyauthtokens)
 - HTTP Route [Login](#http-route-apilogin)
 - HTTP Route [Logout](#http-route-apilogout)
+- HTTP Route [RegisterBasic](#http-route-apiregisterbasic)
+- HTTP Route [RegisterOAuth](#http-route-apiregisteroauth)
+- HTTP Route [RevokeMyAuthToken](#http-route-apirevokemyauthtoken)
 - HTTP Route [ServerDebugMessage](#http-route-apiserverdebugmessage)
 - HTTP Route [SetAPIKey](#http-route-apisetapikey)
 - HTTP Route [SetParamEdits](#http-route-apisetparamedits)
+- HTTP Route [SetPresetLinks](#http-route-apisetpresetlinks)
 - HTTP Route [SetStarredModels](#http-route-apisetstarredmodels)
 
 ## HTTP Route /API/AddNewPreset
@@ -44,8 +51,10 @@ User route to add a new parameter preset.
 | description | String | User-facing description text. | **(REQUIRED)** |
 | raw | JObject | Use 'param_map' key to send the raw parameter mapping, equivalent to GenerateText2Image. | **(REQUIRED)** |
 | preview_image | String | Optional preview image data base64 string. | (null) |
+| preview_image_metadata | String | Optional raw text of metadata to inject to the preview image. | (null) |
 | is_edit | Boolean | If true, edit an existing preset. If false, do not override pre-existing presets of the same name. | `False` |
 | editing | String | If is_edit is set, include the original preset name here. | (null) |
+| is_starred | Boolean | Whether the preset is starred. | `False` |
 
 #### Return Format
 
@@ -105,6 +114,29 @@ User route to change user settings data.
     "success": true
 ```
 
+## HTTP Route /API/CreateAuthToken
+
+#### Description
+
+User route to create a new auth token (login session) for the current user.
+Only valid if authorization is enabled.
+
+#### Permission Flag
+
+`edit_user_settings` - `Edit User Settings` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| reason | String | A user-provided reason/label for this token, stored as the user-agent. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "token": "useridhex.tokenid.validationtext"
+```
+
 ## HTTP Route /API/DeletePreset
 
 #### Description
@@ -147,6 +179,37 @@ User route to duplicate an existing preset.
 
 ```js
     "success": true
+```
+
+## HTTP Route /API/ExportUserPresets
+
+#### Description
+
+Gets the user's presets with full base64 preview images embedded.
+
+#### Permission Flag
+
+`fundamental_generate_tab_access` - `Fundamental Generate Tab Access` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| raw | JObject | Optional 'titles' key holding a JSON array of preset titles to include. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "presets": [
+        {
+            "author": "username",
+            "title": "Preset Title",
+            "description": "Preset Description",
+            "param_map": { "key": "value" },
+            "preview_image": "data:image/jpeg;base64,...",
+            "is_starred": false
+        }
+    ]
 ```
 
 ## HTTP Route /API/GetAPIKeyStatus
@@ -258,13 +321,22 @@ User route to get the user's own base data.
             "param_map": {
                 "key": "value"
             },
-            "preview_image": "/ViewSpecial/Preset/Preset Title"
+            "preview_image": "/ViewSpecial/Preset/Preset Title",
+            "is_starred": false
         }
     ],
     "language": "en",
     "permissions": ["permission1", "permission2"],
     "starred_models": {
         "LoRA": ["one", "two"]
+    },
+    "model_preset_links": {
+        "Stable-Diffusion": {
+            "modelnamehere": ["preset_title"]
+        },
+        "LoRA": {
+            "modelnamehere": ["preset_title"]
+        }
     },
     "autocompletions": ["Word\nword\ntag\n3"]
 ```
@@ -282,7 +354,9 @@ Intentionally no permission flag required, as permissions are not defined until 
 
 #### Parameters
 
-**None.**
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| impersonateUser | String | If you have an admin account with manage_users permission, specify the id of a different user to impersonate here. | (null) |
 
 #### Return Format
 
@@ -332,7 +406,7 @@ Websocket route for the initial installation from the UI.
 
 #### Permission Flag
 
-`install` - `Install` in group `Admin`
+`install` - `Install` in group `Special`
 
 #### Parameters
 
@@ -372,6 +446,36 @@ Tell all waiting generations in this session or all sessions to interrupt.
 
 ```js
     "success": true
+```
+
+## HTTP Route /API/ListMyAuthTokens
+
+#### Description
+
+User route to list the current user's auth tokens (login sessions).
+Only valid if authorization is enabled.
+
+#### Permission Flag
+
+`read_user_settings` - `Read User Settings` in group `User`
+
+#### Parameters
+
+**None.**
+
+#### Return Format
+
+```js
+    "tokens": [
+        {
+            "id": "abc123", // Note this is not the full token, just the ID prefix.
+            "created": 1700000000, // Unix time seconds.
+            "last_active": 1700001000,
+            "user_agent": "Mozilla/5.0...",
+            "origin_address": "127.0.0.1",
+            "is_current": true // If this was the token that sent this request.
+        }
+    ]
 ```
 
 ## HTTP Route /API/Login
@@ -429,6 +533,89 @@ Causes a user to log out, closing all assocated sessions in the process.
     "success": "true"
 ```
 
+## HTTP Route /API/RegisterBasic
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Special route to register a new user account. Generally only for UI users, bots/automated API usages should have a user account generate a token first.
+
+#### Permission Flag
+
+(MISSING)
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| username | String | New registered account username. | **(REQUIRED)** |
+| password | String | New registered account password. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": "true" // and sets a cookie
+    // or
+    "error_id": "invalid_input" // or "ratelimit", "username_exists" (or is reserved/invalid), "registration_failed" (internal)
+```
+
+## HTTP Route /API/RegisterOAuth
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Special route to register a new user account via OAuth. Cannot be automated, must be via UI.
+
+#### Permission Flag
+
+(MISSING)
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| username | String | New registered account username. | **(REQUIRED)** |
+| oauth_tracker_key | String | Tracker key to identify the source OAuth request. | **(REQUIRED)** |
+| oauth_type | String | OAuth provider type. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": "true" // and sets a cookie
+    // or
+    "error_id": "invalid_input" // or "ratelimit", "username_exists" (or is reserved/invalid), "registration_failed" (internal)
+```
+
+## HTTP Route /API/RevokeMyAuthToken
+
+#### Description
+
+User route to revoke (delete) one of the current user's auth tokens.
+
+#### Permission Flag
+
+`edit_user_settings` - `Edit User Settings` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| tokenId | String | The ID of the token to revoke. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
+```
+
 ## HTTP Route /API/ServerDebugMessage
 
 #### Description
@@ -437,7 +624,7 @@ Send a debug message to server logs.
 
 #### Permission Flag
 
-`server_debug_message` - `Server Debug Message` in group `Admin`
+`server_debug_message` - `Server Debug Message` in group `Special`
 
 #### Parameters
 
@@ -494,6 +681,28 @@ UI internal helper for user customization of parameters.
 
 ```js
     "success": true
+```
+
+## HTTP Route /API/SetPresetLinks
+
+#### Description
+
+Saves a reference to a preset for a model or LoRA to the user's data.
+
+#### Permission Flag
+
+`fundamental_model_access` - `Fundamental Model Access` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| raw | JObject | Send the raw data as eg 'LoRA': { 'Name': ['Preset'] }, 'Stable-Diffusion': { ... } | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+"success": "true"
 ```
 
 ## HTTP Route /API/SetStarredModels

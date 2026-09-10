@@ -103,7 +103,9 @@ Trigger a mass metadata reset.
 
 #### Parameters
 
-**None.**
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| type | String | What metadata to reset: `image` for image/output history metadata, `model` for model metadata, or `all` for both. | `all` |
 
 #### Return Format
 

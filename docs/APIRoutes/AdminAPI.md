@@ -13,22 +13,27 @@ Administrative APIs related to server management.
 - HTTP Route [AdminDeleteUser](#http-route-apiadmindeleteuser)
 - HTTP Route [AdminEditRole](#http-route-apiadmineditrole)
 - HTTP Route [AdminGetUserInfo](#http-route-apiadmingetuserinfo)
+- HTTP Route [AdminInterruptUser](#http-route-apiadmininterruptuser)
 - HTTP Route [AdminListPermissions](#http-route-apiadminlistpermissions)
 - HTTP Route [AdminListRoles](#http-route-apiadminlistroles)
 - HTTP Route [AdminListUsers](#http-route-apiadminlistusers)
+- HTTP Route [AdminSetUserOAuthEmail](#http-route-apiadminsetuseroauthemail)
 - HTTP Route [AdminSetUserPassword](#http-route-apiadminsetuserpassword)
+- HTTP Route [AdminTakeControl](#http-route-apiadmintakecontrol)
 - HTTP Route [ChangeServerSettings](#http-route-apichangeserversettings)
 - HTTP Route [CheckForUpdates](#http-route-apicheckforupdates)
 - HTTP Route [DebugGenDocs](#http-route-apidebuggendocs)
 - HTTP Route [DebugLanguageAdd](#http-route-apidebuglanguageadd)
 - HTTP Route [GetGlobalStatus](#http-route-apigetglobalstatus)
 - HTTP Route [GetServerResourceInfo](#http-route-apigetserverresourceinfo)
+- HTTP Route [InstallDotnetUpdate](#http-route-apiinstalldotnetupdate)
 - HTTP Route [InstallExtension](#http-route-apiinstallextension)
 - HTTP Route [ListConnectedUsers](#http-route-apilistconnectedusers)
 - HTTP Route [ListLogTypes](#http-route-apilistlogtypes)
 - HTTP Route [ListRecentLogMessages](#http-route-apilistrecentlogmessages)
 - HTTP Route [ListServerSettings](#http-route-apilistserversettings)
 - HTTP Route [LogSubmitToPastebin](#http-route-apilogsubmittopastebin)
+- HTTP Route [SetExtensionEnabled](#http-route-apisetextensionenabled)
 - HTTP Route [ShutdownServer](#http-route-apishutdownserver)
 - HTTP Route [UninstallExtension](#http-route-apiuninstallextension)
 - HTTP Route [UpdateAndRestart](#http-route-apiupdateandrestart)
@@ -233,7 +238,35 @@ Admin route to get info about a user.
     "user_id": "useridhere",
     "password_set_by_admin": true, // false if set by user
     "settings": { ... }, // User settings, same format as GetUserSettings
+    "oauth_email": "", // OAuth email associated with the user, if any
     "max_t2i": 32 // actual value of max t2i simultaneous, calculated from current roles and available backends
+```
+
+## HTTP Route /API/AdminInterruptUser
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Admin route to interrupt another user's queue.
+
+#### Permission Flag
+
+`interrupt_others` - `Interrupt Others` in group `Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| name | String | The name of the user to interrupt. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
 ```
 
 ## HTTP Route /API/AdminListPermissions
@@ -338,6 +371,34 @@ Admin route to get a list of all known users by ID.
     ]
 ```
 
+## HTTP Route /API/AdminSetUserOAuthEmail
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Admin route to force-set a user's OAuth email.
+
+#### Permission Flag
+
+`manage_users` - `Manage Users` in group `Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| name | String | The name of the user. | **(REQUIRED)** |
+| email | String | The OAuth email to set for the user, or empty string to clear it. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
+```
+
 ## HTTP Route /API/AdminSetUserPassword
 
 > [!WARNING]
@@ -364,6 +425,27 @@ Admin route to force-set a user's password.
 
 ```js
     "success": true
+```
+
+## HTTP Route /API/AdminTakeControl
+
+#### Description
+
+Marks the server as under control of a remote management, such as an AutoScalingBackend.
+If `--require_control_within` was used, the server will shut down if the remote management does not consistently send pings.
+
+#### Permission Flag
+
+`automated_control` - `Automated Control` in group `Special`
+
+#### Parameters
+
+**None.**
+
+#### Return Format
+
+```js
+"success": true
 ```
 
 ## HTTP Route /API/ChangeServerSettings
@@ -405,10 +487,22 @@ Do a scan for any available updates to SwarmUI, extensions, or backends.
 #### Return Format
 
 ```js
-    "server_updates_count": 0,
-    "server_updates_preview": ["name1", ..., "name6"], // capped to just a few
-    "extension_updates": ["name1", ...],
-    "backend_updates": ["name1", ...]
+    "server": {
+        "count": 0,
+        "preview": ["name1", ..., "name6"] // capped to just a few
+    },
+    "extensions": {
+        "MyExtension": {
+            "count": 0,
+            "preview": []
+        }
+    },
+    "backends": {
+        "MyBackend": {
+            "count": 0,
+            "preview": []
+        }
+    }
 ```
 
 ## HTTP Route /API/DebugGenDocs
@@ -540,11 +634,31 @@ Returns information about the server's resource usage.
     }
 ```
 
+## HTTP Route /API/InstallDotnetUpdate
+
+#### Description
+
+(ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`install` - `Install` in group `Special`
+
+#### Parameters
+
+**None.**
+
+#### Return Format
+
+```js
+(RETURN INFO NOT SET)
+```
+
 ## HTTP Route /API/InstallExtension
 
 #### Description
 
-Installs an extension from the known extensions list. Does not trigger a restart. Does signal required rebuild.
+Installs an extension from the known extensions list. Does not trigger a restart.
 
 #### Permission Flag
 
@@ -585,7 +699,11 @@ Returns a list of currently connected users.
             "id": "useridhere",
             "last_active_seconds": 0,
             "active_sessions": [ "addresshere", "..." ],
-            "last_active": "10 seconds ago"
+            "last_active": "10 seconds ago",
+            "waiting_gens": 0,
+            "loading_models": 0,
+            "waiting_backends": 0,
+            "live_gens": 0
         }
     ]
 ```
@@ -699,6 +817,29 @@ Submits current server log info to a pastebin service automatically.
   "url": "a url to the paste here"
 ```
 
+## HTTP Route /API/SetExtensionEnabled
+
+#### Description
+
+Enables or disables an installed extension. Does not trigger a restart.
+
+#### Permission Flag
+
+`manage_extensions` - `Manage Extensions` in group `Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| extensionName | String | The extension name (disable) or folder name (enable). | **(REQUIRED)** |
+| enabled | Boolean | True to enable the extension, false to disable it. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
+```
+
 ## HTTP Route /API/ShutdownServer
 
 #### Description
@@ -723,7 +864,7 @@ Shuts the server down. Returns success before the server is gone.
 
 #### Description
 
-Triggers an extension uninstallation for an installed extension. Does not trigger a restart. Does signal required rebuild.
+Triggers an extension uninstallation for an installed extension. Does not trigger a restart.
 
 #### Permission Flag
 
@@ -733,7 +874,7 @@ Triggers an extension uninstallation for an installed extension. Does not trigge
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| extensionName | String | The name of the extension to uninstall. | **(REQUIRED)** |
+| extensionName | String | The name (if loaded) or folder name (if disabled) of the extension to uninstall. | **(REQUIRED)** |
 
 #### Return Format
 
@@ -755,8 +896,9 @@ Causes swarm to update, then close and restart itself. If there's no update to a
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| updateExtensions | Boolean | True to also update any extensions. | `False` |
-| updateBackends | Boolean | True to also update any backends. | `False` |
+| raw | JObject | Add extensionsToUpdate: ['name'] and backendsToUpdate: ['name', 'name'] to update extensions/backends. Match names to CheckForUpdates output. | **(REQUIRED)** |
+| doUpdateServer | Boolean | True to include the SwarmUI core in the updates. | `False` |
+| aggressive | Boolean | True to perform an *aggressive* git update (forcibly override common git issues). | `False` |
 | force | Boolean | True to always rebuild and restart even if there's no visible update. | `False` |
 
 #### Return Format
@@ -770,7 +912,7 @@ Causes swarm to update, then close and restart itself. If there's no update to a
 
 #### Description
 
-Triggers an extension update for an installed extension. Does not trigger a restart. Does signal required rebuild.
+Triggers an extension update for an installed extension. Does not trigger a restart.
 
 #### Permission Flag
 
