@@ -45,24 +45,45 @@ def slerp(val, low, high):
     return res
 
 
-def swarm_partial_noise(seed, latent_image):
-    generator = torch.manual_seed(seed)
+def slerp_flat(val, low, high):
+    low_flat = low.reshape(-1)
+    high_flat = high.reshape(-1)
+    low_length = torch.linalg.vector_norm(low_flat)
+    high_length = torch.linalg.vector_norm(high_flat)
+    if low_length == 0 or high_length == 0:
+        return torch.lerp(low, high, val)
+    dot = torch.clamp(torch.dot(low_flat / low_length, high_flat / high_length), -1.0, 1.0)
+    if torch.abs(dot) > 0.9995:
+        return torch.lerp(low, high, val)
+    omega = torch.acos(dot)
+    so = torch.sin(omega)
+    return torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
+
+
+def swarm_partial_noise(seed, latent_image, generator=None):
+    if generator is None:
+        generator = torch.manual_seed(seed)
     return torch.randn(latent_image.size(), dtype=latent_image.dtype, layout=latent_image.layout, generator=generator, device="cpu")
 
 
-def swarm_fixed_noise_inner(seed, latent_image, var_seed, var_seed_strength):
+def swarm_fixed_noise_inner(seed, latent_image, var_seed, var_seed_strength, generators=None, var_generators=None, use_flat_slerp=False):
     noises = []
     for i in range(latent_image.size()[0]):
         if var_seed_strength > 0:
-            noise = swarm_partial_noise(seed, latent_image[i])
-            var_noise = swarm_partial_noise(var_seed + i, latent_image[i])
+            generator = generators[i] if generators is not None else None
+            var_generator = var_generators[i] if var_generators is not None else None
+            noise = swarm_partial_noise(seed, latent_image[i], generator)
+            var_noise = swarm_partial_noise(var_seed + i, latent_image[i], var_generator)
             if noise.ndim == 4: # Video models are B C F H W, we're in a B loop already so sub-iterate over F (Frames)
                 for j in range(noise.shape[1]):
                     noise[:, j] = slerp(var_seed_strength, noise[:, j], var_noise[:, j])
+            elif use_flat_slerp:
+                noise = slerp_flat(var_seed_strength, noise, var_noise)
             else:
                 noise = slerp(var_seed_strength, noise, var_noise)
         else:
-            noise = swarm_partial_noise(seed + i, latent_image[i])
+            generator = generators[i] if generators is not None else None
+            noise = swarm_partial_noise(seed + i, latent_image[i], generator)
         noises.append(noise)
     return torch.stack(noises, dim=0)
 
@@ -70,9 +91,13 @@ def swarm_fixed_noise_inner(seed, latent_image, var_seed, var_seed_strength):
 def swarm_fixed_noise(seed, latent_image, var_seed, var_seed_strength):
     if latent_image.is_nested:
         tensors = latent_image.unbind()
+        batch_size = max(t.size()[0] for t in tensors)
+        generators = [torch.Generator(device="cpu").manual_seed(seed if var_seed_strength > 0 else seed + i) for i in range(batch_size)]
+        var_generators = [torch.Generator(device="cpu").manual_seed(var_seed + i) for i in range(batch_size)] if var_seed_strength > 0 else None
         noises = []
         for t in tensors:
-            noises.append(swarm_fixed_noise_inner(seed, t, var_seed, var_seed_strength))
+            use_flat_slerp = t.ndim == 4 and t.shape[2] == 2
+            noises.append(swarm_fixed_noise_inner(seed, t, var_seed, var_seed_strength, generators, var_generators, use_flat_slerp))
         return nested_tensor.NestedTensor(noises)
     else:
         return swarm_fixed_noise_inner(seed, latent_image, var_seed, var_seed_strength)
