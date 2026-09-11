@@ -18,6 +18,7 @@
     - Similar to `random` you can instead use `|` or `||` to separate entries, eg `<alternate:cat || dog>`. You can have as many unique words as you want, eg `<alternate:cat, dog, horse, wolf, taco>` has 5 words so it will cycle through them every 5 steps.
     - You can shorthand this as `<alt:cat,dog>`
     - Auto1111 syntax like `[cat|dog]` is parsed if the default-on **Parse Alternative Prompt Syntaxes** is enabled in User Settings.
+    - You can use `<lora:...>` to attach loras to alternating steps. This will have poor performance.
 
 ## From-To
 
@@ -28,6 +29,7 @@
     - Similar to `random` you can instead use `|` or `||` to separate entries. Must have exactly two entries.
     - For example, `<fromto[0.5]:cat, dog>` swaps from `cat` to `dog` halfway through a generation.
     - Auto1111 syntax like `[cat:dog:0.5]` is parsed if the default-on **Parse Alternative Prompt Syntaxes** is enabled in User Settings.
+    - You can use `<lora:...>` to attach loras to one or the other set of steps. This will have poor performance.
 
 ## Random
 
@@ -123,6 +125,7 @@
 - You may use `<lora:filename>` to enable a LoRA, or `<lora:filename:weight>` to enable it and set a weight
     - Note that it's generally preferred to use the GUI at the bottom of the page to select loras
     - Note that usually position within the prompt doesn't matter, loras are not actually a prompt feature, this is just a convenience option for users used to Auto WebUI.
+    - A LoRA tag nested inside `<fromto[...]:...>` or `<alternate:...>` only applies to the steps the prompt section applies to.
     - The one time it does matter, is when you use `<segment:...>` or `<object:...>`: a LoRA inside one of these will apply *only* to that segment or object.
     - `weight` is a multiplier, where `1` is the default, `0.5` is weakened halfway, or `2` is twice as strong. Generally numbers larger than 2 will destroy image quality.
     - You may also use `<lora:filename:backbone_weight:textenc_weight>` to enable a lora and set its backbone (unet/dit) weight separately from its text encoder weight.

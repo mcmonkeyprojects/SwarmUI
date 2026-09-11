@@ -26,6 +26,9 @@ public class T2IPromptHandling
 
         public int Depth = 0;
 
+        /// <summary>How many enclosing step-scheduled prompt tags are currently being parsed.</summary>
+        public int DynamicDepth = 0;
+
         /// <summary>If the current syntax usage has a pre-data block, it will be here. This will be null otherwise.</summary>
         public string PreData;
 
@@ -56,6 +59,15 @@ public class T2IPromptHandling
             PreData = preData;
             SectionID = sectionId;
             Depth--;
+            return result;
+        }
+
+        /// <summary>Parses text nested inside a step-scheduled prompt tag.</summary>
+        public string ParseDynamic(string text)
+        {
+            DynamicDepth++;
+            string result = Parse(text);
+            DynamicDepth--;
             return result;
         }
     }
@@ -264,7 +276,7 @@ public class T2IPromptHandling
             }
             for (int i = 0; i < rawVals.Length; i++)
             {
-                rawVals[i] = context.Parse(rawVals[i]);
+                rawVals[i] = context.ParseDynamic(rawVals[i]);
             }
             return $"<alternate:{JoinSmart(rawVals)}>";
         };
@@ -287,7 +299,7 @@ public class T2IPromptHandling
             }
             for (int i = 0; i < rawVals.Length; i++)
             {
-                rawVals[i] = context.Parse(rawVals[i]);
+                rawVals[i] = context.ParseDynamic(rawVals[i]);
             }
             return $"<fromto[{stepIndex:0.######}]:{JoinSmart(rawVals)}>";
         };
@@ -534,7 +546,10 @@ public class T2IPromptHandling
         PromptTagProcessors["embedding"] = PromptTagProcessors["embed"];
         PromptTagPostProcessors["lora"] = (data, context) =>
         {
-            data = context.Parse(data);
+            data = PromptRegion.RemoveTagAttachment(data, "hook", out _);
+            string retainedData = data;
+            string parseData = PromptRegion.RemoveTagAttachment(data, "cid", out _);
+            data = context.Parse(parseData);
             string lora = data.ToLowerFast().Replace('\\', '/');
             int colonIndex = lora.IndexOf(':');
             double strength = 1;
@@ -590,6 +605,7 @@ public class T2IPromptHandling
                 confinements = null;
             }
             loraList.Add(matched);
+            int loraIndex = loraList.Count - 1;
             weights.Add(strength.ToString());
             context.Input.Set(T2IParamTypes.Loras, loraList);
             context.Input.Set(T2IParamTypes.LoraWeights, weights);
@@ -621,6 +637,12 @@ public class T2IPromptHandling
             context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
             List<string> promptedLoras = context.Input.ExtraMeta.GetOrCreate("prompted_loras", () => new List<string>()) as List<string>;
             promptedLoras.Add(T2IParamTypes.CleanModelName(matched));
+            if (context.DynamicDepth > 0)
+            {
+                int hookId = context.Input.DynamicLoraIndices.Count;
+                context.Input.DynamicLoraIndices.Add(loraIndex);
+                return $"<lora:{retainedData}//hook={hookId}>";
+            }
             return "";
         };
         PromptTagBasicProcessors["base"] = (data, context) =>
@@ -660,7 +682,7 @@ public class T2IPromptHandling
                 context.SectionID = 10;
             }
             context.SectionID++;
-            string raw = context.RawCurrentTag.Before("//cid=");
+            string raw = PromptRegion.RemoveTagAttachment(context.RawCurrentTag, "cid", out _);
             return $"<{raw}//cid={context.SectionID}>";
         }
         PromptTagBasicProcessors["segment"] = autoConfine;
@@ -849,10 +871,10 @@ public class T2IPromptHandling
                         return result;
                     }
                 }
-                int cidCut = tag.LastIndexOf("//cid=");
-                if (cidCut != -1)
+                PromptRegion.RemoveTagAttachment(tag, "cid", out string cidText);
+                if (int.TryParse(cidText, out int cid))
                 {
-                    sectionId = int.Parse(tag[(cidCut + "//cid=".Length)..]);
+                    sectionId = cid;
                     Logs.Verbose($"[Prompt Parsing] Section ID changed by a prior mapping from {context.SectionID} to  {sectionId}");
                     context.SectionID = sectionId;
                 }

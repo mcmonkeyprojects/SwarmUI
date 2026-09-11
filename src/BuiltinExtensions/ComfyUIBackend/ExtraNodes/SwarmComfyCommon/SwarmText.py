@@ -1,10 +1,10 @@
-import torch, node_helpers
+import torch, node_helpers, comfy.hooks
 from nodes import MAX_RESOLUTION
 from .SwarmTextHandling import PROMPT_TEMPLATE_ENCODE_VIDEO_I2V, PROMPT_TEMPLATE_QWEN_IMAGE_EDIT_PLUS, KREA2_TEMPLATE
 
 
 class ParsedText:
-    def __init__(self, text=None, embed=None, is_break=False, weight=1.0, parts=None, alternate=None, fromto=None, fromto_when=None):
+    def __init__(self, text=None, embed=None, is_break=False, weight=1.0, parts=None, alternate=None, fromto=None, fromto_when=None, lora_hook=None):
         self.text = text
         self.embed = embed
         self.is_break = is_break
@@ -13,6 +13,7 @@ class ParsedText:
         self.alternate = alternate
         self.fromto = fromto
         self.fromto_when = fromto_when
+        self.lora_hook = lora_hook
 
     def has_steps(self):
         if self.alternate is not None or self.fromto is not None:
@@ -36,9 +37,9 @@ class ParsedText:
             for p in self.parts:
                 out.extend(p.flatten(step, steps, w))
             return out
-        if not self.is_break and self.embed is None and not self.text:
+        if not self.is_break and self.embed is None and self.lora_hook is None and not self.text:
             return []
-        return [ParsedText(text=self.text, embed=self.embed, is_break=self.is_break, weight=w)]
+        return [ParsedText(text=self.text, embed=self.embed, is_break=self.is_break, weight=w, lora_hook=self.lora_hook)]
 
 
 def quick_simple_tag_filler(tagged_text, prefix, suffix, tag_reader, do_subtags=True, max_recurse=0):
@@ -154,6 +155,15 @@ def parse_prompt(text):
         if isinstance(content, ParsedText):
             return content
         prefix, predata, data = split_tag(content)
+        if prefix == 'lora':
+            hook_marker = '//hook='
+            hook_start = data.find(hook_marker)
+            if hook_start != -1:
+                try:
+                    hook_id = data[hook_start + len(hook_marker):].split('//', 1)[0]
+                    return ParsedText(lora_hook=int(hook_id))
+                except:
+                    return ParsedText(text=f'<{content}>')
         if prefix == 'break':
             return ParsedText(is_break=True)
         if prefix == 'embed' or prefix == 'embedding':
@@ -481,6 +491,7 @@ class SwarmTextEncodeAdvanced:
                 "clip_vision_output": ("CLIP_VISION_OUTPUT", {"default": None, "tooltip": "Optional CLIP Vision Output to use for the LLaMA model, if applicable."}),
                 "images": ("IMAGE", {"default": None, "tooltip": "Optional images to use for a text-vision model, if applicable."}),
                 "minimax_refs": ("MiniMaxReferences", {"default": None, "tooltip": "Optional MiniMax H3 references (images, videos, audio)."}),
+                "lora_hooks": ("HOOKS", {"default": None, "tooltip": "Optional ordered LoRA hook list referenced by //hook attachments in the prompt."}),
             }
         }
 
@@ -489,7 +500,7 @@ class SwarmTextEncodeAdvanced:
     FUNCTION = "encode"
     DESCRIPTION = "Acts like the regular CLIPTextEncode, but supports Swarm prompt tags such as '<break>', '<fromto[0.5]:a, b>', '<alternate:a, b>', '<weight[2]:text>', '<embed:name>'."
 
-    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None, images = None, minimax_refs = None):
+    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None, images = None, minimax_refs = None, lora_hooks = None):
         append_images = False
         prepend_images = False
         fix_images = True
@@ -508,6 +519,12 @@ class SwarmTextEncodeAdvanced:
                 images = [images]
             else:
                 images = [i.unsqueeze(0) for i in images]
+
+        base_hooks = clip.apply_hooks_to_conds
+        if lora_hooks is not None:
+            clip = clip.clone(disable_dynamic=True)
+            all_hooks = base_hooks.clone_and_combine(lora_hooks) if base_hooks is not None else lora_hooks
+            clip.patcher.register_all_hook_patches(all_hooks, comfy.hooks.create_target_dict(comfy.hooks.EnumWeightTarget.Clip))
 
         def tokenize(text: str):
             nonlocal images
@@ -568,11 +585,27 @@ class SwarmTextEncodeAdvanced:
         encoding_cache = {}
 
         def leaves_to_cond(leaves, start_percent: float, end_percent: float):
-            key = tuple((leaf.text, leaf.embed, leaf.is_break, leaf.weight) for leaf in leaves)
+            active_hook_ids = []
+            text_leaves = []
+            for leaf in leaves:
+                if leaf.lora_hook is None:
+                    text_leaves.append(leaf)
+                elif leaf.lora_hook not in active_hook_ids:
+                    active_hook_ids.append(leaf.lora_hook)
+            active_hooks = base_hooks.clone() if base_hooks is not None else comfy.hooks.HookGroup()
+            if lora_hooks is not None:
+                for hook_id in active_hook_ids:
+                    if hook_id >= 0 and hook_id < len(lora_hooks.hooks):
+                        active_hooks.add(lora_hooks.hooks[hook_id].clone())
+            if len(active_hooks) == 0:
+                active_hooks = None
+            clip.patcher.forced_hooks = active_hooks
+            clip.apply_hooks_to_conds = active_hooks
+            key = (tuple((leaf.text, leaf.embed, leaf.is_break, leaf.weight) for leaf in text_leaves), tuple(active_hook_ids))
             if key in encoding_cache:
                 cond_arr = encoding_cache[key]
             else:
-                chunks = chunks_from_leaves(leaves)
+                chunks = chunks_from_leaves(text_leaves)
                 cond_arr = encode_leaves(chunks[0])
                 if len(chunks) > 1:
                     for chunk in chunks[1:]:
@@ -601,7 +634,7 @@ class SwarmTextEncodeAdvanced:
             for i in range(steps):
                 perc = i / steps
                 leaves = parsed.flatten(i, steps)
-                key = tuple((leaf.text, leaf.embed, leaf.is_break, leaf.weight) for leaf in leaves)
+                key = tuple((leaf.text, leaf.embed, leaf.is_break, leaf.weight, leaf.lora_hook) for leaf in leaves)
                 if key != last_key or i == 0:
                     if i != 0:
                         conds_out.extend(leaves_to_cond(last_leaves, start_perc - 0.001, perc + 0.001))

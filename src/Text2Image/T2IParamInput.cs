@@ -128,6 +128,9 @@ public class T2IParamInput
     /// <summary>Extra data to store in metadata.</summary>
     public Dictionary<string, object> ExtraMeta = [];
 
+    /// <summary>Indices in the LoRA parameter lists that are dynamically applied by prompt conditioning hooks.</summary>
+    public List<int> DynamicLoraIndices = [];
+
     /// <summary>A set of feature flags required for this input.</summary>
     public HashSet<string> RequiredFlags = [];
 
@@ -267,6 +270,7 @@ public class T2IParamInput
         T2IParamInput toret = MemberwiseClone() as T2IParamInput;
         toret.InternalSet = InternalSet.Clone();
         toret.ExtraMeta = new Dictionary<string, object>(ExtraMeta);
+        toret.DynamicLoraIndices = [.. DynamicLoraIndices];
         toret.RequiredFlags = [.. RequiredFlags];
         toret.PendingPresets = [.. PendingPresets];
         toret.ParamsQueried = [.. ParamsQueried];

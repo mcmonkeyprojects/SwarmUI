@@ -85,4 +85,22 @@ public class PromptHandlerTests : SwarmUITest
         Assert.That(LegacyPromptParser.Convert("[a:b:c]"), Is.EqualTo("[a:b:c]"));
         Assert.That(LegacyPromptParser.Convert("(some:text)"), Is.EqualTo("<weight[1.1]:some:text>"));
     }
+
+    /// <summary>Tests <see cref="PromptRegion.RemoveTagAttachment(string, string, out string)"/>.</summary>
+    [Test]
+    public static void TestRemoveTagAttachment()
+    {
+        string tag = PromptRegion.RemoveTagAttachment("lora:some/file/somewhere//hook=1//cid=2", "hook", out string value);
+        Assert.That(tag, Is.EqualTo("lora:some/file/somewhere//cid=2"));
+        Assert.That(value, Is.EqualTo("1"));
+        tag = PromptRegion.RemoveTagAttachment("lora:some/file/somewhere//hook=1//cid=2", "cid", out value);
+        Assert.That(tag, Is.EqualTo("lora:some/file/somewhere//hook=1"));
+        Assert.That(value, Is.EqualTo("2"));
+        tag = PromptRegion.RemoveTagAttachment("lora:some/file/somewhere//cid=2", "cid", out value);
+        Assert.That(tag, Is.EqualTo("lora:some/file/somewhere"));
+        Assert.That(value, Is.EqualTo("2"));
+        tag = PromptRegion.RemoveTagAttachment("lora:some/file/somewhere", "cid", out value);
+        Assert.That(tag, Is.EqualTo("lora:some/file/somewhere"));
+        Assert.That(value, Is.EqualTo(null));
+    }
 }

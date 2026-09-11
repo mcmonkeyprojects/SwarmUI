@@ -151,6 +151,9 @@ public partial class WorkflowGenerator
     /// <summary>Mapping of any extra nodes to keep track of, Name->ID, eg "MyNode" -> "15".</summary>
     public Dictionary<string, string> NodeHelpers = [];
 
+    /// <summary>Combined Comfy hook group for LoRAs controlled by step-scheduled prompt tags.</summary>
+    public JArray DynamicLoraHooks = null;
+
     /// <summary>Last used ID, tracked to safely add new nodes with sequential IDs. Note that this starts at 100, as below 100 is reserved for constant node IDs.</summary>
     public int LastID = 100;
 
@@ -313,6 +316,10 @@ public partial class WorkflowGenerator
         JArray last = null;
         for (int i = 0; i < loras.Count; i++)
         {
+            if (UserInput.DynamicLoraIndices.Contains(i))
+            {
+                continue;
+            }
             int confinementId = -1;
             if (confinements is not null && confinements.Count > i)
             {
@@ -359,6 +366,44 @@ public partial class WorkflowGenerator
         return [newHooks, 0];
     }
 
+    /// <summary>Creates the ordered hook list referenced by generated //hook attachments on dynamic LoRA prompt tags.</summary>
+    public JArray CreateDynamicLoraHooks()
+    {
+        if (DynamicLoraHooks is not null || UserInput.DynamicLoraIndices.Count == 0)
+        {
+            return DynamicLoraHooks;
+        }
+        List<string> loras = UserInput.Get(T2IParamTypes.Loras, []);
+        List<string> weights = UserInput.Get(T2IParamTypes.LoraWeights);
+        List<string> tencWeights = UserInput.Get(T2IParamTypes.LoraTencWeights);
+        T2IModelHandler loraHandler = Program.T2IModelSets["LoRA"];
+        JArray last = null;
+        for (int hookId = 0; hookId < UserInput.DynamicLoraIndices.Count; hookId++)
+        {
+            int i = UserInput.DynamicLoraIndices[hookId];
+            if (!loraHandler.Models.TryGetValue(loras[i] + ".safetensors", out T2IModel lora))
+            {
+                if (!loraHandler.Models.TryGetValue(loras[i], out lora))
+                {
+                    throw new SwarmUserErrorException($"LoRA Model '{loras[i]}' not found in the model set.");
+                }
+            }
+            FinalLoadedModelList.Add(lora);
+            float weight = weights is null || i >= weights.Count ? 1 : float.Parse(weights[i]);
+            float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
+            string newId = CreateNode("CreateHookLora", new JObject()
+            {
+                ["prev_hooks"] = last,
+                ["lora_name"] = lora.ToString(ModelFolderFormat),
+                ["strength_model"] = weight,
+                ["strength_clip"] = tencWeight
+            }, GetStableDynamicID(3000, hookId), false);
+            last = [newId, 0];
+        }
+        DynamicLoraHooks = last;
+        return DynamicLoraHooks;
+    }
+
     /// <summary>Loads and applies LoRAs in the user parameters for the given LoRA confinement ID.</summary>
     public (JArray, JArray) LoadLorasForConfinement(int confinement, JArray model, JArray clip)
     {
@@ -376,6 +421,10 @@ public partial class WorkflowGenerator
         T2IModelHandler loraHandler = Program.T2IModelSets["LoRA"];
         for (int i = 0; i < loras.Count; i++)
         {
+            if (UserInput.DynamicLoraIndices.Contains(i))
+            {
+                continue;
+            }
             int confinementId = -1;
             if (confinements is not null && confinements.Count > i)
             {
@@ -2553,6 +2602,7 @@ public partial class WorkflowGenerator
             node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,
+                ["lora_hooks"] = CreateDynamicLoraHooks(),
                 ["steps"] = steps,
                 ["prompt"] = prompt,
                 ["width"] = width,
@@ -2591,6 +2641,7 @@ public partial class WorkflowGenerator
                 node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
                 {
                     ["clip"] = clip,
+                    ["lora_hooks"] = CreateDynamicLoraHooks(),
                     ["steps"] = steps,
                     ["prompt"] = prompt,
                     ["width"] = width,
@@ -2646,6 +2697,7 @@ public partial class WorkflowGenerator
                 node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
                 {
                     ["clip"] = clip,
+                    ["lora_hooks"] = CreateDynamicLoraHooks(),
                     ["steps"] = steps,
                     ["prompt"] = content,
                     ["width"] = width,
@@ -2673,6 +2725,7 @@ public partial class WorkflowGenerator
             node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,
+                ["lora_hooks"] = CreateDynamicLoraHooks(),
                 ["steps"] = steps,
                 ["prompt"] = prompt,
                 ["width"] = enhance ? (int)Utilities.RoundToPrecision(width * mult, 64) : width,

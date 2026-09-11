@@ -5,6 +5,26 @@ namespace SwarmUI.Utils;
 /// <summary>Helper class to regionalize a prompt.</summary>
 public class PromptRegion
 {
+    /// <summary>Removes the first internal attachment with the given name from a prompt tag, and returns its value.</summary>
+    public static string RemoveTagAttachment(string tag, string name, out string value)
+    {
+        string marker = $"//{name}=";
+        int start = tag.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (start == -1)
+        {
+            value = null;
+            return tag;
+        }
+        int valueStart = start + marker.Length;
+        int end = tag.IndexOf("//", valueStart);
+        if (end == -1)
+        {
+            end = tag.Length;
+        }
+        value = tag[valueStart..end];
+        return tag.Remove(start, end - start);
+    }
+
     public string GlobalPrompt = "";
 
     public string BackgroundPrompt = "";
@@ -94,7 +114,7 @@ public class PromptRegion
                 continue;
             }
             string tag = piece[..end];
-            (string tagBefore, string cidText) = tag.BeforeAndAfterLast("//cid=");
+            string tagBefore = RemoveTagAttachment(tag, "cid", out string cidText);
             if (!string.IsNullOrWhiteSpace(cidText) && int.TryParse(cidText, out int cid))
             {
                 id = cid;
