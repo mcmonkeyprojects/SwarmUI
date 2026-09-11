@@ -768,7 +768,7 @@ public static class ModelsAPI
     [API.APIDescription("Forwards an image file request, eg to civitai image CDN.", "\"image\": \"data:image/jpeg;base64,...\"")]
     public static async Task<JObject> ForwardImageRequest(Session session, string url)
     {
-        if (!url.StartsWithFast("https://image.civitai.com/"))
+        if (!url.StartsWithFast("https://image.civitai.com/") && !url.StartsWithFast("https://blobs-b2.civitai.com/"))
         {
             return new JObject() { ["error"] = "Invalid URL." };
         }

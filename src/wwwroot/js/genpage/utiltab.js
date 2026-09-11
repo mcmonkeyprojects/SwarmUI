@@ -411,7 +411,11 @@ class ModelDownloaderUtil {
                         video.onerror = () => {
                             done('');
                         };
-                        video.src = url;
+                        genericRequest('ForwardImageRequest', { 'url': url }, (data) => {
+                            video.src = data.image;
+                        }, 0, () => {
+                            done('');
+                        });
                     });
                 }
                 else {
