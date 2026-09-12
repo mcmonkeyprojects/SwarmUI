@@ -1014,6 +1014,11 @@ public partial class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "simple";
         }
+        else if (IsYue2())
+        {
+            defsampler ??= "dpm_2";
+            defscheduler ??= "sgm_uniform";
+        }
         else if (IsAnima())
         {
             defsampler ??= "er_sde";
@@ -2558,6 +2563,36 @@ public partial class WorkflowGenerator
                 ["top_p"] = 0.9,
                 ["top_k"] = 0,
                 ["min_p"] = 0
+            }, id);
+        }
+        else if (IsYue2())
+        {
+            if (!isPositive)
+            {
+                return FinalPrompt;
+            }
+            string abc = CreateNode("YuE2GenerateABC", new JObject()
+            {
+                ["clip"] = clip,
+                ["style"] = UserInput.Get(T2IParamTypes.Text2AudioStyle, ""),
+                ["lyrics"] = prompt,
+                ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0) + 10,
+                ["mode"] = "full",
+                ["max_abc_tokens"] = 1024
+            });
+            node = CreateNode("YuE2GenerateMusic", new JObject()
+            {
+                ["clip"] = clip,
+                ["style"] = UserInput.Get(T2IParamTypes.Text2AudioStyle, ""),
+                ["lyrics"] = prompt,
+                ["abc"] = NodePath(abc, 0),
+                ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0) + 20,
+                ["mode"] = "full",
+                ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 120), 0.04, 360),
+                ["temperature"] = 1,
+                ["top_p"] = 0.95,
+                ["top_k"] = 100,
+                ["repetition_penalty"] = 1.2
             }, id);
         }
         else if (IsMiniMaxMusic3())
