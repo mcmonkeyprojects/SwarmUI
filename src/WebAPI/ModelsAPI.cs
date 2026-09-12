@@ -888,7 +888,7 @@ public static class ModelsAPI
         (string oldNameNoExt, string ext) = match.Name.BeforeAndAfterLast('.');
         newName = newName.BeforeLast('.');
         newName = Utilities.StrictFilenameClean(newName).Trim().Trim('/').Replace(' ', '_');
-        if (string.IsNullOrWhiteSpace(newName) || !session.User.IsAllowedModel(oldName))
+        if (string.IsNullOrWhiteSpace(newName) || !session.User.IsAllowedModel(newName))
         {
             return new JObject() { ["error"] = "Model new name is not valid." };
         }
