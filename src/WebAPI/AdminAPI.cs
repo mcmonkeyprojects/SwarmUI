@@ -178,7 +178,7 @@ public static class AdminAPI
             {
                 continue;
             }
-            if (key.ToLowerFast() == "authorization.authorizationrequired" && $"{obj}".ToLowerFast() == "true" && session.User.Data.PasswordHashed == "")
+            if (key.ToLowerFast() == "userauthorization.authorizationrequired" && $"{obj}".ToLowerFast() == "true" && session.User.Data.PasswordHashed == "")
             {
                 return new JObject() { ["error"] = "Tried to enable authorization mode, but your account does not have a password. Configure your account login information before enabling authorization, so you don't get locked out." };
             }
