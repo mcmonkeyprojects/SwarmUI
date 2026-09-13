@@ -407,7 +407,7 @@ class SwarmKSampler:
         disable_noise = add_noise == "disable"
 
         if disable_noise:
-            noise = torch.zeros(latent_samples.size(), dtype=latent_samples.dtype, layout=latent_samples.layout, device="cpu")
+            noise = comfy.sample.prepare_empty_noise(latent_samples)
         else:
             noise = swarm_fixed_noise(noise_seed, latent_samples, var_seed, var_seed_strength)
 
