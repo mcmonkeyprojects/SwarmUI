@@ -2588,7 +2588,7 @@ public partial class WorkflowGenerator
                 ["abc"] = NodePath(abc, 0),
                 ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0) + 20,
                 ["mode"] = "full",
-                ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 120), 0.04, 360),
+                ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 120), 0.04, 900),
                 ["temperature"] = 1,
                 ["top_p"] = 0.95,
                 ["top_k"] = 100,
