@@ -2590,10 +2590,10 @@ public partial class WorkflowGenerator
                 ["mode"] = "full",
                 ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 300), 0.04, 900),
                 // TODO: Parameters for these?
-                ["temperature"] = 1,
-                ["top_p"] = 0.95,
-                ["top_k"] = 100,
-                ["repetition_penalty"] = 1.2
+                ["temperature"] = 0.7,
+                ["top_p"] = 0.9,
+                ["top_k"] = 30,
+                ["repetition_penalty"] = 1.005
             }, id);
         }
         else if (IsMiniMaxMusic3())
