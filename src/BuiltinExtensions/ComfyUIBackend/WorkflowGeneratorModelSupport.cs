@@ -278,6 +278,12 @@ public partial class WorkflowGenerator
         return IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxMusic3);
     }
 
+    /// <summary>Returns true if the current model is YuE2.</summary>
+    public bool IsYue2()
+    {
+        return IsModelCompatClass(T2IModelClassSorter.CompatYue2);
+    }
+
     /// <summary>Returns true if the current model primarily operates on audio.</summary>
     public bool IsAudioModel()
     {
@@ -419,9 +425,9 @@ public partial class WorkflowGenerator
                 ["seconds"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120)
             }, id));
         }
-        else if (IsMiniMaxMusic3())
+        else if (IsMiniMaxMusic3() || IsYue2())
         {
-            JProperty encodedNode = NodesOfClass("MiniMaxMusic3TextEncode").FirstOrDefault();
+            JProperty encodedNode = NodesOfClass(IsYue2() ? "YuE2GenerateMusic" : "MiniMaxMusic3TextEncode").FirstOrDefault();
             JToken targetSeconds;
             if (encodedNode is not null)
             {
@@ -431,7 +437,7 @@ public partial class WorkflowGenerator
             {
                 targetSeconds = NodePath("6", 1); // TODO: This is a very wrong hack hardcoding the prompt path. This will break in many practical edge cases. Need to figure out the special routing that applies here.
             }
-            return resultAudio(CreateNode("EmptyMiniMaxMusic3LatentAudio", new JObject()
+            return resultAudio(CreateNode(IsYue2() ? "EmptyYuE2LatentAudio" : "EmptyMiniMaxMusic3LatentAudio", new JObject()
             {
                 ["batch_size"] = batchSize,
                 ["seconds"] = targetSeconds
@@ -1527,6 +1533,10 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("minimax", helpers.RequireClipModel("minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "010b7416d2336a08c711bc22ee65849c9623069ddb7d89bec011a75699e52014", null));
             helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxMusic3, "minimax-music-3-vae");
+            CurrentAudioVae = new WGNodeData([LoadingVAE, 0], this, WGNodeData.DT_AUDIOVAE, CurrentCompat());
+        }
+        else if (IsYue2())
+        {
             CurrentAudioVae = new WGNodeData([LoadingVAE, 0], this, WGNodeData.DT_AUDIOVAE, CurrentCompat());
         }
         else if (IsAceStep15())

@@ -102,6 +102,7 @@ public class T2IModelClassSorter
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         CompatMiniMaxMusic3 = RegisterCompat(new() { ID = "minimax-music-3", ShortCode = "MMM3", IsAudioModel = true }),
+        CompatYue2 = RegisterCompat(new() { ID = "yue-2", ShortCode = "YuE2", IsAudioModel = true }),
         // Obscure old random ones
         CompatAuraFlow = RegisterCompat(new() { ID = "auraflow-v1", ShortCode = "Aura", VaeFamily = VaeSdxl }),
         CompatHiDreamI1 = RegisterCompat(new() { ID = "hidream-i1", ShortCode = "HiDrm", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
@@ -286,6 +287,7 @@ public class T2IModelClassSorter
         // Audio models
         bool isAceStep15(JObject h) => hasKey(h, "encoder.lyric_encoder.layers.0.post_attention_layernorm.weight");
         bool isMiniMaxMusic3(JObject h) => hasKey(h, "cond_layer_logits") && hasKey(h, "latent_conditioners.0.weight") && hasKey(h, "diffusion_transformer.transformer.layers.0.self_attn.to_qkv.weight");
+        bool isYue2(JObject h) => hasKey(h, "vae2llm.weight") && hasKey(h, "llm2vae.weight") && hasKey(h, "latent_pos_embed.pe") && hasKey(h, "model.layers.0.self_attn.qkv_proj.weight") && hasKey(h, "time_embedder.mlp.0.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = CompatSdv1, Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -955,6 +957,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "minimax-music-3", CompatClass = CompatMiniMaxMusic3, Name = "MiniMax Music 3", IsThisModelOfClass = (m, h) =>
         {
             return isMiniMaxMusic3(h);
+        }});
+        Register(new() { ID = "yue-2", CompatClass = CompatYue2, Name = "YuE2", IsThisModelOfClass = (m, h) =>
+        {
+            return isYue2(h);
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
