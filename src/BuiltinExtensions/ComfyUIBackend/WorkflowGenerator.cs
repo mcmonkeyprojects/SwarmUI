@@ -2577,7 +2577,7 @@ public partial class WorkflowGenerator
                 ["style"] = UserInput.Get(T2IParamTypes.Text2AudioStyle, ""),
                 ["lyrics"] = prompt,
                 ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0) + 10,
-                ["mode"] = "full", // TODO: Parameter? ("melody", "none" available) ref https://github.com/multimodal-art-projection/YuE
+                ["mode"] = "full", // TODO: Parameter? ("melody", "none" available) ref https://github.com/multimodal-art-projection/YuE ('none' means skip this node and just load plain text)
                 ["max_abc_tokens"] = 1024
             });
             node = CreateNode("YuE2GenerateMusic", new JObject()
