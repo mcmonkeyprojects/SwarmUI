@@ -59,6 +59,20 @@ Audio models vary in intention and purpose. Some examples include:
     - Use on Comfy tab with a short workflow of: Load Audio Encoder, Load Audio, SheetSage2 Audio to ABC, Preview Any
 - Parameters:
     - **Prompt:** Write the lyrics of the song
+        - Note: Think of the input here like an old/dumb TTS, it won't know how to pronounce uncommon words so you'll have to guide it.
+        - For example, don't write "SwarmUI", write "Swarm-you-eye".
+        - You can do blocks like:
+        ```
+        [verse]
+        some song lyrics here!
+        I am singing a song!
+
+        [chorus]
+        Wow what a song!
+        Such a singable song!
+        ```
+        - Note that it may slightly hallucinate some additional lyrics, eg adding a 'yeah' or duplicating a few words
     - **Text2Audio Style:** Write a short description of the music style.
+        - This is a freeform LLM input, though how it interprets it will be somewhat arbitrary. Major genre names are understood, but complex instructions may confuse it.
     - **CFG Scale:** use `1`
     - **Steps:** Normal steps range eg `20`

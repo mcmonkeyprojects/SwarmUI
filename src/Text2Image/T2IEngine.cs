@@ -36,7 +36,7 @@ namespace SwarmUI.Text2Image
         public static Action<PostBatchEventParams> PostBatchEvent;
 
         /// <summary>Feature flags that don't block a backend from running, such as model-specific flags.</summary>
-        public static HashSet<string> DisregardedFeatureFlags = ["sd3", "flux-dev", "text2video", "cascade", "sdxl", "text2audio", "optional_reference_latent", "model_has_ipadapter", "supports_reference_only", "supports_hypertile"];
+        public static HashSet<string> DisregardedFeatureFlags = ["sd3", "flux-dev", "text2video", "cascade", "sdxl", "text2audio", "audio_ace_inputs", "optional_reference_latent", "model_has_ipadapter", "supports_reference_only", "supports_hypertile"];
 
         /// <summary>Parameters for <see cref="PostBatchEvent"/>.</summary>
         public record class PostBatchEventParams(T2IParamInput UserInput, ImageOutput[] Images);
