@@ -5,6 +5,7 @@
 | ----  | ---- | ---- | ---- | ---- | ---- |
 [Ace Step 1.5](#ace-step-15) | 2026 | StepFun | 2B DiT | Music | Modern, Fast, Decent Quality |
 [MiniMax Music 3](#minimax-music-3) | 2026 | Hailuo & MiniMax | 2B DiT | Music | Modern, fast-ish, Decent Quality |
+[YuE2](#yue2) | 2026 | Multimodal Art Projection | 3B DiT | Music | Modern, super fast, good |
 
 Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above.
 
@@ -46,3 +47,18 @@ Audio models vary in intention and purpose. Some examples include:
             - They have an official agent skill and template list for style writing <https://github.com/MiniMax-AI/MiniMax-Music3/tree/main/skills/music-caption-rewriter>
     - **CFG Scale:** `1.7` is the official reference
     - **Steps:** Normal steps range eg `20`, 30 is the official reference
+
+# YuE2
+
+- [YuE2](<https://map-yue2.github.io/>) is supported in SwarmUI!
+- Download it from [Comfy-Org/YuE2](<https://huggingface.co/Comfy-Org/YuE2/tree/main/checkpoints>)
+    - save in `Models/Stable-Diffusion`
+- The file contains its own Audio VAE and text encoder
+- It works internally by having one model generate a 'full plan' (melody, chords, etc) from your inputs, then a separate model makes music from the plan
+- They also have a separate tool to transcribe songs into their own format called 'SheetSage2', not implemented in Swarm currently
+    - Use on Comfy tab with a short workflow of: Load Audio Encoder, Load Audio, SheetSage2 Audio to ABC, Preview Any
+- Parameters:
+    - **Prompt:** Write the lyrics of the song
+    - **Text2Audio Style:** Write a short description of the music style.
+    - **CFG Scale:** use `1`
+    - **Steps:** Normal steps range eg `20`
