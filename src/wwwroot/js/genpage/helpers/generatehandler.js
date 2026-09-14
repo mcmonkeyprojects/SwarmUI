@@ -178,12 +178,12 @@ class GenerateHandler {
                 }
             }
             else {
-                this.gotTrackedImageResult(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, div);
                 let imgElem = div.querySelector('img');
                 let spinner = div.querySelector('.loading-spinner-parent');
                 let progress_bars = div.querySelector('.image-preview-progress-wrapper');
                 let isPreviewSwapToCompleted = imgElem.dataset.previewGrow || progress_bars || spinner;
                 this.setImageFor(imgHolder, data.image);
+                this.gotTrackedImageResult(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, div);
                 if (spinner) {
                     spinner.remove();
                 }
