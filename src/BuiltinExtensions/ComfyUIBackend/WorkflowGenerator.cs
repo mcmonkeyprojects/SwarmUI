@@ -2578,7 +2578,13 @@ public partial class WorkflowGenerator
                 ["lyrics"] = prompt,
                 ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0) + 10,
                 ["mode"] = "full", // TODO: Parameter? ("melody", "none" available) ref https://github.com/multimodal-art-projection/YuE ('none' means skip this node and just load plain text)
-                ["max_abc_tokens"] = 8192
+                // TODO: Parameters for these?
+                ["max_abc_tokens"] = 8192,
+                ["temperature"] = 0.7,
+                ["top_p"] = 0.9,
+                ["top_k"] = 30,
+                ["repetition_penalty"] = 1.005,
+                ["penalty_window"] = 100
             });
             node = CreateNode("YuE2GenerateMusic", new JObject()
             {
@@ -2590,10 +2596,10 @@ public partial class WorkflowGenerator
                 ["mode"] = "full",
                 ["max_duration"] = Math.Clamp(UserInput.Get(T2IParamTypes.Text2AudioDuration, 300), 0.04, 900),
                 // TODO: Parameters for these?
-                ["temperature"] = 0.7,
-                ["top_p"] = 0.9,
-                ["top_k"] = 30,
-                ["repetition_penalty"] = 1.005
+                ["temperature"] = 1.0,
+                ["top_p"] = 0.95,
+                ["top_k"] = 100,
+                ["repetition_penalty"] = 1.2
             }, id);
         }
         else if (IsMiniMaxMusic3())

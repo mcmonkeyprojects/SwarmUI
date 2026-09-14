@@ -117,14 +117,12 @@ class GenerateHandler {
             imgHolder.div.appendChild(vid);
         }
         else if (isAudio) {
-            if (imgElem) {
-                imgElem.remove();
+            if (!imgElem) {
+                imgElem = document.createElement('img');
+                imgElem.classList.add('image-block-img-inner');
+                imgHolder.div.appendChild(imgElem);
             }
-            imgElem = document.createElement('audio');
-            imgElem.classList.add('image-block-img-inner');
-            imgElem.controls = true;
-            imgElem.src = src;
-            imgHolder.div.appendChild(imgElem);
+            imgElem.src = 'imgs/audio_placeholder.jpg';
         }
         else {
             imgElem.src = src;
