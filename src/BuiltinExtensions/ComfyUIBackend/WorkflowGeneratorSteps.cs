@@ -608,6 +608,10 @@ public class WorkflowGeneratorSteps
             if (g.UserInput.TryGet(T2IParamTypes.VideoAudioInput, out AudioFile audioData))
             {
                 string audioNode = g.CreateAudioLoadNode(audioData, "${videoaudioinput}");
+                if (g.CurrentMedia.DataType == WGNodeData.DT_LATENT_AUDIOVIDEO)
+                {
+                    g.CurrentMedia = g.CurrentMedia.AsLatentImage(g.CurrentVae);
+                }
                 g.CurrentMedia.AttachedAudio = new WGNodeData([audioNode, 0], g, WGNodeData.DT_AUDIO, g.CurrentCompat());
             }
         }, -9);

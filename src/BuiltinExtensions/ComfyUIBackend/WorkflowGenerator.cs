@@ -1770,6 +1770,11 @@ public partial class WorkflowGenerator
                 VideoFPS ??= 24;
                 Frames = MiniMaxH3AlignFrames(Frames ?? 124);
                 origSrcImg = FixMediaLen();
+                WGNodeData explicitAudio = null;
+                if (g.UserInput.TryGet(T2IParamTypes.VideoAudioInput, out AudioFile _) && g.CurrentMedia?.AttachedAudio?.DataType == WGNodeData.DT_AUDIO)
+                {
+                    explicitAudio = g.CurrentMedia.AttachedAudio;
+                }
                 JArray endFramePath = null;
                 if (VideoEndImage is not null)
                 {
@@ -1791,6 +1796,11 @@ public partial class WorkflowGenerator
                     ["last_frame"] = endFramePath
                 });
                 PosCond = [keyframesNode, 0];
+                if (explicitAudio is not null)
+                {
+                    g.CurrentMedia = g.CurrentMedia.AsLatentImage(Vae);
+                    g.CurrentMedia.AttachedAudio = explicitAudio;
+                }
                 DefaultCFG = 1;
             }
             else if (VideoModel.ModelClass?.CompatClass?.ID == "nvidia-cosmos-1")
