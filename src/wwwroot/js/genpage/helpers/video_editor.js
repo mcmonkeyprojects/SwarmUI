@@ -120,21 +120,6 @@ class VideoEditorInterface {
         this.updateResolution();
     }
 
-    /** Formats seconds for timeline labels. */
-    formatTime(seconds) {
-        let hours = Math.floor(seconds / 3600);
-        seconds -= hours * 3600;
-        let minutes = Math.floor(seconds / 60);
-        seconds -= minutes * 60;
-        let result = '';
-        if (hours > 0) {
-            result += `${hours.toFixed(0).padStart(2, '0')}:`;
-        }
-        result += `${minutes.toFixed(0).padStart(2, '0')}:`;
-        result += `${seconds.toFixed(2).padStart(5, '0')}`;
-        return result;
-    }
-
     /** Updates the timeline display. */
     updateTimeline() {
         let start = this.duration > 0 ? this.trimStart / this.duration * 100 : 0;
@@ -149,10 +134,10 @@ class VideoEditorInterface {
         this.timelineCursor.style.left = `${Math.max(0, Math.min(100, current))}%`;
         this.trimHandleLeft.style.left = `${start}%`;
         this.trimHandleRight.style.left = `${end}%`;
-        this.trimStartText.textContent = `Start: ${this.formatTime(this.trimStart)}`;
-        this.currentTimeText.textContent = `Position: ${this.formatTime(this.video.currentTime)}`;
-        this.trimEndText.textContent = `End: ${this.formatTime(this.trimEnd)}`;
-        this.durationText.textContent = `Duration: ${this.formatTime(this.trimEnd - this.trimStart)}`;
+        this.trimStartText.textContent = `Start: ${durationStringifyColons(this.trimStart, 2)}`;
+        this.currentTimeText.textContent = `Position: ${durationStringifyColons(this.video.currentTime, 2)}`;
+        this.trimEndText.textContent = `End: ${durationStringifyColons(this.trimEnd, 2)}`;
+        this.durationText.textContent = `Duration: ${durationStringifyColons(this.trimEnd - this.trimStart, 2)}`;
     }
 
     /** Starts timeline seeking or trim dragging. */
