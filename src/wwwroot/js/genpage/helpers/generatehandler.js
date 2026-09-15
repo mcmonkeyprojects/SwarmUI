@@ -117,12 +117,19 @@ class GenerateHandler {
             imgHolder.div.appendChild(vid);
         }
         else if (isAudio) {
+            let audio = src;
             if (!imgElem) {
                 imgElem = document.createElement('img');
                 imgElem.classList.add('image-block-img-inner');
                 imgHolder.div.appendChild(imgElem);
             }
             imgElem.src = 'imgs/audio_placeholder.jpg';
+            renderWaveformImage(audio, 256, 256, waveform => `Audio ${durationStringifyColons(waveform.duration)}`).then(waveformImage => {
+                if (imgHolder.image != audio || !imgElem.isConnected) {
+                    return;
+                }
+                imgElem.src = waveformImage;
+            }).catch(() => { });
         }
         else {
             imgElem.src = src;
