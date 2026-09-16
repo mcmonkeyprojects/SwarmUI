@@ -1240,12 +1240,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         imageEditor.setBaseImage(img);
         imageEditor.activate();
     }, '', 'Opens an Image Editor for this image', ['image']);
-    includeButton('Edit Video', () => {
-        mediaEditorInterface.open(img);
-    }, '', 'Opens a Timeline Media Editor to edit this video', ['video']);
-    includeButton('Edit Audio', () => {
-        mediaEditorInterface.open(img);
-    }, '', 'Opens a Timeline Media Editor to edit this audio', ['audio']);
     includeButton('Upscale 2x', () => {
         toDataURL(img.src, (url => {
             let [width, height] = naturalDim();

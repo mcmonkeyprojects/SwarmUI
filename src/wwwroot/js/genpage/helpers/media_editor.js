@@ -59,7 +59,6 @@ class MediaEditorInterface {
         this.sectionVolumeValue = getRequiredElementById('video_editor_section_volume_value');
         this.saveAudioButton = getRequiredElementById('video_editor_save_audio');
         this.saveVideoButton = getRequiredElementById('video_editor_save_video');
-        this.sourceVideo = null;
         this.videoData = null;
         this.isAudio = false;
         this.filename = '';
@@ -100,17 +99,18 @@ class MediaEditorInterface {
         this.modalJq.on('hidden.bs.modal', () => this.cleanup());
     }
 
-    /** Opens the editor for video or audio media. */
-    open(media) {
+    /** Opens the editor for a video/audio element or source URL. */
+    open(media, metadata = null, mediaPath = null) {
         currentImageHelper.doAutoPause();
-        this.sourceVideo = media;
-        this.videoData = media.dataset.filedata || getImageFullSrc(media.dataset.src || media.currentSrc || media.src);
-        this.isAudio = media.tagName == 'AUDIO';
-        this.frameRate = this.getMediaFrameRate(media);
+        let isSourceUrl = typeof media == 'string';
+        let playbackSource = isSourceUrl ? media : (media.currentSrc || media.src || media.dataset.src);
+        this.videoData = isSourceUrl ? (mediaPath || getImageFullSrc(media)) : (media.dataset.filedata || getImageFullSrc(media.dataset.src || media.currentSrc || media.src));
+        this.isAudio = isSourceUrl ? getMediaType(media) == 'audio' : media.tagName == 'AUDIO';
+        this.frameRate = this.getMediaFrameRate(media, metadata);
         this.currentFrameIndex = 0;
         this.videoControls.setVolumeMultiplier(1);
         this.modal.classList.toggle('video_editor_audio', this.isAudio);
-        this.filename = media.dataset.filename || (isValidMediaPath(this.videoData) ? this.videoData : '');
+        this.filename = isSourceUrl ? (media.startsWith('data:') ? '' : this.videoData) : (media.dataset.filename || (isValidMediaPath(this.videoData) ? this.videoData : ''));
         this.duration = 0;
         this.trimStart = 0;
         this.trimEnd = 0;
@@ -128,12 +128,12 @@ class MediaEditorInterface {
         this.scaleBox.style.display = this.isAudio ? 'none' : '';
         this.cropOverlay.style.display = this.isAudio ? 'none' : '';
         this.resetCropButton.style.display = this.isAudio ? 'none' : '';
-        this.saveAudioButton.style.display = !this.isAudio && this.hasAudio(media) ? '' : 'none';
+        this.saveAudioButton.style.display = 'none';
         this.saveVideoButton.textContent = translate(this.isAudio ? 'Save Audio' : 'Save Video');
         this.waveformPeaks = null;
         this.waveform.style.display = '';
         this.waveform.width = 0;
-        this.video.src = media.currentSrc || media.src || media.dataset.src;
+        this.video.src = playbackSource;
         this.video.load();
         this.modalJq.modal('show');
         this.saveVideoButton.disabled = true;
@@ -145,7 +145,6 @@ class MediaEditorInterface {
         this.videoControls.setVolumeMultiplier(1);
         this.video.removeAttribute('src');
         this.video.load();
-        this.sourceVideo = null;
         this.videoData = null;
         this.filename = '';
         this.timelinePointer = null;
@@ -180,7 +179,7 @@ class MediaEditorInterface {
         this.sections = this.duration > 0 ? [new MediaEditorSection(0, this.getFrameIndex(this.duration))] : [];
         this.syncSplitFrames();
         this.splitMarkButton.disabled = this.duration <= 0;
-        this.saveAudioButton.style.display = !this.isAudio && this.sourceVideo && this.hasAudio(this.sourceVideo) ? '' : 'none';
+        this.saveAudioButton.style.display = !this.isAudio && this.hasAudio(this.video) ? '' : 'none';
         this.updateTimeline();
         this.renderSections();
         this.renderSplitMarks();
@@ -189,13 +188,13 @@ class MediaEditorInterface {
     }
 
     /** Returns the media frame rate from generation metadata, defaulting to 24 FPS. */
-    getMediaFrameRate(media) {
-        if (media.tagName == 'AUDIO') {
+    getMediaFrameRate(media, metadata = null) {
+        if ((typeof media == 'string' && getMediaType(media) == 'audio') || media.tagName == 'AUDIO') {
             return 24;
         }
         try {
-            let metadata = JSON.parse(media.dataset.metadata || '{}');
-            let frameRate = parseFloat(metadata.sui_image_params?.videofps);
+            let parsedMetadata = JSON.parse(metadata || media.dataset?.metadata || '{}');
+            let frameRate = parseFloat(parsedMetadata.sui_image_params?.videofps);
             if (Number.isFinite(frameRate) && frameRate > 0) {
                 return frameRate;
             }
@@ -682,7 +681,11 @@ class MediaEditorInterface {
 
     /** Adds a saved edit to the Batch View. */
     addOutputToBatch(result) {
-        mainGenHandler.gotImageResult(`${getImageOutPrefix()}/${result.result}`, '{}', '0');
+        let outputSrc = `${getImageOutPrefix()}/${result.result}`;
+        let batchDiv = mainGenHandler.gotImageResult(outputSrc, '{}', '0');
+        if (batchDiv && isAudioExt(outputSrc)) {
+            mainGenHandler.setImageFor({ div: batchDiv, image: outputSrc }, outputSrc);
+        }
         if (inputBrowserHelper.inputImageBrowser) {
             inputBrowserHelper.inputImageBrowser.lightRefresh();
         }

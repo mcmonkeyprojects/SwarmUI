@@ -132,6 +132,24 @@ function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
             }
         });
     }
+    if (mediaType == 'video') {
+        buttons.push({
+            label: 'Edit Video',
+            title: 'Opens a Timeline Media Editor to edit this video',
+            onclick: (e) => {
+                mediaEditorInterface.open(src, metadata, fullsrc);
+            }
+        });
+    }
+    if (mediaType == 'audio') {
+        buttons.push({
+            label: 'Edit Audio',
+            title: 'Opens a Timeline Media Editor to edit this audio',
+            onclick: (e) => {
+                mediaEditorInterface.open(src, metadata, fullsrc);
+            }
+        });
+    }
     if (permissions.hasPermission('local_image_folder') && !isDataImage) {
         buttons.push({
             label: 'Open In Folder',
