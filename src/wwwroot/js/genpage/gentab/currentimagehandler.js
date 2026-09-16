@@ -1518,6 +1518,11 @@ function imageInputHandler() {
                 }
                 reader.readAsDataURL(file);
             }
+            else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+                let reader = new FileReader();
+                reader.onload = (e) => setCurrentImage(e.target.result);
+                reader.readAsDataURL(file);
+            }
             else if (file.name.endsWith('.json') || file.type == 'application/json') {
                 let reader = new FileReader();
                 reader.onload = (e) => {
