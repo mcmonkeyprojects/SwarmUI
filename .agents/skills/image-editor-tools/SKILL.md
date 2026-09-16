@@ -1,6 +1,6 @@
 ---
 name: image-editor-tools
-description: Architecture and patterns for developing image editor tools and UI in the SwarmUI image editor.
+description: Architecture and patterns for developing image editor tools and UI in the SwarmUI image editor. Not to be confused with the 'advanced media editor', that is separate.
 ---
 
 # Image Editor Tools
@@ -12,6 +12,7 @@ Guide to the image editor tool system in `src/wwwroot/js/genpage/helpers/image_e
 - Use this skill when adding or modifying image editor tools
 - Use this skill when working with layers, color controls, or the image editor toolbar
 - Use this skill when adding new helper JS files that interact with the image editor
+- Do not use if you are working on the 'advanced media editor', that is a separate tool
 
 ## Architecture
 

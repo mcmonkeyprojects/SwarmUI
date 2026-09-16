@@ -20,6 +20,7 @@ class MediaEditorInterface {
         this.timelineSelection = getRequiredElementById('video_editor_timeline_selection');
         this.timelineExcludedLeft = getRequiredElementById('video_editor_timeline_excluded_left');
         this.timelineExcludedRight = getRequiredElementById('video_editor_timeline_excluded_right');
+        this.splitMarksContainer = getRequiredElementById('video_editor_split_marks');
         this.timelineCursor = getRequiredElementById('video_editor_timeline_cursor');
         this.waveform = getRequiredElementById('video_editor_waveform');
         this.trimHandleLeft = this.timeline.querySelector('[data-trim-handle="left"]');
@@ -29,6 +30,7 @@ class MediaEditorInterface {
         this.trimEndText = getRequiredElementById('video_editor_trim_end');
         this.durationText = getRequiredElementById('video_editor_duration');
         this.resetCropButton = getRequiredElementById('video_editor_reset_crop');
+        this.splitMarkButton = getRequiredElementById('video_editor_split_mark');
         this.saveAudioButton = getRequiredElementById('video_editor_save_audio');
         this.saveVideoButton = getRequiredElementById('video_editor_save_video');
         this.sourceVideo = null;
@@ -38,6 +40,9 @@ class MediaEditorInterface {
         this.duration = 0;
         this.trimStart = 0;
         this.trimEnd = 0;
+        this.frameRate = 24;
+        this.currentFrameIndex = 0;
+        this.splitFrames = [];
         this.timelinePointer = null;
         this.cropPointer = null;
         this.waveformPeaks = null;
@@ -58,8 +63,10 @@ class MediaEditorInterface {
             handle.addEventListener('pointercancel', e => this.endCropPointer(e));
         }
         this.resetCropButton.addEventListener('click', () => this.resetCrop());
+        this.splitMarkButton.addEventListener('click', () => this.toggleSplitMark());
         this.saveAudioButton.addEventListener('click', () => this.saveAudio());
         this.saveVideoButton.addEventListener('click', () => this.saveMedia());
+        document.addEventListener('keydown', e => this.onKeyDown(e));
         getRequiredElementById('video_editor_close').addEventListener('click', () => this.modalJq.modal('hide'));
         this.modalJq.on('hidden.bs.modal', () => this.cleanup());
     }
@@ -70,11 +77,17 @@ class MediaEditorInterface {
         this.sourceVideo = media;
         this.videoData = media.dataset.filedata || getImageFullSrc(media.dataset.src || media.currentSrc || media.src);
         this.isAudio = media.tagName == 'AUDIO';
+        this.frameRate = this.getMediaFrameRate(media);
+        this.currentFrameIndex = 0;
         this.modal.classList.toggle('video_editor_audio', this.isAudio);
         this.filename = media.dataset.filename || (isValidMediaPath(this.videoData) ? this.videoData : '');
         this.duration = 0;
         this.trimStart = 0;
         this.trimEnd = 0;
+        this.splitFrames = [];
+        this.renderSplitMarks();
+        this.splitMarkButton.disabled = true;
+        this.updateSplitMarkButton();
         this.resetCrop();
         this.resetScale();
         this.setSaving(false);
@@ -130,10 +143,33 @@ class MediaEditorInterface {
         this.duration = Number.isFinite(this.video.duration) ? this.video.duration : 0;
         this.trimStart = 0;
         this.trimEnd = this.duration;
+        this.splitMarkButton.disabled = this.duration <= 0;
         this.saveAudioButton.style.display = !this.isAudio && this.sourceVideo && this.hasAudio(this.sourceVideo) ? '' : 'none';
         this.updateTimeline();
         this.updateResolution();
         this.renderAudioWaveform();
+    }
+
+    /** Returns the media frame rate from generation metadata, defaulting to 24 FPS. */
+    getMediaFrameRate(media) {
+        if (media.tagName == 'AUDIO') {
+            return 24;
+        }
+        try {
+            let metadata = JSON.parse(media.dataset.metadata || '{}');
+            let frameRate = parseFloat(metadata.sui_image_params?.videofps);
+            if (Number.isFinite(frameRate) && frameRate > 0) {
+                return frameRate;
+            }
+        }
+        catch (err) {
+        }
+        return 24;
+    }
+
+    /** Returns the zero-based frame index at a media time. */
+    getFrameIndex(time) {
+        return Math.max(0, Math.round(time * this.frameRate));
     }
 
     /** Renders the media's audio waveform behind the timeline controls. */
@@ -168,7 +204,9 @@ class MediaEditorInterface {
     updateTimeline() {
         let start = this.duration > 0 ? this.trimStart / this.duration * 100 : 0;
         let end = this.duration > 0 ? this.trimEnd / this.duration * 100 : 100;
-        let current = this.duration > 0 ? this.video.currentTime / this.duration * 100 : 0;
+        this.currentFrameIndex = this.getFrameIndex(this.video.currentTime);
+        let currentTime = this.currentFrameIndex / this.frameRate;
+        let current = this.duration > 0 ? currentTime / this.duration * 100 : 0;
         this.timelineSelection.style.left = `${start}%`;
         this.timelineSelection.style.width = `${Math.max(0, end - start)}%`;
         this.timelineExcludedLeft.style.left = '0';
@@ -179,9 +217,90 @@ class MediaEditorInterface {
         this.trimHandleLeft.style.left = `${start}%`;
         this.trimHandleRight.style.left = `${end}%`;
         this.trimStartText.textContent = `Start: ${durationStringifyColons(this.trimStart, 2)}`;
-        this.currentTimeText.textContent = `Position: ${durationStringifyColons(this.video.currentTime, 2)}`;
+        this.currentTimeText.textContent = `Position: ${durationStringifyColons(currentTime, 2)} (Frame ${this.currentFrameIndex})`;
         this.trimEndText.textContent = `End: ${durationStringifyColons(this.trimEnd, 2)}`;
         this.durationText.textContent = `Duration: ${durationStringifyColons(this.trimEnd - this.trimStart, 2)}`;
+        this.updateSplitMarkButton();
+    }
+
+    /** Returns the split mark at an exact frame index, if any. */
+    getSplitMarkIndexAtFrame(frameIndex) {
+        return this.splitFrames.indexOf(frameIndex);
+    }
+
+    /** Adds or removes a split mark at the current timeline position. */
+    toggleSplitMark() {
+        if (this.duration <= 0) {
+            return;
+        }
+        this.currentFrameIndex = this.getFrameIndex(this.video.currentTime);
+        let index = this.getSplitMarkIndexAtFrame(this.currentFrameIndex);
+        if (index == -1) {
+            this.splitFrames.push(this.currentFrameIndex);
+            this.splitFrames.sort((a, b) => a - b);
+        }
+        else {
+            this.splitFrames.splice(index, 1);
+        }
+        this.renderSplitMarks();
+        this.updateSplitMarkButton();
+    }
+
+    /** Renders all split marks over the timeline waveform. */
+    renderSplitMarks() {
+        this.splitMarksContainer.replaceChildren();
+        if (this.duration <= 0) {
+            return;
+        }
+        for (let frameIndex of this.splitFrames) {
+            let mark = createDiv(null, 'video_editor_split_mark');
+            mark.style.left = `${Math.min(100, frameIndex / this.frameRate / this.duration * 100)}%`;
+            this.splitMarksContainer.appendChild(mark);
+        }
+    }
+
+    /** Updates the split mark button for the current timeline position. */
+    updateSplitMarkButton() {
+        let hasMark = this.duration > 0 && this.getSplitMarkIndexAtFrame(this.currentFrameIndex) != -1;
+        this.splitMarkButton.textContent = translate(hasMark ? 'Remove Split Mark' : 'Add Split Mark');
+    }
+
+    /** Moves the timeline cursor by an exact number of frames. */
+    stepFrames(offset) {
+        if (this.duration <= 0) {
+            return;
+        }
+        this.video.pause();
+        let maxFrameIndex = this.getFrameIndex(this.duration);
+        let frameIndex = Math.max(0, Math.min(maxFrameIndex, this.getFrameIndex(this.video.currentTime) + offset));
+        this.video.currentTime = Math.min(this.duration, frameIndex / this.frameRate);
+        this.updateTimeline();
+    }
+
+    /** Handles media editor keyboard shortcuts. */
+    onKeyDown(e) {
+        let target = e.target;
+        let isInput = target.tagName == 'INPUT' || target.tagName == 'TEXTAREA' || target.tagName == 'SELECT' || target.isContentEditable;
+        if (isInput || !this.modal.classList.contains('show') || e.ctrlKey || e.altKey || e.metaKey) {
+            return;
+        }
+        if (e.key.toLowerCase() == 's' && !e.repeat) {
+            this.toggleSplitMark();
+        }
+        else if (e.key == 'ArrowLeft') {
+            this.stepFrames(-1);
+        }
+        else if (e.key == 'ArrowRight') {
+            this.stepFrames(1);
+        }
+        else if (e.code == 'Space' && !e.repeat) {
+            this.videoControls.togglePlay();
+        }
+        else {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
     }
 
     /** Starts timeline seeking or trim dragging. */

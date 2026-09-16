@@ -1209,7 +1209,7 @@ body.small-window > .tab-content.tab-hundred {
 }
 .video_editor_timeline {
     position: relative;
-    height: 1.75rem;
+    height: 4.5rem;
     margin: 0.75rem 0.5rem 0;
     border: 1px solid var(--light-border);
     background-color: var(--range-track-color);
@@ -1235,6 +1235,19 @@ body.small-window > .tab-content.tab-hundred {
     transform: translateX(-50%);
     background-color: var(--text);
     pointer-events: none;
+}
+.video_editor_split_marks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.video_editor_split_mark {
+    position: absolute;
+    top: calc(-0.2rem - 5px);
+    bottom: calc(-0.2rem - 5px);
+    width: 2px;
+    transform: translateX(-50%);
+    background-color: var(--aggressive);
 }
 .video_editor_trim_handle {
     position: absolute;

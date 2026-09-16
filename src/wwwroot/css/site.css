@@ -13,6 +13,7 @@
     --toggle-thumb-hover: var(--button-background-hover);
     --toggle-thumb-active-hover: color-mix(in srgb, var(--emphasis) 25%, white);
     --font-monospace: 'Courier New', Courier, monospace;
+    --aggressive: #ff5533;
     --red: #ff0000;
     --green: #00ff00;
     --yellow: #ffff00;
