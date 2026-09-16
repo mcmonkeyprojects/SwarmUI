@@ -41,7 +41,7 @@ Audio models vary in intention and purpose. Some examples include:
 - Parameters:
     - **Prompt:** Write the lyrics of the song
     - **Text2Audio Parameter Group** will appear on the sidebar after the model is selected:
-        - **Audio Duration:** defaults to 120 seconds (2 minutes), but designed to short any duration from a few seconds to up to 5 minutes
+        - **Audio Duration:** defaults to 120 seconds (2 minutes), but designed to support any duration from a few seconds to up to 5 minutes
             - Will be used as a *max* duration, the LLM song builder may choose to make the song shorter
         - **Audio Style:** write a short description of the music style.
             - They have an official agent skill and template list for style writing <https://github.com/MiniMax-AI/MiniMax-Music3/tree/main/skills/music-caption-rewriter>
@@ -74,5 +74,7 @@ Audio models vary in intention and purpose. Some examples include:
         - Note that it may slightly hallucinate some additional lyrics, eg adding a 'yeah' or duplicating a few words
     - **Text2Audio Style:** Write a short description of the music style.
         - This is a freeform LLM input, though how it interprets it will be somewhat arbitrary. Major genre names are understood, but complex instructions may confuse it.
+    - **Audio Duration:** defaults to 300 seconds (5 minutes), can be up to 900 (15 minutes)
+        - Will be used as a *max* duration, the LLM song builder may choose to make the song shorter
     - **CFG Scale:** use `1`
     - **Steps:** Normal steps range eg `20`

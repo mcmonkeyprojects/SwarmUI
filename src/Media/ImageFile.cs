@@ -191,8 +191,8 @@ public class ImageFile : MediaFile
         return new Image(ISImgToPngBytes(ToIS), Type);
     }
 
-    /// <summary>Returns the metadata from this image, or null if none.</summary>
-    public string GetMetadata()
+    /// <inheritdoc/>
+    public override string GetMetadata()
     {
         try
         {
@@ -234,12 +234,6 @@ public class ImageFile : MediaFile
     public JObject GetSUIMetadata()
     {
         return GetSUIMetadata(GetMetadata());
-    }
-
-    /// <summary>Parses Swarm <c>sui_image_params</c> from a metadata string, or null.</summary>
-    public static JObject GetSUIMetadata(string metadata)
-    {
-        return metadata?.ParseToJson()?["sui_image_params"]?.Value<JObject>();
     }
 
     /// <summary>Helper for the Image-Format user setting.</summary>
