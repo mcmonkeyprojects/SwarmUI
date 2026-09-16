@@ -1241,10 +1241,10 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         imageEditor.activate();
     }, '', 'Opens an Image Editor for this image', ['image']);
     includeButton('Edit Video', () => {
-        videoEditorInterface.open(img);
+        mediaEditorInterface.open(img);
     }, '', 'Opens a Timeline Media Editor to edit this video', ['video']);
     includeButton('Edit Audio', () => {
-        videoEditorInterface.open(img);
+        mediaEditorInterface.open(img);
     }, '', 'Opens a Timeline Media Editor to edit this audio', ['audio']);
     includeButton('Upscale 2x', () => {
         toDataURL(img.src, (url => {

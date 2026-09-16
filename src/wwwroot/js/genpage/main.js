@@ -600,7 +600,7 @@ function showPromptMediaMenu(media, menuButton, x = null, y = null) {
         buttons.push({
             key: `Advanced ${mediaName[0].toUpperCase()}${mediaName.substring(1)} Editor`,
             title: `Trim${mediaName == 'video' ? ' or crop' : ''} this ${mediaName} and save the result`,
-            action: () => videoEditorInterface.open(media)
+            action: () => mediaEditorInterface.open(media)
         });
     }
     buttons.push({

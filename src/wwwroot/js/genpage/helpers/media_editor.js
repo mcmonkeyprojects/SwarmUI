@@ -1,5 +1,5 @@
-/** Advanced editing tool for videos, such as trimming and cropping. */
-class VideoEditorInterface {
+/** Advanced timeline based editing tool for media, such as trimming and cropping. */
+class MediaEditorInterface {
 
     constructor() {
         this.modal = getRequiredElementById('video_editor_modal');
@@ -418,4 +418,4 @@ class VideoEditorInterface {
     }
 }
 
-let videoEditorInterface = new VideoEditorInterface();
+let mediaEditorInterface = new MediaEditorInterface();
