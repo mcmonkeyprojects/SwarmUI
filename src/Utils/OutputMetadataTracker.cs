@@ -120,7 +120,7 @@ public static class OutputMetadataTracker
     }
 
     /// <summary>File format extensions that even can have metadata on them.</summary>
-    public static HashSet<string> ExtensionsWithMetadata = ["png", "jpg", "webp", "wav", "flac", "ogg", "mp3", "aac"];
+    public static HashSet<string> ExtensionsWithMetadata = ["png", "jpg", "webp", "wav", "flac", "ogg", "mp3", "aac", "mp4", "webm", "mov"];
 
     /// <summary>File format extensions that require ffmpeg to process image data.</summary>
     public static HashSet<string> ExtensionsForFfmpegables = ["webm", "mp4", "mov"];

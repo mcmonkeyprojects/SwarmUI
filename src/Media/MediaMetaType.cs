@@ -28,8 +28,7 @@ public class MediaMetaType
     public static MediaMetaType Animation = new() { Name = "Image", CreateNew = (raw, type) => new Image(raw, type), FromDataString = ImageFile.FromDataString, FromRawData = (data, type) => new Image(data, type) };
 
     /// <summary>Moving-picture video media type. May contain audio or other video container streams.</summary>
-    public static MediaMetaType Video = new() { Name = "Video", CreateNew = (raw, type) => new Image(raw, type), FromDataString = ImageFile.FromDataString, FromRawData = (data, type) => new Image(data, type) };
-    // TODO: Actual video type
+    public static MediaMetaType Video = new() { Name = "Video", CreateNew = (raw, type) => new VideoFile(raw, type), FromDataString = VideoFile.FromDataString, FromRawData = (data, type) => new VideoFile(data, type) };
 
     /// <summary>Simple text content media type.</summary>
     public static MediaMetaType Text = new() { Name = "Text", CreateNew = (raw, type) => new Image(raw, type), FromDataString = ImageFile.FromDataString, FromRawData = (data, type) => new Image(data, type) };

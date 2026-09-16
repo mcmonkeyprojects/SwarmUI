@@ -974,8 +974,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         return;
     }
     let mediaType = getMediaType(src);
-    if (!metadata && canReparse && mediaType == 'audio') {
-        parseAudioMetadata(src, (data, parsedMetadata) => {
+    if (!metadata && canReparse && (mediaType == 'audio' || mediaType == 'video')) {
+        parseMediaMetadata(src, (data, parsedMetadata) => {
             setCurrentImage(src, parsedMetadata, batchId, previewGrow, false, false);
         });
         return;

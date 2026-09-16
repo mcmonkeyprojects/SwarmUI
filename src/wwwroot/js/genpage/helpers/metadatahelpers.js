@@ -235,8 +235,8 @@ function parseMetadata(data, callback) {
     });
 }
 
-/** Reads generation metadata from an audio file using music-metadata. */
-function parseAudioMetadata(data, callback) {
+/** Reads generation metadata from an audio or video file using music-metadata. */
+function parseMediaMetadata(data, callback) {
     let blobPromise = data instanceof Blob ? Promise.resolve(data) : fetch(data).then(response => response.blob());
     blobPromise.then(blob => MusicMetadata.parseBlob(blob, { duration: false, skipCovers: true })).then(parsed => {
         let metadata = null;
@@ -250,7 +250,7 @@ function parseAudioMetadata(data, callback) {
         }
         callback(data, metadata);
     }).catch(err => {
-        console.error(`Error parsing metadata (audio): ${err}`);
+        console.error(`Error parsing metadata (audio/video): ${err}`);
         callback(data, null);
     });
 }

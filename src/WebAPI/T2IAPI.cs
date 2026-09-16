@@ -694,6 +694,10 @@ public static class T2IAPI
                 }
             });
             VideoFile videoFile = new(videoData, MediaType.VideoMp4);
+            if (session.User.Settings.FileFormat.SaveMetadata)
+            {
+                videoFile = videoFile.WithMetadata(metadata);
+            }
             T2IEngine.ImageOutput outputVideo = new() { File = videoFile };
             (string src, string localPath) = session.SaveImage(outputVideo, 0, outputInput, metadata);
             if (src == "ERROR" || localPath is null)
