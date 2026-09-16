@@ -179,23 +179,24 @@ public class UserImageHistoryHelper
         }
     }
 
-    /// <summary>Use ffmpeg to extract a video's audio track as MP3 data.</summary>
-    /// <param name="file">The video file.</param>
-    /// <param name="start">Trim start in seconds.</param>
-    /// <param name="end">Trim end in seconds, or negative for the remaining video.</param>
-    public static async Task<byte[]> ExtractVideoAudio(string file, double start = 0, double end = -1)
+    /// <summary>Returns whether ffmpeg can find a readable audio stream in a media file.</summary>
+    private static async Task<bool> MediaHasAudioStream(string file)
     {
-        List<string> arguments = ["-y", "-i", file];
-        if (start > 0)
+        if (string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
         {
-            arguments.AddRange(["-ss", $"{start:0.###}"]);
+            return false;
         }
-        if (end >= 0)
+        int exitCode = -1;
+        await FfmpegLock.WaitAsync();
+        try
         {
-            arguments.AddRange(["-t", $"{end - start:0.###}"]);
+            await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-v", "error", "-i", file, "-map", "0:a:0", "-frames:a", "1", "-f", "null", "-"], setExitCode: code => exitCode = code);
         }
-        arguments.AddRange(["-map", "0:a:0", "-vn", "-codec:a", "libmp3lame", "-q:a", "2", "-f", "mp3"]);
-        return await RunFfmpegToData(arguments, "mp3", "Cannot split video audio because ffmpeg is not available.", "The video does not contain a readable audio track or can't be parsed.");
+        finally
+        {
+            FfmpegLock.Release();
+        }
+        return exitCode == 0;
     }
 
     /// <summary>Use ffmpeg to edit audio or video media.</summary>
@@ -208,36 +209,95 @@ public class UserImageHistoryHelper
     /// <param name="cropWidth">Crop width in pixels, or zero for the full frame.</param>
     /// <param name="cropHeight">Crop height in pixels, or zero for the full frame.</param>
     /// <param name="scale">Output scale factor. 1 leaves the cropped size unchanged.</param>
-    public static async Task<byte[]> EditMedia(string file, bool audioOutput, double start, double end, int cropX, int cropY, int cropWidth, int cropHeight, double scale = 1)
+    /// <param name="timelineSections">Ordered timeline sections, or null to use only the start and end trim.</param>
+    public static async Task<byte[]> EditMedia(string file, bool audioOutput, double start, double end, int cropX, int cropY, int cropWidth, int cropHeight, double scale = 1, List<MediaEditorSection> timelineSections = null)
     {
+        List<MediaEditorSection> includedSections = timelineSections?.Where(section => !section.Excluded).ToList();
+        bool useTimelineSelection = includedSections?.Count > 1;
+        if (includedSections?.Count == 1)
+        {
+            start = includedSections[0].Start;
+            end = includedSections[0].End;
+        }
         List<string> arguments = ["-y", "-i", file];
-        if (start > 0)
+        if (!useTimelineSelection && start > 0)
         {
             arguments.AddRange(["-ss", $"{start:0.###}"]);
         }
-        if (end >= 0)
+        if (!useTimelineSelection && end >= 0)
         {
             arguments.AddRange(["-t", $"{end - start:0.###}"]);
         }
         if (audioOutput)
         {
-            arguments.AddRange(["-map", "0:a:0", "-vn", "-codec:a", "libmp3lame", "-q:a", "2", "-f", "mp3"]);
+            if (useTimelineSelection)
+            {
+                List<string> filters = [];
+                for (int i = 0; i < includedSections.Count; i++)
+                {
+                    MediaEditorSection section = includedSections[i];
+                    filters.Add($"[0:a]atrim=start={section.Start.ToString("0.###", CultureInfo.InvariantCulture)}:end={section.End.ToString("0.###", CultureInfo.InvariantCulture)},asetpts=PTS-STARTPTS[a{i}]");
+                }
+                filters.Add($"{string.Concat(Enumerable.Range(0, includedSections.Count).Select(i => $"[a{i}]"))}concat=n={includedSections.Count}:v=0:a=1[aout]");
+                arguments.AddRange(["-filter_complex", string.Join(';', filters), "-map", "[aout]"]);
+            }
+            else
+            {
+                arguments.AddRange(["-map", "0:a:0"]);
+            }
+            arguments.AddRange(["-vn", "-codec:a", "libmp3lame", "-q:a", "2", "-f", "mp3"]);
             return await RunFfmpegToData(arguments, "mp3", "Cannot edit audio because ffmpeg is not available.", "ffmpeg could not produce the edited audio.");
         }
-        List<string> filters = [];
+        List<string> videoFilters = [];
         if (cropWidth > 0)
         {
             int leftPad = Math.Max(0, -cropX);
             int topPad = Math.Max(0, -cropY);
-            filters.Add($"pad={leftPad}+max(iw\\,{cropX + cropWidth}):{topPad}+max(ih\\,{cropY + cropHeight}):{leftPad}:{topPad}:black");
-            filters.Add($"crop={cropWidth}:{cropHeight}:{cropX + leftPad}:{cropY + topPad}");
+            videoFilters.Add($"pad={leftPad}+max(iw\\,{cropX + cropWidth}):{topPad}+max(ih\\,{cropY + cropHeight}):{leftPad}:{topPad}:black");
+            videoFilters.Add($"crop={cropWidth}:{cropHeight}:{cropX + leftPad}:{cropY + topPad}");
         }
         if (scale != 1)
         {
-            filters.Add($"scale=max(16\\,16*round(iw*{scale}/16)):max(16\\,16*round(ih*{scale}/16))");
+            videoFilters.Add($"scale=max(16\\,16*round(iw*{scale}/16)):max(16\\,16*round(ih*{scale}/16))");
         }
-        filters.Add("pad=ceil(iw/2)*2:ceil(ih/2)*2");
-        arguments.AddRange(["-map", "0:v:0", "-map", "0:a?", "-vf", string.Join(',', filters), "-c:v", "libx264", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart"]);
+        videoFilters.Add("pad=ceil(iw/2)*2:ceil(ih/2)*2");
+        if (useTimelineSelection)
+        {
+            bool hasAudio = await MediaHasAudioStream(file);
+            List<string> filters = [];
+            for (int i = 0; i < includedSections.Count; i++)
+            {
+                MediaEditorSection section = includedSections[i];
+                string sectionStart = section.Start.ToString("0.###", CultureInfo.InvariantCulture);
+                string sectionEnd = section.End.ToString("0.###", CultureInfo.InvariantCulture);
+                filters.Add($"[0:v]trim=start={sectionStart}:end={sectionEnd},setpts=PTS-STARTPTS[v{i}]");
+                if (hasAudio)
+                {
+                    filters.Add($"[0:a]atrim=start={sectionStart}:end={sectionEnd},asetpts=PTS-STARTPTS[a{i}]");
+                }
+            }
+            string videoInputs = string.Concat(Enumerable.Range(0, includedSections.Count).Select(i => $"[v{i}]"));
+            if (hasAudio)
+            {
+                string concatInputs = string.Concat(Enumerable.Range(0, includedSections.Count).Select(i => $"[v{i}][a{i}]"));
+                filters.Add($"{concatInputs}concat=n={includedSections.Count}:v=1:a=1[vconcat][aout]");
+            }
+            else
+            {
+                filters.Add($"{videoInputs}concat=n={includedSections.Count}:v=1:a=0[vconcat]");
+            }
+            filters.Add($"[vconcat]{string.Join(',', videoFilters)}[vout]");
+            arguments.AddRange(["-filter_complex", string.Join(';', filters), "-map", "[vout]"]);
+            if (hasAudio)
+            {
+                arguments.AddRange(["-map", "[aout]"]);
+            }
+        }
+        else
+        {
+            arguments.AddRange(["-map", "0:v:0", "-map", "0:a?", "-vf", string.Join(',', videoFilters)]);
+        }
+        arguments.AddRange(["-c:v", "libx264", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart"]);
         return await RunFfmpegToData(arguments, "mp4", "Cannot edit video because ffmpeg is not available.", "ffmpeg could not produce the edited video.");
     }
 }

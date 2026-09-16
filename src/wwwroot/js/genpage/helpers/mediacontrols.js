@@ -42,7 +42,11 @@ class MediaControlsBase {
 
     /** Toggles play/pause. */
     togglePlay() {
-        if (this.media.paused) {
+        let isAtEnd = this.media.ended || (Number.isFinite(this.media.duration) && this.media.duration > 0 && this.media.currentTime >= this.media.duration);
+        if (this.media.paused || isAtEnd) {
+            if (isAtEnd) {
+                this.media.currentTime = 0;
+            }
             this.media.play();
         }
         else {

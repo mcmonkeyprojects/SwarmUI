@@ -1227,6 +1227,18 @@ body.small-window > .tab-content.tab-hundred {
 .video_editor_timeline_excluded {
     background-color: rgb(20, 20, 20, 0.68);
 }
+.video_editor_sections {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.video_editor_section_excluded {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: color-mix(in srgb, var(--aggressive) 42%, rgb(20, 20, 20, 0.75));
+    box-shadow: inset 0 0 0 1px var(--aggressive);
+}
 .video_editor_timeline_cursor {
     position: absolute;
     top: -0.2rem;

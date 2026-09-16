@@ -1,3 +1,23 @@
+/** A section of the media timeline. */
+class MediaEditorSection {
+
+    constructor(startFrame, endFrame, excluded = false) {
+        this.startFrame = startFrame;
+        this.endFrame = endFrame;
+        this.excluded = excluded;
+    }
+
+    /** Returns an independent copy of this section with new bounds. */
+    clone(startFrame, endFrame) {
+        return new MediaEditorSection(startFrame, endFrame, this.excluded);
+    }
+
+    /** Returns the section data sent to the media editing API. */
+    toRequest(frameRate) {
+        return { startMilliseconds: Math.round(this.startFrame / frameRate * 1000), endMilliseconds: Math.round(this.endFrame / frameRate * 1000), excluded: this.excluded };
+    }
+}
+
 /** Advanced timeline based editing tool for media, such as trimming and cropping. */
 class MediaEditorInterface {
 
@@ -20,6 +40,7 @@ class MediaEditorInterface {
         this.timelineSelection = getRequiredElementById('video_editor_timeline_selection');
         this.timelineExcludedLeft = getRequiredElementById('video_editor_timeline_excluded_left');
         this.timelineExcludedRight = getRequiredElementById('video_editor_timeline_excluded_right');
+        this.sectionsContainer = getRequiredElementById('video_editor_sections');
         this.splitMarksContainer = getRequiredElementById('video_editor_split_marks');
         this.timelineCursor = getRequiredElementById('video_editor_timeline_cursor');
         this.waveform = getRequiredElementById('video_editor_waveform');
@@ -31,6 +52,7 @@ class MediaEditorInterface {
         this.durationText = getRequiredElementById('video_editor_duration');
         this.resetCropButton = getRequiredElementById('video_editor_reset_crop');
         this.splitMarkButton = getRequiredElementById('video_editor_split_mark');
+        this.excludeSectionButton = getRequiredElementById('video_editor_exclude_section');
         this.saveAudioButton = getRequiredElementById('video_editor_save_audio');
         this.saveVideoButton = getRequiredElementById('video_editor_save_video');
         this.sourceVideo = null;
@@ -43,12 +65,13 @@ class MediaEditorInterface {
         this.frameRate = 24;
         this.currentFrameIndex = 0;
         this.splitFrames = [];
+        this.sections = [];
         this.timelinePointer = null;
         this.cropPointer = null;
         this.waveformPeaks = null;
         this.resetCrop();
         this.video.addEventListener('loadedmetadata', () => this.onMetadataLoaded());
-        this.video.addEventListener('timeupdate', () => this.updateTimeline());
+        this.video.addEventListener('timeupdate', () => this.onTimeUpdate());
         this.video.addEventListener('seeked', () => this.updateTimeline());
         this.timeline.addEventListener('pointerdown', e => this.startTimelinePointer(e));
         this.timeline.addEventListener('pointermove', e => this.moveTimelinePointer(e));
@@ -64,6 +87,7 @@ class MediaEditorInterface {
         }
         this.resetCropButton.addEventListener('click', () => this.resetCrop());
         this.splitMarkButton.addEventListener('click', () => this.toggleSplitMark());
+        this.excludeSectionButton.addEventListener('click', () => this.toggleExcludeSection());
         this.saveAudioButton.addEventListener('click', () => this.saveAudio());
         this.saveVideoButton.addEventListener('click', () => this.saveMedia());
         document.addEventListener('keydown', e => this.onKeyDown(e));
@@ -85,8 +109,11 @@ class MediaEditorInterface {
         this.trimStart = 0;
         this.trimEnd = 0;
         this.splitFrames = [];
+        this.sections = [];
         this.renderSplitMarks();
+        this.renderSections();
         this.splitMarkButton.disabled = true;
+        this.excludeSectionButton.style.display = 'none';
         this.updateSplitMarkButton();
         this.resetCrop();
         this.resetScale();
@@ -143,9 +170,13 @@ class MediaEditorInterface {
         this.duration = Number.isFinite(this.video.duration) ? this.video.duration : 0;
         this.trimStart = 0;
         this.trimEnd = this.duration;
+        this.sections = this.duration > 0 ? [new MediaEditorSection(0, this.getFrameIndex(this.duration))] : [];
+        this.syncSplitFrames();
         this.splitMarkButton.disabled = this.duration <= 0;
         this.saveAudioButton.style.display = !this.isAudio && this.sourceVideo && this.hasAudio(this.sourceVideo) ? '' : 'none';
         this.updateTimeline();
+        this.renderSections();
+        this.renderSplitMarks();
         this.updateResolution();
         this.renderAudioWaveform();
     }
@@ -221,11 +252,22 @@ class MediaEditorInterface {
         this.trimEndText.textContent = `End: ${durationStringifyColons(this.trimEnd, 2)}`;
         this.durationText.textContent = `Duration: ${durationStringifyColons(this.trimEnd - this.trimStart, 2)}`;
         this.updateSplitMarkButton();
+        this.updateExcludeSectionButton();
     }
 
     /** Returns the split mark at an exact frame index, if any. */
     getSplitMarkIndexAtFrame(frameIndex) {
         return this.splitFrames.indexOf(frameIndex);
+    }
+
+    /** Rebuilds the split mark list from the section boundaries. */
+    syncSplitFrames() {
+        this.splitFrames = this.sections.slice(0, -1).map(section => section.endFrame);
+    }
+
+    /** Returns the section containing a frame, treating a split frame as the start of its right section. */
+    getSectionAtFrame(frameIndex) {
+        return this.sections.find((section, index) => frameIndex >= section.startFrame && (frameIndex < section.endFrame || index == this.sections.length - 1)) || null;
     }
 
     /** Adds or removes a split mark at the current timeline position. */
@@ -236,14 +278,24 @@ class MediaEditorInterface {
         this.currentFrameIndex = this.getFrameIndex(this.video.currentTime);
         let index = this.getSplitMarkIndexAtFrame(this.currentFrameIndex);
         if (index == -1) {
-            this.splitFrames.push(this.currentFrameIndex);
-            this.splitFrames.sort((a, b) => a - b);
+            let sectionIndex = this.sections.findIndex(section => this.currentFrameIndex > section.startFrame && this.currentFrameIndex < section.endFrame);
+            if (sectionIndex == -1) {
+                return;
+            }
+            let section = this.sections[sectionIndex];
+            this.sections.splice(sectionIndex, 1, section.clone(section.startFrame, this.currentFrameIndex), section.clone(this.currentFrameIndex, section.endFrame));
         }
         else {
-            this.splitFrames.splice(index, 1);
+            let leftSection = this.sections[index];
+            let rightSection = this.sections[index + 1];
+            this.sections.splice(index, 2, new MediaEditorSection(leftSection.startFrame, rightSection.endFrame));
         }
+        this.syncSplitFrames();
+        this.renderSections();
         this.renderSplitMarks();
         this.updateSplitMarkButton();
+        this.updateExcludeSectionButton();
+        this.saveVideoButton.disabled = false;
     }
 
     /** Renders all split marks over the timeline waveform. */
@@ -259,10 +311,81 @@ class MediaEditorInterface {
         }
     }
 
+    /** Renders section-specific timeline state. */
+    renderSections() {
+        this.sectionsContainer.replaceChildren();
+        if (this.duration <= 0) {
+            return;
+        }
+        for (let section of this.sections) {
+            if (!section.excluded) {
+                continue;
+            }
+            let highlight = createDiv(null, 'video_editor_section_excluded');
+            highlight.style.left = `${section.startFrame / this.frameRate / this.duration * 100}%`;
+            highlight.style.width = `${(section.endFrame - section.startFrame) / this.frameRate / this.duration * 100}%`;
+            this.sectionsContainer.appendChild(highlight);
+        }
+    }
+
     /** Updates the split mark button for the current timeline position. */
     updateSplitMarkButton() {
         let hasMark = this.duration > 0 && this.getSplitMarkIndexAtFrame(this.currentFrameIndex) != -1;
         this.splitMarkButton.textContent = translate(hasMark ? 'Remove Split Mark' : 'Add Split Mark');
+    }
+
+    /** Updates the section action for the section under the cursor. */
+    updateExcludeSectionButton() {
+        let section = this.getSectionAtFrame(this.currentFrameIndex);
+        this.excludeSectionButton.style.display = this.splitFrames.length > 0 ? '' : 'none';
+        this.excludeSectionButton.textContent = translate(section?.excluded ? 'Include Section' : 'Exclude Section');
+    }
+
+    /** Includes or excludes the section under the timeline cursor. */
+    toggleExcludeSection() {
+        if (this.splitFrames.length == 0) {
+            return;
+        }
+        let section = this.getSectionAtFrame(this.getFrameIndex(this.video.currentTime));
+        if (!section) {
+            return;
+        }
+        section.excluded = !section.excluded;
+        this.video.pause();
+        this.renderSections();
+        this.updateExcludeSectionButton();
+        this.saveVideoButton.disabled = false;
+    }
+
+    /** Skips excluded content during active playback. */
+    onTimeUpdate() {
+        if (!this.video.paused) {
+            let section = this.getSectionAtFrame(this.getFrameIndex(this.video.currentTime));
+            if (section?.excluded) {
+                let nextFrame = this.skipExcludedFrame(section.endFrame, 1);
+                if (nextFrame >= this.getFrameIndex(this.duration)) {
+                    this.video.pause();
+                    this.video.currentTime = this.duration;
+                }
+                else {
+                    this.video.currentTime = nextFrame / this.frameRate;
+                }
+            }
+        }
+        this.updateTimeline();
+    }
+
+    /** Moves a target frame out of excluded sections in the requested direction. */
+    skipExcludedFrame(frameIndex, direction) {
+        let section = this.getSectionAtFrame(frameIndex);
+        while (section?.excluded) {
+            if (direction > 0 && section.endFrame >= this.getFrameIndex(this.duration)) {
+                return this.getFrameIndex(this.duration);
+            }
+            frameIndex = direction > 0 ? section.endFrame : section.startFrame - 1;
+            section = this.getSectionAtFrame(frameIndex);
+        }
+        return frameIndex;
     }
 
     /** Moves the timeline cursor by an exact number of frames. */
@@ -273,6 +396,7 @@ class MediaEditorInterface {
         this.video.pause();
         let maxFrameIndex = this.getFrameIndex(this.duration);
         let frameIndex = Math.max(0, Math.min(maxFrameIndex, this.getFrameIndex(this.video.currentTime) + offset));
+        frameIndex = Math.max(0, Math.min(maxFrameIndex, this.skipExcludedFrame(frameIndex, offset)));
         this.video.currentTime = Math.min(this.duration, frameIndex / this.frameRate);
         this.updateTimeline();
     }
@@ -295,6 +419,9 @@ class MediaEditorInterface {
         }
         else if (e.code == 'Space' && !e.repeat) {
             this.videoControls.togglePlay();
+        }
+        else if (e.key == 'Delete' && !e.repeat) {
+            this.toggleExcludeSection();
         }
         else {
             return;
@@ -476,6 +603,15 @@ class MediaEditorInterface {
         return { startMilliseconds: Math.round(this.trimStart * 1000), endMilliseconds: Math.abs(this.trimEnd - this.duration) < 0.001 ? -1 : Math.round(this.trimEnd * 1000) };
     }
 
+    /** Returns the ordered timeline sections for the media editing API. */
+    getSectionsRequest() {
+        let result = this.sections.map(section => section.toRequest(this.frameRate));
+        if (result.length > 0) {
+            result[result.length - 1].endMilliseconds = Math.round(this.duration * 1000);
+        }
+        return result;
+    }
+
     /** Returns even-pixel crop parameters for video encoding. */
     getCropRequest() {
         if (this.cropBounds.left == 0 && this.cropBounds.top == 0 && this.cropBounds.right == 1 && this.cropBounds.bottom == 1) {
@@ -490,6 +626,7 @@ class MediaEditorInterface {
 
     /** Toggles save buttons while an operation is running. */
     setSaving(saving) {
+        this.excludeSectionButton.disabled = saving;
         this.saveAudioButton.disabled = saving;
         this.saveVideoButton.disabled = saving;
     }
@@ -502,14 +639,14 @@ class MediaEditorInterface {
         }
     }
 
-    /** Saves the trimmed audio as a Batch View output. */
+    /** Saves the edited audio track as a Batch View output. */
     saveAudio() {
         if (!this.videoData || this.duration <= 0) {
             return;
         }
         this.setSaving(true);
-        let trim = this.getTrimRequest();
-        genericRequest('ExtractVideoAudio', { video: this.videoData, filename: this.filename, ...trim }, result => {
+        let request = { media: this.videoData, filename: this.filename, audioOnly: true, ...this.getTrimRequest(), timelineSections: this.getSectionsRequest() };
+        genericRequest('EditMedia', request, result => {
             this.addOutputToBatch(result);
             this.setSaving(false);
             this.saveAudioButton.style.display = 'none';
@@ -525,7 +662,7 @@ class MediaEditorInterface {
             return;
         }
         this.setSaving(true);
-        let request = { media: this.videoData, filename: this.filename, ...this.getTrimRequest(), ...this.getCropRequest(), scale: this.getScale() };
+        let request = { media: this.videoData, filename: this.filename, audioOnly: this.isAudio, ...this.getTrimRequest(), ...this.getCropRequest(), scale: this.getScale(), timelineSections: this.getSectionsRequest() };
         genericRequest('EditMedia', request, result => {
             this.addOutputToBatch(result);
             this.setSaving(false);

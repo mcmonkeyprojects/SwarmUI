@@ -156,6 +156,7 @@ This section applies to the general `src/*.cs` files.
 - Always use full braced blocks, never inline if/etc. statements
 - We currently use C# 12 and dotnet 8
 - All fields should have `///` XML cs docs
+- Never use the `{ get; set; }` syntax, if it's a field it's a field, properties are only used when it's actually doing something unique
 
 ### Structure
 

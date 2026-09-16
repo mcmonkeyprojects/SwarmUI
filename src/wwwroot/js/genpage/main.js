@@ -564,7 +564,7 @@ function imagePromptAddImage(file) {
 
 /** Extracts a prompt video's audio on the server and attaches the saved audio result. */
 function imagePromptSplitVideoAudio(video, startMilliseconds = 0, endMilliseconds = -1, onComplete = null) {
-    genericRequest('ExtractVideoAudio', { video: video.dataset.filedata, filename: video.dataset.filename || '', startMilliseconds, endMilliseconds }, result => {
+    genericRequest('EditMedia', { media: video.dataset.filedata, filename: video.dataset.filename || '', startMilliseconds, endMilliseconds, audioOnly: true }, result => {
         imagePromptAddImageData(`${getImageOutPrefix()}/${result.result}`, 'audio', result.result, result.result);
         if (inputBrowserHelper.inputImageBrowser) {
             inputBrowserHelper.inputImageBrowser.lightRefresh();
