@@ -39,6 +39,7 @@ class VideoEditorInterface {
         this.trimEnd = 0;
         this.timelinePointer = null;
         this.cropPointer = null;
+        this.waveformPeaks = null;
         this.resetCrop();
         this.video.addEventListener('loadedmetadata', () => this.onMetadataLoaded());
         this.video.addEventListener('timeupdate', () => this.updateTimeline());
@@ -47,6 +48,8 @@ class VideoEditorInterface {
         this.timeline.addEventListener('pointermove', e => this.moveTimelinePointer(e));
         this.timeline.addEventListener('pointerup', e => this.endTimelinePointer(e));
         this.timeline.addEventListener('pointercancel', e => this.endTimelinePointer(e));
+        this.timelineResizeObserver = new ResizeObserver(() => this.redrawAudioWaveform());
+        this.timelineResizeObserver.observe(this.timeline);
         for (let handle of this.cropSelection.querySelectorAll('[data-crop-handle]')) {
             handle.addEventListener('pointerdown', e => this.startCropPointer(e));
             handle.addEventListener('pointermove', e => this.moveCropPointer(e));
@@ -73,6 +76,7 @@ class VideoEditorInterface {
         this.resetScale();
         this.setSaving(false);
         this.saveAudioButton.style.display = this.hasAudio(video) ? '' : 'none';
+        this.waveformPeaks = null;
         this.waveform.style.display = '';
         this.waveform.width = 0;
         this.video.src = video.currentSrc || video.src || video.dataset.src;
@@ -132,13 +136,24 @@ class VideoEditorInterface {
             if (source != (this.video.currentSrc || this.video.src)) {
                 return;
             }
-            renderWaveform(this.waveform, peaks, { width: this.timeline.clientWidth, height: this.waveform.clientHeight, pixelRatio: window.devicePixelRatio || 1 });
+            this.waveformPeaks = peaks;
+            this.redrawAudioWaveform();
         }
         catch (err) {
             if (source == (this.video.currentSrc || this.video.src)) {
                 this.waveform.style.display = 'none';
             }
         }
+    }
+
+    /** Redraws the audio waveform at the current timeline size. */
+    redrawAudioWaveform() {
+        let width = this.timeline.clientWidth;
+        let height = this.timeline.clientHeight;
+        if (!this.waveformPeaks || width <= 0 || height <= 0) {
+            return;
+        }
+        renderWaveform(this.waveform, this.waveformPeaks, { width, height, pixelRatio: window.devicePixelRatio || 1 });
     }
 
     /** Updates the timeline display. */
