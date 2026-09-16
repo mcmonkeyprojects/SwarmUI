@@ -21,6 +21,7 @@ class VideoEditorInterface {
         this.timelineExcludedLeft = getRequiredElementById('video_editor_timeline_excluded_left');
         this.timelineExcludedRight = getRequiredElementById('video_editor_timeline_excluded_right');
         this.timelineCursor = getRequiredElementById('video_editor_timeline_cursor');
+        this.waveform = getRequiredElementById('video_editor_waveform');
         this.trimHandleLeft = this.timeline.querySelector('[data-trim-handle="left"]');
         this.trimHandleRight = this.timeline.querySelector('[data-trim-handle="right"]');
         this.trimStartText = getRequiredElementById('video_editor_trim_start');
@@ -72,6 +73,8 @@ class VideoEditorInterface {
         this.resetScale();
         this.setSaving(false);
         this.saveAudioButton.style.display = this.hasAudio(video) ? '' : 'none';
+        this.waveform.style.display = '';
+        this.waveform.width = 0;
         this.video.src = video.currentSrc || video.src || video.dataset.src;
         this.video.load();
         this.modalJq.modal('show');
@@ -118,6 +121,24 @@ class VideoEditorInterface {
         this.saveAudioButton.style.display = this.sourceVideo && this.hasAudio(this.sourceVideo) ? '' : 'none';
         this.updateTimeline();
         this.updateResolution();
+        this.renderAudioWaveform();
+    }
+
+    /** Renders the video's audio waveform behind the timeline controls. */
+    async renderAudioWaveform() {
+        let source = this.video.currentSrc || this.video.src;
+        try {
+            let peaks = await getAudioWaveformPeaks(source);
+            if (source != (this.video.currentSrc || this.video.src)) {
+                return;
+            }
+            renderWaveform(this.waveform, peaks, { width: this.timeline.clientWidth, height: this.waveform.clientHeight, pixelRatio: window.devicePixelRatio || 1 });
+        }
+        catch (err) {
+            if (source == (this.video.currentSrc || this.video.src)) {
+                this.waveform.style.display = 'none';
+            }
+        }
     }
 
     /** Updates the timeline display. */
