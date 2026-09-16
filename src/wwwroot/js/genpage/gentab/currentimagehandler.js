@@ -974,6 +974,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         return;
     }
     let mediaType = getMediaType(src);
+    if (!metadata && canReparse && mediaType == 'audio') {
+        parseAudioMetadata(src, (data, parsedMetadata) => {
+            setCurrentImage(src, parsedMetadata, batchId, previewGrow, false, false);
+        });
+        return;
+    }
     if ((smoothAdd || !metadata) && canReparse && mediaType == 'image') {
         let image = new Image();
         image.onload = () => {

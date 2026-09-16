@@ -235,6 +235,26 @@ function parseMetadata(data, callback) {
     });
 }
 
+/** Reads generation metadata from an audio file using music-metadata. */
+function parseAudioMetadata(data, callback) {
+    let blobPromise = data instanceof Blob ? Promise.resolve(data) : fetch(data).then(response => response.blob());
+    blobPromise.then(blob => MusicMetadata.parseBlob(blob, { duration: false, skipCovers: true })).then(parsed => {
+        let metadata = null;
+        for (let comment of parsed?.common?.comment ?? []) {
+            let text = typeof comment == 'string' ? comment : comment?.text;
+            let interpreted = interpretMetadata(text);
+            if (interpreted) {
+                metadata = interpreted;
+                break;
+            }
+        }
+        callback(data, metadata);
+    }).catch(err => {
+        console.error(`Error parsing metadata (audio): ${err}`);
+        callback(data, null);
+    });
+}
+
 let metadataKeyFormatCleaners = [];
 let promptCidMatcher = new RegExp('\<(.*?)//cid=\\d+>', 'g');
 
