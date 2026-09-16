@@ -213,30 +213,31 @@ public class UserImageHistoryHelper
     public static async Task<byte[]> EditMedia(string file, bool audioOutput, double start, double end, int cropX, int cropY, int cropWidth, int cropHeight, double scale = 1, List<MediaEditorSection> timelineSections = null)
     {
         List<MediaEditorSection> includedSections = timelineSections?.Where(section => !section.Excluded).ToList();
-        bool useTimelineSelection = includedSections?.Count > 1;
+        bool useTimelineSections = includedSections is not null && (includedSections.Count > 1 || includedSections.Any(section => section.Volume != 1));
         if (includedSections?.Count == 1)
         {
             start = includedSections[0].Start;
             end = includedSections[0].End;
         }
         List<string> arguments = ["-y", "-i", file];
-        if (!useTimelineSelection && start > 0)
+        if (!useTimelineSections && start > 0)
         {
             arguments.AddRange(["-ss", $"{start:0.###}"]);
         }
-        if (!useTimelineSelection && end >= 0)
+        if (!useTimelineSections && end >= 0)
         {
             arguments.AddRange(["-t", $"{end - start:0.###}"]);
         }
         if (audioOutput)
         {
-            if (useTimelineSelection)
+            if (useTimelineSections)
             {
                 List<string> filters = [];
                 for (int i = 0; i < includedSections.Count; i++)
                 {
                     MediaEditorSection section = includedSections[i];
-                    filters.Add($"[0:a]atrim=start={section.Start.ToString("0.###", CultureInfo.InvariantCulture)}:end={section.End.ToString("0.###", CultureInfo.InvariantCulture)},asetpts=PTS-STARTPTS[a{i}]");
+                    string volume = section.Volume.ToString("0.##", CultureInfo.InvariantCulture);
+                    filters.Add($"[0:a]atrim=start={section.Start.ToString("0.###", CultureInfo.InvariantCulture)}:end={section.End.ToString("0.###", CultureInfo.InvariantCulture)},volume={volume},asetpts=PTS-STARTPTS[a{i}]");
                 }
                 filters.Add($"{string.Concat(Enumerable.Range(0, includedSections.Count).Select(i => $"[a{i}]"))}concat=n={includedSections.Count}:v=0:a=1[aout]");
                 arguments.AddRange(["-filter_complex", string.Join(';', filters), "-map", "[aout]"]);
@@ -261,7 +262,7 @@ public class UserImageHistoryHelper
             videoFilters.Add($"scale=max(16\\,16*round(iw*{scale}/16)):max(16\\,16*round(ih*{scale}/16))");
         }
         videoFilters.Add("pad=ceil(iw/2)*2:ceil(ih/2)*2");
-        if (useTimelineSelection)
+        if (useTimelineSections)
         {
             bool hasAudio = await MediaHasAudioStream(file);
             List<string> filters = [];
@@ -273,7 +274,8 @@ public class UserImageHistoryHelper
                 filters.Add($"[0:v]trim=start={sectionStart}:end={sectionEnd},setpts=PTS-STARTPTS[v{i}]");
                 if (hasAudio)
                 {
-                    filters.Add($"[0:a]atrim=start={sectionStart}:end={sectionEnd},asetpts=PTS-STARTPTS[a{i}]");
+                    string volume = section.Volume.ToString("0.##", CultureInfo.InvariantCulture);
+                    filters.Add($"[0:a]atrim=start={sectionStart}:end={sectionEnd},volume={volume},asetpts=PTS-STARTPTS[a{i}]");
                 }
             }
             string videoInputs = string.Concat(Enumerable.Range(0, includedSections.Count).Select(i => $"[v{i}]"));

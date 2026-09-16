@@ -586,7 +586,7 @@ public static class T2IAPI
         """)]
     public static async Task<JObject> EditMedia(Session session,
         [API.APIParameter("Video or audio data URL or reusable server media path.")] string media,
-        [API.APIParameter("Raw request data.\nOptionally include timelineSections as an ordered JSON array of section objects with startMilliseconds, endMilliseconds, and excluded fields.")] JObject raw,
+        [API.APIParameter("Raw request data.\nOptionally include timelineSections as an ordered JSON array of section objects with: startMilliseconds (int), endMilliseconds (int), excluded (bool), and volume (float [0..1])")] JObject raw,
         [API.APIParameter("Original media filename, used to name the edited media.")] string filename = null,
         [API.APIParameter("Trim start in milliseconds.")] int startMilliseconds = 0,
         [API.APIParameter("Trim end in milliseconds, or -1 for the end of the media.")] int endMilliseconds = -1,
@@ -705,13 +705,23 @@ public static class T2IAPI
             {
                 throw new SwarmUserErrorException("Timeline section excluded values must be boolean.");
             }
+            JToken volumeToken = section["volume"];
+            if (volumeToken is not null && volumeToken.Type != JTokenType.Integer && volumeToken.Type != JTokenType.Float)
+            {
+                throw new SwarmUserErrorException("Timeline section volume values must be numbers.");
+            }
+            float volume = volumeToken?.Value<float>() ?? 1;
+            if (!float.IsFinite(volume) || volume < 0 || volume > 1)
+            {
+                throw new SwarmUserErrorException("Timeline section volume values must be between 0 and 1.");
+            }
             int clippedStart = Math.Max(sectionStart, startMilliseconds);
             int clippedEnd = endMilliseconds < 0 ? sectionEnd : Math.Min(sectionEnd, endMilliseconds);
             if (clippedEnd <= clippedStart)
             {
                 continue;
             }
-            result.Add(new MediaEditorSection(clippedStart / 1000.0, clippedEnd / 1000.0, excludedToken?.Value<bool>() ?? false));
+            result.Add(new MediaEditorSection(clippedStart / 1000.0, clippedEnd / 1000.0, excludedToken?.Value<bool>() ?? false, volume));
         }
         if (!result.Any(section => !section.Excluded))
         {

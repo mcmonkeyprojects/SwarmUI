@@ -1,20 +1,21 @@
 /** A section of the media timeline. */
 class MediaEditorSection {
 
-    constructor(startFrame, endFrame, excluded = false) {
+    constructor(startFrame, endFrame, excluded = false, volume = 1) {
         this.startFrame = startFrame;
         this.endFrame = endFrame;
         this.excluded = excluded;
+        this.volume = volume;
     }
 
     /** Returns an independent copy of this section with new bounds. */
     clone(startFrame, endFrame) {
-        return new MediaEditorSection(startFrame, endFrame, this.excluded);
+        return new MediaEditorSection(startFrame, endFrame, this.excluded, this.volume);
     }
 
     /** Returns the section data sent to the media editing API. */
     toRequest(frameRate) {
-        return { startMilliseconds: Math.round(this.startFrame / frameRate * 1000), endMilliseconds: Math.round(this.endFrame / frameRate * 1000), excluded: this.excluded };
+        return { startMilliseconds: Math.round(this.startFrame / frameRate * 1000), endMilliseconds: Math.round(this.endFrame / frameRate * 1000), excluded: this.excluded, volume: this.volume };
     }
 }
 
@@ -52,7 +53,10 @@ class MediaEditorInterface {
         this.durationText = getRequiredElementById('video_editor_duration');
         this.resetCropButton = getRequiredElementById('video_editor_reset_crop');
         this.splitMarkButton = getRequiredElementById('video_editor_split_mark');
+        this.sectionControls = getRequiredElementById('video_editor_section_controls');
         this.excludeSectionButton = getRequiredElementById('video_editor_exclude_section');
+        this.sectionVolumeSlider = getRequiredElementById('video_editor_section_volume');
+        this.sectionVolumeValue = getRequiredElementById('video_editor_section_volume_value');
         this.saveAudioButton = getRequiredElementById('video_editor_save_audio');
         this.saveVideoButton = getRequiredElementById('video_editor_save_video');
         this.sourceVideo = null;
@@ -88,6 +92,7 @@ class MediaEditorInterface {
         this.resetCropButton.addEventListener('click', () => this.resetCrop());
         this.splitMarkButton.addEventListener('click', () => this.toggleSplitMark());
         this.excludeSectionButton.addEventListener('click', () => this.toggleExcludeSection());
+        this.sectionVolumeSlider.addEventListener('input', () => this.onSectionVolumeChanged());
         this.saveAudioButton.addEventListener('click', () => this.saveAudio());
         this.saveVideoButton.addEventListener('click', () => this.saveMedia());
         document.addEventListener('keydown', e => this.onKeyDown(e));
@@ -103,6 +108,7 @@ class MediaEditorInterface {
         this.isAudio = media.tagName == 'AUDIO';
         this.frameRate = this.getMediaFrameRate(media);
         this.currentFrameIndex = 0;
+        this.videoControls.setVolumeMultiplier(1);
         this.modal.classList.toggle('video_editor_audio', this.isAudio);
         this.filename = media.dataset.filename || (isValidMediaPath(this.videoData) ? this.videoData : '');
         this.duration = 0;
@@ -113,7 +119,7 @@ class MediaEditorInterface {
         this.renderSplitMarks();
         this.renderSections();
         this.splitMarkButton.disabled = true;
-        this.excludeSectionButton.style.display = 'none';
+        this.sectionControls.style.display = 'none';
         this.updateSplitMarkButton();
         this.resetCrop();
         this.resetScale();
@@ -136,6 +142,7 @@ class MediaEditorInterface {
     /** Releases the active video when the modal closes. */
     cleanup() {
         this.video.pause();
+        this.videoControls.setVolumeMultiplier(1);
         this.video.removeAttribute('src');
         this.video.load();
         this.sourceVideo = null;
@@ -228,7 +235,12 @@ class MediaEditorInterface {
         if (!this.waveformPeaks || width <= 0 || height <= 0) {
             return;
         }
-        renderWaveform(this.waveform, this.waveformPeaks, { width, height, pixelRatio: window.devicePixelRatio || 1 });
+        renderWaveform(this.waveform, this.waveformPeaks, {
+            width,
+            height,
+            pixelRatio: window.devicePixelRatio || 1,
+            amplitudeScale: fraction => this.getSectionAtFrame(this.getFrameIndex(fraction * this.duration))?.volume ?? 1
+        });
     }
 
     /** Updates the timeline display. */
@@ -236,6 +248,7 @@ class MediaEditorInterface {
         let start = this.duration > 0 ? this.trimStart / this.duration * 100 : 0;
         let end = this.duration > 0 ? this.trimEnd / this.duration * 100 : 100;
         this.currentFrameIndex = this.getFrameIndex(this.video.currentTime);
+        this.videoControls.setVolumeMultiplier(this.getSectionAtFrame(this.currentFrameIndex)?.volume ?? 1);
         let currentTime = this.currentFrameIndex / this.frameRate;
         let current = this.duration > 0 ? currentTime / this.duration * 100 : 0;
         this.timelineSelection.style.left = `${start}%`;
@@ -252,7 +265,7 @@ class MediaEditorInterface {
         this.trimEndText.textContent = `End: ${durationStringifyColons(this.trimEnd, 2)}`;
         this.durationText.textContent = `Duration: ${durationStringifyColons(this.trimEnd - this.trimStart, 2)}`;
         this.updateSplitMarkButton();
-        this.updateExcludeSectionButton();
+        this.updateSectionControls();
     }
 
     /** Returns the split mark at an exact frame index, if any. */
@@ -292,9 +305,10 @@ class MediaEditorInterface {
         }
         this.syncSplitFrames();
         this.renderSections();
+        this.redrawAudioWaveform();
         this.renderSplitMarks();
         this.updateSplitMarkButton();
-        this.updateExcludeSectionButton();
+        this.updateSectionControls();
         this.saveVideoButton.disabled = false;
     }
 
@@ -318,13 +332,30 @@ class MediaEditorInterface {
             return;
         }
         for (let section of this.sections) {
-            if (!section.excluded) {
-                continue;
+            let left = section.startFrame / this.frameRate / this.duration * 100;
+            let width = (section.endFrame - section.startFrame) / this.frameRate / this.duration * 100;
+            let volume = Math.max(0, Math.min(1, section.volume));
+            let reductionHeight = (1 - volume) * 50;
+            if (reductionHeight > 0) {
+                let topReduction = createDiv(null, 'video_editor_section_volume_reduction');
+                topReduction.style.left = `${left}%`;
+                topReduction.style.width = `${width}%`;
+                topReduction.style.top = '0';
+                topReduction.style.height = `${reductionHeight}%`;
+                this.sectionsContainer.appendChild(topReduction);
+                let bottomReduction = createDiv(null, 'video_editor_section_volume_reduction');
+                bottomReduction.style.left = `${left}%`;
+                bottomReduction.style.width = `${width}%`;
+                bottomReduction.style.bottom = '0';
+                bottomReduction.style.height = `${reductionHeight}%`;
+                this.sectionsContainer.appendChild(bottomReduction);
             }
-            let highlight = createDiv(null, 'video_editor_section_excluded');
-            highlight.style.left = `${section.startFrame / this.frameRate / this.duration * 100}%`;
-            highlight.style.width = `${(section.endFrame - section.startFrame) / this.frameRate / this.duration * 100}%`;
-            this.sectionsContainer.appendChild(highlight);
+            if (section.excluded) {
+                let highlight = createDiv(null, 'video_editor_section_excluded');
+                highlight.style.left = `${left}%`;
+                highlight.style.width = `${width}%`;
+                this.sectionsContainer.appendChild(highlight);
+            }
         }
     }
 
@@ -334,11 +365,14 @@ class MediaEditorInterface {
         this.splitMarkButton.textContent = translate(hasMark ? 'Remove Split Mark' : 'Add Split Mark');
     }
 
-    /** Updates the section action for the section under the cursor. */
-    updateExcludeSectionButton() {
+    /** Updates the controls for the section under the cursor. */
+    updateSectionControls() {
         let section = this.getSectionAtFrame(this.currentFrameIndex);
-        this.excludeSectionButton.style.display = this.splitFrames.length > 0 ? '' : 'none';
+        this.sectionControls.style.display = this.splitFrames.length > 0 ? '' : 'none';
         this.excludeSectionButton.textContent = translate(section?.excluded ? 'Include Section' : 'Exclude Section');
+        this.sectionVolumeSlider.value = (section?.volume ?? 1) * 100;
+        this.sectionVolumeValue.textContent = `${Math.round((section?.volume ?? 1) * 100)}%`;
+        updateRangeStyle(this.sectionVolumeSlider);
     }
 
     /** Includes or excludes the section under the timeline cursor. */
@@ -353,7 +387,21 @@ class MediaEditorInterface {
         section.excluded = !section.excluded;
         this.video.pause();
         this.renderSections();
-        this.updateExcludeSectionButton();
+        this.updateSectionControls();
+        this.saveVideoButton.disabled = false;
+    }
+
+    /** Stores the selected section's output volume as a multiplier. */
+    onSectionVolumeChanged() {
+        let section = this.getSectionAtFrame(this.currentFrameIndex);
+        if (!section) {
+            return;
+        }
+        section.volume = parseFloat(this.sectionVolumeSlider.value) / 100;
+        this.videoControls.setVolumeMultiplier(section.volume);
+        this.sectionVolumeValue.textContent = `${Math.round(section.volume * 100)}%`;
+        this.renderSections();
+        this.redrawAudioWaveform();
         this.saveVideoButton.disabled = false;
     }
 
@@ -403,9 +451,7 @@ class MediaEditorInterface {
 
     /** Handles media editor keyboard shortcuts. */
     onKeyDown(e) {
-        let target = e.target;
-        let isInput = target.tagName == 'INPUT' || target.tagName == 'TEXTAREA' || target.tagName == 'SELECT' || target.isContentEditable;
-        if (isInput || !this.modal.classList.contains('show') || e.ctrlKey || e.altKey || e.metaKey) {
+        if (!this.modal.classList.contains('show') || e.ctrlKey || e.altKey || e.metaKey) {
             return;
         }
         if (e.key.toLowerCase() == 's' && !e.repeat) {

@@ -1,21 +1,17 @@
 namespace SwarmUI.Media;
 
 /// <summary>A bounded section of an edited media timeline.</summary>
-public class MediaEditorSection
+public class MediaEditorSection(double start, double end, bool excluded = false, float volume = 1)
 {
     /// <summary>Section start time in seconds.</summary>
-    public double Start;
+    public double Start = start;
 
     /// <summary>Section end time in seconds.</summary>
-    public double End;
+    public double End = end;
 
     /// <summary>Whether this section is omitted from the edited output.</summary>
-    public bool Excluded;
+    public bool Excluded = excluded;
 
-    public MediaEditorSection(double start, double end, bool excluded)
-    {
-        Start = start;
-        End = end;
-        Excluded = excluded;
-    }
+    /// <summary>Audio volume multiplier for this section.</summary>
+    public float Volume = volume;
 }

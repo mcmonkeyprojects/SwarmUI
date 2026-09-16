@@ -312,11 +312,18 @@
             <span id="video_editor_trim_end">End: 0:00.00</span>
             <span id="video_editor_duration">Duration: 0:00.00</span>
         </div>
+        <div class="video_editor_section_controls" id="video_editor_section_controls" style="display:none">
+            <button type="button" class="btn btn-secondary basic-button translate" id="video_editor_exclude_section">Exclude Section</button>
+            <label for="video_editor_section_volume" class="translate">Volume</label>
+            <span id="video_editor_section_volume_value">100%</span>
+            <div class="auto-slider-range-wrapper" style="--range-value:100%">
+                <input class="auto-slider-range" type="range" id="video_editor_section_volume" value="100" min="0" max="100" step="1" data-ispot="false" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+            </div>
+        </div>
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary basic-button translate" id="video_editor_reset_crop">Reset Cropping</button>
         <button type="button" class="btn btn-secondary basic-button translate" id="video_editor_split_mark">Add Split Mark</button>
-        <button type="button" class="btn btn-secondary basic-button translate" id="video_editor_exclude_section" style="display:none">Exclude Section</button>
         <button type="button" class="btn btn-primary basic-button translate" id="video_editor_save_audio">Save Split Audio</button>
         <button type="button" class="btn btn-primary basic-button translate" id="video_editor_save_video">Save Video</button>
         <button type="button" class="btn btn-secondary basic-button translate" id="video_editor_close">Close</button>

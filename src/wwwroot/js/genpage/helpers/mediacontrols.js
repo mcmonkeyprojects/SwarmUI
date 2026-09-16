@@ -4,6 +4,8 @@ class MediaControlsBase {
 
     constructor(mediaElement) {
         this.media = mediaElement;
+        this.userVolume = mediaElement.volume;
+        this.volumeMultiplier = 1;
         this.isDragging = false;
         this.progressRaf = null;
     }
@@ -27,7 +29,7 @@ class MediaControlsBase {
         else if (userSetting == 'silent') {
             this.volumeSlider.value = 0;
             this.volumeSlider.dataset.lastRealVolume = "0";
-            this.media.volume = 0;
+            this.userVolume = 0;
             this.media.muted = true;
         }
         else {
@@ -35,9 +37,10 @@ class MediaControlsBase {
             let lastMuted = localStorage.getItem('audiovolume_lastmuted') == "true";
             this.volumeSlider.value = lastMuted ? 0 : parseFloat(lastVolume);
             this.volumeSlider.dataset.lastRealVolume = lastVolume;
-            this.media.volume = parseFloat(lastVolume) / 100;
+            this.userVolume = parseFloat(lastVolume) / 100;
             this.media.muted = lastMuted;
         }
+        this.applyPlaybackVolume();
     }
 
     /** Toggles play/pause. */
@@ -59,7 +62,8 @@ class MediaControlsBase {
     setVolume(e) {
         let volume = e.target.value / 100;
         e.target.dataset.lastRealVolume = `${e.target.value}`;
-        this.media.volume = volume;
+        this.userVolume = volume;
+        this.applyPlaybackVolume();
         this.media.muted = volume < 0.001;
         localStorage.setItem('audiovolume_last', `${e.target.value}`);
         localStorage.setItem('audiovolume_lastmuted', `${this.media.muted}`);
@@ -73,10 +77,11 @@ class MediaControlsBase {
             this.volumeSlider.value = 0;
         }
         else if (this.volumeSlider.dataset.lastRealVolume) {
-            this.media.volume = parseFloat(this.volumeSlider.dataset.lastRealVolume) / 100;
-            if (this.media.volume < 0.01) {
-                this.media.volume = 0.5;
+            this.userVolume = parseFloat(this.volumeSlider.dataset.lastRealVolume) / 100;
+            if (this.userVolume < 0.01) {
+                this.userVolume = 0.5;
             }
+            this.applyPlaybackVolume();
         }
         localStorage.setItem('audiovolume_lastmuted', `${this.media.muted}`);
         this.updateIcons();
@@ -84,7 +89,7 @@ class MediaControlsBase {
 
     /** Refreshes play/volume glyphs and range fill. */
     updateIcons() {
-        let volume = this.media.muted ? 0 : this.media.volume;
+        let volume = this.media.muted ? 0 : this.userVolume;
         this.volumeSlider.value = volume * 100;
         updateRangeStyle(this.volumeSlider);
         if (volume == 0) {
@@ -102,6 +107,21 @@ class MediaControlsBase {
         else {
             this.playBtn.textContent = '⏸';
         }
+    }
+
+    /** Applies a temporary playback multiplier without changing the user's chosen volume. */
+    setVolumeMultiplier(multiplier) {
+        multiplier = Math.max(0, Math.min(1, multiplier));
+        if (this.volumeMultiplier == multiplier) {
+            return;
+        }
+        this.volumeMultiplier = multiplier;
+        this.applyPlaybackVolume();
+    }
+
+    /** Applies the user volume and temporary playback multiplier to the media element. */
+    applyPlaybackVolume() {
+        this.media.volume = Math.max(0, Math.min(1, this.userVolume * this.volumeMultiplier));
     }
 
     /** Clamped horizontal fraction [0, 1] for scrubbing, or null if the element has no width. */

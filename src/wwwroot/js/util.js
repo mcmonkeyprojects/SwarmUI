@@ -1246,13 +1246,15 @@ function renderWaveform(canvas, peaks, options = {}) {
         }
         let maxHalfAmp = height * 0.42;
         for (let i = 0; i < peaks.length; i++) {
-            let norm = peaks[i] / maxPeak;
+            let fraction = (i + 0.5) / peaks.length;
+            let amplitudeScale = typeof options.amplitudeScale == 'function' ? options.amplitudeScale(fraction) : (options.amplitudeScale ?? 1);
+            let norm = peaks[i] / maxPeak * Math.max(0, amplitudeScale);
             if (norm < 0.018) {
                 continue;
             }
             let x0 = Math.floor((i / peaks.length) * width);
             let x1 = Math.ceil(((i + 1) / peaks.length) * width);
-            ctx.fillStyle = (i + 0.5) / peaks.length <= progress ? playedColor : waveformColor;
+            ctx.fillStyle = fraction <= progress ? playedColor : waveformColor;
             ctx.fillRect(x0, mid - norm * maxHalfAmp, Math.max(1, x1 - x0), norm * maxHalfAmp * 2);
         }
     }
