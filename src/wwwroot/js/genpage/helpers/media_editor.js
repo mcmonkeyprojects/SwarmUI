@@ -477,7 +477,10 @@ class MediaEditorInterface {
             this.video.currentTime = this.trimEnd;
         }
         else {
-            this.video.currentTime = time;
+            let frameIndex = this.getFrameIndex(time);
+            if (frameIndex != this.getFrameIndex(this.video.currentTime)) {
+                this.video.currentTime = Math.min(this.duration, frameIndex / this.frameRate);
+            }
         }
         this.updateTimeline();
         this.saveVideoButton.disabled = false;
