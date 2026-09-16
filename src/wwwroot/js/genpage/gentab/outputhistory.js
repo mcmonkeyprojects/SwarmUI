@@ -253,9 +253,6 @@ function describeOutputFile(image) {
         forceImage = 'imgs/html.jpg';
         forcePreview = forceImage;
     }
-    else if (['wav', 'mp3', 'aac', 'ogg', 'flac'].includes(extension)) {
-        forcePreview = 'imgs/audio_placeholder.jpg';
-    }
     let dragImage = forceImage ?? `${image.data.src}`;
     let imageSrc = forcePreview ?? `${image.data.src}?preview=true${allowAnimToggle}`;
     let searchable = `${image.data.name}, ${image.data.metadata}, ${image.data.fullsrc}`;

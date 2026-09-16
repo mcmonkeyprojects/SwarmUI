@@ -1,8 +1,14 @@
 using System.IO;
 using System.Globalization;
+using ATL;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 
 namespace SwarmUI.Accounts;
@@ -59,28 +65,75 @@ public class UserImageHistoryHelper
     /// <summary>Ffmpeg can get weird with overlapping calls, so max one at a time.</summary>
     public static SemaphoreSlim FfmpegLock = new(1, 1);
 
-    /// <summary>Use ffmpeg to generate a preview for a video file.</summary>
-    /// <param name="file">The video file.</param>
+    /// <summary>Use ffmpeg to generate a preview for a video or audio file.</summary>
+    /// <param name="file">The media file.</param>
     public static async Task DoFfmpegPreviewGeneration(string file)
     {
         string fullPathNoExt = file.BeforeLast('.');
+        bool isAudio = MediaType.GetByExtension(file.AfterLast('.'))?.MetaType == MediaMetaType.Audio;
         if (string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
         {
-            Logs.Warning("ffmpeg cannot be found, some features will not work including video previews. Please ensure ffmpeg is locatable to use video files.");
+            Logs.Warning("ffmpeg cannot be found, some features will not work including video and audio previews. Please ensure ffmpeg is locatable to use media files.");
         }
         else
         {
             await FfmpegLock.WaitAsync();
             try
             {
-                string output = await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]);
+                string output;
+                if (isAudio)
+                {
+                    string previewPath = fullPathNoExt + ".swarmpreview.jpg";
+                    string tempPreviewPath = Path.Combine(Program.TempDir, $"swarm-audio-preview-{Guid.NewGuid():N}.jpg");
+                    try
+                    {
+                        output = await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-y", "-i", file, "-filter_complex", "[0:a]showwavespic=s=256x256:colors=#7855e1:filter=peak,format=rgba[wave];color=c=#27272a:s=256x256[bg];[bg][wave]overlay=format=auto,drawbox=y=127:w=iw:h=2:color=#7855e1:t=fill", "-frames:v", "1", "-update", "1", "-q:v", "3", tempPreviewPath]);
+                        double durationMs = new Track(file).DurationMs;
+                        long totalSeconds = double.IsFinite(durationMs) ? Math.Max(0, (long)(durationMs / 1000)) : 0;
+                        string duration = totalSeconds >= 3600 ? $"{totalSeconds / 3600:00}:{totalSeconds / 60 % 60:00}:{totalSeconds % 60:00}" : $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
+                        FontCollection fonts = new();
+                        Font font = fonts.Add("src/wwwroot/fonts/Inter.woff2").CreateFont(32, FontStyle.Bold);
+                        using SixLabors.ImageSharp.Image preview = SixLabors.ImageSharp.Image.Load(tempPreviewPath);
+                        RichTextOptions textOptions = new(font) { Origin = new(128, 128), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                        Brush outlineBrush = Brushes.Solid(Color.FromRgb(39, 39, 42));
+                        Brush textBrush = Brushes.Solid(Color.FromRgb(228, 228, 228));
+                        preview.Mutate(m =>
+                        {
+                            for (int x = -2; x <= 2; x += 2)
+                            {
+                                for (int y = -2; y <= 2; y += 2)
+                                {
+                                    if (x != 0 || y != 0)
+                                    {
+                                        textOptions.Origin = new(128 + x, 128 + y);
+                                        m.DrawText(textOptions, $"Audio {duration}", outlineBrush);
+                                    }
+                                }
+                            }
+                            textOptions.Origin = new(128, 128);
+                            m.DrawText(textOptions, $"Audio {duration}", textBrush);
+                        });
+                        preview.SaveAsJpeg(previewPath);
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempPreviewPath))
+                        {
+                            File.Delete(tempPreviewPath);
+                        }
+                    }
+                }
+                else
+                {
+                    output = await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vf", "select=eq(n\\,0)", "-frames:v", "1", "-update", "1", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]);
+                }
                 Logs.Verbose($"ffmpeg output: {output}");
             }
             finally
             {
                 FfmpegLock.Release();
             }
-            if (Program.ServerSettings.UI.AllowAnimatedPreviews)
+            if (!isAudio && Program.ServerSettings.UI.AllowAnimatedPreviews)
             {
                 await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]);
             }

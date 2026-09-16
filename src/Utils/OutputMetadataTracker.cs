@@ -123,7 +123,7 @@ public static class OutputMetadataTracker
     public static HashSet<string> ExtensionsWithMetadata = ["png", "jpg", "webp", "wav", "flac", "ogg", "mp3", "aac", "mp4", "webm", "mov"];
 
     /// <summary>File format extensions that require ffmpeg to process image data.</summary>
-    public static HashSet<string> ExtensionsForFfmpegables = ["webm", "mp4", "mov"];
+    public static HashSet<string> ExtensionsForFfmpegables = ["webm", "mp4", "mov", "wav", "flac", "ogg", "mp3", "aac"];
 
     /// <summary>File format extensions that are animations in an image file format.</summary>
     public static HashSet<string> ExtensionsForAnimatedImages = ["webp", "gif"];
@@ -151,11 +151,6 @@ public static class OutputMetadataTracker
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
         if (file.EndsWith(".swarmpreview.jpg") || file.EndsWith(".swarmpreview.webp"))
-        {
-            return null;
-        }
-        MediaType expectedMediaType = MediaType.GetByExtension(ext);
-        if (expectedMediaType is not null && expectedMediaType.MetaType == MediaMetaType.Audio)
         {
             return null;
         }
