@@ -33,6 +33,7 @@ class VideoEditorInterface {
         this.saveVideoButton = getRequiredElementById('video_editor_save_video');
         this.sourceVideo = null;
         this.videoData = null;
+        this.isAudio = false;
         this.filename = '';
         this.duration = 0;
         this.trimStart = 0;
@@ -58,28 +59,35 @@ class VideoEditorInterface {
         }
         this.resetCropButton.addEventListener('click', () => this.resetCrop());
         this.saveAudioButton.addEventListener('click', () => this.saveAudio());
-        this.saveVideoButton.addEventListener('click', () => this.saveVideo());
+        this.saveVideoButton.addEventListener('click', () => this.saveMedia());
         getRequiredElementById('video_editor_close').addEventListener('click', () => this.modalJq.modal('hide'));
         this.modalJq.on('hidden.bs.modal', () => this.cleanup());
     }
 
-    /** Opens the editor for a video. */
-    open(video) {
+    /** Opens the editor for video or audio media. */
+    open(media) {
         currentImageHelper.doAutoPause();
-        this.sourceVideo = video;
-        this.videoData = video.dataset.filedata || getImageFullSrc(video.dataset.src || video.currentSrc || video.src);
-        this.filename = video.dataset.filename || (isValidMediaPath(this.videoData) ? this.videoData : '');
+        this.sourceVideo = media;
+        this.videoData = media.dataset.filedata || getImageFullSrc(media.dataset.src || media.currentSrc || media.src);
+        this.isAudio = media.tagName == 'AUDIO';
+        this.modal.classList.toggle('video_editor_audio', this.isAudio);
+        this.filename = media.dataset.filename || (isValidMediaPath(this.videoData) ? this.videoData : '');
         this.duration = 0;
         this.trimStart = 0;
         this.trimEnd = 0;
         this.resetCrop();
         this.resetScale();
         this.setSaving(false);
-        this.saveAudioButton.style.display = this.hasAudio(video) ? '' : 'none';
+        this.resolutionText.style.display = this.isAudio ? 'none' : '';
+        this.scaleBox.style.display = this.isAudio ? 'none' : '';
+        this.cropOverlay.style.display = this.isAudio ? 'none' : '';
+        this.resetCropButton.style.display = this.isAudio ? 'none' : '';
+        this.saveAudioButton.style.display = !this.isAudio && this.hasAudio(media) ? '' : 'none';
+        this.saveVideoButton.textContent = translate(this.isAudio ? 'Save Audio' : 'Save Video');
         this.waveformPeaks = null;
         this.waveform.style.display = '';
         this.waveform.width = 0;
-        this.video.src = video.currentSrc || video.src || video.dataset.src;
+        this.video.src = media.currentSrc || media.src || media.dataset.src;
         this.video.load();
         this.modalJq.modal('show');
         this.saveVideoButton.disabled = true;
@@ -117,18 +125,18 @@ class VideoEditorInterface {
         return true;
     }
 
-    /** Initializes the timeline from loaded video metadata. */
+    /** Initializes the timeline from loaded media metadata. */
     onMetadataLoaded() {
         this.duration = Number.isFinite(this.video.duration) ? this.video.duration : 0;
         this.trimStart = 0;
         this.trimEnd = this.duration;
-        this.saveAudioButton.style.display = this.sourceVideo && this.hasAudio(this.sourceVideo) ? '' : 'none';
+        this.saveAudioButton.style.display = !this.isAudio && this.sourceVideo && this.hasAudio(this.sourceVideo) ? '' : 'none';
         this.updateTimeline();
         this.updateResolution();
         this.renderAudioWaveform();
     }
 
-    /** Renders the video's audio waveform behind the timeline controls. */
+    /** Renders the media's audio waveform behind the timeline controls. */
     async renderAudioWaveform() {
         let source = this.video.currentSrc || this.video.src;
         try {
@@ -392,14 +400,14 @@ class VideoEditorInterface {
         });
     }
 
-    /** Saves the edited video as a Batch View output. */
-    saveVideo() {
+    /** Saves the edited media as a Batch View output. */
+    saveMedia() {
         if (!this.videoData || this.duration <= 0) {
             return;
         }
         this.setSaving(true);
-        let request = { video: this.videoData, filename: this.filename, ...this.getTrimRequest(), ...this.getCropRequest(), scale: this.getScale() };
-        genericRequest('EditVideo', request, result => {
+        let request = { media: this.videoData, filename: this.filename, ...this.getTrimRequest(), ...this.getCropRequest(), scale: this.getScale() };
+        genericRequest('EditMedia', request, result => {
             this.addOutputToBatch(result);
             this.setSaving(false);
             this.saveVideoButton.disabled = true;

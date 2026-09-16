@@ -1242,7 +1242,10 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }, '', 'Opens an Image Editor for this image', ['image']);
     includeButton('Edit Video', () => {
         videoEditorInterface.open(img);
-    }, '', 'Opens a Video Editor to trim or crop this video', ['video']);
+    }, '', 'Opens a Timeline Media Editor to edit this video', ['video']);
+    includeButton('Edit Audio', () => {
+        videoEditorInterface.open(img);
+    }, '', 'Opens a Timeline Media Editor to edit this audio', ['audio']);
     includeButton('Upscale 2x', () => {
         toDataURL(img.src, (url => {
             let [width, height] = naturalDim();

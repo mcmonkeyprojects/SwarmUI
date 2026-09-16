@@ -594,9 +594,12 @@ function showPromptMediaMenu(media, menuButton, x = null, y = null) {
             title: "Extract this video's audio and attach it as a separate prompt audio input",
             action: () => imagePromptSplitVideoAudio(media)
         });
+    }
+    if (media.tagName == 'VIDEO' || media.tagName == 'AUDIO') {
+        let mediaName = media.tagName == 'AUDIO' ? 'audio' : 'video';
         buttons.push({
-            key: 'Advanced Video Editor',
-            title: 'Trim or crop this video and save the result',
+            key: `Advanced ${mediaName[0].toUpperCase()}${mediaName.substring(1)} Editor`,
+            title: `Trim${mediaName == 'video' ? ' or crop' : ''} this ${mediaName} and save the result`,
             action: () => videoEditorInterface.open(media)
         });
     }

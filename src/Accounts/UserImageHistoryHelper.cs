@@ -198,16 +198,17 @@ public class UserImageHistoryHelper
         return await RunFfmpegToData(arguments, "mp3", "Cannot split video audio because ffmpeg is not available.", "The video does not contain a readable audio track or can't be parsed.");
     }
 
-    /// <summary>Use ffmpeg to trim, crop, and scale a video into MP4 data.</summary>
-    /// <param name="file">The video file.</param>
+    /// <summary>Use ffmpeg to edit audio or video media.</summary>
+    /// <param name="file">The media file.</param>
+    /// <param name="audioOutput">Whether to produce MP3 audio instead of MP4 video.</param>
     /// <param name="start">Trim start in seconds.</param>
-    /// <param name="end">Trim end in seconds, or negative for the remaining video.</param>
+    /// <param name="end">Trim end in seconds, or negative for the full remaining duration.</param>
     /// <param name="cropX">Crop left coordinate in pixels.</param>
     /// <param name="cropY">Crop top coordinate in pixels.</param>
     /// <param name="cropWidth">Crop width in pixels, or zero for the full frame.</param>
     /// <param name="cropHeight">Crop height in pixels, or zero for the full frame.</param>
     /// <param name="scale">Output scale factor. 1 leaves the cropped size unchanged.</param>
-    public static async Task<byte[]> EditVideo(string file, double start, double end, int cropX, int cropY, int cropWidth, int cropHeight, double scale = 1)
+    public static async Task<byte[]> EditMedia(string file, bool audioOutput, double start, double end, int cropX, int cropY, int cropWidth, int cropHeight, double scale = 1)
     {
         List<string> arguments = ["-y", "-i", file];
         if (start > 0)
@@ -217,6 +218,11 @@ public class UserImageHistoryHelper
         if (end >= 0)
         {
             arguments.AddRange(["-t", $"{end - start:0.###}"]);
+        }
+        if (audioOutput)
+        {
+            arguments.AddRange(["-map", "0:a:0", "-vn", "-codec:a", "libmp3lame", "-q:a", "2", "-f", "mp3"]);
+            return await RunFfmpegToData(arguments, "mp3", "Cannot edit audio because ffmpeg is not available.", "ffmpeg could not produce the edited audio.");
         }
         List<string> filters = [];
         if (cropWidth > 0)

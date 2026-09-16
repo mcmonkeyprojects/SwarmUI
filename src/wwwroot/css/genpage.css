@@ -1137,6 +1137,21 @@ body.small-window > .tab-content.tab-hundred {
     max-width: 100%;
     max-height: min(calc(62vh - 10rem), calc(38rem - 10rem));
 }
+.video_editor_audio .video_editor_stage {
+    height: 4.5rem;
+    padding: 0;
+}
+.video_editor_audio .video_editor_video_wrap {
+    width: 100%;
+    height: 100%;
+}
+.video_editor_audio .video_editor_video_wrap video {
+    display: none;
+}
+.video_editor_audio .video-controls {
+    padding: 0.5rem 1rem;
+    opacity: 1 !important;
+}
 .video_editor_resolution {
     padding-bottom: 0.25rem;
     font-family: var(--font-monospace);
