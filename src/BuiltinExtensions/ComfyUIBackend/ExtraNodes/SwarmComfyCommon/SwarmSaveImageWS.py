@@ -1,5 +1,6 @@
 from PIL import Image
 import numpy as np
+import av, torchaudio
 from server import PromptServer, BinaryEventTypes
 import time, io, struct
 
@@ -76,6 +77,68 @@ class SwarmSaveImageWS:
         return time.time()
 
 
+class SwarmSaveAudioWS:
+    formats = {
+        "mp3": ("mp3", "libmp3lame", 8),
+        "wav": ("wav", "pcm_s16le", 9),
+        "flac": ("flac", "flac", 10),
+        "ogg": ("opus", "libopus", 11),
+    }
+    opus_rates = [8000, 12000, 16000, 24000, 48000]
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "audio": ("AUDIO",),
+                "format": (list(cls.formats.keys()), {"default": "mp3"}),
+            }
+        }
+
+    CATEGORY = "SwarmUI/audio"
+    RETURN_TYPES = ()
+    FUNCTION = "save_audio"
+    OUTPUT_NODE = True
+    DESCRIPTION = "Acts like a special version of 'SaveAudio' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the audio itself rather than having Comfy's Core save it."
+
+    def save_audio(self, audio, format):
+        if audio is None:
+            raise ValueError("SwarmSaveAudioWS: input audio is None.")
+        container_format, codec, type_num = self.formats[format]
+        for batch_number, waveform in enumerate(audio["waveform"].cpu()):
+            sample_rate = audio["sample_rate"]
+            if format == "ogg" and sample_rate not in self.opus_rates:
+                sample_rate = min((rate for rate in self.opus_rates if rate > sample_rate), default=48000)
+                waveform = torchaudio.functional.resample(waveform, audio["sample_rate"], sample_rate)
+
+            layout = "mono" if waveform.shape[0] == 1 else "stereo"
+            output_buffer = io.BytesIO()
+            output_container = av.open(output_buffer, mode="w", format=container_format)
+            output_stream = output_container.add_stream(codec, rate=sample_rate, layout=layout)
+            if format == "mp3":
+                output_stream.codec_context.qscale = 1
+            elif format == "ogg":
+                output_stream.bit_rate = 128000
+
+            frame = av.AudioFrame.from_ndarray(
+                waveform.movedim(0, 1).reshape(1, -1).float().numpy(),
+                format="flt",
+                layout=layout,
+            )
+            frame.sample_rate = sample_rate
+            frame.pts = 0
+            output_container.mux(output_stream.encode(frame))
+            output_container.mux(output_stream.encode(None))
+            output_container.close()
+
+            send_image_to_server_raw(type_num | (batch_number << 4), lambda out: out.write(output_buffer.getvalue()), SPECIAL_ID)
+        return { }
+
+    @classmethod
+    def IS_CHANGED(cls, audio, format):
+        return time.time()
+
+
 class SwarmSaveAnimatedWebpWS:
     methods = {"default": 4, "fastest": 0, "slowest": 6}
 
@@ -145,6 +208,7 @@ class SwarmAddSaveMetadataWS:
 
 NODE_CLASS_MAPPINGS = {
     "SwarmSaveImageWS": SwarmSaveImageWS,
+    "SwarmSaveAudioWS": SwarmSaveAudioWS,
     "SwarmSaveAnimatedWebpWS": SwarmSaveAnimatedWebpWS,
     "SwarmAddSaveMetadataWS": SwarmAddSaveMetadataWS,
 }

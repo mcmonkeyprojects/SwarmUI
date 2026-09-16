@@ -3,13 +3,25 @@ import { app } from '../../scripts/app.js';
 
 window.swarmApiDirect = api;
 
-let swarmSaveNodes = ['SwarmSaveImageWS', 'SwarmSaveAnimatedWebpWS', 'SwarmSaveAnimationWS'];
+let swarmSaveNodes = ['SwarmSaveImageWS', 'SwarmSaveAudioWS', 'SwarmSaveAnimatedWebpWS', 'SwarmSaveAnimationWS'];
 let swarmExecutingNode = null;
 
 function swarmSniffMime(bytes) {
     let ascii = (start, len) => String.fromCharCode(...bytes.slice(start, start + len));
     if (ascii(0, 4) == 'RIFF' && ascii(8, 4) == 'WEBP') {
         return 'image/webp';
+    }
+    if (ascii(0, 4) == 'RIFF' && ascii(8, 4) == 'WAVE') {
+        return 'audio/wav';
+    }
+    if (ascii(0, 3) == 'ID3' || (bytes[0] == 0xFF && (bytes[1] & 0xE0) == 0xE0)) {
+        return 'audio/mpeg';
+    }
+    if (ascii(0, 4) == 'fLaC') {
+        return 'audio/flac';
+    }
+    if (ascii(0, 4) == 'OggS') {
+        return 'audio/ogg';
     }
     if (ascii(0, 3) == 'GIF') {
         return 'image/gif';
@@ -23,7 +35,9 @@ function swarmSniffMime(bytes) {
     return null;
 }
 
-function swarmShowPreview(node, blob, isVideo) {
+function swarmShowPreview(node, blob, mime) {
+    let isAudio = mime.startsWith('audio/');
+    let isVideo = mime.startsWith('video/');
     let widget = node.widgets?.find(w => w.name == 'swarm_ws_preview');
     if (!widget) {
         let container = document.createElement('div');
@@ -32,7 +46,7 @@ function swarmShowPreview(node, blob, isVideo) {
         widget.serialize = false;
         widget.computeLayoutSize = () => ({ minWidth: 0, minHeight: widget.swarmMinHeight || 256 });
     }
-    let element = document.createElement(isVideo ? 'video' : 'img');
+    let element = document.createElement(isAudio ? 'audio' : (isVideo ? 'video' : 'img'));
     if (isVideo) {
         element.muted = true;
         element.autoplay = true;
@@ -40,16 +54,24 @@ function swarmShowPreview(node, blob, isVideo) {
         element.playsInline = true;
         element.controls = true;
     }
+    else if (isAudio) {
+        element.controls = true;
+        element.preload = 'metadata';
+        widget.swarmMinHeight = 54;
+        node.graph?.setDirtyCanvas(true);
+    }
     element.style.width = '100%';
     element.style.height = '100%';
     element.style.objectFit = 'contain';
     element.style.pointerEvents = 'auto';
-    element.onload = element.onloadedmetadata = () => {
-        let width = element.videoWidth || element.naturalWidth;
-        let height = element.videoHeight || element.naturalHeight;
-        widget.swarmMinHeight = height * Math.min(1, (node.size[0] || 256) / width);
-        node.graph?.setDirtyCanvas(true);
-    };
+    if (!isAudio) {
+        element.onload = element.onloadedmetadata = () => {
+            let width = element.videoWidth || element.naturalWidth;
+            let height = element.videoHeight || element.naturalHeight;
+            widget.swarmMinHeight = height * Math.min(1, (node.size[0] || 256) / width);
+            node.graph?.setDirtyCanvas(true);
+        };
+    }
     let old = widget.element.firstChild;
     if (old) {
         URL.revokeObjectURL(old.src);
@@ -70,5 +92,5 @@ api.addEventListener('b_preview', async ({ detail }) => {
     }
     let head = new Uint8Array(await detail.slice(0, 12).arrayBuffer());
     let mime = swarmSniffMime(head) ?? detail.type;
-    swarmShowPreview(node, detail.slice(0, detail.size, mime), mime.startsWith('video/'));
+    swarmShowPreview(node, detail.slice(0, detail.size, mime), mime);
 });
