@@ -194,6 +194,23 @@ class ModelDownloaderUtil {
         this.imageSide = getRequiredElementById('model_downloader_imageside');
         this.activeZone = getRequiredElementById('model_downloader_right_sidebar');
         this.folders = getRequiredElementById('model_downloader_folder');
+        this.newFolderWrap = getRequiredElementById('model_downloader_new_folder_wrap');
+        this.newFolder = getRequiredElementById('model_downloader_new_folder');
+        this.folderSelectButton = getRequiredElementById('model_downloader_folder_select_button');
+        this.folders.addEventListener('change', () => {
+            if (this.folders.value == '__new__') {
+                this.folders.hidden = true;
+                this.newFolderWrap.hidden = false;
+                this.newFolder.focus();
+            }
+        });
+        this.folderSelectButton.addEventListener('click', () => {
+            this.newFolderWrap.hidden = true;
+            this.folders.hidden = false;
+            this.folders.value = '(None)';
+            this.folders.focus();
+            this.folders.click();
+        });
         this.hfPrefix = 'https://huggingface.co/';
         this.civitPrefix = 'https://civitai.red/';
         this.civitOldPrefix = 'https://civitai.com/';
@@ -216,7 +233,7 @@ class ModelDownloaderUtil {
         if (!coreModelMap) {
             return;
         }
-        let html = '<option>(None)</option>';
+        let html = '<option>(None)</option>\n<option value="__new__">(Create new...)</option>';
         let folderList = [];
         for (let submap of Object.values(coreModelMap)) {
             for (let model of submap) {
@@ -753,7 +770,8 @@ class ModelDownloaderUtil {
 
     run() {
         this.button.disabled = true;
-        let name = this.folders.value == '(None)' ? this.name.value : this.folders.value + '/' + this.name.value;
+        let folder = this.newFolderWrap.hidden ? this.folders.value : this.newFolder.value.trim();
+        let name = folder == '(None)' || folder == '' ? this.name.value : folder + '/' + this.name.value;
         let download = new ActiveModelDownload(this, name, this.url.value, this.metadataZone.dataset.image, this.type.value, this.metadataZone.dataset.raw || '');
         download.download();
     }

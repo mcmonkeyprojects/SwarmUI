@@ -2529,6 +2529,21 @@ body.small-window > .tab-content.tab-hundred {
     min-width: 0;
     width: auto;
 }
+.model-downloader-new-folder-wrap {
+    display: flex;
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+.model-downloader-new-folder-wrap .auto-text-wide {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.model-downloader-new-folder-wrap .model-downloader-folder-select-button {
+    flex: 0 0 auto;
+    padding: 0 0.65rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
 .model-downloader-status {
     color: var(--text-soft);
 }
