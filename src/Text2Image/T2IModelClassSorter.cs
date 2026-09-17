@@ -99,6 +99,7 @@ public class T2IModelClassSorter
         CompatBoogu = RegisterCompat(new() { ID = "boogu", ShortCode = "Boogu", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
         CompatMageFlow = RegisterCompat(new() { ID = "mage-flow", ShortCode = "Mage", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true, ResolutionPrecision = 32 }),
+        CompatSam3 = RegisterCompat(new() { ID = "sam3", ShortCode = "SAM3", LorasTargetTextEnc = false }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
         CompatMiniMaxMusic3 = RegisterCompat(new() { ID = "minimax-music-3", ShortCode = "MMM3", IsAudioModel = true }),
@@ -189,7 +190,7 @@ public class T2IModelClassSorter
         bool isFlux2Klein9BLora(JObject h) => hasLoraKey(h, "single_blocks.23.linear1");
         bool isFlux2DevLora(JObject h) => hasLoraKey(h, "single_blocks.47.linear2");
         bool isLens(JObject h) => h.ContainsKey("transformer_blocks.0.attn.norm_added_q.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.w1.weight");
-        bool isIdeogram4(JObject h) => h.ContainsKey("embed_image_indicator.weight") && h.ContainsKey("llm_cond_proj.weight") && h.ContainsKey("t_embedding.mlp_in.weight") && h.ContainsKey("layers.0.attention.qkv.weight");
+        bool isIdeogram4(JObject h) => hasKey(h, "embed_image_indicator.weight") && hasKey(h, "llm_cond_proj.weight") && hasKey(h, "t_embedding.mlp_in.weight") && hasKey(h, "layers.0.attention.qkv.weight");
         bool isIdeogram4Lora(JObject h) => hasLoraKey(h, "layers.0.adaln_modulation") && hasLoraKey(h, "layers.0.attention.o") && hasLoraKey(h, "layers.0.feed_forward.w3") && hasLoraKey(h, "layers.33.attention.qkv");
         bool isKrea2(JObject h) => hasKey(h, "txtfusion.projector.weight") && hasKey(h, "blocks.0.attn.gate.weight") && hasKey(h, "blocks.0.mod.lin");
         bool isKrea2Lora(JObject h) => (hasLoraKey(h, "blocks.0.attn.gate") && hasLoraKey(h, "blocks.0.mlp.gate"))
@@ -284,6 +285,8 @@ public class T2IModelClassSorter
                                     || (hasLoraKey(h, "lora_unet_blocks_27_self_attn_v_proj") && hasLoraKey(h, "lora_unet_blocks_27_cross_attn_output_proj") && hasLoraKey(h, "lora_unet_blocks_27_mlp_layer2"));
         bool isAnimaControlnet(JObject h) => h.ContainsKey("lllite_dit_blocks_0_self_attn_q_proj.depth_embed") && h.ContainsKey("lllite_dit_blocks_0_self_attn_q_proj.cond_to_film.weight") && h.ContainsKey("lllite_dit_blocks_27_self_attn_q_proj.up.weight");
         bool isLongcat(JObject h) => hasKey(h, "double_blocks.0.txt_attn.norm.query_norm.weight") && hasKey(h, "time_in.out_layer.weight") && hasKey(h, "final_layer.adaLN_modulation.1.weight") && hasKey(h, "double_blocks.0.txt_mod.lin.weight");
+        // Segmentation models
+        bool isSam3(JObject h) => hasKey(h, "detector.backbone.vision_backbone.trunk.blocks.0.attn.qkv.weight") && hasKey(h, "detector.transformer.decoder.query_embed.weight");
         // Audio models
         bool isAceStep15(JObject h) => hasKey(h, "encoder.lyric_encoder.layers.0.post_attention_layernorm.weight");
         bool isMiniMaxMusic3(JObject h) => hasKey(h, "cond_layer_logits") && hasKey(h, "latent_conditioners.0.weight") && hasKey(h, "diffusion_transformer.transformer.layers.0.self_attn.to_qkv.weight");
@@ -662,7 +665,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "nvidia-cosmos-predict2-t2i-14b", CompatClass = CompatCosmosPredict2_14b, Name = "NVIDIA Cosmos Predict2 Text2Image 14B", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isCosmosPredict2_14B(h);
+            return isCosmosPredict2_14B(h) && !isAnima(h);
         }});
         // ====================== Z-Image ======================
         Register(new() { ID = "z-image", CompatClass = CompatZImage, Name = "Z-Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
@@ -948,6 +951,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "boogu", CompatClass = CompatBoogu, Name = "Boogu", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isBoogu(h);
+        }});
+        // ====================== Segmentation Models ======================
+        Register(new() { ID = "sam3", CompatClass = CompatSam3, Name = "SAM3", IsThisModelOfClass = (m, h) =>
+        {
+            return isSam3(h);
         }});
         // ====================== Audio Models ======================
         Register(new() { ID = "ace-step-1_5", CompatClass = CompatAceStep15, Name = "Ace Step 1.5", IsThisModelOfClass = (m, h) =>
