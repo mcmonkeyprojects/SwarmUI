@@ -266,6 +266,19 @@ public static class Utilities
         return CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, new CancellationTokenSource(time).Token);
     }
 
+    /// <summary>Send JSON data to a WebSocket, no errors thrown (eg transient updates that shouldn't fail an operation).</summary>
+    public static async Task SendJsonNoError(this WebSocket socket, JObject obj, TimeSpan maxDuration)
+    {
+        try
+        {
+            await socket.SendJson(obj, maxDuration);
+        }
+        catch (Exception ex)
+        {
+            Logs.Verbose($"Failed to send JSON to WebSocket: {ex.ReadableString()}");
+        }
+    }
+
     /// <summary>Send JSON data to a WebSocket.</summary>
     public static async Task SendJson(this WebSocket socket, JObject obj, TimeSpan maxDuration)
     {
@@ -273,11 +286,11 @@ public static class Utilities
         await socket.SendAsync(JsonToByteArray(obj), WebSocketMessageType.Text, true, cancel.Token);
     }
 
-    /// <summary>Send JSON data to a WebSocket.</summary>
+    /// <summary>Send an error to a WebSocket, and report it to logs. Used for fatal API rejections.</summary>
     public static async Task SendAndReportError(this WebSocket socket, string context, string message, TimeSpan maxDuration)
     {
         Logs.Error($"{context}: {message}");
-        await socket.SendJson(new JObject() { ["error"] = message }, maxDuration);
+        await socket.SendJsonNoError(new JObject() { ["error"] = message }, maxDuration);
     }
 
     /// <summary>Equivalent to <see cref="Task.WhenAny(IEnumerable{Task})"/> but doesn't break on an empty list.</summary>

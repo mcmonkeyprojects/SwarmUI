@@ -337,7 +337,7 @@ public static class BasicAPIFeatures
     {
         if (Program.ServerSettings.IsInstalled)
         {
-            await socket.SendJson(new JObject() { ["error"] = $"Server is already installed!" }, API.WebsocketTimeout);
+            await socket.SendAndReportError($"InstallConfirmWS triggered by {session.User.UserID}", "Server is already installed!", API.WebsocketTimeout);
             return null;
         }
         try

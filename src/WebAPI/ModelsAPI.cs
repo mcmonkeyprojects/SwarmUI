@@ -581,7 +581,7 @@ public static class ModelsAPI
     {
         if (!url.StartsWith("http://") && !url.StartsWith("https://"))
         {
-            await ws.SendJson(new JObject() { ["error"] = "Invalid URL." }, API.WebsocketTimeout);
+            await ws.SendAndReportError($"User '{session.User.UserID}' trying to download a model", "Invalid URL.", API.WebsocketTimeout);
             return null;
         }
         name = Utilities.StrictFilenameClean(name.Replace(' ', '_'));
@@ -592,7 +592,7 @@ public static class ModelsAPI
         }
         if (!Program.T2IModelSets.TryGetValue(type, out T2IModelHandler handler))
         {
-            await ws.SendJson(new JObject() { ["error"] = "Invalid type." }, API.WebsocketTimeout);
+            await ws.SendAndReportError($"User '{session.User.UserID}' trying to download a model", "Invalid type.", API.WebsocketTimeout);
             return null;
         }
         string extension = "safetensors";
@@ -612,7 +612,7 @@ public static class ModelsAPI
             string outPath = $"{folder}/{name}.{extension}";
             if (File.Exists(outPath))
             {
-                await ws.SendJson(new JObject() { ["error"] = "Model at that save path already exists." }, API.WebsocketTimeout);
+                await ws.SendAndReportError($"User '{session.User.UserID}' trying to download a model", "Model at that save path already exists.", API.WebsocketTimeout);
                 return null;
             }
             string tempPath = $"{folder}/{name}.download.tmp";
@@ -625,7 +625,7 @@ public static class ModelsAPI
             using CancellationTokenSource canceller = new();
             Task downloading = Utilities.DownloadFile(url, tempPath, (progress, total, perSec) =>
             {
-                ws.SendJson(new JObject()
+                ws.SendJsonNoError(new JObject()
                 {
                     ["current_percent"] = progress / (double)total,
                     ["overall_percent"] = 0.2,
@@ -685,14 +685,12 @@ public static class ModelsAPI
         }
         catch (SwarmReadableErrorException userErr)
         {
-            Logs.Warning($"Failed to download the model due to: {userErr.Message}");
-            await ws.SendJson(new JObject() { ["error"] = userErr.Message }, API.WebsocketTimeout);
+            await ws.SendAndReportError($"User '{session.User.UserID}' trying to download a model, got error", userErr.Message, API.WebsocketTimeout);
             return null;
         }
         catch (TaskCanceledException)
         {
-            Logs.Info("Download was cancelled.");
-            await ws.SendJson(new JObject() { ["error"] = "Download was cancelled." }, API.WebsocketTimeout);
+            await ws.SendAndReportError($"User '{session.User.UserID}' trying to download a model", "Download was cancelled.", API.WebsocketTimeout);
             return null;
         }
         catch (Exception ex)
