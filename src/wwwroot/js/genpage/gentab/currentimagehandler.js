@@ -336,6 +336,9 @@ class ImageFullViewHelper {
             let wrapAspectRatio = imagewrap.offsetWidth / imagewrap.offsetHeight;
             let defaultHeight = Math.min(100, (wrapAspectRatio / videoAspectRatio) * 100);
             container.style.height = `${defaultHeight}%`;
+            container.style.left = `${(imagewrap.offsetWidth - container.offsetWidth) / 2}px`;
+            container.style.marginLeft = '0';
+            container.style.marginRight = '0';
             container.style.top = `${(imagewrap.offsetHeight - imagewrap.offsetHeight * defaultHeight / 100) / 2}px`;
         }
     }
