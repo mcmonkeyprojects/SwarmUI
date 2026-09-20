@@ -150,7 +150,13 @@ public partial class WorkflowGenerator
     public bool IsQwenImage()
     {
         string clazz = CurrentCompatClass();
-        return clazz is not null && clazz.StartsWith("qwen-image");
+        return clazz is not null && clazz.StartsWith("qwen-image") && !IsQwenImage21();
+    }
+
+    /// <summary>Returns true if the current model is Qwen Image 2.1.</summary>
+    public bool IsQwenImage21()
+    {
+        return IsModelCompatClass(T2IModelClassSorter.CompatQwenImage21);
     }
 
     /// <summary>Returns true if the current model is Qwen Image Edit.</summary>
@@ -324,7 +330,16 @@ public partial class WorkflowGenerator
         WGNodeData resultAudio(string node) => new([node, 0], this, WGNodeData.DT_LATENT_AUDIO, CurrentCompat());
         T2IVAEFamily family = CurrentCompat()?.VaeFamily;
         // TODO: Register a dict of family IDs probably? Instead of if trees. Allows registering new families from extensions.
-        if (family == T2IModelClassSorter.VaeFlux2)
+        if (IsQwenImage21())
+        {
+            return resultImage(CreateNode("EmptyHunyuanImageLatent", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height * 2,
+                ["width"] = width * 2
+            }, id));
+        }
+        else if (family == T2IModelClassSorter.VaeFlux2)
         {
             return resultImage(CreateNode("EmptyFlux2LatentImage", new JObject()
             {
@@ -685,6 +700,11 @@ public partial class WorkflowGenerator
         public string GetOmniQwenModel()
         {
             return RequireClipModel("qwen_2.5_vl_fp16.safetensors", "https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_fp16.safetensors", "ba05dd266ad6a6aa90f7b2936e4e775d801fb233540585b43933647f8bc4fbc3", T2IParamTypes.QwenModel);
+        }
+
+        public string GetQwenImage21TextEncoder()
+        {
+            return RequireClipModel("qwen3vl_8b_int8_convrot.safetensors", "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors", "8bfd0f6e12abf2d2d697ecc888e5e90b0d6741d6708f05799f53afa560452e8f", T2IParamTypes.QwenModel);
         }
 
         public string GetQwenImage25_7b_tenc()
@@ -1371,6 +1391,11 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("omnigen2", helpers.GetOmniQwenModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsQwenImage21())
+        {
+            helpers.LoadClip("qwen_image", helpers.GetQwenImage21TextEncoder());
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatQwenImage21, "qwen-image-2.1-vae");
         }
         else if (IsQwenImage())
         {
