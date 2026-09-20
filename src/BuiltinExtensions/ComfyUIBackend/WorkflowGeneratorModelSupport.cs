@@ -330,16 +330,7 @@ public partial class WorkflowGenerator
         WGNodeData resultAudio(string node) => new([node, 0], this, WGNodeData.DT_LATENT_AUDIO, CurrentCompat());
         T2IVAEFamily family = CurrentCompat()?.VaeFamily;
         // TODO: Register a dict of family IDs probably? Instead of if trees. Allows registering new families from extensions.
-        if (IsQwenImage21())
-        {
-            return resultImage(CreateNode("EmptyHunyuanImageLatent", new JObject()
-            {
-                ["batch_size"] = batchSize,
-                ["height"] = height * 2,
-                ["width"] = width * 2
-            }, id));
-        }
-        else if (family == T2IModelClassSorter.VaeFlux2)
+        if (family == T2IModelClassSorter.VaeFlux2)
         {
             return resultImage(CreateNode("EmptyFlux2LatentImage", new JObject()
             {
@@ -554,6 +545,16 @@ public partial class WorkflowGenerator
                 ["off_b"] = offB,
                 ["off_c"] = offC,
                 ["off_d"] = offD
+            }, id));
+        }
+        else if (IsQwenImage21())
+        {
+            // TODO: This ain't right, but there's no correct node.
+            return resultImage(CreateNode("EmptyLatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height / 2,
+                ["width"] = width / 2
             }, id));
         }
         else
