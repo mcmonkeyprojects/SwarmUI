@@ -239,6 +239,8 @@ def apply_comfy_token_weights(flat_tokens, weighted_tokens):
 
 
 def stamp_token_weight(tokens, weight):
+    if isinstance(tokens, bool):
+        return tokens
     if isinstance(tokens, dict):
         return {k: stamp_token_weight(v, weight) for k, v in tokens.items()}
     out = []
@@ -514,6 +516,8 @@ class SwarmTextEncodeAdvanced:
             llama_template = PROMPT_TEMPLATE_QWEN_IMAGE_EDIT_PLUS
             append_images = True
             prepend_images = True
+        if images is not None and images.shape[-1] == 4:
+            images = images[..., :3] * images[..., 3:] + (1.0 - images[..., 3:])
         if images is not None and fix_images:
             if len(images.shape) == 3:
                 images = [images]
