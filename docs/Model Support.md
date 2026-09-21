@@ -21,6 +21,7 @@
 [Ideogram 4](#ideogram-4) | DiT | 2026 | Ideogram AI | 9B | Yes | Modern, advanced on input understanding |
 [Krea 2](#krea-2) | DiT | 2026 | Krea AI | 12B | Yes | Modern, extremely smart and great quality |
 [Boogu](#boogu) | MMDiT | 2026 | Boogu | 10B | Minimal | Modern, fast |
+[Qwen Image 2.1](#qwen-image-21) | MMDiT | 2026 | Alibaba-Qwen | 7B | No | Modern, creative, slow |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -451,7 +452,27 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - There are a couple dedicated Qwen Image Edit Lightning Loras [lightx2v/Qwen-Image-Edit-2511-Lightning](<https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/tree/main>) or for older copies [lightx2v/Qwen-Image-Lightning](<https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>)
         - Take care to separate the Edit lora vs the base Qwen Image lora.
 
-### Hunyuan Image 2.1
+# Qwen Image 2.1
+
+![img](/docs/images/models/qwenimage21.jpg)
+
+- [Qwen Image 2.1](<https://huggingface.co/Qwen/Qwen-Image-2.1>) is supported in SwarmUI
+    - This models specific claim to fame is being the first proper model that supports alpha - meaning, it can generate images with transparency
+    - It can also do image editing & referencing at relatively high quality
+    - They have a blog post that demonstrates main use cases here: [Qwen AI Blog: Qwen Image 2.1](<https://qwen.ai/blog?id=qwen-image-2.1>)
+- Main model downloads are here: [Comfy-Org/Qwen-Image-2.1](<https://huggingface.co/Comfy-Org/Qwen-Image-2.1/tree/main/diffusion_models>)
+- It has a ch=64 scale=16 RGBA VAE, it will be downloaded automatically
+    - Note that many models are scale=8, this is scale=16, meaning it has a larger 'snap' in resolution range, and needs to be set to 2048x2048 to generate the equivalent quality of what most models do at 1024x1024
+- **Parameters:**
+    - **Prompt**: General VLM prompting
+        - The preset for transparent images is `This is an RGBA image with transparency. {prompt}. The image has alpha channel and the background is transparent.` this is essentially required for proper transparent backgrounds.
+    - **Prompt Images:** add up to 10 images to the prompt for editing or referencing
+    - **CFG Scale:** Use `1`
+    - **Steps:** Normal step ranges (like `20`, official Qwen reference is `40`, can still produce coherent images with lower step counts like 12)
+    - **Resolution:** The model is built for SideLength=2048 (at a 16x downscale, equivalent to 1024x1024 on most other models), but you may wish to lower this for speed (and sometimes quality, 2048 may be a bit undertrained), eg SideLength=1024 is more comfortable for quick gens
+        - Consider trying 1024 base res and a Refiner Upscale 2x
+
+# Hunyuan Image 2.1
 
 ![img](/docs/images/models/hy-img-21.jpg)
 

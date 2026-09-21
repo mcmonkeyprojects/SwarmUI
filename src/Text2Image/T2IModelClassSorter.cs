@@ -690,11 +690,11 @@ public class T2IModelClassSorter
             return isLumina2(h) && isZImage(h) && isZetaChroma(h);
         }});
         // ====================== Qwen Image 2.1 ======================
-        Register(new() { ID = "qwen-image-2.1", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "qwen-image-2.1", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isQwenImage21(h);
         }});
-        Register(new() { ID = "qwen-image-2.1/vae", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1 VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "qwen-image-2.1/vae", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1 VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isQwenImage21Vae(h);
         }});
