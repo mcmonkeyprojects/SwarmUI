@@ -111,7 +111,7 @@ class SwarmImageNoise:
             while mask.dim() < 4:
                 mask = mask.unsqueeze(0)
             mask = torch.nn.functional.interpolate(mask.to(image.device), size=(image.shape[1], image.shape[2]), mode="bicubic")
-            if image.shape[3] == 3 and image.shape[1] > 3: # (channels-last)
+            if image.shape[3] in (3, 4) and image.shape[1] > 3: # (channels-last)
                 mask = mask.movedim(1, -1)
             noise = noise * mask
         img = image + noise.to(image.device)
@@ -236,18 +236,24 @@ class SwarmImageCompositeMaskedColorCorrecting:
         visible_width, visible_height = (destination.shape[3] - left + min(0, x), destination.shape[2] - top + min(0, y),)
 
         mask = mask[:, :, :visible_height, :visible_width]
+        if source.shape[1] == 4:
+            mask = mask * source[:, 3:4, :visible_height, :visible_width]
+            source = source[:, :3]
         inverse_mask = torch.ones_like(mask) - mask
 
         source_section = source[:, :, :visible_height, :visible_width]
         dest_section = destination[:, :, top:bottom, left:right]
+        dest_color_section = dest_section[:, :3]
 
         # Fall through on "None"
         if correction_method == "Uniform":
-            source_section = color_correct_uniform(source_section, dest_section, inverse_mask)
+            source_section = color_correct_uniform(source_section, dest_color_section, inverse_mask)
         elif correction_method == "Linear":
-            source_section = color_correct_linear(source_section, dest_section, inverse_mask)
+            source_section = color_correct_linear(source_section, dest_color_section, inverse_mask)
         elif correction_method == "Linear2":
-            source_section = color_correct_linear2(source_section, dest_section, inverse_mask)
+            source_section = color_correct_linear2(source_section, dest_color_section, inverse_mask)
+        if dest_section.shape[1] == 4:
+            source_section = torch.cat((source_section, torch.ones_like(source_section[:, :1])), dim=1)
 
         source_portion = mask * source_section
         destination_portion = inverse_mask * dest_section
