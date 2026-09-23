@@ -286,6 +286,9 @@ public class User
     /// <summary>Returns the maximum simultaneous text-2-image requests appropriate to this user's restrictions and the available backends.</summary>
     public int CalcMaxT2ISimultaneous => Math.Max(1, Math.Min(CalculatedRole.Data.MaxT2ISimultaneous, Program.ServerSettings.Backends.UnrestrictedMaxT2iSimultaneous ? int.MaxValue : Program.Backends.RunningBackendsOfType<AbstractT2IBackend>().Sum(b => b.MaxUsages) * 2));
 
+    /// <summary>Returns a calculated total of all generations currently queued (or running) for this user across all sessions.</summary>
+    public int CalcTotalQueued => CurrentSessions.Values.Sum(session => session.WaitingGenerations);
+
     /// <summary>Lock object for this user's data.</summary>
     public LockObject UserLock = new();
 

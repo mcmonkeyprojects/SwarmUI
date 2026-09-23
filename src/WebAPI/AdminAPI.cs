@@ -1208,6 +1208,7 @@ public static class AdminAPI
                     "model_blacklist": [],
                     "permissions": ["first", "second"],
                     "max_t2i_simultaneous": 32,
+                    "max_queued": 100000,
                     "allow_unsafe_outpaths": false
                 }
             ]
@@ -1228,6 +1229,7 @@ public static class AdminAPI
                 ["model_blacklist"] = JArray.FromObject(role.Data.ModelBlacklist.ToList()),
                 ["permissions"] = JArray.FromObject(role.Data.PermissionFlags.ToList()),
                 ["max_t2i_simultaneous"] = role.Data.MaxT2ISimultaneous,
+                ["max_queued"] = role.Data.MaxQueued,
                 ["allow_unsafe_outpaths"] = role.Data.AllowUnsafeOutpaths
             };
         }
@@ -1270,6 +1272,7 @@ public static class AdminAPI
         [API.APIParameter("The description text for the role.")] string description,
         [API.APIParameter("The maximum outpath depth allowed for the role.")] int max_outpath_depth,
         [API.APIParameter("The maximum number of simultaneous T2I allowed for the role.")] int max_t2i_simultaneous,
+        [API.APIParameter("The maximum number of queued generations allowed for the role.")] int max_queued,
         [API.APIParameter("Whether to allow unsafe outpaths for the role.")] bool allow_unsafe_outpaths,
         [API.APIParameter("Comma-separated list of model names to whitelist for the role.")] string model_whitelist,
         [API.APIParameter("Comma-separated list of model names to blacklist for the role.")] string model_blacklist,
@@ -1284,6 +1287,7 @@ public static class AdminAPI
             role.Data.Description = description;
             role.Data.MaxOutPathDepth = max_outpath_depth;
             role.Data.MaxT2ISimultaneous = max_t2i_simultaneous;
+            role.Data.MaxQueued = max_queued;
             role.Data.AllowUnsafeOutpaths = allow_unsafe_outpaths;
             role.Data.ModelWhitelist = [.. model_whitelist.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
             role.Data.ModelBlacklist = [.. model_blacklist.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];

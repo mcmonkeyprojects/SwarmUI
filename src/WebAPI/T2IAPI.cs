@@ -267,6 +267,10 @@ public static class T2IAPI
             {
                 output(new JObject() { ["error"] = message });
                 claim.LocalClaimInterrupt.Cancel();
+                if (isWS)
+                {
+                    output(BasicAPIFeatures.GetCurrentStatusRaw(session));
+                }
             }
         }
         long timeStart = Environment.TickCount64;
@@ -298,6 +302,18 @@ public static class T2IAPI
         user_input.ApplySpecialLogic();
         images = user_input.Get(T2IParamTypes.Images, 1);
         claim.Extend(images - claim.WaitingGenerations);
+        int maxQueued = session.User.CalculatedRole.Data.MaxQueued;
+        if (maxQueued < 100_000_000) // (don't waste time calculating for admin/local)
+        {
+            int totalQueued = session.User.CalcTotalQueued;
+            if (totalQueued > maxQueued)
+            {
+                int alreadyRunning = totalQueued - images;
+                int available = maxQueued - alreadyRunning;
+                setError($"Too many gens in queue. Your user account role has a MaxQueued of {maxQueued}, you had {alreadyRunning} already running and tried to request {images} more (total {totalQueued}). {(images > 1 && available > 0 ? $"Try setting your images count to {available} or less." : "Wait for your pending gens, or interrupt them.")}");
+                return;
+            }
+        }
         Logs.Info($"User {session.User.UserID} requested {images} image{(images == 1 ? "" : "s")} with model '{user_input.Get(T2IParamTypes.Model)?.Name}'...");
         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
         {

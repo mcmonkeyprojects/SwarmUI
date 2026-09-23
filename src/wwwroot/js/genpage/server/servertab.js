@@ -270,6 +270,7 @@ class UserAdminManager {
         'description': 'adminrolemenu_description',
         'max_outpath_depth': 'adminrolemenu_maxoutpathdepth',
         'max_t2i_simultaneous': 'adminrolemenu_maxt2isimultaneous',
+        'max_queued': 'adminrolemenu_maxqueued',
         'allow_unsafe_outpaths': 'adminrolemenu_allowunsafeoutpaths',
         'model_whitelist': 'adminrolemenu_modelwhitelist',
         'model_blacklist': 'adminrolemenu_modelblacklist'
@@ -292,6 +293,8 @@ class UserAdminManager {
                 + makeNumberInput(null, 'adminrolemenu_maxoutpathdepth', '', 'Max OutPath Depth', '', 5, 1, 100, 1, 'normal', false, true)
                 + makeGenericPopover('adminrolemenu_maxt2isimultaneous', 'Max T2I Simultaneous', 'number', "How many images this user can have actively generating at once.\nDefault is 32.\nThis is naturally sub-limited by the number of available backends.\nThis is a protection for many-backend servers, to guarantee one user cannot steal all backends at once.\nYou can set this to a very low value if you have few backends but many users.\nSet this to a very high value if you have many backends and no concern for their distribution.\nThe actual limit applied to a user is whatever the highest value of all their roles is.", '')
                 + makeNumberInput(null, 'adminrolemenu_maxt2isimultaneous', '', 'Max T2I Simultaneous', '', 32, 1, 10000, 1, 'normal', false, true)
+                + makeGenericPopover('adminrolemenu_maxqueued', 'Max Queued', 'number', "How many generations this user can have queued at once.\nDefault is 100,000 (ie effectively infinite).\nWhen customizing your roles, consider setting regular users low to prevent abuse and trusted users higher.\nThe actual limit applied to a user is whatever the highest value of all their roles is.", '')
+                + makeNumberInput(null, 'adminrolemenu_maxqueued', '', 'Max Queued', '', 100000, 1, 999999999, 1, 'normal', false, true)
                 + makeGenericPopover('adminrolemenu_allowunsafeoutpaths', 'Allow Unsafe OutPaths', 'checkbox', "Whether the '.' symbol can be used in OutPath - if enabled, users may cause file system issues or perform folder escapes.", '')
                 + makeCheckboxInput(null, 'adminrolemenu_allowunsafeoutpaths', '', 'Allow Unsafe OutPaths', '', false, false, true)
                 + makeGenericPopover('adminrolemenu_modelwhitelist', 'Model Whitelist', 'text', "What models are allowed, as a list of prefixes.\nFor example 'sdxl/' allows only models in the SDXL folder.\nOr, 'sdxl/,flux/' allows models in the SDXL or Flux folders.\nIf empty, no whitelist logic is applied.\nNote that blacklist is 'more powerful' than whitelist and overrides it.\nThis stacks between roles, roles can add whitelist entries together.", '')

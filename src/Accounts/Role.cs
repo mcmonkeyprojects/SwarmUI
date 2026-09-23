@@ -24,6 +24,9 @@ public class Role(string name)
         [ConfigComment("How many images this user can have actively generating at once.\nDefault is 32.\nThis is naturally sub-limited by the number of available backends.\nThis is a protection for many-backend servers, to guarantee one user cannot steal all backends at once.\nYou can set this to a very low value if you have few backends but many users.\nSet this to a very high value if you have many backends and no concern for their distribution.\nThe actual limit applied to a user is whatever the highest value of all their roles is.")]
         public int MaxT2ISimultaneous = 32;
 
+        [ConfigComment("How many generations this user can have queued at once.\nDefault is 100,000 (ie effectively infinite).\nWhen customizing your roles, consider setting regular users low to prevent abuse and trusted users higher.\nThe actual limit applied to a user is whatever the highest value of all their roles is.")]
+        public int MaxQueued = 100_000;
+
         [ConfigComment("Whether the '.' symbol can be used in OutPath - if enabled, users may cause file system issues or perform folder escapes.")]
         public bool AllowUnsafeOutpaths = false;
 
@@ -46,11 +49,12 @@ public class Role(string name)
     /// <summary>Creates a role object with the combined values of all the given roles.</summary>
     public static Role Stack(IEnumerable<Role> roles)
     {
-        RoleData role = new() { MaxOutPathDepth = 0, ModelWhitelist = [], ModelBlacklist = [], PermissionFlags = [], MaxT2ISimultaneous = 0, AllowUnsafeOutpaths = false, Name = "", Description = "" };
+        RoleData role = new() { MaxOutPathDepth = 0, ModelWhitelist = [], ModelBlacklist = [], PermissionFlags = [], MaxT2ISimultaneous = 0, MaxQueued = 0, AllowUnsafeOutpaths = false, Name = "", Description = "" };
         foreach (RoleData otherRole in roles.Select(r => r.Data))
         {
             role.MaxOutPathDepth = Math.Max(role.MaxOutPathDepth, otherRole.MaxOutPathDepth);
             role.MaxT2ISimultaneous = Math.Max(role.MaxT2ISimultaneous, otherRole.MaxT2ISimultaneous);
+            role.MaxQueued = Math.Max(role.MaxQueued, otherRole.MaxQueued);
             role.AllowUnsafeOutpaths = role.AllowUnsafeOutpaths || otherRole.AllowUnsafeOutpaths;
             role.PermissionFlags.UnionWith(otherRole.PermissionFlags);
             role.ModelWhitelist.UnionWith(otherRole.ModelWhitelist);
