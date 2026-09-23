@@ -260,12 +260,18 @@ public static class T2IAPI
             output(BasicAPIFeatures.GetCurrentStatusRaw(session));
         }
         bool continueAfterErrors = false;
+        T2IParamInput user_input = null;
         void setError(string message)
         {
             Logs.Warning($"Refused to generate image for {session.User.UserID}: {message}");
             if (!continueAfterErrors || claim.ShouldCancel)
             {
-                output(new JObject() { ["error"] = message });
+                JObject error = new() { ["error"] = message };
+                if (user_input is not null)
+                {
+                    error["request_id"] = $"{user_input.UserRequestId}";
+                }
+                output(error);
                 claim.LocalClaimInterrupt.Cancel();
                 if (isWS)
                 {
@@ -274,7 +280,6 @@ public static class T2IAPI
             }
         }
         long timeStart = Environment.TickCount64;
-        T2IParamInput user_input;
         try
         {
             user_input = RequestToParams(session, rawInput);

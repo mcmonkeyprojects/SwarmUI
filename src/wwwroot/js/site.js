@@ -113,9 +113,9 @@ let failedWSAddr = translatable(`Failed to get WebSocket address. You may be con
 let failedDepth = translatable(`Failed to get session ID after 3 tries. Your account may have been invalidated. Try refreshing the page, or contact the site owner.`);
 
 function makeWSRequest(url, in_data, callback, depth = 0, errorHandle = null, onOpenHandle = null) {
-    function fail(e) {
+    function fail(e, data = null) {
         if (errorHandle) {
-            errorHandle(e);
+            errorHandle(e, data);
             return;
         }
         console.log(e);
@@ -151,7 +151,7 @@ function makeWSRequest(url, in_data, callback, depth = 0, errorHandle = null, on
         if (data.error) {
             let error = typeof data.error == 'string' ? data.error : JSON.stringify(data.error);
             console.log(`Tried making WS request ${url} but failed with error: ${error}`);
-            fail(error);
+            fail(error, data);
             return;
         }
         callback(data);

@@ -325,12 +325,12 @@ class GenerateHandler {
             let timeLastGenHit = [Date.now()];
             let actualInput = this.getGenInput(input_overrides, input_preoverrides);
             let socket = null;
-            let handleError = e => {
+            let handleError = (e, data = null) => {
                 console.log(`Error in GenerateText2ImageWS:`, e, this.interrupted, batch_id);
                 setTimeout(() => {
                     for (let imgHolder of Object.values(images)) {
                         let div = this.getDiv(imgHolder);
-                        if (div) {
+                        if (div && (!data || (data.request_id && div.dataset.request_id == data.request_id))) {
                             let spinner = div.querySelector('.loading-spinner-parent');
                             if (spinner) {
                                 spinner.remove();
