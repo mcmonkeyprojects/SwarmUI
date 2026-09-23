@@ -2984,6 +2984,7 @@ public partial class WorkflowGenerator
         string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null) : null);
         string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], neg, [emptyLatent, 0], cfg, steps, 0, 10000, seed, false, true, explicitSampler: explicitSampler ?? "lcm", explicitScheduler: explicitScheduler ?? "simple", sectionId: sectionId);
         WGNodeData result = media.WithPath([sampled, 0], WGNodeData.DT_LATENT_IMAGE, pidModel.ModelClass?.CompatClass);
+        result.MayHaveAlpha = false;
         result.Width = width;
         result.Height = height;
         result = result.DecodeLatents(CurrentVae, false);
@@ -3058,6 +3059,7 @@ public partial class WorkflowGenerator
             ["color_correction_method"] = UserInput.Get(ComfyUIBackendExtension.SeedVRColorCorrectionBehavior, "lab")
         });
         WGNodeData result = raw.WithPath([post, 0]);
+        result.MayHaveAlpha = false;
         result.Width = raw.Width;
         result.Height = raw.Height;
         FinalLoadedModel = priorFinalModel;

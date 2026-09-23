@@ -36,6 +36,9 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
     /// <summary>If known and relevant (eg latent), what class of models this is compatible with.</summary>
     public T2IModelCompatClass Compat = _compat;
 
+    /// <summary>Whether this media may contain an alpha channel when decoded.</summary>
+    public bool MayHaveAlpha = false;
+
     /// <summary>Returns true if this data has the same compat class as given.</summary>
     public bool IsCompat(T2IModelCompatClass clazz) => Compat is not null && clazz.ID == Compat.ID;
 
@@ -327,7 +330,9 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                     ["pixels"] = Path
                 }, id);
             }
-            return WithPath([encoded, 0], DataType == DT_IMAGE ? DT_LATENT_IMAGE : DT_LATENT_VIDEO, vae.Compat);
+            WGNodeData result = WithPath([encoded, 0], DataType == DT_IMAGE ? DT_LATENT_IMAGE : DT_LATENT_VIDEO, vae.Compat);
+            result.MayHaveAlpha = vae.Compat?.SupportsAlpha ?? false;
+            return result;
         }
         if (DataType == DT_AUDIO)
         {
@@ -531,6 +536,23 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         }
         WGAssert(false, $"Cannot convert data of type '{DataType}' to raw image/video.");
         return null;
+    }
+
+    /// <summary>Returns an object that is definitely compatible with raw RGB image or video inputs, decoding and removing alpha as needed.</summary>
+    public WGNodeData AsRawImageNoAlpha(WGNodeData vae)
+    {
+        WGNodeData result = AsRawImage(vae);
+        if (!result.MayHaveAlpha)
+        {
+            return result;
+        }
+        string split = Gen.CreateNode("SplitImageWithAlpha", new JObject()
+        {
+            ["image"] = result.Path
+        });
+        result = result.WithPath([split, 0]);
+        result.MayHaveAlpha = false;
+        return result;
     }
 
     /// <summary>Returns a copy of this node data. If it has attached audio, the copy's audio will be masked off.</summary>

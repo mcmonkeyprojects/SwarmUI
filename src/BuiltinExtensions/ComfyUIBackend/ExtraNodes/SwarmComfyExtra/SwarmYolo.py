@@ -24,7 +24,7 @@ class SwarmYoloDetection:
 
     def seg(self, image, model_name, index, class_filter=None, sort_order="left-right", threshold=0.25):
         # TODO: Batch support?
-        i = 255.0 * image[0].cpu().numpy()
+        i = 255.0 * image[0, ..., :3].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
         # TODO: Cache the model in RAM in some way?
         model_path = folder_paths.get_full_path("yolov8", model_name)

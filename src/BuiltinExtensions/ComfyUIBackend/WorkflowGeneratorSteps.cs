@@ -1464,6 +1464,7 @@ public class WorkflowGeneratorSteps
                 g.CreateKSampler(g.CurrentModel.Path, g.FinalPrompt, g.FinalNegativePrompt, g.CurrentMedia.Path, cfg, steps, startStep, endStep,
                     g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed), sectionId: T2IParamInput.SectionID_BaseOnly), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true, sectionId: T2IParamInput.SectionID_BaseOnly);
                 g.CurrentMedia = g.CurrentMedia.WithPath(["10", 0]);
+                g.CurrentMedia.MayHaveAlpha = g.CurrentCompat()?.SupportsAlpha ?? false;
                 if (g.UserInput.Get(T2IParamTypes.UseReferenceOnly, false))
                 {
                     string fromBatch = g.CreateNode("LatentFromBatch", new JObject()
@@ -1640,6 +1641,7 @@ public class WorkflowGeneratorSteps
                         }
                         else
                         {
+                            decoded = decoded.AsRawImageNoAlpha(origVae); // TODO: Pending comfy fix for alpha compat
                             g.CreateNode("UpscaleModelLoader", new JObject()
                             {
                                 ["model_name"] = upscaleMethod.After("model-")
@@ -1757,6 +1759,7 @@ public class WorkflowGeneratorSteps
                     seed, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
                     explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
                 g.CurrentMedia = g.CurrentMedia.WithPath(["23", 0]);
+                g.CurrentMedia.MayHaveAlpha = model.Compat?.SupportsAlpha ?? false;
                 g.IsRefinerStage = false;
             }
         }, -4);
@@ -1931,6 +1934,7 @@ public class WorkflowGeneratorSteps
                     WGNodeData beforeImage = g.CurrentMedia;
                     string sampler = g.CreateKSampler(model.Path, prompt, negPrompt, [g.MaskShrunkInfo.MaskedLatent, 0], cfg, steps, startStep, 10000, seed, false, true, sectionId: part.ContextID);
                     g.CurrentMedia = g.CurrentMedia.WithPath([sampler, 0], WGNodeData.DT_LATENT_IMAGE);
+                    g.CurrentMedia.MayHaveAlpha = model.Compat?.SupportsAlpha ?? false;
                     g.CurrentMedia = g.CurrentMedia.AsRawImage(vae);
                     JArray composited = g.RecompositeCropped(g.MaskShrunkInfo.BoundsNode, [g.MaskShrunkInfo.CroppedMask, 0], beforeImage.Path, g.CurrentMedia.Path);
                     g.CurrentMedia = g.CurrentMedia.WithPath(composited);
@@ -1960,7 +1964,7 @@ public class WorkflowGeneratorSteps
             RunSegmentationProcessing(g, isBeforeRefiner: false);
         }, 5);
         #endregion
-        #region Segmentation
+        #region Segment Clears
         AddStep(g =>
         {
             PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.ClearSegment)];
@@ -1999,6 +2003,7 @@ public class WorkflowGeneratorSteps
                     ["alpha"] = NodePath(thresholded, 0)
                 });
                 g.CurrentMedia = g.CurrentMedia.WithPath([joined, 0]);
+                g.CurrentMedia.MayHaveAlpha = true;
             }
         }, 7);
         #endregion
@@ -2333,6 +2338,7 @@ public class WorkflowGeneratorSteps
                     }
                     else if (method.StartsWith("model-"))
                     {
+                        media = media.AsRawImageNoAlpha(vae); // TODO: Pending comfy fix for alpha compat
                         string loaderNode = g.CreateNode("UpscaleModelLoader", new JObject()
                         {
                             ["model_name"] = method.After("model-")
@@ -2408,6 +2414,7 @@ public class WorkflowGeneratorSteps
                     ["images"] = g.CurrentMedia.Path
                 });
                 g.CurrentMedia = g.CurrentMedia.WithPath([removed, 0]);
+                g.CurrentMedia.MayHaveAlpha = true;
             }
         }, 50);
         #endregion

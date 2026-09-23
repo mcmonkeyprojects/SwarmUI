@@ -76,7 +76,7 @@ public class T2IModelClassSorter
         CompatChromaRadiance = RegisterCompat(new() { ID = "chroma-radiance", ShortCode = "ChrRad" }),
         CompatLtxv = RegisterCompat(new() { ID = "lightricks-ltx-video", ShortCode = "LTXV", IsText2Video = true, IsImage2Video = true }),
         CompatLumina2 = RegisterCompat(new() { ID = "lumina-2", ShortCode = "Lumi2", VaeFamily = VaeFlux1 }),
-        CompatQwenImage21 = RegisterCompat(new() { ID = "qwen-image-2.1", ShortCode = "Qwen21", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage21, ResolutionPrecision = 32 }),
+        CompatQwenImage21 = RegisterCompat(new() { ID = "qwen-image-2.1", ShortCode = "Qwen21", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage21, ResolutionPrecision = 32, SupportsAlpha = true }),
         CompatQwenImage = RegisterCompat(new() { ID = "qwen-image", ShortCode = "Qwen", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
         CompatHunyuanImage2_1 = RegisterCompat(new() { ID = "hunyuan-image-2_1", ShortCode = "HyImg", LorasTargetTextEnc = false }),
         CompatHunyuanImage2_1Refiner = RegisterCompat(new() { ID = "hunyuan-image-2_1-refiner", ShortCode = "HyImg", LorasTargetTextEnc = false }),
