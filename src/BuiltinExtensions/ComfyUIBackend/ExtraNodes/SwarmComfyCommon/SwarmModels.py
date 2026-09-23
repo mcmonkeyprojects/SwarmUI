@@ -1,5 +1,5 @@
-import folder_paths, torch, comfy, math, torchaudio
-import comfy.utils, comfy.sd, nodes, node_helpers
+import folder_paths, torch, comfy, math
+import comfy.utils, comfy.sd, comfy.audio, nodes, node_helpers
 from comfy_api.latest import io
 
 MiniMaxReferences = io.Custom("MiniMaxReferences")
@@ -151,7 +151,7 @@ def _encode_ref_audio(audio_vae, audio):
     sr = audio["sample_rate"]
     vae_sr = getattr(audio_vae, "audio_sample_rate", 32000)
     if sr != vae_sr:
-        waveform = torchaudio.functional.resample(waveform, sr, vae_sr)
+        waveform = comfy.audio.resample(waveform, sr, vae_sr)
     z = audio_vae.encode(waveform[:1].movedim(1, -1))
     return z, z.shape[-1]
 

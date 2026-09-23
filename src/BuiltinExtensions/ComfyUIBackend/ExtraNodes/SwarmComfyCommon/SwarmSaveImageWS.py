@@ -1,6 +1,6 @@
 from PIL import Image
 import numpy as np
-import av, torchaudio
+import av, comfy.audio
 from server import PromptServer, BinaryEventTypes
 import time, io, struct
 
@@ -109,7 +109,7 @@ class SwarmSaveAudioWS:
             sample_rate = audio["sample_rate"]
             if format == "ogg" and sample_rate not in self.opus_rates:
                 sample_rate = min((rate for rate in self.opus_rates if rate > sample_rate), default=48000)
-                waveform = torchaudio.functional.resample(waveform, audio["sample_rate"], sample_rate)
+                waveform = comfy.audio.resample(waveform, audio["sample_rate"], sample_rate)
 
             layout = "mono" if waveform.shape[0] == 1 else "stereo"
             output_buffer = io.BytesIO()

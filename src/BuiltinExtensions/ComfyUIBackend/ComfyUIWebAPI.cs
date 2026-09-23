@@ -328,7 +328,7 @@ public static class ComfyUIWebAPI
             try
             {
                 await pipCall("Uninstalling old torch", "uninstall -y torch torchvision torchaudio");
-                await pipCall("Installing new torch", "install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu132");
+                await pipCall("Installing new torch", "install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu132");
             }
             catch (Exception ex)
             {
