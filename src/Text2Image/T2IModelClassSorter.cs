@@ -49,7 +49,8 @@ public class T2IModelClassSorter
         VaeSd3 = RegisterVaeFamily("sd3", "sd35-vae", "stable-diffusion-v3"),
         VaeSdxl = RegisterVaeFamily("sdxl", "sdxl-vae", "stable-diffusion-xl-v1"),
         VaeQwenImage21 = RegisterVaeFamily("qwenimage21", "qwen-image-2.1-vae", "qwen-image-2.1"),
-        VaeQwenImage = RegisterVaeFamily("qwenimage", "qwen-image-vae", "qwen-image");
+        VaeQwenImage = RegisterVaeFamily("qwenimage", "qwen-image-vae", "qwen-image"),
+        VaeMingImage = RegisterVaeFamily("mingimage", "ming-image-vae", "ming-image");
 
     /// <summary>Core Compatibility classes.</summary>
     public static T2IModelCompatClass
@@ -78,6 +79,7 @@ public class T2IModelClassSorter
         CompatLumina2 = RegisterCompat(new() { ID = "lumina-2", ShortCode = "Lumi2", VaeFamily = VaeFlux1 }),
         CompatQwenImage21 = RegisterCompat(new() { ID = "qwen-image-2.1", ShortCode = "Qwen21", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage21, ResolutionPrecision = 32, SupportsAlpha = true }),
         CompatQwenImage = RegisterCompat(new() { ID = "qwen-image", ShortCode = "Qwen", LorasTargetTextEnc = false, VaeFamily = VaeQwenImage }),
+        CompatMingImage = RegisterCompat(new() { ID = "ming-image", ShortCode = "Ming", LorasTargetTextEnc = false, VaeFamily = VaeMingImage, SupportsAlpha = true }),
         CompatHunyuanImage2_1 = RegisterCompat(new() { ID = "hunyuan-image-2_1", ShortCode = "HyImg", LorasTargetTextEnc = false }),
         CompatHunyuanImage2_1Refiner = RegisterCompat(new() { ID = "hunyuan-image-2_1-refiner", ShortCode = "HyImg", LorasTargetTextEnc = false }),
         CompatHunyuanVideo1_5 = RegisterCompat(new() { ID = "hunyuan-video-1_5", ShortCode = "HyVid", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
@@ -230,6 +232,8 @@ public class T2IModelClassSorter
         bool isCosmosPredict2_14B(JObject h) => h.ContainsKey("net.blocks.0.adaln_modulation_cross_attn.1.weight") && h.ContainsKey("net.pos_embedder.dim_temporal_range") && h.ContainsKey("net.x_embedder.proj.1.weight") && h.ContainsKey("net.blocks.35.adaln_modulation_mlp.2.weight");
         bool isLumina2(JObject h) => hasKey(h, "cap_embedder.0.weight");
         bool isZImage(JObject h) => (hasKey(h, "context_refiner.0.attention.k_norm.weight") || hasKey(h, "context_refiner.0.attention.norm_k.weight")) && hasKey(h, "layers.0.adaLN_modulation.0.bias");
+        bool isMingImage(JObject h) => tryGetKey(h, "cap_embedder.1.weight", out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 3840 && hasKey(h, "noise_refiner.0.attention.k_norm.weight") && !hasKey(h, "cap_pad_token") && !hasKey(h, "dec_net.cond_embed.weight");
+        bool isMingImageVae(JObject h) => h.ContainsKey("decoder.upsamples.0.residual.2.weight") && h["decoder.head.2.weight"]?["shape"] is JArray shape && shape.Count == 5 && shape[0].Value<int>() == 4;
         bool isZetaChroma(JObject h) => hasKey(h, "dec_net.input_embedder.embedder.0.bias") && hasKey(h, "__x0__");
         bool isOvis(JObject h) => hasKey(h, "double_blocks.0.img_mlp.down_proj.weight");
         bool isZImageLora(JObject h) => (hasLoraKey(h, "layers.0.adaLN_modulation.0") && hasLoraKey(h, "layers.9.feed_forward.w3"))
@@ -675,7 +679,7 @@ public class T2IModelClassSorter
         // ====================== Z-Image ======================
         Register(new() { ID = "z-image", CompatClass = CompatZImage, Name = "Z-Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isLumina2(h) && isZImage(h) && !isZetaChroma(h);
+            return isLumina2(h) && isZImage(h) && !isZetaChroma(h) && !isMingImage(h);
         }});
         Register(new() { ID = "z-image/lora", CompatClass = CompatZImage, Name = "Z-Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -689,6 +693,15 @@ public class T2IModelClassSorter
         Register(new() { ID = "zeta-chroma", CompatClass = CompatZetaChroma, Name = "Zeta Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isLumina2(h) && isZImage(h) && isZetaChroma(h);
+        }});
+        // ====================== Ming Image ======================
+        Register(new() { ID = "ming-image", CompatClass = CompatMingImage, Name = "Ming Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isMingImage(h);
+        }});
+        Register(new() { ID = "ming-image/vae", CompatClass = CompatMingImage, Name = "Ming Image VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isMingImageVae(h);
         }});
         // ====================== Qwen Image 2.1 ======================
         Register(new() { ID = "qwen-image-2.1", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
