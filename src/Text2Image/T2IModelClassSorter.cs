@@ -264,6 +264,7 @@ public class T2IModelClassSorter
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
             || (h.ContainsKey("model.diffusion_model.time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("model.diffusion_model.img_in.bias") && (h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_qkv_proj.bias")));
         bool isQwenImage21(JObject h) => hasKey(h, "txt_in.text_norm.weight") && hasKey(h, "modulation.1.weight") && hasKey(h, "transformer_blocks.0.attn.norm_q.weight");
+        bool isQwenImage21Lora(JObject h) => hasLoraKey(h, "transformer_blocks.0.attn.to_k") && (hasLoraKey(h, "modulation.1") || hasLoraKey(h, "transformer_blocks.0.img_mlp.gate_layer") || hasLoraKey(h, "transformer_blocks.0.img_mlp.proj"));
         bool isQwenImage21Vae(JObject h) => h.ContainsKey("decoder.upsamples.0.upsamples.0.residual.2.weight") && h["decoder.head.2.weight"]?["shape"] is JArray shape && shape.Count == 5 && shape[0].Value<int>() == 4 && shape[2].Value<int>() == 1;
         bool isQwenImageEdit2511(JObject h) => h.ContainsKey("__index_timestep_zero__");
         bool isMageFlow(JObject h) => tryGetKey(h, "txt_norm.weight", out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 2560;
@@ -693,6 +694,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "qwen-image-2.1", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isQwenImage21(h);
+        }});
+        Register(new() { ID = "qwen-image-2.1/lora", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isQwenImage21Lora(h);
         }});
         Register(new() { ID = "qwen-image-2.1/vae", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1 VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
