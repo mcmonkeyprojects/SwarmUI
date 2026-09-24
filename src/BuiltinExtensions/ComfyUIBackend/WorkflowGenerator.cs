@@ -2758,26 +2758,18 @@ public partial class WorkflowGenerator
                 ["images"] = imageNode
             }, id);
         }
-        else if (IsMingImage() && isPositive && GetPromptImage(false, true) is JArray mingImage)
+        else if (IsMingImage() && isPositive && GetPromptImage(true, true) is JArray mingImage)
         {
-            string resized = CreateNode("ImageScale", new JObject()
-            {
-                ["image"] = mingImage,
-                ["width"] = width,
-                ["height"] = height,
-                ["crop"] = "center",
-                ["upscale_method"] = "lanczos"
-            });
             JObject inputs = new()
             {
                 ["clip"] = clip,
                 ["vae"] = CurrentVae.Path,
                 ["prompt"] = prompt,
-                ["images.image_1"] = new JArray(resized, 0)
+                ["images.image_1"] = mingImage
             };
             for (int i = 1; i < 8; i++)
             {
-                JArray image2 = GetPromptImage(false, true, i);
+                JArray image2 = GetPromptImage(true, true, i);
                 if (image2 is null)
                 {
                     break;
