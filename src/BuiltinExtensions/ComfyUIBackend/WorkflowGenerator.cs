@@ -1064,7 +1064,7 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3() || IsSeedVR2())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsMingImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3() || IsSeedVR2())
         {
             defscheduler ??= "simple";
         }
@@ -2757,6 +2757,34 @@ public partial class WorkflowGenerator
                 ["target_height"] = height,
                 ["images"] = imageNode
             }, id);
+        }
+        else if (IsMingImage() && isPositive && GetPromptImage(false, true) is JArray mingImage)
+        {
+            string resized = CreateNode("ImageScale", new JObject()
+            {
+                ["image"] = mingImage,
+                ["width"] = width,
+                ["height"] = height,
+                ["crop"] = "center",
+                ["upscale_method"] = "lanczos"
+            });
+            JObject inputs = new()
+            {
+                ["clip"] = clip,
+                ["vae"] = CurrentVae.Path,
+                ["prompt"] = prompt,
+                ["images.image_1"] = new JArray(resized, 0)
+            };
+            for (int i = 1; i < 8; i++)
+            {
+                JArray image2 = GetPromptImage(false, true, i);
+                if (image2 is null)
+                {
+                    break;
+                }
+                inputs[$"images.image_{i + 1}"] = image2;
+            }
+            node = CreateNode("TextEncodeMingImageEdit", inputs, id);
         }
         else if (IsHunyuanVideoI2V() && prompt.StartsWith("<image:"))
         {
