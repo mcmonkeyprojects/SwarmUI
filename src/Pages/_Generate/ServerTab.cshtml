@@ -245,7 +245,7 @@
                             }
                         </td>
                         <td>@(ext.ReadmeURL == "" ? "(Missing)": new HtmlString($"<a target=\"_blank\" href=\"{ext.ReadmeURL}\">Here</a>"))</td>
-                        <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
+                        <td class="@(WebUtil.LicenseIsFoss(ext.License) ? "" : "ext-danger-license")">@ext.License</td>
                         <td>
                             <button class="basic-button danger-button translate" onclick="extensionsManager.setExtensionEnabled('@ext.ExtensionName', false, this)">Disable</button>
                             @if (ext.CanUpdate)
@@ -265,7 +265,7 @@
                         <td>@ext.Author</td>
                         <td>@ext.Description</td>
                         <td>@(ext.URL == "" ? "(Missing)" : new HtmlString($"<a target=\"_blank\" href=\"{ext.URL}\">Here</a>"))</td>
-                        <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
+                        <td class="@(WebUtil.LicenseIsFoss(ext.License) ? "" : "ext-danger-license")">@ext.License</td>
                         <td>
                             <button class="basic-button translate" onclick="extensionsManager.setExtensionEnabled('@ext.FolderNames[0]', true, this)">Enable</button>
                             <button class="basic-button" onclick="extensionsManager.uninstallExtension('@ext.FolderNames[0]', this)">Uninstall</button>
@@ -294,7 +294,7 @@
                         <td>@ext.Author</td>
                         <td>@ext.Description</td>
                         <td><a target="_blank" href="@ext.URL">Here</a></td>
-                        <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
+                        <td class="@(WebUtil.LicenseIsFoss(ext.License) ? "" : "ext-danger-license")">@ext.License</td>
                         <td>
                             <button class="basic-button" onclick="extensionsManager.installExtension('@ext.Name', this)">Install</button>
                         </td>

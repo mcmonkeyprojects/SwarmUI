@@ -327,4 +327,11 @@ public static class WebUtil
             return null;
         }
     }
+
+    public static HashSet<string> FossLicenses = ["mit", "apache-2.0"];
+
+    public static bool LicenseIsFoss(string license)
+    {
+        return FossLicenses.Contains(license.ToLowerFast());
+    }
 }

@@ -390,7 +390,7 @@ RTXVideo:
     - parameters
     - nodes
 
-PromptEnhancer
+PromptEnhancer:
     author: Hippotes
     description: use the GenerateText node of ComfyUI for prompt enhancement from the Generate tab without an external inference engine, reusing the LLMs we have as text encoder.
     url: https://github.com/HPPTS-MGNBR/SwarmUI-PromptEnhancer
