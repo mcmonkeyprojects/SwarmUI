@@ -1396,7 +1396,7 @@ public partial class WorkflowGenerator
         else if (IsQwenImage21())
         {
             helpers.LoadClip("qwen_image", helpers.GetQwenImage21TextEncoder());
-            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatQwenImage21, "qwen-image-2.1-vae");
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultQwen21VAE, T2IModelClassSorter.CompatQwenImage21, "qwen-image-2.1-vae");
         }
         else if (IsQwenImage())
         {

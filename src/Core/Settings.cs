@@ -586,6 +586,10 @@ public class Settings : AutoConfiguration
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]
             public string DefaultQwenVAE = "None";
 
+            [ConfigComment("What VAE to use with Qwen Image 2.1 models by default.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["None"])]
+            public string DefaultQwen21VAE = "None";
+
             [ConfigComment("What VAE to use with MiniMax H3 models by default (the video VAE, not audio).")]
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]
             public string DefaultMiniMaxH3VAE = "None";

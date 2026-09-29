@@ -463,6 +463,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - Main model downloads are here: [Comfy-Org/Qwen-Image-2.1](<https://huggingface.co/Comfy-Org/Qwen-Image-2.1/tree/main/diffusion_models>)
 - It has a ch=64 scale=16 RGBA VAE, it will be downloaded automatically
     - Note that many models are scale=8, this is scale=16, meaning it has a larger 'snap' in resolution range, and needs to be set to 2048x2048 to generate the equivalent quality of what most models do at 1024x1024
+    - There is an unofficial 'texture fix' VAE that looks a bit better, download here [madebyollin/texture-fix-vae](<https://huggingface.co/madebyollin/texture-fix-vae-for-qwen-image-2.1/blob/main/texture_fix_vae_for_qwen_image_2.1_bf16.safetensors>). If you prefer it, select it in User Settings -> DefaultQwen21VAE.
 - **Parameters:**
     - **Prompt**: General VLM prompting
         - The preset for transparent images is `This is an RGBA image with transparency. {prompt}. The image has alpha channel and the background is transparent.` this is essentially required for proper transparent backgrounds.
