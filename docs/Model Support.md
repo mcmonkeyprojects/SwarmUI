@@ -11,17 +11,18 @@
 [Flux.2](#flux-2) | MMDiT | 2025 | Black Forest Labs | 4B, 9B, 32B | Minimal | Recent, Incredible Quality, choice of speed or quality preference |
 [Chroma](#chroma) | MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Decent Quality |
 [Chroma Radiance](#chroma-radiance) | Pixel MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Bad Quality (WIP) |
-[Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Passable Quality |
-[Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | Minimal | Modern, Great Quality, very memory intense |
-[Hunyuan Image 2.1](#hunyuan-image-21) | MMDiT | 2025 | Tencent | 17B | No | Modern, Great Quality, very memory intense |
-[Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Modern, Great Quality, lightweight |
-[Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
+[Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Recent, Passable Quality |
+[Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | Minimal | Recent, Great Quality, very memory intense |
+[Hunyuan Image 2.1](#hunyuan-image-21) | MMDiT | 2025 | Tencent | 17B | No | Recent, Great Quality, very memory intense |
+[Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Recent, Great Quality, lightweight |
+[Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Recent, Decent Quality |
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
 [HiDream O1](#hidream-o1) | "Pixel UiT" | 2026 | HiDream | 8B | Minimal | Modern, intelligent, fast, decent quality |
 [Ideogram 4](#ideogram-4) | DiT | 2026 | Ideogram AI | 9B | Yes | Modern, advanced on input understanding |
 [Krea 2](#krea-2) | DiT | 2026 | Krea AI | 12B | Yes | Modern, extremely smart and great quality |
 [Boogu](#boogu) | MMDiT | 2026 | Boogu | 10B | Minimal | Modern, fast |
 [Qwen Image 2.1](#qwen-image-21) | MMDiT | 2026 | Alibaba-Qwen | 7B | No | Modern, creative, slow |
+[Ming Image](#ming-image) | DiT | 2026 | InclusionAI | 6B | Minimal | Modern, intelligent but ugly |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -67,11 +68,12 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 
 # Current Recommendations
 
-Image model(s) most worth using, as of June 2026:
+Image model(s) most worth using, as of September 2026:
 
 - Krea 2 is the champion of image generation.
 - Flux.2 Klein is pretty great too, particularly for editing.
-- Ideogram is worth experimenting with if you like getting advanced, as it allows JSON inputs with structured bounding boxes.
+- Qwen Image 2.1 is probably better for edit than Klein.
+- Ideogram or Ming Image may be worth experimenting with if you like getting advanced, as they allow JSON inputs with structured bounding boxes.
 
 # General Info
 
@@ -464,6 +466,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - It has a ch=64 scale=16 RGBA VAE, it will be downloaded automatically
     - Note that many models are scale=8, this is scale=16, meaning it has a larger 'snap' in resolution range, and needs to be set to 2048x2048 to generate the equivalent quality of what most models do at 1024x1024
     - There is an unofficial 'texture fix' VAE that looks a bit better, download here [madebyollin/texture-fix-vae](<https://huggingface.co/madebyollin/texture-fix-vae-for-qwen-image-2.1/blob/main/texture_fix_vae_for_qwen_image_2.1_bf16.safetensors>). If you prefer it, select it in User Settings -> DefaultQwen21VAE.
+- Supports generating transparency (will break if image format is jpg)
 - **Parameters:**
     - **Prompt**: General VLM prompting
         - The preset for transparent images is `This is an RGBA image with transparency. {prompt}. The image has alpha channel and the background is transparent.` this is essentially required for proper transparent backgrounds.
@@ -677,12 +680,25 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - Uses the Flux.1 VAE and a Qwen3-VL8B text encoder, both downloaded and handled automatically.
 - For editing, use the `Edit` model and give it a prompt image - SwarmUI automatically wires it in as the reference.
 - **Parameters:** recommendations differ between the Base, Edit, and Turbo models:
-    - **Sampler**: For Turbo, use LCM, otherwise default is fine, DPM++ 2M is recommended as a bit better than Euler for these models.
+    - **Sampler:** For Turbo, use LCM, otherwise default is fine, DPM++ 2M is recommended as a bit better than Euler for these models.
     - **Scheduler:** For Turbo, use SGM Uniform, otherwise default is fine.
     - **CFG Scale:** For Turbo, `1`, otherwise normal CFG ranges (around `4`).
     - **Steps:** For Turbo, `4` is recommended, otherwise `20` as normal.
     - **Resolution:** Side length `1024` is the default.
     - **Sigma Shift:** Default is `3.16`.
+
+# Ming Image
+
+- [Ming Image](<https://huggingface.co/inclusionAI/Ming-Image-0.1-Design>) is supported in SwarmUI!
+- It is a 6B model intended for infographic generation
+    - Download here: [Comfy-Org/Ming-Image](<https://huggingface.co/Comfy-Org/Ming-Image/blob/main/diffusion_models/ming_image_0.1_design_int8_convrot.safetensors>)
+    - There is also a 'layer' model, not currently supported
+- Supports generating transparency (will break if image format is jpg)
+- VAE and text encoder will be automatically downloaded
+- **Parameters:**
+    - **Prompt:** Likes JSON blocks, similar to ideogram
+    - **CFG Scale:** `1`
+    - **Steps:** They recommend `12`
 
 # Video Models
 

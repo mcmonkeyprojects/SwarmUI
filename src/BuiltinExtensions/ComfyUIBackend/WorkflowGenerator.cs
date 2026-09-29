@@ -2779,6 +2779,7 @@ public partial class WorkflowGenerator
                 });
                 imageNode = [batched, 0];
             }
+            // TODO: Just hit wantsSwarmCustom
             node = CreateNode("SwarmTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,

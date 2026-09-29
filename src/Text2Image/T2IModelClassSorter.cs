@@ -699,7 +699,7 @@ public class T2IModelClassSorter
         {
             return isMingImage(h);
         }});
-        Register(new() { ID = "ming-image/vae", CompatClass = CompatMingImage, Name = "Ming Image VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "ming-image/vae", CompatClass = CompatMingImage, Name = "Ming Image VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return isMingImageVae(h);
         }});
