@@ -520,7 +520,8 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id));
         }
-        else if (UserInput.Get(ComfyUIBackendExtension.ShiftedLatentAverageInit, false))
+        // Note: check type before arg to cause it to fall into unused list if enabled on wrong model type
+        else if ((IsModelCompatClass(T2IModelClassSorter.CompatSdv1) || IsModelCompatClass(T2IModelClassSorter.CompatSdv2) || IsModelCompatClass(T2IModelClassSorter.CompatSdxl)) && UserInput.Get(ComfyUIBackendExtension.ShiftedLatentAverageInit, false))
         {
             double offA = 0, offB = 0, offC = 0, offD = 0;
             switch (FinalLoadedModel.ModelClass?.CompatClass?.ID)
