@@ -271,7 +271,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("If enabled, backend starting port will be randomly offset at each restart.\nThis is an obscure bug fix for 'stuck ports', where restarting and reusing the same backend port causes strange misbehaviors.")]
         public bool BackendPortRandomize = false;
 
-        [ConfigComment("If you wish to access your Swarm instance externally, set this to the path of a CloudFlared executable, and it will automatically be used.\n(Must restart to apply).\nThe URL will be visible on the Server Info tab and/or terminal log.\nSee documentation in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Advanced Usage.md#accessing-swarmui-from-other-devices\">the docs here</a>")]
+        [ConfigComment($"If you wish to access your Swarm instance externally, set this to the path of a CloudFlared executable, and it will automatically be used.\n(Must restart to apply).\nThe URL will be visible on the Server Info tab and/or terminal log.\nSee documentation in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Advanced Usage.md#accessing-swarmui-from-other-devices\">the docs here</a>")]
         public string CloudflaredPath = "";
 
         [ConfigComment("Any IPs that can bypass network-authorization requirements, as a comma-separated list.\nDefaults to '127.0.0.1' (localhost IPv4) and '::1' (localhost IPv6) and '::ffff:127.0.0.1' (IPv4 localhost forwarded through IPv6).")]
