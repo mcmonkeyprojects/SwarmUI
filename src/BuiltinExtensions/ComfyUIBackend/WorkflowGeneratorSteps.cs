@@ -1699,48 +1699,111 @@ public class WorkflowGeneratorSteps
                 }
                 else if (doUpscale && upscaleMethod.StartsWith("latentmodel-"))
                 {
-                    g.CreateNode("LatentUpscaleModelLoader", new JObject()
+                    string modelName = upscaleMethod.After("latentmodel-");
+                    if (g.IsMiniMaxH3())
                     {
-                        ["model_name"] = upscaleMethod.After("latentmodel-")
-                    }, "27");
-                    if (g.IsHunyuanVideo15())
-                    {
-                        g.CreateNode("HunyuanVideo15LatentUpscaleWithModel", new JObject()
+                        width = (width / 32) * 32;
+                        height = (height / 32) * 32;
+                        if (!g.Features.Contains("minimax_h3_latent_upscaler"))
                         {
-                            ["model"] = NodePath("27", 0),
-                            ["samples"] = g.CurrentMedia.Path,
-                            ["upscale_method"] = "bilinear",
-                            ["width"] = width,
-                            ["height"] = height,
-                            ["crop"] = "disabled"
+                            throw new SwarmUserErrorException("MiniMax H3 latent upscaling requires the Comfyui_Minimax_h3_latent_Upscaler node pack.");
+                        }
+                        JArray vidLatent;
+                        JArray audLatent = null;
+                        if (g.CurrentMedia.DataType == WGNodeData.DT_LATENT_AUDIOVIDEO)
+                        {
+                            string sepNode = g.CreateNode("LTXVSeparateAVLatent", new JObject()
+                            {
+                                ["av_latent"] = g.CurrentMedia.Path
+                            });
+                            vidLatent = NodePath(sepNode, 0);
+                            audLatent = NodePath(sepNode, 1);
+                        }
+                        else
+                        {
+                            vidLatent = g.CurrentMedia.Path;
+                            if (g.CurrentMedia.AttachedAudio is not null)
+                            {
+                                audLatent = g.CurrentMedia.AttachedAudio.Path;
+                            }
+                        }
+                        string upscaleNode = g.CreateNode("MinimaxH3LatentUpscaler3D", new JObject()
+                        {
+                            ["latent"] = vidLatent,
+                            ["model_name"] = modelName,
+                            ["mode"] = "scale by multiplier",
+                            ["mode.scale"] = refineUpscale,
+                            ["align"] = 32,
+                            ["enable_temporal_chunking"] = true,
+                            ["force_unload"] = true,
+                            ["device"] = "cuda",
+                            ["precision"] = "fp16"
                         }, "26");
-                        g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0], WGNodeData.DT_LATENT_VIDEO);
-                    }
-                    else if (g.IsLTXV2())
-                    {
-                        g.CurrentMedia = g.CurrentMedia.AsLatentImage(g.CurrentVae);
-                        string cropGuides = g.CreateNode("LTXVCropGuides", new JObject()
+                        if (audLatent is not null)
                         {
-                            ["positive"] = prompt,
-                            ["negative"] = negPrompt,
-                            ["latent"] = g.CurrentMedia.Path
-                        });
-                        prompt = [cropGuides, 0];
-                        negPrompt = [cropGuides, 1];
-                        g.CreateNode("LTXVLatentUpsampler", new JObject()
+                            string concatNode = g.CreateNode("LTXVConcatAVLatent", new JObject()
+                            {
+                                ["video_latent"] = NodePath(upscaleNode, 0),
+                                ["audio_latent"] = audLatent
+                            });
+                            g.CurrentMedia = g.CurrentMedia.WithPath([concatNode, 0], WGNodeData.DT_LATENT_AUDIOVIDEO);
+                            g.CurrentMedia.AttachedAudio = null;
+                        }
+                        else
                         {
-                            ["vae"] = g.CurrentVae.Path,
-                            ["samples"] = NodePath(cropGuides, 2),
-                            ["upscale_model"] = NodePath("27", 0)
-                        }, "26");
-                        g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0], WGNodeData.DT_LATENT_VIDEO);
+                            g.CurrentMedia = g.CurrentMedia.WithPath([upscaleNode, 0], WGNodeData.DT_LATENT_VIDEO);
+                        }
                     }
                     else
                     {
-                        throw new SwarmUserErrorException($"Cannot latent-upscale with a model for {g.CurrentCompatClass()}, check your Refiner Upscale Method parameter");
+                        g.CreateNode("LatentUpscaleModelLoader", new JObject()
+                        {
+                            ["model_name"] = modelName
+                        }, "27");
+                        if (g.IsHunyuanVideo15())
+                        {
+                            g.CreateNode("HunyuanVideo15LatentUpscaleWithModel", new JObject()
+                            {
+                                ["model"] = NodePath("27", 0),
+                                ["samples"] = g.CurrentMedia.Path,
+                                ["upscale_method"] = "bilinear",
+                                ["width"] = width,
+                                ["height"] = height,
+                                ["crop"] = "disabled"
+                            }, "26");
+                            g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0], WGNodeData.DT_LATENT_VIDEO);
+                        }
+                        else if (g.IsLTXV2())
+                        {
+                            g.CurrentMedia = g.CurrentMedia.AsLatentImage(g.CurrentVae);
+                            string cropGuides = g.CreateNode("LTXVCropGuides", new JObject()
+                            {
+                                ["positive"] = prompt,
+                                ["negative"] = negPrompt,
+                                ["latent"] = g.CurrentMedia.Path
+                            });
+                            prompt = [cropGuides, 0];
+                            negPrompt = [cropGuides, 1];
+                            g.CreateNode("LTXVLatentUpsampler", new JObject()
+                            {
+                                ["vae"] = g.CurrentVae.Path,
+                                ["samples"] = NodePath(cropGuides, 2),
+                                ["upscale_model"] = NodePath("27", 0)
+                            }, "26");
+                            g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0], WGNodeData.DT_LATENT_VIDEO);
+                        }
+                        else
+                        {
+                            throw new SwarmUserErrorException($"Cannot latent-upscale with a model for {g.CurrentCompatClass()}, check your Refiner Upscale Method parameter");
+                        }
                     }
                     g.CurrentMedia.Width = width;
                     g.CurrentMedia.Height = height;
+                    if (refinerControl <= 0)
+                    {
+                        g.IsRefinerStage = false;
+                        return;
+                    }
                 }
                 if (isSeedVr)
                 {

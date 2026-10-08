@@ -36,5 +36,6 @@ public static class InstallableFeatures
         RegisterInstallableFeature(new("ExtraModels", "extramodels", "https://github.com/city96/ComfyUI_ExtraModels", "city96", "This will install ExtraModels support developed by city96.\nDo you wish to install?"));
         RegisterInstallableFeature(new("Nunchaku", "nunchaku", "https://github.com/mit-han-lab/ComfyUI-nunchaku", "mit-han-lab"));
         RegisterInstallableFeature(new("TeaCache", "teacache", "https://github.com/welltop-cn/ComfyUI-TeaCache", "welltop-cn"));
+        RegisterInstallableFeature(new("MiniMax H3 Latent Upscaler", "minimax_h3_latent_upscaler", "https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler", "LBH-123-AI"));
     }
 }
