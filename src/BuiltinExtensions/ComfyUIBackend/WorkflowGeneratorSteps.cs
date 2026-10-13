@@ -12,6 +12,8 @@ namespace SwarmUI.Builtin_ComfyUIBackend;
 
 public class WorkflowGeneratorSteps
 {
+    public static Action<WorkflowGenerator> SeedVRStep;
+
     /// <summary>Register a new step to the workflow generator.</summary>
     public static void AddStep(Action<WorkflowGenerator> step, double priority)
     {
@@ -52,6 +54,22 @@ public class WorkflowGeneratorSteps
 
     public static void Register()
     {
+        AddStep(g =>
+        {
+            T2IModel model = g.UserInput.Get(T2IParamTypes.Model);
+            if (model?.ModelClass?.CompatClass == T2IModelClassSorter.CompatSeedVR2 && g.UserInput.TryGet(T2IParamTypes.InitImage, out Image input))
+            {
+                g.FinalLoadedModel = model;
+                g.NoVAEOverride = true;
+                (g.FinalLoadedModel, g.CurrentModel, g.CurrentTextEnc, g.CurrentVae) = g.CreateModelLoader(model, "SeedVR2", sectionId: T2IParamInput.SectionID_SeedVR);
+                g.PreserveSeedVRSourceMetadata(input);
+                g.CurrentMedia = g.LoadImage(input, "${initimage}", true, "15");
+                g.UserInput.Set(ComfyUIBackendExtension.SeedVRModel, model);
+                SeedVRStep(g);
+                g.CurrentMedia.SaveOutput(g.CurrentVae, null, "9");
+                g.SkipFurtherSteps = true;
+            }
+        }, -16);
         #region Model Loader
         AddStep(g =>
         {
@@ -2282,7 +2300,7 @@ public class WorkflowGeneratorSteps
         }, 12);
         #endregion
         #region SeedVR
-        AddStep(g =>
+        AddStep(SeedVRStep = g =>
         {
             if (!g.UserInput.TryGet(ComfyUIBackendExtension.SeedVRModel, out T2IModel seedVrModel) || seedVrModel is null)
             {

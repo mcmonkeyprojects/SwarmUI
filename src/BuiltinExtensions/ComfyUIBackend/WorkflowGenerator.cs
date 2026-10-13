@@ -3030,6 +3030,82 @@ public partial class WorkflowGenerator
         return result;
     }
 
+    internal void PreserveSeedVRSourceMetadata(Image input)
+    {
+        try
+        {
+            string metadata;
+            if (UserInput.ExtraMeta.Remove("seedvr_source_metadata", out object provided))
+            {
+                metadata = provided as string;
+            }
+            else if (input.Type.MetaType == MediaMetaType.Video)
+            {
+                metadata = new VideoFile(input.RawData, input.Type).GetMetadata();
+            }
+            else
+            {
+                metadata = input.GetMetadata();
+            }
+            if (string.IsNullOrWhiteSpace(metadata))
+            {
+                return;
+            }
+            JObject source = JObject.Parse(metadata);
+            if (source["sui_image_params"] is not JObject)
+            {
+                return;
+            }
+            UserInput.MetadataModifier = restored =>
+            {
+                JObject result = (JObject)source.DeepClone();
+                result.Remove("is_starred");
+                JObject parameters = (JObject)result["sui_image_params"];
+                foreach (JProperty property in parameters.Properties().Where(p => p.Name.StartsWith("seedvr")).ToArray())
+                {
+                    property.Remove();
+                }
+                foreach (JProperty property in ((JObject)restored["sui_image_params"]).Properties())
+                {
+                    if (property.Name.StartsWith("seedvr"))
+                    {
+                        parameters[property.Name] = property.Value.DeepClone();
+                    }
+                }
+                parameters["seedvrmodel"] = restored["sui_image_params"]["model"]?.DeepClone();
+                if (result["sui_models"] is JArray sourceModels)
+                {
+                    foreach (JObject entry in sourceModels.OfType<JObject>().Where(m => m["param"]?.Value<string>() == "seedvrmodel").ToArray())
+                    {
+                        entry.Remove();
+                    }
+                }
+                if (restored["sui_models"] is JArray restoredModels)
+                {
+                    JArray models = result["sui_models"] as JArray ?? new JArray();
+                    result["sui_models"] = models;
+                    foreach (JObject model in restoredModels.OfType<JObject>())
+                    {
+                        JObject entry = (JObject)model.DeepClone();
+                        if (entry["param"]?.Value<string>() == "model")
+                        {
+                            entry["param"] = "seedvrmodel";
+                        }
+                        if (!models.Any(existing => JToken.DeepEquals(existing, entry)))
+                        {
+                            models.Add(entry);
+                        }
+                    }
+                }
+                return result;
+            };
+        }
+        catch (Exception ex)
+        {
+            Logs.Warning($"Could not preserve SeedVR source metadata: {ex.Message}");
+        }
+    }
+
     /// <summary>Creates a SeedVR2 restoration stage: converts to a SeedVR2-space latent and samples the restored image from it.</summary>
     public WGNodeData CreateSeedVR2Restore(T2IModel seedVrModel, WGNodeData media, WGNodeData decodeVae, long seed, bool isRefiner = false)
     {
