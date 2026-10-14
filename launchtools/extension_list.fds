@@ -400,3 +400,12 @@ PromptEnhancer:
     - ui
     # Vibecoded but decently tested
     - lowquality
+
+GridTweaks:
+    author: Juan Treminio
+    description: Find grid results that look alike. Organize saved comparisons and delete columns you no longer need.
+    url: https://github.com/jtreminio/SwarmUI-GridTweaks
+    license: MIT
+    tags:
+    - ui
+    - tools
