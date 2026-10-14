@@ -1300,7 +1300,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         let [width, height] = naturalDim();
         let input = getGenInput();
         let input_overrides = {};
-        let retainedParams = ['seed', 'imageformat', 'videoformat', 'colordepth', 'donotsave', 'internalbackendtype', 'exactbackendid', 'vaetilesize', 'vaetileoverlap', 'vaetemporaltilesize', 'vaetemporaltileoverlap'];
+        let retainedParams = ['seed', 'imageformat', 'videoformat', 'colordepth', 'donotsave', 'overrideoutpathformat', 'internalbackendtype', 'exactbackendid', 'vaetilesize', 'vaetileoverlap', 'vaetemporaltilesize', 'vaetemporaltileoverlap'];
         for (let param of gen_param_types) {
             let group = param.original_group || param.group;
             while (group && group.id != 'seedvr') {

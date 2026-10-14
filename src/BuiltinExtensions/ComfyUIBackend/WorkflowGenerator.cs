@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using System.IO;
+using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Media;
 using SwarmUI.Text2Image;
@@ -3056,6 +3057,20 @@ public partial class WorkflowGenerator
             {
                 return;
             }
+            T2IParamInput pathInput = UserInput.Clone();
+            pathInput.InternalSet.ValuesInput[T2IParamTypes.Prompt.Type.ID] = source["sui_image_params"]["prompt"]?.Value<string>() ?? "";
+            pathInput.InternalSet.ValuesInput[T2IParamTypes.NegativePrompt.Type.ID] = source["sui_image_params"]["negativeprompt"]?.Value<string>() ?? "";
+            User.OutpathFillHelper pathHelper = new(pathInput, UserInput.SourceSession.User, "");
+            foreach (string key in new[] { "prompt", "prompthash", "negativeprompt", "negativeprompthash" })
+            {
+                UserInput.ExtraMeta[$"seedvr_source_{key}"] = pathHelper.FillPartUnformatted(key);
+            }
+            string pathFormat = UserInput.Get(T2IParamTypes.OverrideOutpathFormat, UserInput.SourceSession.User.Settings.OutPathBuilder.Format);
+            UserInput.Set(T2IParamTypes.OverrideOutpathFormat, StringConversionHelper.QuickSimpleTagFiller(pathFormat, "[", "]", tag =>
+            {
+                string key = $"seedvr_source_{T2IParamTypes.CleanTypeName(tag)}";
+                return UserInput.ExtraMeta.ContainsKey(key) ? $"[{key}]" : $"[{tag}]";
+            }, false));
             UserInput.MetadataModifier = restored =>
             {
                 JObject result = (JObject)source.DeepClone();
