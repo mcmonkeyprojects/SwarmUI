@@ -400,3 +400,12 @@ PromptEnhancer:
     - ui
     # Vibecoded but decently tested
     - lowquality
+
+GridTweaks:
+    author: Juan Treminio
+    description: Add to saved image grids, resume unfinished comparisons, sort by visual similarity, and remove unwanted results.
+    url: https://github.com/jtreminio/SwarmUI-GridTweaks
+    license: MIT
+    tags:
+    - ui
+    - tools
