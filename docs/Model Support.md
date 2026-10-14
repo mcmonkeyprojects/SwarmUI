@@ -463,6 +463,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - It can also do image editing & referencing at relatively high quality
     - They have a blog post that demonstrates main use cases here: [Qwen AI Blog: Qwen Image 2.1](<https://qwen.ai/blog?id=qwen-image-2.1>)
 - Main model downloads are here: [Comfy-Org/Qwen-Image-2.1](<https://huggingface.co/Comfy-Org/Qwen-Image-2.1/tree/main/diffusion_models>)
+    - There is a regular and turbo version
+    - For the Turbo version, use Steps=8 and Scheduler=AlignYourSteps
 - It has a ch=64 scale=16 RGBA VAE, it will be downloaded automatically
     - Note that many models are scale=8, this is scale=16, meaning it has a larger 'snap' in resolution range, and needs to be set to 2048x2048 to generate the equivalent quality of what most models do at 1024x1024
     - There is an unofficial 'texture fix' VAE that looks a bit better, download here [madebyollin/texture-fix-vae](<https://huggingface.co/madebyollin/texture-fix-vae-for-qwen-image-2.1/blob/main/texture_fix_vae_for_qwen_image_2.1_bf16.safetensors>). If you prefer it, select it in User Settings -> DefaultQwen21VAE.
@@ -473,6 +475,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Prompt Images:** add up to 10 images to the prompt for editing or referencing
     - **CFG Scale:** Use `1`
     - **Steps:** Normal step ranges (like `20`, official Qwen reference is `40`, can still produce coherent images with lower step counts like 12)
+        - For Turbo version, use 8
+    - **Sampler:** Default is fine
+    - **Scheduler:** Default is fine
+        - For Turbo version, AlignYourSteps is recommended
     - **Resolution:** The model is built for SideLength=2048 (at a 16x downscale, equivalent to 1024x1024 on most other models), but you may wish to lower this for speed (and sometimes quality, 2048 may be a bit undertrained), eg SideLength=1024 is more comfortable for quick gens
         - Consider trying 1024 base res and a Refiner Upscale 2x
 
