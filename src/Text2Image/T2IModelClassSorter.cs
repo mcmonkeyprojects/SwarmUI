@@ -87,6 +87,7 @@ public class T2IModelClassSorter
         CompatFlux2 = RegisterCompat(new() { ID = "flux-2", ShortCode = "Flux2", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatFlux2Klein4B = RegisterCompat(new() { ID = "flux-2-klein-4b", ShortCode = "Fl2K4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatFlux3Klein = RegisterCompat(new() { ID = "flux-3-klein", ShortCode = "Fl3K", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
@@ -193,6 +194,7 @@ public class T2IModelClassSorter
         bool isFlux2KleinLora(JObject h) => hasLoraKey(h, "double_blocks.4.img_attn.proj") && hasLoraKey(h, "double_blocks.4.txt_mlp.2") && hasLoraKey(h, "single_blocks.18.linear1") && hasLoraKey(h, "single_blocks.19.linear2");
         bool isFlux2Klein9BLora(JObject h) => hasLoraKey(h, "single_blocks.23.linear1");
         bool isFlux2DevLora(JObject h) => hasLoraKey(h, "single_blocks.47.linear2");
+        bool isFlux3Klein(JObject h) => hasKey(h, "content_mode_blocks.image.0.attn_out.weight") && hasKey(h, "single_stream_modulations.txt.lin.weight");
         bool isLens(JObject h) => h.ContainsKey("transformer_blocks.0.attn.norm_added_q.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.w1.weight");
         bool isIdeogram4(JObject h) => hasKey(h, "embed_image_indicator.weight") && hasKey(h, "llm_cond_proj.weight") && hasKey(h, "t_embedding.mlp_in.weight") && hasKey(h, "layers.0.attention.qkv.weight");
         bool isIdeogram4Lora(JObject h) => hasLoraKey(h, "layers.0.adaln_modulation") && hasLoraKey(h, "layers.0.attention.o") && hasLoraKey(h, "layers.0.feed_forward.w3") && hasLoraKey(h, "layers.33.attention.qkv");
@@ -546,6 +548,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "flux.2-klein-9b/lora", CompatClass = CompatFlux2Klein9B, Name = "Flux.2 Klein 9B LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isFlux2KleinLora(h) && isFlux2Klein9BLora(h) && !isFlux2DevLora(h);
+        }});
+        // ====================== BFL Flux.3 ======================
+        Register(new() { ID = "flux.3-klein", CompatClass = CompatFlux3Klein, Name = "Flux.3 Klein", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isFlux3Klein(h);
         }});
         Register(new() { ID = "lens", CompatClass = CompatLens, Name = "Lens", StandardWidth = 1440, StandardHeight = 1440, IsThisModelOfClass = (m, h) =>
         {
