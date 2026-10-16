@@ -88,6 +88,7 @@ public class T2IModelClassSorter
         CompatFlux2Klein4B = RegisterCompat(new() { ID = "flux-2-klein-4b", ShortCode = "Fl2K4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatFlux3ImageKlein = RegisterCompat(new() { ID = "flux-3-image-klein", ShortCode = "Fl3K", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatMossImage = RegisterCompat(new() { ID = "moss-image", ShortCode = "MOSS", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
@@ -195,6 +196,7 @@ public class T2IModelClassSorter
         bool isFlux2Klein9BLora(JObject h) => hasLoraKey(h, "single_blocks.23.linear1");
         bool isFlux2DevLora(JObject h) => hasLoraKey(h, "single_blocks.47.linear2");
         bool isFlux3ImageKlein(JObject h) => hasKey(h, "content_mode_blocks.image.0.attn_out.weight") && hasKey(h, "single_stream_modulations.txt.lin.weight");
+        bool isMossImage(JObject h) => hasKey(h, "shared_block_modulation.weight") && hasKey(h, "layers.0.proj.ffn_up_gate.weight");
         bool isLens(JObject h) => h.ContainsKey("transformer_blocks.0.attn.norm_added_q.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.w1.weight");
         bool isIdeogram4(JObject h) => hasKey(h, "embed_image_indicator.weight") && hasKey(h, "llm_cond_proj.weight") && hasKey(h, "t_embedding.mlp_in.weight") && hasKey(h, "layers.0.attention.qkv.weight");
         bool isIdeogram4Lora(JObject h) => hasLoraKey(h, "layers.0.adaln_modulation") && hasLoraKey(h, "layers.0.attention.o") && hasLoraKey(h, "layers.0.feed_forward.w3") && hasLoraKey(h, "layers.33.attention.qkv");
@@ -917,6 +919,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "hidream-o1", CompatClass = CompatHiDreamO1, Name = "HiDream O1 Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return isHiDreamO1(h);
+        }});
+        // ====================== MOSS Image ======================
+        Register(new() { ID = "moss-image", CompatClass = CompatMossImage, Name = "MOSS Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isMossImage(h);
         }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "lens", CompatClass = CompatLens, Name = "Lens", StandardWidth = 1440, StandardHeight = 1440, IsThisModelOfClass = (m, h) =>
