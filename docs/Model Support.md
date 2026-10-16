@@ -727,10 +727,12 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - They allow JSON bounding box prompt in this example format:
             `Minimalist graphic illustration featuring a black silhouette of a person <silhouette_1> centered against a solid, vibrant chartreuse background <background_1>. The figure is captured in a dynamic, mid-stride running pose, facing toward the left side of the frame. [{"id": "background_1", "bbox": [0, 0, 1000, 1000], "desc": "A flat field of neon yellow-green with a subtle paper texture and fine, organic grain."}, {"id": "silhouette_1", "bbox": [150, 150, 850, 850], "desc": "A black silhouette of a person in motion, made of dense stippled ink."}]`
         - They have LLM system prompts available here [Black-Forest-Labs/system_prompts](<https://huggingface.co/black-forest-labs/flux-3-image-klein-pup/blob/main/system_prompts.json>)
+        - Also, prompting guide [bfl.ai](<https://docs.bfl.ai/guides/prompting_summary>)
     - **Prompt Images:** You can add up to 10 images to the prompt to use as references.
     - **CFG Scale:** `1` for 'sd' Distilled, regular ranges (eg `3.5`) for Base
     - **Steps:** `16` for 'sd' Distilled (can go down to `4` at some quality loss), regular ranges (`20` or more) for Base
     - **Resolution:** `1024` is default but anywhere from `128` up to `3072` can work
+    - **Sampler:** Defaults to `er_sde`
 
 # Video Models
 

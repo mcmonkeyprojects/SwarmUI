@@ -73,7 +73,7 @@ public partial class WorkflowGenerator
     public bool IsAnyFlux2() => IsFlux2Dev() || IsFlux2Klein4B() || IsFlux2Klein9B();
 
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.3 Klein.</summary>
-    public bool IsFlux3() => IsModelCompatClass(T2IModelClassSorter.CompatFlux3Klein);
+    public bool IsFlux3Image() => IsModelCompatClass(T2IModelClassSorter.CompatFlux3ImageKlein);
 
     /// <summary>Returns true if the current model is Ernie Image.</summary>
     public bool IsErnie() => IsModelCompatClass(T2IModelClassSorter.CompatErnieImage);
@@ -1245,7 +1245,7 @@ public partial class WorkflowGenerator
                 LoadingModel = [kvcached, 0];
             }
         }
-        else if (IsFlux3())
+        else if (IsFlux3Image())
         {
             helpers.LoadClip("flux3", helpers.GetQwen3vl_4bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
@@ -1626,7 +1626,7 @@ public partial class WorkflowGenerator
         }
         if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal, sectionId: sectionId))
         {
-            if (IsFlux() || IsAnyFlux2() || IsFlux3() || IsKrea2())
+            if (IsFlux() || IsAnyFlux2() || IsFlux3Image() || IsKrea2())
             {
                 string samplingNode = CreateNode("ModelSamplingFlux", new JObject()
                 {
@@ -1634,7 +1634,7 @@ public partial class WorkflowGenerator
                     ["width"] = UserInput.GetImageWidth(),
                     ["height"] = UserInput.GetImageHeight(),
                     ["max_shift"] = shiftVal,
-                    ["base_shift"] = (IsKrea2() || IsFlux3()) ? shiftVal : 0.5 // TODO: Does this need an input?
+                    ["base_shift"] = (IsKrea2() || IsFlux3Image()) ? shiftVal : 0.5 // TODO: Does this need an input?
                 });
                 LoadingModel = [samplingNode, 0];
             }
