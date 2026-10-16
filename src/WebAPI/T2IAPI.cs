@@ -326,6 +326,7 @@ public static class T2IAPI
         }
         List<T2IEngine.ImageOutput> imageSet = [];
         List<Task> tasks = [];
+        Task previousSubmission = Task.CompletedTask;
         void removeDoneTasks()
         {
             for (int i = 0; i < tasks.Count; i++)
@@ -420,6 +421,9 @@ public static class T2IAPI
                 }
             }
             int numCalls = 0;
+            Task previous = previousSubmission;
+            TaskCompletionSource submitted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            previousSubmission = Task.WhenAll(previous, submitted.Task);
             tasks.Add(Task.Run(() => T2IEngine.CreateImageTask(thisParams, $"{imageIndex}", claim, output, setError, isWS,
                 (image, metadata) =>
                 {
@@ -437,7 +441,7 @@ public static class T2IAPI
                         actualIndex = -10 - Interlocked.Increment(ref data.NumNonReal);
                     }
                     saveImage(image, actualIndex, thisParams, metadata);
-                })));
+                }, previous, submitted)));
             if (Program.Backends.QueuedRequests < Program.ServerSettings.Backends.MaxRequestsForcedOrder)
             {
                 Task.Delay(20).Wait(); // Tiny few-ms delay to encourage tasks retaining order.

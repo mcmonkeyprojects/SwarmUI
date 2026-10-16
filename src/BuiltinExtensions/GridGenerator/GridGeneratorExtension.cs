@@ -210,6 +210,9 @@ public class GridGeneratorExtension : Extension
                 }
             }
             int iteration = runner.Iteration;
+            Task previousSubmission = data.PreviousSubmission;
+            TaskCompletionSource submitted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            data.PreviousSubmission = Task.WhenAll(previousSubmission, submitted.Task);
             Task t = Task.Run(() => T2IEngine.CreateImageTask(thisParams, $"{iteration}", data.Claim, data.AddOutput, setError, true,
                 (image, metadata) =>
                 {
@@ -261,7 +264,7 @@ public class GridGeneratorExtension : Extension
                             data.GeneratedOutputs.TryAdd(set.BaseFilepath, image.File);
                         }
                     }
-                }));
+                }, previousSubmission, submitted));
             lock (data.UpdateLock)
             {
                 data.Rendering.Add(t);
@@ -368,6 +371,9 @@ public class GridGeneratorExtension : Extension
     public class SwarmUIGridData
     {
         public List<Task> Rendering = [];
+
+        /// <summary>Completes when earlier cells have queued, failed, or been cancelled.</summary>
+        public Task PreviousSubmission = Task.CompletedTask;
 
         public LockObject UpdateLock = new();
 

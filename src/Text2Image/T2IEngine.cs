@@ -178,13 +178,20 @@ namespace SwarmUI.Text2Image
         }
 
         /// <summary>Internal handler route to create an image based on a user request.</summary>
-        public static async Task CreateImageTask(T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, Action<ImageOutput, string> saveImages)
+        public static async Task CreateImageTask(T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, Action<ImageOutput, string> saveImages, Task previousSubmission = null, TaskCompletionSource submitted = null)
         {
-            await CreateImageTask(user_input, batchId, claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, saveImages, true);
+            try
+            {
+                await CreateImageTask(user_input, batchId, claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, saveImages, true, previousSubmission, submitted);
+            }
+            finally
+            {
+                submitted?.TrySetResult();
+            }
         }
 
         /// <summary>Internal handler route to create an image based on a user request.</summary>
-        public static async Task CreateImageTask(T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, float backendTimeoutMin, Action<ImageOutput, string> saveImages, bool canCallTools)
+        public static async Task CreateImageTask(T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, float backendTimeoutMin, Action<ImageOutput, string> saveImages, bool canCallTools, Task previousSubmission = null, TaskCompletionSource submitted = null)
         {
             long timeStart = Environment.TickCount64;
             void sendStatus()
@@ -242,7 +249,7 @@ namespace SwarmUI.Text2Image
                 string prompt = user_input.Get(T2IParamTypes.Prompt);
                 if (prompt is not null && prompt.Contains("<object:"))
                 {
-                    Image multiImg = await T2IMultiStepObjectBuilder.CreateFullImage(prompt, user_input, batchId, claim, output, setError, isWS, backendTimeoutMin);
+                    Image multiImg = await T2IMultiStepObjectBuilder.CreateFullImage(prompt, user_input, batchId, claim, output, setError, isWS, backendTimeoutMin, previousSubmission, submitted);
                     if (multiImg is not null)
                     {
                         user_input = user_input.Clone();
@@ -269,7 +276,25 @@ namespace SwarmUI.Text2Image
                 PreGenerateEvent?.Invoke(new(user_input));
                 claim.Extend(backendWaits: 1);
                 sendStatus();
-                backend = await Program.Backends.GetNextT2IBackend(TimeSpan.FromMinutes(backendTimeoutMin), user_input.Get(T2IParamTypes.Model), user_input, filter: BackendMatcherFor(user_input), session: user_input.SourceSession, notifyWillLoad: sendStatus, cancel: claim.InterruptToken);
+                if (previousSubmission is not null && Program.Backends.QueuedRequests < Program.ServerSettings.Backends.MaxRequestsForcedOrder)
+                {
+                    using CancellationTokenSource interrupt = CancellationTokenSource.CreateLinkedTokenSource(claim.InterruptToken, claim.LocalClaimInterrupt.Token);
+                    try
+                    {
+                        await previousSubmission.WaitAsync(interrupt.Token);
+                    }
+                    catch (OperationCanceledException) when (claim.ShouldCancel)
+                    {
+                        return;
+                    }
+                    if (claim.ShouldCancel)
+                    {
+                        return;
+                    }
+                }
+                Task<T2IBackendAccess> request = Program.Backends.GetNextT2IBackend(TimeSpan.FromMinutes(backendTimeoutMin), user_input.Get(T2IParamTypes.Model), user_input, filter: BackendMatcherFor(user_input), session: user_input.SourceSession, notifyWillLoad: sendStatus, cancel: claim.InterruptToken);
+                submitted?.TrySetResult();
+                backend = await request;
             }
             catch (SwarmReadableErrorException ex)
             {

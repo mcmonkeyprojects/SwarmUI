@@ -16,13 +16,13 @@ namespace SwarmUI.Text2Image;
 /// Called by <see cref="T2IEngine"/>, should not be called directly.</summary>
 public class T2IMultiStepObjectBuilder
 {
-    public static async Task<Image> CreateFullImage(string prompt, T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, float backendTimeoutMin)
+    public static async Task<Image> CreateFullImage(string prompt, T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, float backendTimeoutMin, Task previousSubmission = null, TaskCompletionSource submitted = null)
     {
         int obj = 0;
         async Task<MediaFile> createImageDirect(T2IParamInput user_input)
         {
             MediaFile result = null;
-            await T2IEngine.CreateImageTask(user_input, batchId + (obj++), claim, output, setError, isWS, backendTimeoutMin, (img, meta) => { result = img.File; }, false);
+            await T2IEngine.CreateImageTask(user_input, batchId + (obj++), claim, output, setError, isWS, backendTimeoutMin, (img, meta) => { result = img.File; }, false, previousSubmission, submitted);
             return result;
         }
         if (string.IsNullOrWhiteSpace(prompt) || !prompt.Contains("<object:"))

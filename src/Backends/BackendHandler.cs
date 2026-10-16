@@ -958,18 +958,14 @@ public class BackendHandler
             ReleasePressure(false);
         }
 
-        public void TryFind()
+        /// <summary>Whether this request is ready for backend assignment.</summary>
+        public bool CanFindNow() => !Cancel.IsCancellationRequested && Result is null && Failure is null && (WaitingOnScalingAttempt is null || WaitingOnScalingAttempt.IsCompleted) && CanTryFindNow.All(func => func(this));
+
+        public void TryFind(bool forceOrder = false)
         {
-            if (WaitingOnScalingAttempt is not null && !WaitingOnScalingAttempt.IsCompleted)
+            if (!CanFindNow())
             {
                 return;
-            }
-            foreach (Func<T2IBackendRequest, bool> func in CanTryFindNow)
-            {
-                if (!func(this))
-                {
-                    return;
-                }
             }
             List<T2IBackendData> currentBackends = [.. Handler.EnumerateT2IBackends];
             List<T2IBackendData> possible = [.. currentBackends.Where(b => b.Backend.IsEnabled && !b.Backend.ShutDownReserve && b.Backend.Reservations == 0 && b.Backend.MaxUsages > 0 && b.Backend.Status == BackendStatus.RUNNING)];
@@ -1011,6 +1007,14 @@ public class BackendHandler
                 return;
             }
             List<T2IBackendData> available = [.. possible.Where(b => !b.CheckIsInUse).OrderBy(b => b.Usages)];
+            if (forceOrder)
+            {
+                bool isNeededByEarlierRequest(T2IBackendData backend)
+                {
+                    return Handler.T2IBackendRequests.Values.Any(request => request.ID < ID && request.CanFindNow() && (request.Filter is null || request.Filter(backend)) && (request.Model is null || request.Model.Name == backend.Backend.CurrentModelName || backend.Backend.CanLoadModels && !(request.Pressure?.IsLoading ?? false) && !(request.Pressure?.BadBackends.Contains(backend.ID) ?? false)));
+                }
+                available = [.. available.Where(backend => !isNeededByEarlierRequest(backend))];
+            }
             if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
             {
                 Logs.Verbose($"Possible: {possible.Select(b => $"{b.ID}/{b.BackType.Name}").JoinString(", ")}, available {available.Select(b => $"{b.ID}/{b.BackType.Name}").JoinString(", ")}");
@@ -1047,7 +1051,7 @@ public class BackendHandler
                     Pressure.Requests.Add(this);
                 }
             }
-            Handler.LoadHighestPressureNow(possible, available, () => ReleasePressure(true), Pressure, Cancel);
+            Handler.LoadHighestPressureNow(possible, available, () => ReleasePressure(true), Pressure, Cancel, forceOrder);
             if (Pressure is not null && Pressure.IsLoading && NotifyWillLoad is not null)
             {
                 NotifyWillLoad();
@@ -1162,7 +1166,13 @@ public class BackendHandler
             {
                 bool anyMoved = false;
                 mark("Start");
-                foreach (T2IBackendRequest request in T2IBackendRequests.Values.ToArray())
+                T2IBackendRequest[] requests = [.. T2IBackendRequests.Values];
+                bool forceOrder = QueuedRequests < Program.ServerSettings.Backends.MaxRequestsForcedOrder;
+                if (forceOrder)
+                {
+                    requests = [.. requests.OrderBy(r => r.ID)];
+                }
+                foreach (T2IBackendRequest request in requests)
                 {
                     if (request.Cancel.IsCancellationRequested)
                     {
@@ -1178,7 +1188,7 @@ public class BackendHandler
                     }
                     try
                     {
-                        request.TryFind();
+                        request.TryFind(forceOrder);
                     }
                     catch (Exception ex)
                     {
@@ -1264,7 +1274,7 @@ public class BackendHandler
     }
 
     /// <summary>Internal helper route for <see cref="GetNextT2IBackend"/> to trigger a backend model load.</summary>
-    public void LoadHighestPressureNow(List<T2IBackendData> possible, List<T2IBackendData> available, Action releasePressure, ModelRequestPressure pressure, CancellationToken cancel)
+    public void LoadHighestPressureNow(List<T2IBackendData> possible, List<T2IBackendData> available, Action releasePressure, ModelRequestPressure pressure, CancellationToken cancel, bool forceOrder = false)
     {
         List<T2IBackendData> availableLoaders = [.. available.Where(b => b.Backend.CanLoadModels && b.Backend.MaxUsages > 0)];
         if (availableLoaders.IsEmpty())
@@ -1282,7 +1292,7 @@ public class BackendHandler
         }
         Logs.Verbose($"[BackendHandler] Will load highest pressure model...");
         long timeRel = Environment.TickCount64;
-        List<ModelRequestPressure> pressures = [.. ModelRequests.Values.Where(p => !p.IsLoading).OrderByDescending(p => p.Heuristic(timeRel))];
+        List<ModelRequestPressure> pressures = [.. ModelRequests.Values.Where(p => !p.IsLoading && (!forceOrder || p == pressure)).OrderByDescending(p => p.Heuristic(timeRel))];
         if (pressures.IsEmpty())
         {
             Logs.Verbose($"[BackendHandler] No model requests, skipping load.");
@@ -1364,13 +1374,13 @@ public class BackendHandler
                     {
                         claims.Add(sess.Claim(0, 1, 0, 0));
                     }
+                    availableBackend.ReserveModelLoad = true;
                     Task.Factory.StartNew(() =>
                     {
                         try
                         {
-                            availableBackend.ReserveModelLoad = true;
                             int ticks = 0;
-                            while (availableBackend.CheckIsInUseNoModelReserve && availableBackend.Backend.MaxUsages > 0)
+                            while ((forceOrder ? availableBackend.Usages > 0 : availableBackend.CheckIsInUseNoModelReserve) && availableBackend.Backend.MaxUsages > 0)
                             {
                                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                                 {
@@ -1389,7 +1399,7 @@ public class BackendHandler
                             }
                             else
                             {
-                                availableBackend.Backend.LoadModel(highestPressure.Model, highestPressure.Requests.FirstOrDefault()?.UserInput).Wait(cancel);
+                                availableBackend.Backend.LoadModel(highestPressure.Model, highestPressure.Requests.FirstOrDefault()?.UserInput).Wait();
                             }
                             Logs.Debug($"[BackendHandler] backend #{availableBackend.ID} loaded model, returning to pool");
                         }
@@ -1407,7 +1417,6 @@ public class BackendHandler
                         }
                         finally
                         {
-                            availableBackend.ReserveModelLoad = false;
                             if (availableBackend.Backend.CurrentModelName != highestPressure.Model.Name)
                             {
                                 Logs.Warning($"[BackendHandler] backend #{availableBackend.ID} failed to load model {highestPressure.Model.Name}");
@@ -1422,9 +1431,11 @@ public class BackendHandler
                             {
                                 claim.Dispose();
                             }
+                            availableBackend.ReserveModelLoad = false;
+                            CheckBackendsSignal.Set();
                         }
                         ReassignLoadedModelsList();
-                    }, cancel);
+                    }, CancellationToken.None);
                 }
                 else
                 {
