@@ -23,6 +23,7 @@
 [Boogu](#boogu) | MMDiT | 2026 | Boogu | 10B | Minimal | Modern, fast |
 [Qwen Image 2.1](#qwen-image-21) | MMDiT | 2026 | Alibaba-Qwen | 7B | No | Modern, creative, slow |
 [Ming Image](#ming-image) | DiT | 2026 | InclusionAI | 6B | Minimal | Modern, intelligent but ugly |
+[Flux 3 Image](#flux-3-image) | DiT | 2026 | Black Forest Labs | 5.6B | Yes | Modern, intelligent but poor details |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -705,6 +706,31 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Prompt:** Likes JSON blocks, similar to ideogram
     - **CFG Scale:** `1`
     - **Steps:** They recommend `12`
+
+# Flux 3 Image
+
+![img](/docs/images/models/flux3klein.jpg)
+
+*(Flux 3 Klein SD, 16 steps, 1024)*
+
+- [Flux 3 Image Klein](<https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy>) is supported in SwarmUI!
+- It is a 5.6B image model intended as a direct partial upgrade to the Flux 2 Klein models
+    - Download here: [Black-Forest-Labs/Flux-3-Image-Klein](<https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy/tree/main/diffusion_models>)
+    - They have a "base" and "sd" version - "sd" means distilled (CFG=1, Steps=8 or 16)
+    - They have bf16, int8, and nvfp4 versions - the int8 version is strongly recommended for most users
+    - Initial community opinion is low regarding quality as compared to current leading image models, but it is a very *fast* model at least
+- Supports text-to-image, and image editing with prompt image references
+- VAE and text encoder will be automatically downloaded
+    - The VAE is still the Flux 2 image VAE
+- **Parameters:**
+    - **Prompt:** They recommend using an LLM to rewrite your prompts to be much longer
+        - They allow JSON bounding box prompt in this example format:
+            `Minimalist graphic illustration featuring a black silhouette of a person <silhouette_1> centered against a solid, vibrant chartreuse background <background_1>. The figure is captured in a dynamic, mid-stride running pose, facing toward the left side of the frame. [{"id": "background_1", "bbox": [0, 0, 1000, 1000], "desc": "A flat field of neon yellow-green with a subtle paper texture and fine, organic grain."}, {"id": "silhouette_1", "bbox": [150, 150, 850, 850], "desc": "A black silhouette of a person in motion, made of dense stippled ink."}]`
+        - They have LLM system prompts available here [Black-Forest-Labs/system_prompts](<https://huggingface.co/black-forest-labs/flux-3-image-klein-pup/blob/main/system_prompts.json>)
+    - **Prompt Images:** You can add up to 10 images to the prompt to use as references.
+    - **CFG Scale:** `1` for 'sd' Distilled, regular ranges (eg `3.5`) for Base
+    - **Steps:** `16` for 'sd' Distilled (can go down to `4` at some quality loss), regular ranges (`20` or more) for Base
+    - **Resolution:** `1024` is default but anywhere from `128` up to `3072` can work
 
 # Video Models
 
