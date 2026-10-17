@@ -75,6 +75,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.3 Klein.</summary>
     public bool IsFlux3Image() => IsModelCompatClass(T2IModelClassSorter.CompatFlux3ImageKlein);
 
+    /// <summary>Returns true if the current model is OpenMOSS's MOSS Image.</summary>
+    public bool IsMossImage() => IsModelCompatClass(T2IModelClassSorter.CompatMossImage);
+
     /// <summary>Returns true if the current model is Ernie Image.</summary>
     public bool IsErnie() => IsModelCompatClass(T2IModelClassSorter.CompatErnieImage);
 
@@ -740,6 +743,11 @@ public partial class WorkflowGenerator
             return RequireClipModel("qwen_3_8b.safetensors", "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/text_encoders/qwen_3_8b_fp4mixed.safetensors", "bbf16f981d98e16d080c566134814c4e9f6aadd0d0e1383c60bc44ba939d760d", T2IParamTypes.QwenModel);
         }
 
+        public string GetQwen35_9bModel()
+        {
+            return RequireClipModel("qwen3.5_9b_int8_convrot.safetensors", "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/text_encoders/qwen3.5_9b_int8_convrot.safetensors", "32e3787472f708fa5f83624acbf5ef23f7fc89c439e05065ea57cfe5a97f025a", T2IParamTypes.QwenModel);
+        }
+
         public string GetQwen3vl_8bModel()
         {
             return RequireClipModel("qwen3vl_8b.safetensors", "https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/text_encoders/qwen3vl_8b_fp8_scaled.safetensors", "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd", T2IParamTypes.QwenModel);
@@ -1250,6 +1258,11 @@ public partial class WorkflowGenerator
             helpers.LoadClip("flux3", helpers.GetQwen3vl_4bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
         }
+        else if (IsMossImage())
+        {
+            helpers.LoadClip("moss_image", helpers.GetQwen35_9bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+        }
         else if (IsErnie())
         {
             helpers.LoadClip("flux2", helpers.GetMinistral3_3bModel());
@@ -1638,7 +1651,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsZImage() || IsAceStep15() || IsAnima() || IsBoogu() || IsMingImage())
+            else if (IsZImage() || IsAceStep15() || IsAnima() || IsBoogu() || IsMingImage() || IsMossImage())
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {

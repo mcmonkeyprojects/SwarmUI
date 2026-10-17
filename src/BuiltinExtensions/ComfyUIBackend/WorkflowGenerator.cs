@@ -1072,6 +1072,10 @@ public partial class WorkflowGenerator
             defsampler ??= "er_sde";
             defscheduler ??= "simple";
         }
+        else if (IsMossImage())
+        {
+            defscheduler ??= "simple";
+        }
         else if (IsChroma() || IsChromaRadiance())
         {
             defscheduler ??= "beta";
