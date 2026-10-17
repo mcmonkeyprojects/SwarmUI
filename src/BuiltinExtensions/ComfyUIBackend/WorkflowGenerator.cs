@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using System.IO;
+using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Media;
 using SwarmUI.Text2Image;
@@ -3033,6 +3034,89 @@ public partial class WorkflowGenerator
         CurrentTextEnc = priorTextEnc;
         CurrentVae = priorVae;
         return result;
+    }
+
+    public void PreserveSeedVRSourceMetadata(Image input)
+    {
+        try
+        {
+            string metadata;
+            if (UserInput.ExtraMeta.Remove("seedvr_source_metadata", out object provided))
+            {
+                metadata = provided as string;
+            }
+            else if (input.Type.MetaType == MediaMetaType.Video)
+            {
+                metadata = new VideoFile(input.RawData, input.Type).GetMetadata();
+            }
+            else
+            {
+                metadata = input.GetMetadata();
+            }
+            if (string.IsNullOrWhiteSpace(metadata))
+            {
+                return;
+            }
+            JObject source = JObject.Parse(metadata);
+            if (source["sui_image_params"] is not JObject)
+            {
+                return;
+            }
+            string prompt = source["sui_image_params"]["prompt"]?.Value<string>() ?? "";
+            string negativePrompt = source["sui_image_params"]["negativeprompt"]?.Value<string>() ?? "";
+            User.OutpathFillHelper pathHelper = new(UserInput, UserInput.SourceSession.User, "");
+            UserInput.ExtraMeta["seedvr_source_prompt"] = prompt;
+            UserInput.ExtraMeta["seedvr_source_prompthash"] = pathHelper.QuickHash(prompt);
+            UserInput.ExtraMeta["seedvr_source_negativeprompt"] = negativePrompt;
+            UserInput.ExtraMeta["seedvr_source_negativeprompthash"] = pathHelper.QuickHash(negativePrompt);
+            string pathFormat = UserInput.Get(T2IParamTypes.OverrideOutpathFormat, UserInput.SourceSession.User.Settings.OutPathBuilder.Format);
+            UserInput.Set(T2IParamTypes.OverrideOutpathFormat, StringConversionHelper.QuickSimpleTagFiller(pathFormat, "[", "]", tag =>
+            {
+                string key = T2IParamTypes.CleanTypeName(tag);
+                return key is "prompt" or "prompthash" or "negativeprompt" or "negativeprompthash" ? $"[seedvr_source_{key}]" : $"[{tag}]";
+            }, false));
+            UserInput.MetadataModifier = restored =>
+            {
+                JObject result = (JObject)source.DeepClone();
+                result.Remove("is_starred");
+                JObject parameters = (JObject)result["sui_image_params"];
+                foreach (JProperty property in parameters.Properties().Where(p => p.Name.StartsWith("seedvr")).ToArray())
+                {
+                    property.Remove();
+                }
+                foreach (JProperty property in ((JObject)restored["sui_image_params"]).Properties().Where(p => p.Name.StartsWith("seedvr")))
+                {
+                    parameters[property.Name] = property.Value;
+                }
+                if (result["sui_models"] is JArray sourceModels)
+                {
+                    foreach (JObject entry in sourceModels.OfType<JObject>().Where(m => m["param"]?.Value<string>() == "seedvrmodel").ToArray())
+                    {
+                        entry.Remove();
+                    }
+                }
+                if (restored["sui_models"] is JArray restoredModels)
+                {
+                    if (result["sui_models"] is not JArray models)
+                    {
+                        models = [];
+                        result["sui_models"] = models;
+                    }
+                    foreach (JObject model in restoredModels.OfType<JObject>().Where(m => m["param"]?.Value<string>() != "model"))
+                    {
+                        if (!models.Any(existing => JToken.DeepEquals(existing, model)))
+                        {
+                            models.Add(model);
+                        }
+                    }
+                }
+                return result;
+            };
+        }
+        catch (Exception ex)
+        {
+            Logs.Warning($"Could not preserve SeedVR source metadata: {ex.Message}");
+        }
     }
 
     /// <summary>Creates a SeedVR2 restoration stage: converts to a SeedVR2-space latent and samples the restored image from it.</summary>
