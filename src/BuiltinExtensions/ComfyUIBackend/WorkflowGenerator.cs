@@ -835,9 +835,9 @@ public partial class WorkflowGenerator
     public (JArray, JArray, JArray, JArray) BuildInputImageHandling(List<JArray> images, JArray pos, JArray neg, JArray latent)
     {
         JArray imgNeg = null;
-        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsAnyFlux2() || IsBoogu() || IsMageFlow() || IsMingImage() || (IsKrea2() && UserInput.Get(ComfyUIBackendExtension.EnableReferenceLatents, "none") != "none"))
+        if (IsKontext() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsAnyFlux2() || IsFlux3Image() || IsBoogu() || IsMageFlow() || IsMingImage() || (IsKrea2() && UserInput.Get(ComfyUIBackendExtension.EnableReferenceLatents, "none") != "none"))
         {
-            if (IsOmniGen() || IsQwenImageEditPlus() || IsQwenImage21() || IsBoogu() || IsMageFlow())
+            if (IsOmniGen() || IsQwenImageEditPlus() || IsQwenImage21() || IsFlux3Image() || IsBoogu() || IsMageFlow())
             {
                 imgNeg = neg;
             }
@@ -869,7 +869,7 @@ public partial class WorkflowGenerator
             }
             if (img is not null)
             {
-                if (IsQwenImageEditPlus() || IsQwenImage21() || IsBoogu() || IsMageFlow())
+                if (IsQwenImageEditPlus() || IsQwenImage21() || IsFlux3Image() || IsBoogu() || IsMageFlow())
                 {
                     neg = imgNeg;
                 }
@@ -1065,8 +1065,13 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsMingImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3() || IsSeedVR2())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsMingImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMossImage() || IsMiniMaxMusic3() || IsSeedVR2())
         {
+            defscheduler ??= "simple";
+        }
+        else if (IsFlux3Image())
+        {
+            defsampler ??= "er_sde";
             defscheduler ??= "simple";
         }
         else if (IsChroma() || IsChromaRadiance())
@@ -1414,7 +1419,7 @@ public partial class WorkflowGenerator
                     doesFit = false;
                 }
             }
-            else if ((IsBoogu() || IsQwenImageEditPlus() || IsMageFlow() || IsKrea2()) && promptSize)
+            else if ((IsBoogu() || IsQwenImageEditPlus() || IsMageFlow() || IsKrea2() || IsMossImage()) && promptSize)
             {
                 target = 384;
                 doesFit = false;
@@ -2639,7 +2644,7 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (IsIdeogram4() || IsKrea2() || (IsBoogu() && isPositive) || IsMageFlow())
+        else if (IsIdeogram4() || IsKrea2() || IsMossImage() || (IsBoogu() && isPositive) || IsMageFlow())
         {
             JArray imageNode = GetPromptImage(true, true, 0);
             for (int i = 1; i < 10; i++)

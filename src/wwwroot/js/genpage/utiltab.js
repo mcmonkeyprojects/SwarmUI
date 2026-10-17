@@ -649,7 +649,7 @@ class ModelDownloaderUtil {
                                 fUrl += '#.gguf';
                             }
                             let selected = (fileId ? vFile.id == fileId : fUrl == url) ? ' selected' : '';
-                            fileOptions += `<option value="${escapeHtml(`${vFile.id}`)}"${selected}>${escapeHtml(vFile.name)}</option>`;
+                            fileOptions += `<option value="${escapeHtml(`${vFile.id}`)}"${selected}>${escapeHtml(`${vFile.name} (${vFile.metadata?.fp ?? '?'})`)}</option>`;
                         }
                         this.fileSelect.innerHTML = fileOptions;
                         this.fileWrap.style.display = '';

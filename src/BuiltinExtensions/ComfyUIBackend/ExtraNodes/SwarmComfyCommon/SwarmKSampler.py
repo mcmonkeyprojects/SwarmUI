@@ -3,7 +3,7 @@ from io import BytesIO
 from PIL import Image
 import latent_preview, comfy
 from server import PromptServer
-from comfy.model_base import SDXL, SVD_img2vid, Flux, Flux2, WAN21, Chroma
+from comfy.model_base import SDXL, SVD_img2vid, Flux, Flux2, WAN21, Chroma, QwenImage21
 from comfy import nested_tensor
 import numpy as np
 from math import ceil
@@ -232,6 +232,7 @@ AYS_NOISE_LEVELS = {
     # Flux and Wan from https://github.com/comfyanonymous/ComfyUI/pull/7584
     "Flux": [0.9968, 0.9886, 0.9819, 0.975, 0.966, 0.9471, 0.9158, 0.8287, 0.5512, 0.2808, 0.001],
     "Flux2": [1.0, 0.6509, 0.4374, 0.2932, 0.1893, 0.1108, 0.0495, 0.00031], # https://huggingface.co/fal/FLUX.2-dev-Turbo#usage
+    "QwenImage21": [1.0, 0.978453, 0.95418, 0.926626, 0.89508, 0.845148, 0.704534, 0.414568, 0.001], # https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/model_index.json with a tail value
     "Wan": [1.0, 0.997, 0.995, 0.993, 0.991, 0.989, 0.987, 0.985, 0.98, 0.975, 0.973, 0.968, 0.96, 0.946, 0.927, 0.902, 0.864, 0.776, 0.539, 0.208, 0.001],
     # https://github.com/comfyanonymous/ComfyUI/commit/08ff5fa08a92e0b3f23b9abec979a830a6cffb03#diff-3e4e70e402dcd9e1070ad71ef9292277f10d9faccf36a1c405c0c717a7ee6485R23
     "Chroma": [0.992, 0.99, 0.988, 0.985, 0.982, 0.978, 0.973, 0.968, 0.961, 0.953, 0.943, 0.931, 0.917, 0.9, 0.881, 0.858, 0.832, 0.802, 0.769, 0.731, 0.69, 0.646, 0.599, 0.55, 0.501, 0.451, 0.402, 0.355, 0.311, 0.27, 0.232, 0.199, 0.169, 0.143, 0.12, 0.101, 0.084, 0.07, 0.058, 0.048, 0.001]
@@ -440,6 +441,8 @@ class SwarmKSampler:
                 model_type = "Wan"
             elif isinstance(model.model, Chroma):
                 model_type = "Chroma"
+            elif isinstance(model.model, QwenImage21):
+                model_type = "QwenImage21"
             else:
                 print(f"AlignYourSteps: Unknown model type: {type(model.model)}, defaulting to SD1")
                 model_type = "SD1"

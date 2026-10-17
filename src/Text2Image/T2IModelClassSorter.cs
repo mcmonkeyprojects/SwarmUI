@@ -87,6 +87,8 @@ public class T2IModelClassSorter
         CompatFlux2 = RegisterCompat(new() { ID = "flux-2", ShortCode = "Flux2", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatFlux2Klein4B = RegisterCompat(new() { ID = "flux-2-klein-4b", ShortCode = "Fl2K4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatFlux3ImageKlein = RegisterCompat(new() { ID = "flux-3-image-klein", ShortCode = "Fl3K", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
+        CompatMossImage = RegisterCompat(new() { ID = "moss-image", ShortCode = "MOSS", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
@@ -193,6 +195,9 @@ public class T2IModelClassSorter
         bool isFlux2KleinLora(JObject h) => hasLoraKey(h, "double_blocks.4.img_attn.proj") && hasLoraKey(h, "double_blocks.4.txt_mlp.2") && hasLoraKey(h, "single_blocks.18.linear1") && hasLoraKey(h, "single_blocks.19.linear2");
         bool isFlux2Klein9BLora(JObject h) => hasLoraKey(h, "single_blocks.23.linear1");
         bool isFlux2DevLora(JObject h) => hasLoraKey(h, "single_blocks.47.linear2");
+        bool isFlux3ImageKlein(JObject h) => hasKey(h, "content_mode_blocks.image.0.attn_out.weight") && hasKey(h, "single_stream_modulations.txt.lin.weight");
+        bool isMossImage(JObject h) => hasKey(h, "shared_block_modulation.weight") && hasKey(h, "layers.0.proj.ffn_up_gate.weight");
+        bool isMossImageLora(JObject h) => hasLoraKey(h, "layers.0.proj.ffn_up_gate") && hasLoraKey(h, "layers.41.proj.v");
         bool isLens(JObject h) => h.ContainsKey("transformer_blocks.0.attn.norm_added_q.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.w1.weight");
         bool isIdeogram4(JObject h) => hasKey(h, "embed_image_indicator.weight") && hasKey(h, "llm_cond_proj.weight") && hasKey(h, "t_embedding.mlp_in.weight") && hasKey(h, "layers.0.attention.qkv.weight");
         bool isIdeogram4Lora(JObject h) => hasLoraKey(h, "layers.0.adaln_modulation") && hasLoraKey(h, "layers.0.attention.o") && hasLoraKey(h, "layers.0.feed_forward.w3") && hasLoraKey(h, "layers.33.attention.qkv");
@@ -547,25 +552,10 @@ public class T2IModelClassSorter
         {
             return isFlux2KleinLora(h) && isFlux2Klein9BLora(h) && !isFlux2DevLora(h);
         }});
-        Register(new() { ID = "lens", CompatClass = CompatLens, Name = "Lens", StandardWidth = 1440, StandardHeight = 1440, IsThisModelOfClass = (m, h) =>
+        // ====================== BFL Flux 3 ======================
+        Register(new() { ID = "flux-3-image-klein", CompatClass = CompatFlux3ImageKlein, Name = "Flux.3 Image Klein", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isLens(h);
-        }});
-        Register(new() { ID = "ideogram-4", CompatClass = CompatIdeogram4, Name = "Ideogram 4", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isIdeogram4(h);
-        }});
-        Register(new() { ID = "ideogram-4/lora", CompatClass = CompatIdeogram4, Name = "Ideogram 4 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isIdeogram4Lora(h);
-        }});
-        Register(new() { ID = "krea-2", CompatClass = CompatKrea2, Name = "Krea 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isKrea2(h);
-        }});
-        Register(new() { ID = "krea-2/lora", CompatClass = CompatKrea2, Name = "Krea 2 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isKrea2Lora(h);
+            return isFlux3ImageKlein(h);
         }});
         // ====================== Wan Video ======================
         Register(new() { ID = "wan-2_1-text2video/vae", CompatClass = CompatWan21, Name = "Wan 2.1 VAE", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) => { return false; }});
@@ -689,20 +679,6 @@ public class T2IModelClassSorter
         {
             return isZImageControlNetDiffPatch(h);
         }});
-        // ====================== Zeta Chroma ======================
-        Register(new() { ID = "zeta-chroma", CompatClass = CompatZetaChroma, Name = "Zeta Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isLumina2(h) && isZImage(h) && isZetaChroma(h);
-        }});
-        // ====================== Ming Image ======================
-        Register(new() { ID = "ming-image", CompatClass = CompatMingImage, Name = "Ming Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
-        {
-            return isMingImage(h);
-        }});
-        Register(new() { ID = "ming-image/vae", CompatClass = CompatMingImage, Name = "Ming Image VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
-        {
-            return isMingImageVae(h);
-        }});
         // ====================== Qwen Image 2.1 ======================
         Register(new() { ID = "qwen-image-2.1", CompatClass = CompatQwenImage21, Name = "Qwen Image 2.1", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -744,20 +720,6 @@ public class T2IModelClassSorter
         Register(new() { ID = "qwen-image/lora", CompatClass = CompatQwenImage, Name = "Qwen Image LoRA", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
             return isQwenImageLora(h);
-        }});
-        // ====================== Ernie Image ======================
-        Register(new() { ID = "ernie-image", CompatClass = CompatErnieImage, Name = "Ernie Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isErnie(h);
-        }});
-        Register(new() { ID = "ernie-image/lora", CompatClass = CompatErnieImage, Name = "Ernie Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return false; // Probably not worth the bother
-        }});
-        // ====================== Mage Flow ======================
-        Register(new() { ID = "mage-flow", CompatClass = CompatMageFlow, Name = "Mage Flow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isMageFlow(h) && isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h) && !isQwenImageEdit2511(h);
         }});
         // ====================== Kandinsky5 ======================
         Register(new() { ID = "kandinsky5-image-lite", CompatClass = CompatKandinsky5ImgLite, Name = "Kandinsky5 Image Lite", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
@@ -838,85 +800,6 @@ public class T2IModelClassSorter
         {
             return isMiniMaxH3AudioVae(h) && !isMiniMaxH3VideoVae(h);
         }});
-        // ====================== Random Other Models ======================
-        Register(new() { ID = "chroma", CompatClass = CompatChroma, Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isChroma(h) && !isChromaRadiance(h);
-        }});
-        Register(new() { ID = "chroma/lora", CompatClass = CompatChroma, Name = "Chroma LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return false;
-        }});
-        Register(new() { ID = "chroma-radiance", CompatClass = CompatChromaRadiance, Name = "Chroma Radiance", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isChroma(h) && isChromaRadiance(h);
-        }});
-        // ====================== PixelDiT / PiD ======================
-        Register(new() { ID = "pid", CompatClass = CompatPiD, Name = "PiD", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isPiD(h);
-        }});
-        Register(new() { ID = "pixeldit", CompatClass = CompatPixelDiT, Name = "PixelDiT", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isPixelDiT(h);
-        }});
-        // ====================== SeedVR2 ======================
-        Register(new() { ID = "seedvr2", CompatClass = CompatSeedVR2, Name = "SeedVR2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isSeedVR2(h);
-        }});
-        Register(new() { ID = "seedvr2/vae", CompatClass = CompatSeedVR2, Name = "SeedVR2 VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isSeedVR2Vae(h);
-        }});
-        Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = CompatAltDiffusion, Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
-        {
-            return IsAlt(h);
-        }});
-        Register(new() { ID = "nvidia-sana-1600", CompatClass = CompatSana, Name = "NVIDIA Sana 1600M", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isSana(h);
-        }});
-        Register(new() { ID = "nvidia-sana-1600/vae", CompatClass = CompatSana, Name = "NVIDIA Sana 1600M DC-AE VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return h.ContainsKey("decoder.stages.0.0.main.conv.bias");
-        }});
-        Register(new() { ID = "lumina-2", CompatClass = CompatLumina2, Name = "Lumina 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isLumina2(h) && !isZImage(h);
-        }});
-        Register(new() { ID = "hidream-i1", CompatClass = CompatHiDreamI1, Name = "HiDream i1", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isHiDream(h);
-        }});
-        Register(new() { ID = "hidream-i1-edit", CompatClass = CompatHiDreamI1, Name = "HiDream i1 Edit", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
-        {
-            return false; // Must manual edit, seems undetectable?
-        }});
-        Register(new() { ID = "hidream-i1/lora", CompatClass = CompatHiDreamI1, Name = "HiDream i1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isHiDreamLora(h);
-        }});
-        Register(new() { ID = "hidream-o1", CompatClass = CompatHiDreamO1, Name = "HiDream O1 Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
-        {
-            return isHiDreamO1(h);
-        }});
-        Register(new() { ID = "sensenova-u1.5", CompatClass = CompatSenseNovaU15, Name = "SenseNova U1.5", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
-        {
-            return isSenseNovaU15(h);
-        }});
-        Register(new() { ID = "hidream-o1/lora", CompatClass = CompatHiDreamO1, Name = "HiDream O1 LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
-        {
-            return isHiDreamO1Lora(h);
-        }});
-        Register(new() { ID = "omnigen-2", CompatClass = CompatOmniGen2, Name = "OmniGen 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isOmniGen(h);
-        }});
-        Register(new() { ID = "auraflow-v1", CompatClass = CompatAuraFlow, Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isAuraFlow(h);
-        }});
         // ====================== Anima ======================
         Register(new() { ID = "anima", CompatClass = CompatAnima, Name = "Anima", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -968,20 +851,23 @@ public class T2IModelClassSorter
         {
             return false; // TODO: Possible to detect?
         }});
-        // ====================== Ovis ======================
-        Register(new() { ID = "ovis", CompatClass = CompatOvis, Name = "Ovis", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        // ====================== PixelDiT / PiD ======================
+        Register(new() { ID = "pid", CompatClass = CompatPiD, Name = "PiD", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isOvis(h);
+            return isPiD(h);
         }});
-        // ====================== LongCat ======================
-        Register(new() { ID = "longcat-image", CompatClass = CompatLongcatImage, Name = "Longcat Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "pixeldit", CompatClass = CompatPixelDiT, Name = "PixelDiT", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isLongcat(h);
+            return isPixelDiT(h);
         }});
-        // ====================== Boogu ======================
-        Register(new() { ID = "boogu", CompatClass = CompatBoogu, Name = "Boogu", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        // ====================== SeedVR2 ======================
+        Register(new() { ID = "seedvr2", CompatClass = CompatSeedVR2, Name = "SeedVR2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isBoogu(h);
+            return isSeedVR2(h);
+        }});
+        Register(new() { ID = "seedvr2/vae", CompatClass = CompatSeedVR2, Name = "SeedVR2 VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isSeedVR2Vae(h);
         }});
         // ====================== Segmentation Models ======================
         Register(new() { ID = "sam3", CompatClass = CompatSam3, Name = "SAM3", IsThisModelOfClass = (m, h) =>
@@ -1000,6 +886,134 @@ public class T2IModelClassSorter
         Register(new() { ID = "yue-2", CompatClass = CompatYue2, Name = "YuE2", IsThisModelOfClass = (m, h) =>
         {
             return isYue2(h);
+        }});
+        // ====================== Chroma Family ======================
+        Register(new() { ID = "chroma", CompatClass = CompatChroma, Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isChroma(h) && !isChromaRadiance(h);
+        }});
+        Register(new() { ID = "chroma/lora", CompatClass = CompatChroma, Name = "Chroma LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
+        Register(new() { ID = "chroma-radiance", CompatClass = CompatChromaRadiance, Name = "Chroma Radiance", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isChroma(h) && isChromaRadiance(h);
+        }});
+        Register(new() { ID = "zeta-chroma", CompatClass = CompatZetaChroma, Name = "Zeta Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isLumina2(h) && isZImage(h) && isZetaChroma(h);
+        }});
+        // ====================== HiDream Family ======================
+        Register(new() { ID = "hidream-i1", CompatClass = CompatHiDreamI1, Name = "HiDream i1", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isHiDream(h);
+        }});
+        Register(new() { ID = "hidream-i1-edit", CompatClass = CompatHiDreamI1, Name = "HiDream i1 Edit", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // Must manual edit, seems undetectable?
+        }});
+        Register(new() { ID = "hidream-i1/lora", CompatClass = CompatHiDreamI1, Name = "HiDream i1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isHiDreamLora(h);
+        }});
+        Register(new() { ID = "hidream-o1", CompatClass = CompatHiDreamO1, Name = "HiDream O1 Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isHiDreamO1(h);
+        }});
+        // ====================== MOSS Image ======================
+        Register(new() { ID = "moss-image", CompatClass = CompatMossImage, Name = "MOSS Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isMossImage(h);
+        }});
+        Register(new() { ID = "moss-image/lora", CompatClass = CompatMossImage, Name = "MOSS Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isMossImageLora(h);
+        }});
+        // ====================== Random Other Models ======================
+        Register(new() { ID = "lens", CompatClass = CompatLens, Name = "Lens", StandardWidth = 1440, StandardHeight = 1440, IsThisModelOfClass = (m, h) =>
+        {
+            return isLens(h);
+        }});
+        Register(new() { ID = "ideogram-4", CompatClass = CompatIdeogram4, Name = "Ideogram 4", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isIdeogram4(h);
+        }});
+        Register(new() { ID = "ideogram-4/lora", CompatClass = CompatIdeogram4, Name = "Ideogram 4 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isIdeogram4Lora(h);
+        }});
+        Register(new() { ID = "krea-2", CompatClass = CompatKrea2, Name = "Krea 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isKrea2(h);
+        }});
+        Register(new() { ID = "krea-2/lora", CompatClass = CompatKrea2, Name = "Krea 2 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isKrea2Lora(h);
+        }});
+        Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = CompatAltDiffusion, Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
+        {
+            return IsAlt(h);
+        }});
+        Register(new() { ID = "nvidia-sana-1600", CompatClass = CompatSana, Name = "NVIDIA Sana 1600M", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isSana(h);
+        }});
+        Register(new() { ID = "nvidia-sana-1600/vae", CompatClass = CompatSana, Name = "NVIDIA Sana 1600M DC-AE VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return h.ContainsKey("decoder.stages.0.0.main.conv.bias");
+        }});
+        Register(new() { ID = "lumina-2", CompatClass = CompatLumina2, Name = "Lumina 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isLumina2(h) && !isZImage(h);
+        }});
+        Register(new() { ID = "sensenova-u1.5", CompatClass = CompatSenseNovaU15, Name = "SenseNova U1.5", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isSenseNovaU15(h);
+        }});
+        Register(new() { ID = "hidream-o1/lora", CompatClass = CompatHiDreamO1, Name = "HiDream O1 LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isHiDreamO1Lora(h);
+        }});
+        Register(new() { ID = "omnigen-2", CompatClass = CompatOmniGen2, Name = "OmniGen 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isOmniGen(h);
+        }});
+        Register(new() { ID = "auraflow-v1", CompatClass = CompatAuraFlow, Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isAuraFlow(h);
+        }});
+        Register(new() { ID = "ovis", CompatClass = CompatOvis, Name = "Ovis", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isOvis(h);
+        }});
+        Register(new() { ID = "longcat-image", CompatClass = CompatLongcatImage, Name = "Longcat Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isLongcat(h);
+        }});
+        Register(new() { ID = "boogu", CompatClass = CompatBoogu, Name = "Boogu", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isBoogu(h);
+        }});
+        Register(new() { ID = "ming-image", CompatClass = CompatMingImage, Name = "Ming Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isMingImage(h);
+        }});
+        Register(new() { ID = "ming-image/vae", CompatClass = CompatMingImage, Name = "Ming Image VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isMingImageVae(h);
+        }});
+        Register(new() { ID = "ernie-image", CompatClass = CompatErnieImage, Name = "Ernie Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isErnie(h);
+        }});
+        Register(new() { ID = "ernie-image/lora", CompatClass = CompatErnieImage, Name = "Ernie Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // Probably not worth the bother
+        }});
+        Register(new() { ID = "mage-flow", CompatClass = CompatMageFlow, Name = "Mage Flow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isMageFlow(h) && isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h) && !isQwenImageEdit2511(h);
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
@@ -1045,6 +1059,7 @@ public class T2IModelClassSorter
         Remaps["flux.1-schnell/lora"] = "Flux.1-dev/lora";
         Remaps["flux.1-schnell/controlnet"] = "Flux.1-dev/controlnet";
         Remaps["flux.1-ae"] = "flux.1/vae";
+        Remaps["flux.3-klein"] = "flux-3-image-klein";
         Remaps["stable-cascade-v1-stage-a"] = "stable-cascade-v1-stage-a/vae";
         Remaps["stable-diffusion-3-3-5-large"] = "stable-diffusion-v3.5-large";
         Remaps["stable-diffusion-3-3-5-large/lora"] = "stable-diffusion-v3.5-large/lora";
