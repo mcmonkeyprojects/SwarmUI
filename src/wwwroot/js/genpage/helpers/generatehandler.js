@@ -300,7 +300,7 @@ class GenerateHandler {
         }
     }
 
-    doGenerate(input_overrides = {}, input_preoverrides = {}, postCollectRun = null, validateModel = true) {
+    doGenerate(input_overrides = {}, input_preoverrides = {}, postCollectRun = null) {
         if (session_id == null) {
             if (Date.now() - time_started > 1000 * 60) {
                 this.hadError("Cannot generate, session not started. Did the server crash?");
@@ -360,7 +360,7 @@ class GenerateHandler {
                 this.sockets[socketId] = socket;
             }
         };
-        if (this.validateModel && validateModel) {
+        if (this.validateModel) {
             if (getRequiredElementById('current_model').value == '') {
                 this.hadError("Cannot generate, no model selected.");
                 return;

@@ -1286,7 +1286,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             });
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
-    includeButton('SeedVR', () => {
+    includeButton('Enhance With SeedVR', () => {
         let toggler = getRequiredElementById('input_group_content_seedvr_toggle');
         let model = getRequiredElementById('input_seedvrmodel');
         if (!toggler.checked) {
@@ -1306,10 +1306,13 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             while (group && group.id != 'seedvr') {
                 group = group.parent;
             }
-            input_overrides[param.id] = group || retainedParams.includes(param.id) ? input[param.id] ?? null : null;
+            if ((group || retainedParams.includes(param.id)) && input[param.id] != null) {
+                input_overrides[param.id] = input[param.id];
+            }
         }
         Object.assign(input_overrides, {
             'model': model.value,
+            'seedvronly': true,
             'noloadmodels': true,
             'images': 1,
             'width': width,
@@ -1324,7 +1327,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                     }
                 }
                 actualInput.extra_metadata = metaParsed.sui_image_params ? { 'seedvr_source_metadata': metadata } : {};
-            }, false);
+            });
         });
     }, '', 'Runs SeedVR on this image or video with the current SeedVR settings', ['image', 'video']);
     let metaParsed = { is_starred: false };

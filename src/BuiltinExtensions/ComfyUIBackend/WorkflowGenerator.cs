@@ -3031,7 +3031,7 @@ public partial class WorkflowGenerator
         return result;
     }
 
-    internal void PreserveSeedVRSourceMetadata(Image input)
+    public void PreserveSeedVRSourceMetadata(Image input)
     {
         try
         {
@@ -3057,19 +3057,18 @@ public partial class WorkflowGenerator
             {
                 return;
             }
-            T2IParamInput pathInput = UserInput.Clone();
-            pathInput.InternalSet.ValuesInput[T2IParamTypes.Prompt.Type.ID] = source["sui_image_params"]["prompt"]?.Value<string>() ?? "";
-            pathInput.InternalSet.ValuesInput[T2IParamTypes.NegativePrompt.Type.ID] = source["sui_image_params"]["negativeprompt"]?.Value<string>() ?? "";
-            User.OutpathFillHelper pathHelper = new(pathInput, UserInput.SourceSession.User, "");
-            foreach (string key in new[] { "prompt", "prompthash", "negativeprompt", "negativeprompthash" })
-            {
-                UserInput.ExtraMeta[$"seedvr_source_{key}"] = pathHelper.FillPartUnformatted(key);
-            }
+            string prompt = source["sui_image_params"]["prompt"]?.Value<string>() ?? "";
+            string negativePrompt = source["sui_image_params"]["negativeprompt"]?.Value<string>() ?? "";
+            User.OutpathFillHelper pathHelper = new(UserInput, UserInput.SourceSession.User, "");
+            UserInput.ExtraMeta["seedvr_source_prompt"] = prompt;
+            UserInput.ExtraMeta["seedvr_source_prompthash"] = pathHelper.QuickHash(prompt);
+            UserInput.ExtraMeta["seedvr_source_negativeprompt"] = negativePrompt;
+            UserInput.ExtraMeta["seedvr_source_negativeprompthash"] = pathHelper.QuickHash(negativePrompt);
             string pathFormat = UserInput.Get(T2IParamTypes.OverrideOutpathFormat, UserInput.SourceSession.User.Settings.OutPathBuilder.Format);
             UserInput.Set(T2IParamTypes.OverrideOutpathFormat, StringConversionHelper.QuickSimpleTagFiller(pathFormat, "[", "]", tag =>
             {
-                string key = $"seedvr_source_{T2IParamTypes.CleanTypeName(tag)}";
-                return UserInput.ExtraMeta.ContainsKey(key) ? $"[{key}]" : $"[{tag}]";
+                string key = T2IParamTypes.CleanTypeName(tag);
+                return key is "prompt" or "prompthash" or "negativeprompt" or "negativeprompthash" ? $"[seedvr_source_{key}]" : $"[{tag}]";
             }, false));
             UserInput.MetadataModifier = restored =>
             {
@@ -3080,14 +3079,10 @@ public partial class WorkflowGenerator
                 {
                     property.Remove();
                 }
-                foreach (JProperty property in ((JObject)restored["sui_image_params"]).Properties())
+                foreach (JProperty property in ((JObject)restored["sui_image_params"]).Properties().Where(p => p.Name.StartsWith("seedvr")))
                 {
-                    if (property.Name.StartsWith("seedvr"))
-                    {
-                        parameters[property.Name] = property.Value.DeepClone();
-                    }
+                    parameters[property.Name] = property.Value;
                 }
-                parameters["seedvrmodel"] = restored["sui_image_params"]["model"]?.DeepClone();
                 if (result["sui_models"] is JArray sourceModels)
                 {
                     foreach (JObject entry in sourceModels.OfType<JObject>().Where(m => m["param"]?.Value<string>() == "seedvrmodel").ToArray())
@@ -3097,18 +3092,16 @@ public partial class WorkflowGenerator
                 }
                 if (restored["sui_models"] is JArray restoredModels)
                 {
-                    JArray models = result["sui_models"] as JArray ?? new JArray();
-                    result["sui_models"] = models;
-                    foreach (JObject model in restoredModels.OfType<JObject>())
+                    if (result["sui_models"] is not JArray models)
                     {
-                        JObject entry = (JObject)model.DeepClone();
-                        if (entry["param"]?.Value<string>() == "model")
+                        models = [];
+                        result["sui_models"] = models;
+                    }
+                    foreach (JObject model in restoredModels.OfType<JObject>().Where(m => m["param"]?.Value<string>() != "model"))
+                    {
+                        if (!models.Any(existing => JToken.DeepEquals(existing, model)))
                         {
-                            entry["param"] = "seedvrmodel";
-                        }
-                        if (!models.Any(existing => JToken.DeepEquals(existing, entry)))
-                        {
-                            models.Add(entry);
+                            models.Add(model);
                         }
                     }
                 }
