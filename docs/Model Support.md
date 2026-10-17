@@ -752,6 +752,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **CFG Scale:** normal ranges like `3`
     - **Steps:** normal ranges like `20` though higher may be needed for the raw models
     - **Resolution:** `1024`, lower values down to 256 work as expected, higher values are quite variable
+    - **SkipLayerGuidance:** The OpenMOSS team recommends skip layer guidance with Layer Target set to `22`, but the benefit is questionable. This is available in Swarm's extension list if you'd like to try it.
 
 # Video Models
 
