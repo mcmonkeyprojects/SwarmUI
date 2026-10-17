@@ -748,6 +748,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - **Parameters:**
     - **Prompt:** They have an official prompt enhancer LLM skill file [OpenMOSS/prompt-enhancer](<https://github.com/OpenMOSS/MOSS-Image/blob/main/skills/moss-image-prompt-enhancer/SKILL.md>)
         - Supports JSON Bounding Boxes in captions, see [their example JSON prompt](<https://github.com/OpenMOSS/MOSS-Image/blob/main/skills/moss-image-prompt-enhancer/references/layout.md#example>)
+    - **Prompt Images:** The model does not natively do image editing or references, but you can toss in prompt images anyway and the textencoder will see them, just not retain all details
     - **CFG Scale:** normal ranges like `3`
     - **Steps:** normal ranges like `20` though higher may be needed for the raw models
     - **Resolution:** `1024`, lower values down to 256 work as expected, higher values are quite variable

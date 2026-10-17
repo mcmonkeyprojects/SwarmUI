@@ -1064,16 +1064,13 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsMingImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMiniMaxMusic3() || IsSeedVR2())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsMingImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsMageFlow() || IsMossImage() || IsMiniMaxMusic3() || IsSeedVR2())
         {
+            defscheduler ??= "simple";
         }
         else if (IsFlux3Image())
         {
             defsampler ??= "er_sde";
-            defscheduler ??= "simple";
-        }
-        else if (IsMossImage())
-        {
             defscheduler ??= "simple";
         }
         else if (IsChroma() || IsChromaRadiance())
@@ -1421,7 +1418,7 @@ public partial class WorkflowGenerator
                     doesFit = false;
                 }
             }
-            else if ((IsBoogu() || IsQwenImageEditPlus() || IsMageFlow() || IsKrea2()) && promptSize)
+            else if ((IsBoogu() || IsQwenImageEditPlus() || IsMageFlow() || IsKrea2() || IsMossImage()) && promptSize)
             {
                 target = 384;
                 doesFit = false;
@@ -2646,7 +2643,7 @@ public partial class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (IsIdeogram4() || IsKrea2() || (IsBoogu() && isPositive) || IsMageFlow())
+        else if (IsIdeogram4() || IsKrea2() || IsMossImage() || (IsBoogu() && isPositive) || IsMageFlow())
         {
             JArray imageNode = GetPromptImage(true, true, 0);
             for (int i = 1; i < 10; i++)

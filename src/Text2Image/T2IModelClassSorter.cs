@@ -197,6 +197,7 @@ public class T2IModelClassSorter
         bool isFlux2DevLora(JObject h) => hasLoraKey(h, "single_blocks.47.linear2");
         bool isFlux3ImageKlein(JObject h) => hasKey(h, "content_mode_blocks.image.0.attn_out.weight") && hasKey(h, "single_stream_modulations.txt.lin.weight");
         bool isMossImage(JObject h) => hasKey(h, "shared_block_modulation.weight") && hasKey(h, "layers.0.proj.ffn_up_gate.weight");
+        bool isMossImageLora(JObject h) => hasLoraKey(h, "layers.0.proj.ffn_up_gate") && hasLoraKey(h, "layers.41.proj.v");
         bool isLens(JObject h) => h.ContainsKey("transformer_blocks.0.attn.norm_added_q.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.w1.weight");
         bool isIdeogram4(JObject h) => hasKey(h, "embed_image_indicator.weight") && hasKey(h, "llm_cond_proj.weight") && hasKey(h, "t_embedding.mlp_in.weight") && hasKey(h, "layers.0.attention.qkv.weight");
         bool isIdeogram4Lora(JObject h) => hasLoraKey(h, "layers.0.adaln_modulation") && hasLoraKey(h, "layers.0.attention.o") && hasLoraKey(h, "layers.0.feed_forward.w3") && hasLoraKey(h, "layers.33.attention.qkv");
@@ -924,6 +925,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "moss-image", CompatClass = CompatMossImage, Name = "MOSS Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isMossImage(h);
+        }});
+        Register(new() { ID = "moss-image/lora", CompatClass = CompatMossImage, Name = "MOSS Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isMossImageLora(h);
         }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "lens", CompatClass = CompatLens, Name = "Lens", StandardWidth = 1440, StandardHeight = 1440, IsThisModelOfClass = (m, h) =>
