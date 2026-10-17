@@ -24,6 +24,7 @@
 [Qwen Image 2.1](#qwen-image-21) | MMDiT | 2026 | Alibaba-Qwen | 7B | No | Modern, creative, slow |
 [Ming Image](#ming-image) | DiT | 2026 | InclusionAI | 6B | Minimal | Modern, intelligent but ugly |
 [Flux 3 Image](#flux-3-image) | DiT | 2026 | Black Forest Labs | 5.6B | Yes | Modern, intelligent but poor details |
+[MOSS Image](#moss-image) | DiT | 2026 | OpenMOSS | 5B | No | Modern, extremely capable |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -713,7 +714,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 *(Flux 3 Klein SD, 16 steps, 1024)*
 
-- [Flux 3 Image Klein](<https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy>) is supported in SwarmUI!
+- [FLUX 3 Image Klein](<https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy>) is supported in SwarmUI!
 - It is a 5.6B image model intended as a direct partial upgrade to the Flux 2 Klein models
     - Download here: [Black-Forest-Labs/Flux-3-Image-Klein](<https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy/tree/main/diffusion_models>)
     - They have a "base" and "sd" version - "sd" means distilled (CFG=1, Steps=8 or 16)
@@ -728,11 +729,28 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
             `Minimalist graphic illustration featuring a black silhouette of a person <silhouette_1> centered against a solid, vibrant chartreuse background <background_1>. The figure is captured in a dynamic, mid-stride running pose, facing toward the left side of the frame. [{"id": "background_1", "bbox": [0, 0, 1000, 1000], "desc": "A flat field of neon yellow-green with a subtle paper texture and fine, organic grain."}, {"id": "silhouette_1", "bbox": [150, 150, 850, 850], "desc": "A black silhouette of a person in motion, made of dense stippled ink."}]`
         - They have LLM system prompts available here [Black-Forest-Labs/system_prompts](<https://huggingface.co/black-forest-labs/flux-3-image-klein-pup/blob/main/system_prompts.json>)
         - Also, prompting guide [bfl.ai](<https://docs.bfl.ai/guides/prompting_summary>)
-    - **Prompt Images:** You can add up to 10 images to the prompt to use as references.
+    - **Prompt Images:** You can add up to 10 images to the prompt to use as references or editing
     - **CFG Scale:** `1` for 'sd' Distilled, regular ranges (eg `3.5`) for Base
     - **Steps:** `16` for 'sd' Distilled (can go down to `4` at some quality loss), regular ranges (`20` or more) for Base
     - **Resolution:** `1024` is default but anywhere from `128` up to `3072` can work
     - **Sampler:** Defaults to `er_sde`
+
+# MOSS Image
+
+![img](/docs/images/models/mossimage.jpg)
+
+- [MOSS Image](<https://huggingface.co/OpenMOSS-Team/MOSS-Image-Base>) is supported in SwarmUI!
+- It is a 5B image model
+    - Download here [Comfy-Org/MOSS-Image](<https://huggingface.co/Comfy-Org/MOSS-Image/tree/main/diffusion_models>)
+    - There are bf16 and int8 variants, the int8 is recommended
+    - There is a 'Base' and 'SFT' version - the 'SFT' is quality tuned, whereas the base is less trained and more variable
+- The VAE (Flux 2) and Text Encoder (Qwen 3.5 9B) will be automatically downloaded
+- **Parameters:**
+    - **Prompt:** They have an official prompt enhancer LLM skill file [OpenMOSS/prompt-enhancer](<https://github.com/OpenMOSS/MOSS-Image/blob/main/skills/moss-image-prompt-enhancer/SKILL.md>)
+        - Supports JSON Bounding Boxes in captions, see [their example JSON prompt](<https://github.com/OpenMOSS/MOSS-Image/blob/main/skills/moss-image-prompt-enhancer/references/layout.md#example>)
+    - **CFG Scale:** normal ranges like `3`
+    - **Steps:** normal ranges like `20` though higher may be needed for the raw models
+    - **Resolution:** `1024`, lower values down to 256 work as expected, higher values are quite variable
 
 # Video Models
 
