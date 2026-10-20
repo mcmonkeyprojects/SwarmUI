@@ -31,3 +31,8 @@ docker-compose.yml
 __pycache__/
 venv/
 *.pth
+
+# Claudesloppers
+
+CLAUDE.md
+.claude/
