@@ -1286,7 +1286,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             });
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
-    includeButton('Enhance With SeedVR', () => {
+    includeButton('Run SeedVR', () => {
         let toggler = getRequiredElementById('input_group_content_seedvr_toggle');
         let model = getRequiredElementById('input_seedvrmodel');
         if (!toggler.checked) {
