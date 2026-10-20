@@ -11,7 +11,8 @@ Here's some general info:
 - When writing a Swarm extension, you need to meet Swarm's code requirements -- most notably, that means you need to write code that won't explode if it's called from multiple threads (in most cases this won't be an issue, it's just something to consider when you're getting very advanced).
 - All of Swarm is open source, including a pile of built-in-extensions ([see here](https://github.com/mcmonkeyprojects/SwarmUI/tree/master/src/BuiltinExtensions)), so you can reference any existing code to get examples of things
     - `DynamicThresholding` in particular in there is a great example of a simple extension that adds support for an external comfy node with some parameters.
-- Swarm uses C#, a compiled language, so it only recompiles if (A) you do so manually, (B) you run the `update` script in the swarm root, or (C) you launch using the `launch-dev` scripts (builds fresh every time). When working on extensions, you need to either use the dev scripts, or remember to run the update every time.
+- Swarm uses C#, a compiled language, so it only recompiles if (A) you do so manually, or (B) you launch using the `launch-dev` scripts (builds fresh every time). When working on extensions, you need to either use the dev scripts, or remember to run the update every time.
+    - Swarm will auto-rebuild extensions in regular (non-dev) launches if the git hash changes as well.
 - You can add custom tabs by just making a folder inside your extension of `Tabs/Text2Image/` and inside of that put `Your Tab Name.html`
 - See the [`Extension` class source here](https://github.com/mcmonkeyprojects/SwarmUI/blob/master/src/Core/Extension.cs) for more things you can do.
     - This has several different launch points (eg `OnInit`, `OnPreInit`, etc.) and some registration points (eg `ScriptFiles` and `StyleSheetFiles` to register custom web assets to the main page).
@@ -111,6 +112,18 @@ These standards are newly written as of October 2024, and may change over time b
 - **7: General Style Match**: The UI portions of your extension should aim to match the general styling of Swarm itself, in a way that is compatible with user theme selection.
     - If you think Swarm could look better, maybe make a PR to Swarm's CSS or PR a new theme?
 
+# Vibecoding
+
+So, you don't know much about coding, but you sure have subscribed to [AI Coding Provider Name] and want to customize something? Good news, it's pretty easy!
+
+Fire up [Codex / Cursor / Whatever you're running] in the `SwarmUI` root folder, and tell it you want to make an extension - or explicitly request the `creating-extensions` skill.
+
+*(NOTE: if using nonstandardized harnesses such as Claude Code, start your first session with "hey Claude, copy the skills files into the Claude folder format")*
+
+You'll probably want to learn a bit about how git and github work, so that you can properly track the change history of the extension. Agents can help you with this, but you'll need to register accounts and maybe install helpful UIs like GitHub Desktop.
+
+Completely vibecoded extensions will generally not be accepted to the main extensions list, but you are welcome to use them yourself or share with your friends of course.
+
 # Example: A Custom Comfy-Node-Backed Parameter
 
 Save this file as `src/Extensions/MyExtension/MyCoolExtensionName.cs`:
@@ -149,16 +162,18 @@ public class MyCoolExtensionName : Extension // extend the "Extension" class in 
             // Generally always check that your parameter exists before doing anything (so you don't infect unrelated generations unless the user wants your feature running)
             if (g.UserInput.TryGet(MyCoolParam, out int myParamNumber))
             {
+                // Our input must be an image, this call with autoconvert it from latent or other data
+                WGNodeData image = g.CurrentMedia.AsRawImage(g.CurrentVae);
                 // Create the node we want...
                 string shiftNode = g.CreateNode("ImageBlur", new JObject()
                 {
                     // And configure all the inputs to that node...
-                    ["image"] = g.FinalImageOut, // Take in the prior final image value
+                    ["image"] = g.image.Path, // Take in the prior final image value
                     ["blur_radius"] = myParamNumber,
                     ["sigma"] = 5
                 });
-                // And then make sure its result actually gets used. The final save image uses 'FinalImageOut' to identify what to save, so just update that.
-                g.FinalImageOut = [shiftNode, 0]; // (Note the 0 is because some nodes have multiple outputs, so 0 means use the first output)
+                // And then make sure its result actually gets used. The final save image uses 'CurrentMedia' to identify what to save, so just update that.
+                g.CurrentMedia = image.WithPath([shiftNode, 0]); // (Note the 0 is because some nodes have multiple outputs, so 0 means use the first output)
             }
             // The priority value determines where in the workflow this will process.
             // You can technically just use a late priority and then just modify the workflow at will, but it's best to run at the appropriate time.
