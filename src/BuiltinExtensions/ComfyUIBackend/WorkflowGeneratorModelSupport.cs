@@ -190,6 +190,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Boogu.</summary>
     public bool IsBoogu() => IsModelCompatClass(T2IModelClassSorter.CompatBoogu);
 
+    /// <summary>Returns true if the current model is Bria's Fibo 2.0.</summary>
+    public bool IsFibo2() => IsModelCompatClass(T2IModelClassSorter.CompatFibo2);
+
     /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
     public bool IsHunyuanVideo() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo);
 
@@ -1100,7 +1103,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsZImage() || IsZetaChroma() || IsAnima() || IsLens() || IsPixelDiT() || IsPiD() || IsSeedVR2()) // Model is small and dense, so trust user preferred download format
+                    else if (IsZImage() || IsZetaChroma() || IsAnima() || IsLens() || IsPixelDiT() || IsPiD() || IsSeedVR2() || IsFibo2()) // Model is small and dense, so trust user preferred download format
                     {
                         dtype = "default";
                     }
@@ -1315,6 +1318,11 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("boogu", helpers.GetQwen3vl_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsFibo2())
+        {
+            helpers.LoadClip("fibo2", helpers.GetQwen3vl_4bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
         }
         else if (IsMageFlow())
         {
