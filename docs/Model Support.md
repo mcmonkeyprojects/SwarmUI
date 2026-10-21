@@ -25,6 +25,7 @@
 [Ming Image](#ming-image) | DiT | 2026 | InclusionAI | 6B | Minimal | Modern, intelligent but ugly |
 [Flux 3 Image](#flux-3-image) | DiT | 2026 | Black Forest Labs | 5.6B | Yes | Modern, intelligent but poor details |
 [MOSS Image](#moss-image) | DiT | 2026 | OpenMOSS | 5B | No | Modern, extremely capable |
+[Fibo 2](#bria-fibo-2) | DiT | 2026 | Bria | 8B | Minimal | Modern, meh quality |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -762,6 +763,24 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Steps:** normal ranges like `20` though higher may be needed for the raw models
     - **Resolution:** `1024`, lower values down to 256 work as expected, higher values are quite variable
     - **SkipLayerGuidance:** The OpenMOSS team recommends skip layer guidance with Layer Target set to `22`, but the benefit is questionable. This is available in Swarm's extension list if you'd like to try it.
+
+# Bria Fibo 2
+
+![img](/docs/images/models2/fibo2.jpg)
+
+- [Fibo 2](<https://huggingface.co/briaai/Fibo-2.0-dev>) is supported in SwarmUI!
+- It is an 8B model with a "dev" model and an Edit model
+    - Download here [Comfy-Org/Fibo-2.0](<https://huggingface.co/Comfy-Org/Fibo-2.0/tree/main/diffusion_models>)
+    - int8_convrot recommended
+    - You can probably ignore dev and just grab the Edit, it does regular t2i fine
+    - Save in `diffusion_models`
+- The VAE (Flux 2) and Text Encoder (Qwen 3 VL 4B) will be automatically downloaded
+- **Parameters:**
+    - **Prompt:** This model was trained for very long JSON prompts.
+        - It works without those, but the quality and understanding is poor.
+    - **CFG Scale:** `1`
+    - **Steps:** `8` or higher for dev, `4` for edit
+    - **Resolution:** defaults to `1024` but can do anywhere from `256` to `1536` well, starts losing coherence above that but not unusuable
 
 # Video Models
 

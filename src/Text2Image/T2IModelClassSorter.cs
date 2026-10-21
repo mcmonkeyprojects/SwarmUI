@@ -103,6 +103,7 @@ public class T2IModelClassSorter
         CompatIdeogram4 = RegisterCompat(new() { ID = "ideogram-4", ShortCode = "Ideo4", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatKrea2 = RegisterCompat(new() { ID = "krea-2", ShortCode = "Krea2", VaeFamily = VaeQwenImage }),
         CompatBoogu = RegisterCompat(new() { ID = "boogu", ShortCode = "Boogu", LorasTargetTextEnc = false, VaeFamily = VaeFlux1 }),
+        CompatFibo2 = RegisterCompat(new() { ID = "fibo-2", ShortCode = "Fibo2", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatMageFlow = RegisterCompat(new() { ID = "mage-flow", ShortCode = "Mage", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true, ResolutionPrecision = 32 }),
         CompatSam3 = RegisterCompat(new() { ID = "sam3", ShortCode = "SAM3", LorasTargetTextEnc = false }),
@@ -270,6 +271,7 @@ public class T2IModelClassSorter
         bool isSeedVR2Vae(JObject h) => h.ContainsKey("decoder.up_blocks.2.upsamplers.0.upscale_conv.weight");
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight") && !isBoogu(h);
         bool isBoogu(JObject h) => hasKey(h, "double_stream_layers.0.img_instruct_attn.processor.img_to_q.weight") && hasKey(h, "double_stream_layers.0.img_instruct_attn.processor.instruct_to_q.weight");
+        bool isFibo2(JObject h) => hasKey(h, "perceiver.layers.0.self_attention.to_q.weight") && hasKey(h, "noise_refiner.0.feed_forward.w13.weight") && hasKey(h, "layers.43.feed_forward.w13.weight");
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
             || (h.ContainsKey("model.diffusion_model.time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("model.diffusion_model.img_in.bias") && (h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_qkv_proj.bias")));
         bool isQwenImage21(JObject h) => hasKey(h, "txt_in.text_norm.weight") && hasKey(h, "modulation.1.weight") && hasKey(h, "transformer_blocks.0.attn.norm_q.weight");
@@ -994,6 +996,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "boogu", CompatClass = CompatBoogu, Name = "Boogu", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isBoogu(h);
+        }});
+        Register(new() { ID = "fibo-2", CompatClass = CompatFibo2, Name = "Fibo 2.0", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isFibo2(h);
         }});
         Register(new() { ID = "ming-image", CompatClass = CompatMingImage, Name = "Ming Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
