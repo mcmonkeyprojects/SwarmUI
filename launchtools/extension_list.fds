@@ -131,7 +131,7 @@ SkimmedCFG:
 
 SkipLayerGuidance:
     author: mcmonkey
-    description: Adds support for SLG (SD3.5M trick) and STG (LTX-Video trick) as a parameter group.
+    description: Adds support for SLG (SD3.5M trick, also for MOSS Image) and STG (LTX-Video trick) as a parameter group.
     url: https://github.com/mcmonkey4eva/SwarmSkipLayerGuidanceExtension
     license: MIT
     ci-test: true
