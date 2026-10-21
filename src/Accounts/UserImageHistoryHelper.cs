@@ -3,10 +3,8 @@ using System.Globalization;
 using ATL;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.Processing;
+using ImageMagick;
+using ImageMagick.Drawing;
 using SwarmUI.Core;
 using SwarmUI.Media;
 using SwarmUI.Utils;
@@ -91,29 +89,23 @@ public class UserImageHistoryHelper
                         double durationMs = new Track(file).DurationMs;
                         long totalSeconds = double.IsFinite(durationMs) ? Math.Max(0, (long)(durationMs / 1000)) : 0;
                         string duration = totalSeconds >= 3600 ? $"{totalSeconds / 3600:00}:{totalSeconds / 60 % 60:00}:{totalSeconds % 60:00}" : $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
-                        FontCollection fonts = new();
-                        Font font = fonts.Add("src/wwwroot/fonts/Inter.woff2").CreateFont(32, FontStyle.Bold);
-                        using SixLabors.ImageSharp.Image preview = SixLabors.ImageSharp.Image.Load(tempPreviewPath);
-                        RichTextOptions textOptions = new(font) { Origin = new(128, 128), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-                        Brush outlineBrush = Brushes.Solid(Color.FromRgb(39, 39, 42));
-                        Brush textBrush = Brushes.Solid(Color.FromRgb(228, 228, 228));
-                        preview.Mutate(m =>
+                        using MagickImage preview = new(tempPreviewPath);
+                        IDrawables<ushort> text = new Drawables().Font("src/wwwroot/fonts/Inter.woff2", FontStyleType.Normal, FontWeight.Bold, FontStretch.Normal).FontPointSize(32).TextAlignment(TextAlignment.Center);
+                        ITypeMetric metrics = text.FontTypeMetrics($"Audio {duration}");
+                        double baseline = 128 + (metrics.Ascent + metrics.Descent) / 2;
+                        text.FillColor(new MagickColor("#27272a"));
+                        for (int x = -2; x <= 2; x += 2)
                         {
-                            for (int x = -2; x <= 2; x += 2)
+                            for (int y = -2; y <= 2; y += 2)
                             {
-                                for (int y = -2; y <= 2; y += 2)
+                                if (x != 0 || y != 0)
                                 {
-                                    if (x != 0 || y != 0)
-                                    {
-                                        textOptions.Origin = new(128 + x, 128 + y);
-                                        m.DrawText(textOptions, $"Audio {duration}", outlineBrush);
-                                    }
+                                    text.Text(128 + x, baseline + y, $"Audio {duration}");
                                 }
                             }
-                            textOptions.Origin = new(128, 128);
-                            m.DrawText(textOptions, $"Audio {duration}", textBrush);
-                        });
-                        preview.SaveAsJpeg(previewPath);
+                        }
+                        text.FillColor(new MagickColor("#e4e4e4")).Text(128, baseline, $"Audio {duration}").Draw(preview);
+                        preview.Write(previewPath, MagickFormat.Jpeg);
                     }
                     finally
                     {
