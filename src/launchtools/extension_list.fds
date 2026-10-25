@@ -1,0 +1,411 @@
+# This file is the list of known online extensions.
+
+# Author should be your name.
+# Description should be a short description of what the extension does.
+# URL should be a link to the GitHub repo. Do not use a sublink, do not end with '/'. This URL is used to git clone the repo.
+# If CI-Test is true, the extension will be downloaded and compile-checked for new Swarm commits. A pull request should never add CI-Test, that is a maintainer decision only.
+
+# License is the shortname of the license, (eg MIT, LGPL, ...).
+# If deciding on a license, MIT is strongly recommended.
+# For obvious reasons, must be an open source license of some form to be on the extension list.
+# If you're a GPL fan, GPLv3 is questionable, LGPL might make more sense. AGPL is not welcome on the extension list.
+
+# Tags info:
+# Content type:
+#   'parameters': Adds new T2I Parameters
+#   'tabs': adds new tabs on the main page (including subtabs, eg inside Utilities)
+#   'ui': modifies the UI in some way (including 'tabs' above, also themes and etc.)
+#   'tools': adds new tools to the Tools menu
+#   'nodes': adds Comfy nodes
+#   'backend': adds a new backend
+# Meta:
+#   'hidden': don't show on the main listing yet
+#   'paid': requires a paid account
+#   'beta': treat as an alpha or beta, not ready for general use
+#   'conflicts': may conflict with core systems or with other extensions (eg overrides core features)
+#   'lowquality': This extension has known quality issues, such as improper implementation methods or a fully vibecoded development approach, adding significant changes outside of the intended scope, or simply is a feature that does not work as well as one might hope
+#   'none': no tags of relevance to add
+
+FaceTools:
+    author: Quaggles
+    description: Adds support for CodeFormer FaceRestore and ReActor.
+    url: https://github.com/Quaggles/SwarmUI-FaceTools
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+    - nodes
+
+WaifuDiffusionV:
+    author: Neggles & Waifu Diffusion Team
+    description: Adds support for WaifuDiffusion-V-EDM sampling.
+    url: https://github.com/waifu-diffusion/SwarmWaifuDiffusionV
+    license: GPLv3
+    ci-test: true
+    tags:
+    - parameters
+    - nodes
+
+# (ComfyDeployBackend: deprecated as ComfyDeploy shut down)
+ComfyDeployBackend:
+    author: mcmonkey
+    description: Adds a ComfyDeploy ( https://www.comfydeploy.com/ ) backend.
+    url: https://github.com/mcmonkey4eva/SwarmComfyDeployBackendExt
+    license: MIT
+    ci-test: false
+    tags:
+    - paid
+    - backend
+    - hidden
+
+MagicPrompt:
+    author: Hartsy
+    description: Provides LLM (language model) usage inside SwarmUI to enhance your prompts.
+    url: https://github.com/HartsyAI/SwarmUI-MagicPromptExtension
+    license: MIT
+    ci-test: true
+    tags:
+    - tabs
+    - ui
+
+UniversalTab:
+    author: Hartsy
+    description: Lets you embed iframes of other webservices into subtabs in SwarmUI.
+    url: https://github.com/HartsyAI/SwarmUI-UniversalTabExtension
+    license: MIT
+    tags:
+    - tabs
+    - ui
+
+SDCppBackend:
+    author: Hartsy
+    description: Experimental approach to add a backend powered by an external stable-diffusion.cpp executable. Non-compatible with general use.
+    url: https://github.com/HartsyAI/SwarmUI-SD.cpp-Backend
+    license: MIT
+    tags:
+    - backend
+    - beta
+
+APIBackends:
+    author: Hartsy
+    description: Integration with commercial image/video generation APIs (OpenAI, BFL, Ideogram, Grok, Google, Fal.ai).
+    url: https://github.com/HartsyAI/SwarmUI-API-Backends
+    license: MIT
+    tags:
+    - api
+    - backend
+    - paid
+
+WildcardImporter:
+    author: spoomples+bman654
+    description: Lets you import Wildcards from Auto1111-extension-syntax (SD Dynamic Prompts) YAML cards into Swarm's standardizable format.
+    url: https://github.com/bman654/SwarmUI-WildcardImporter
+    license: MIT
+    ci-test: true
+    tags:
+    - tabs
+    - ui
+    # Significant features outside of intended scope
+    - lowquality
+
+PostRender:
+    author: Juan Treminio, orig. HellerCommaA
+    description: Adds support for a variety of useful post-processing techniques - LUTs, film grain, vignette, blur, and more. Updated and replaced to a new repo March 2026.
+    url: https://github.com/jtreminio/SwarmUI-PostRenderTorched
+    old_url: https://github.com/HellerCommaA/SwarmUI-PostRender
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+    - nodes
+
+SkimmedCFG:
+    author: Quaggles
+    description: Adds support for SkimmedCFG anti-burn allowing much higher CFG scales.
+    url: https://github.com/Quaggles/SwarmUI-SkimmedCFG
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+    - nodes
+
+SkipLayerGuidance:
+    author: mcmonkey
+    description: Adds support for SLG (SD3.5M trick, also for MOSS Image) and STG (LTX-Video trick) as a parameter group.
+    url: https://github.com/mcmonkey4eva/SwarmSkipLayerGuidanceExtension
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+
+OllamaVision:
+    author: Urabewe
+    description: Provides a frontend to connect to Ollama, OpenAI, or OpenRouter for image analysis using vision LLM models.
+    url: https://github.com/Urabewe/OllamaVision
+    license: MIT
+    tags:
+    - tabs
+    - ui
+
+AdaptiveProjectedGuidance:
+    author: Quaggles
+    description: Adds support for Adaptive Projected Guidance, retain the quality-boosting advantages of CFG while enabling the use of higher guidance scales without oversaturation.
+    url: https://github.com/Quaggles/SwarmUI-AdaptiveProjectedGuidance
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+
+KohyaDeepShrink:
+    author: derrian-distro
+    description: A simple SwarmUI extension that adds parameters for the Kohya Deep Shrink / PatchModelAddDownscale node to the generate tab (SDXL resolution trick).
+    url: https://github.com/derrian-distro/SwarmUI-KohyaDeepShrink
+    license: MIT
+    tags:
+    - parameters
+
+Mahiro:
+    author: yoinked
+    description: Adds a parameter to enable the "MaHiRo" experimental sampling method.
+    url: https://github.com/yoinked-h/MaHiRon-SwarmUI
+    license: MIT
+    tags:
+    - parameters
+    # Not very useful feature
+    - lowquality
+
+TIPO:
+    author: Hugs288
+    description: Adds a parameter group for TIPO (anime tag prompt gen).
+    url: https://github.com/Hugs288/TipoForSwarmUI
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+    # Removed from github?
+    - hidden
+
+NegPip:
+    author: khanghy1000, orig. Hugs288
+    description: Adds a parameter group for Negpip (allows for the use of negative weights in positive prompt, works even in non-CFG models).
+    url: https://github.com/khanghy1000/NegPipforSwarmUI
+    old_url: https://github.com/Hugs288/NegPipforSwarmUI
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+
+DAAMSwarm:
+    author: jakstein
+    description: Provides cross-attention heatmap visualization for Stable Diffusion models.
+    url: https://github.com/jakstein/DAAMSwarm
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+
+FrameSaver:
+    author: Mathew Tomberlin
+    description: Adds parameters to save the first and/or last frame of generated video.
+    url: https://github.com/MathewTomberlin/FrameSaver
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+
+VAEReflection:
+    author: Jelosus2
+    description: Adds support for using reflect padding mode in VAEs, fixing artifacts in the edges of images generated using a VAE trained with reflect padding, notably EQVAE.
+    url: https://github.com/Jelosus2/comfyui-vae-reflection
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+    - nodes
+
+MoreThemes:
+    author: Blomblo
+    description: Adds a variety of high-quality themes to SwarmUI
+    url: https://github.com/mrblomblo/MoreThemes
+    license: MIT
+    ci-test: true
+    tags:
+    - ui
+
+PromptBuilder:
+    author: Juan Treminio
+    description: Adds a new tool UI to browse clickable Danbooru tags to build your prompt. Appears under Tools tab dropdown.
+    url: https://github.com/jtreminio/SwarmUI-PromptBuilderExtension
+    license: MIT
+    tags:
+    - ui
+    - tools
+
+SeedVR2Upscaler:
+    author: Rasmus
+    description: Adds SeedVR2 AI upscaler with auto VRAM detection, quality presets, and 2-step upscaling for reduced artifacts.
+    url: https://github.com/rlerdorf/SwarmUI-SeedVR2Upscaler
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+
+Base2Edit:
+    author: Juan Treminio
+    description: Edit an image in the refiner stage (with Edit models like Flux2), allowing you to generate and edit in a single generation.
+    url: https://github.com/jtreminio/SwarmUI-Base2Edit
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+    - nodes
+
+WhatTheDuck:
+    author: Juan Treminio
+    description: Adds potentially-breaking power tools for obscure special cases. Most users should not install this.
+    url: https://github.com/jtreminio/SwarmUI-WhatTheDuckExtension
+    license: MIT
+    tags:
+    - tools
+    - conflicts
+
+DownloaderHelper:
+    author: Juan Treminio
+    description: Allows sending model download URLs directly to the SwarmUI Model Downloader page from a "Send to SwarmUI" right-click menu item in Chrome Web Browser. See README for instructions on installing the Chrome extension.
+    url: https://github.com/jtreminio/SwarmUI-DownloaderHelper
+    license: MIT
+    tags:
+    - tools
+
+VideoStages:
+    author: Juan Treminio
+    description: Allows adding multiple video stages to your workflows, as well as automatically using generate audio.
+    url: https://github.com/jtreminio/SwarmUI-VideoStages
+    license: MIT
+    ci-test: true
+    tags:
+    - tools
+    - parameters
+
+AceStepFun:
+    author: Juan Treminio
+    description: More advanced AceStep 1.5 text-to-audio support for SwarmUI. Works in tandem with the VideoStages to use AceStep audio in LTX2 videos.
+    url: https://github.com/jtreminio/SwarmUI-AceStepFun
+    license: MIT
+    ci-test: true
+    tags:
+    - tools
+    - parameters
+
+AltTriggerPhraseBtn:
+    author: Blomblo
+    description: Changes the appearance of the trigger phrase copy button. 
+    url: https://github.com/mrblomblo/AltTriggerPhraseBtn
+    license: MIT
+    tags:
+    - conflicts
+    - ui
+
+Epsilon-Scaling:
+    author: jakstein
+    description: Adds the Epsilon Scaling node from ComfyUI to SwarmUI as a parameter in the Advanced Sampling group.
+    url: https://github.com/jakstein/SwarmUI-Epsilon-Scaling
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+    # Not very useful feature
+    - lowquality
+
+Quarry:
+    author: Juan Treminio
+    description: Prompt database engine, like wildcards with much more advanced power-user features, supporting Parquet/CSV/JSON/LanceDB datasets, dynamic filters, and more.
+    url: https://github.com/jtreminio/SwarmUI-Quarry
+    license: MIT
+    tags:
+    - tabs
+    - ui
+    - tools
+
+SharpSplat:
+    author: Glen Carpenter
+    description: Turns images into 3D Gaussian Splats directly inside the browser.
+    url: https://github.com/GlenCarpenter/SwarmUI-SharpSplat
+    license: MIT
+    tags:
+    - tabs
+    - ui
+    - parameters
+    # Vibecoded, highly complex, inappropriate implementations
+    - lowquality
+
+Spectrum:
+    author: Glen Carpenter
+    description: Adds support for an alternate sampling acceleration technique called 'Spectrum'.
+    url: https://github.com/GlenCarpenter/SwarmUI-Spectrum
+    license: MIT
+    tags:
+    - parameters
+    # Not very useful feature, very overcomplicated to use
+    - lowquality
+
+WD14Tagger:
+    author: Glen Carpenter
+    description: Adds automatic image tagging using booru-style taggers.
+    url: https://github.com/GlenCarpenter/SwarmUI-WD14Tagger
+    license: MIT
+    tags:
+    - tools
+    - parameters
+    # Vibecoded, very strange implementation
+    - lowquality
+
+KreaGoneWild:
+    author: Juan Treminio
+    description: Adds some neat Krea2 features, like NSFW and Edit-Lora support.
+    url: https://github.com/jtreminio/SwarmUI-KreaGoneWild
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+    # No longer relevant for 99% of Krea usage
+    - hidden
+
+H3Attn:
+    author: Juan Treminio
+    description: Attention and speedup options for the MiniMax H3 video model - a built-in window-attention node, plus optional support for the Sol-Attn and Spectrum custom nodes.
+    url: https://github.com/jtreminio/SwarmUI-H3Attn
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+    - beta
+
+RTXVideo:
+    author: BetaDoggo
+    description: Adds RTX Video (NVIDIA AI video super resolution + SDR-to-HDR) parameters for image and video outputs.
+    url: https://github.com/BetaDoggo/SwarmUI-RTX-Video
+    license: Mixed
+    tags:
+    - parameters
+    - nodes
+
+PromptEnhancer:
+    author: Hippotes
+    description: use the GenerateText node of ComfyUI for prompt enhancement from the Generate tab without an external inference engine, reusing the LLMs we have as text encoder.
+    url: https://github.com/HPPTS-MGNBR/SwarmUI-PromptEnhancer
+    license: Apache-2.0
+    tags:
+    - parameters
+    - ui
+    # Vibecoded but decently tested
+    - lowquality
+
+GridTweaks:
+    author: Juan Treminio
+    description: Find grid results that look alike. Organize saved comparisons and delete columns you no longer need.
+    url: https://github.com/jtreminio/SwarmUI-GridTweaks
+    license: MIT
+    tags:
+    - ui
+    - tools

@@ -101,7 +101,7 @@ public class ExtensionsManager
             .. Directory.EnumerateFiles(AppContext.BaseDirectory, "*.dll").Select(Path.GetFileNameWithoutExtension)
         ];
         await BuildPublicExtensionList();
-        string[] builtins = [.. Directory.EnumerateDirectories("./src/BuiltinExtensions").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))];
+        string[] builtins = [.. Directory.EnumerateDirectories("./BuiltinExtensions").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))];
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))] : [];
         string[] deleteMe = [.. extras.Where(e => e.TrimEnd('/').EndsWith(".delete"))];
         extras = [.. extras.Where(e => !e.TrimEnd('/').EndsWith(".delete") && !e.TrimEnd('/').EndsWith(".disable"))];
