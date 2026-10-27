@@ -922,6 +922,32 @@ function genInputs(delay_final = false) {
         modelInput.addEventListener('change', () => {
             forceSetDropdownValue('current_model', modelInput.value);
         });
+        let modelChangeInputs = new Set();
+        for (let param of gen_param_types) {
+            if (param.type != 'model' || param.subtype != 'Stable-Diffusion' || param.id == 'model') {
+                continue;
+            }
+            modelChangeInputs.add(document.getElementById(`input_${param.id}`));
+            if (param.toggleable) {
+                modelChangeInputs.add(document.getElementById(`input_${param.id}_toggle`));
+            }
+            let group = param.original_group || param.group;
+            while (group) {
+                if (group.toggles) {
+                    modelChangeInputs.add(document.getElementById(`input_group_content_${group.id}_toggle`));
+                }
+                group = group.parent;
+            }
+        }
+        for (let input of modelChangeInputs) {
+            if (input) {
+                input.addEventListener('change', () => {
+                    for (let browser of subModelBrowsers) {
+                        browser.browser.lightRefresh();
+                    }
+                });
+            }
+        }
         let vaeInput = document.getElementById('input_vae');
         if (vaeInput) {
             vaeInput.addEventListener('change', () => {
