@@ -619,9 +619,13 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier, SeedVRTemporalVideoOverlap;
 
+    public static T2IRegisteredParam<int> VideoContextLength, VideoContextOverlap;
+
     public static T2IRegisteredParam<T2IModel> PixelDecoderModel, SeedVRModel;
 
     public static T2IParamGroup GroupSeedVR;
+
+    public static T2IParamGroup GroupVideoContextWindow;
 
     public static T2IRegisteredParam<string>[] ControlNetPreprocessorParams = new T2IRegisteredParam<string>[3], ControlNetUnionTypeParams = new T2IRegisteredParam<string>[3];
 
@@ -821,6 +825,13 @@ public class ComfyUIBackendExtension : Extension
             ));
         VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
             "RIFE", FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupAdvancedVideo, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 33, DependNonDefault: VideoFrameInterpolationMultiplier.Type.ID, IsAdvanced: true
+            ));
+        GroupVideoContextWindow = new("Video Context Window", Description: "Using Context Windows lets you generate longer videos with less memory, at the cost of increased generation time and quality side effects.\nContext Windows split the frames of the video into chunks and generate the chunks separately with some overlap.\nOnly some video models support context windows.", Open: false, Toggles: true, OrderPriority: 40, IsAdvanced: true, Parent: T2IParamTypes.GroupAdvancedVideo);
+        VideoContextLength = T2IParamTypes.Register<int>(new("Video Context Length", "The length of the sections to generate at one time.\nFor example on a 15 second video, you might use 5 second chunks.",
+            "120", Min: 1, Max: 100000, Step: 1, FeatureFlag: "comfyui", Group: GroupVideoContextWindow, Permission: Permissions.ParamVideo, OrderPriority: 1, IsAdvanced: true, ViewType: ParamViewType.VIDEO_FRAMES, Examples: ["81", "120"]
+            ));
+        VideoContextOverlap = T2IParamTypes.Register<int>(new("Video Context Overlap", "The length of the overlap between context windows, ie how much of the next and previous chunk the current one can see.\nShould always be less than half the length.\nHigher values allow better consistency between chunks.",
+            "24", Min: 0, Max: 100000, Step: 1, FeatureFlag: "comfyui", Group: GroupVideoContextWindow, Permission: Permissions.ParamVideo, OrderPriority: 2, IsAdvanced: true, ViewType: ParamViewType.VIDEO_FRAMES, Examples: ["24", "48"]
             ));
         GligenModel = T2IParamTypes.Register<string>(new("GLIGEN Model", "Optionally use a GLIGEN model.\nGLIGEN is only compatible with SDv1 at time of writing.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRegionalPrompting, GetValues: (_) => GligenModels, IsAdvanced: true

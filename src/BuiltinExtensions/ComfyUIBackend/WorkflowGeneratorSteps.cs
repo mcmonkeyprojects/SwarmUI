@@ -367,6 +367,37 @@ public class WorkflowGeneratorSteps
                     g.LoadingModel = [teaCacheNode, 0];
                 }
             }
+            if (g.UserInput.Contains(ComfyUIBackendExtension.VideoContextLength) && g.UserInput.Contains(ComfyUIBackendExtension.VideoContextOverlap))
+            {
+                string contextNode = g.IsAnyWanModel() ? "WanContextWindowsManual" : (g.IsLTXV() || g.IsLTXV2()) ? "LTXVContextWindows" : g.IsMiniMaxH3() ? "MiniMaxH3ContextWindows" : null;
+                if (contextNode is not null)
+                {
+                    int contextLength = g.UserInput.Get(ComfyUIBackendExtension.VideoContextLength);
+                    int contextOverlap = g.UserInput.Get(ComfyUIBackendExtension.VideoContextOverlap);
+                    if (contextOverlap >= contextLength)
+                    {
+                        throw new SwarmUserErrorException("Video Context Overlap must be less than Video Context Length.");
+                    }
+                    JObject contextInputs = new()
+                    {
+                        ["model"] = g.LoadingModel,
+                        ["context_length"] = contextLength,
+                        ["context_overlap"] = contextOverlap,
+                        ["fuse_method"] = "pyramid",
+                        ["freenoise"] = true,
+                        ["split_conds_to_windows"] = false
+                    };
+                    if (contextNode != "MiniMaxH3ContextWindows")
+                    {
+                        contextInputs["context_schedule"] = "standard_uniform";
+                        contextInputs["context_stride"] = 1;
+                        contextInputs["closed_loop"] = false;
+                        contextInputs["retain_first_frame"] = false;
+                    }
+                    string contextWindows = g.CreateNode(contextNode, contextInputs);
+                    g.LoadingModel = [contextWindows, 0];
+                }
+            }
         }, -4);
         AddModelGenStep(g =>
         {
