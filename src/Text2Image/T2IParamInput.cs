@@ -598,6 +598,26 @@ public class T2IParamInput
         return fixedVal.Replace("\a", "");
     }
 
+    /// <summary>Returns whether the parameter is present.</summary>
+    public bool ContainsRaw(T2IParamType param)
+    {
+        return InternalSet.ContainsRaw(param);
+    }
+
+    /// <summary>Returns whether the parameter is present.</summary>
+    public bool Contains<T>(T2IRegisteredParam<T> param, int sectionId = 0, bool includeBase = true)
+    {
+        if (sectionId > 0 && SectionParamOverrides.TryGetValue(sectionId, out T2IParamSet subSet) && subSet.Contains(param))
+        {
+            return true;
+        }
+        if (sectionId != 0 && !includeBase)
+        {
+            return false;
+        }
+        return InternalSet.Contains(param);
+    }
+
     /// <summary>Gets the raw value of the parameter, if it is present, or null if not.</summary>
     public object GetRaw(T2IParamType param)
     {
