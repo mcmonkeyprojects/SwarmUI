@@ -1,8 +1,7 @@
 namespace SwarmUI.Utils;
 
 using FreneticUtilities.FreneticExtensions;
-
-using ISImage = SixLabors.ImageSharp.Image;
+using ImageMagick;
 using SwarmUI.Media;
 
 /// <summary>Helper to represent an image file cleanly and quickly.</summary>
@@ -15,18 +14,10 @@ public class Image : ImageFile
         Type = type;
     }
 
-    /// <summary>Construct an image from an ISImage, treating it as a png.</summary>
-    public Image(ISImage img) : this(ImageFile.ISImgToPngBytes(img), MediaType.ImagePng)
+    /// <summary>Construct an image from a MagickImage, treating it as a png.</summary>
+    public Image(IMagickImage<ushort> img) : this(MagickImageToPngBytes(img), MediaType.ImagePng)
     {
     }
-
-    /// <summary>Helper to convert an ImageSharp image to png bytes.</summary>
-    [Obsolete("Use ImageFile.ISImgToPngBytes instead")]
-    public static new byte[] ISImgToPngBytes(ISImage img) => ImageFile.ISImgToPngBytes(img);
-
-    /// <summary>Helper to convert an ImageSharp image to jpg bytes.</summary>
-    [Obsolete("Use ImageFile.ISImgToJpgBytes instead")]
-    public static new byte[] ISImgToJpgBytes(ISImage img) => ImageFile.ISImgToJpgBytes(img);
 
     /// <summary>Gets the correct mime type for this image, eg 'image/png'.</summary>
     [Obsolete("Use MediaType.MimeType instead")]
