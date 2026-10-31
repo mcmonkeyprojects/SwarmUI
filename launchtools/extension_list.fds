@@ -418,3 +418,14 @@ SeedVRTiling:
     tags:
     - parameters
     - nodes
+
+ManualSigmas:
+    author: Hippotes
+    description: Adds a 'Manual' scheduler that samples with a given list of sigmas
+    url: https://github.com/<you>/SwarmUI-ManualSigmas
+    license: Apache-2.0
+    tags:
+    - parameters
+    - nodes
+    # Vibecoded but decently tested
+    - lowquality
