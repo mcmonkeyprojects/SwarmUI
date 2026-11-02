@@ -1217,8 +1217,8 @@ function refreshParameterValues(strong = true, refreshType = null, callback = nu
                     }
                 }
                 else if (param.type == "list" && values) {
-                    let listOpts = [...elem.options].map(o => o.value);
-                    let newVals = values.filter(v => !listOpts.includes(v));
+                    let listOpts = new Set([...elem.options].map(o => o.value));
+                    let newVals = values.filter(v => !listOpts.has(v));
                     for (let val of newVals) {
                         $(elem).append(new Option(val, val, false, false));
                         $(presetElem).append(new Option(val, val, false, false));

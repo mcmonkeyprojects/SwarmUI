@@ -234,25 +234,22 @@ class ModelDownloaderUtil {
             return;
         }
         let html = '<option>(None)</option>\n<option value="__new__">(Create new...)</option>';
-        let folderList = [];
+        let folderSet = new Set();
         for (let submap of Object.values(coreModelMap)) {
             for (let model of submap) {
                 let parts = model.split('/');
                 if (parts.length == 1) {
                     continue;
                 }
-                if (folderList.includes(parts.slice(0, -1).join('/'))) {
+                if (folderSet.has(parts.slice(0, -1).join('/'))) {
                     continue;
                 }
                 for (let i = 1; i < parts.length; i++) {
-                    let folder = parts.slice(0, i).join('/');
-                    if (!folderList.includes(folder)) {
-                        folderList.push(folder);
-                    }
+                    folderSet.add(parts.slice(0, i).join('/'));
                 }
             }
         }
-        folderList.sort();
+        let folderList = [...folderSet].sort();
         for (let folder of folderList) {
             html += `<option>${folder}</option>\n`;
         }
