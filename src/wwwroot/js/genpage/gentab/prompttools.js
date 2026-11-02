@@ -60,12 +60,12 @@ class PromptTabCompleteClass {
         });
         this.registerPrefix('embed', 'Use a pretrained CLIP TI Embedding', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return this.getOrderedMatches(Object.values(modelsHelpers.models['Embedding']).map(m => {return {raw: true, name: `<embed:${m.cleanName}>`, clean_html: m.cleanDropdown()};}), prefixLow);
+            return this.getOrderedMatches(Object.values(modelsHelpers.models['Embedding']), prefixLow, m => `<embed:${m.cleanName}>`, m => ({raw: true, name: `<embed:${m.cleanName}>`, clean_html: m.cleanDropdown()}));
         });
         this.registerAltPrefix('embedding', 'embed');
         this.registerPrefix('lora', 'Forcibly apply a pretrained LoRA model (useful eg inside wildcards or other automatic inclusions - normally use the LoRAs UI tab)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return this.getOrderedMatches(Object.values(modelsHelpers.models['LoRA']).map(m => {return {raw: true, name: `<lora:${m.cleanName}>`, clean_html: m.cleanDropdown()};}), prefixLow);
+            return this.getOrderedMatches(Object.values(modelsHelpers.models['LoRA']), prefixLow, m => `<lora:${m.cleanName}>`, m => ({raw: true, name: `<lora:${m.cleanName}>`, clean_html: m.cleanDropdown()}));
         });
         this.registerPrefix('region', 'Apply a different prompt to a sub-region within the image', (prefix) => {
             return ['\nx,y,width,height eg "0.25,0.25,0.5,0.5"', '\nor x,y,width,height,strength eg "0,0,1,1,0.5"', '\nwhere strength is how strongly to apply the prompt to the region (vs global prompt). Can do "region:background" for background-only region.'];
@@ -163,16 +163,22 @@ class PromptTabCompleteClass {
         this.blockInput = false;
     }
 
-    getOrderedMatches(set, prefixLow) {
-        function getNameLow(item) {
-            if (typeof item == 'object') {
-                return item.name.toLowerCase();
+    getOrderedMatches(set, prefixLow, getName = item => typeof item == 'object' ? item.name : item, getReturnable = item => item) {
+        let prefixed = [];
+        let suffixed = [];
+        for (let item of set) {
+            let nameLow = getName(item).toLowerCase();
+            if (!nameLow.includes(prefixLow)) {
+                continue;
             }
-            return item.toLowerCase();
+            let match = getReturnable(item);
+            if (nameLow.startsWith(prefixLow)) {
+                prefixed.push(match);
+            }
+            else {
+                suffixed.push(match);
+            }
         }
-        let matched = set.filter(m => getNameLow(m).includes(prefixLow));
-        let prefixed = matched.filter(m => getNameLow(m).startsWith(prefixLow));
-        let suffixed = matched.filter(m => !getNameLow(m).startsWith(prefixLow));
         return prefixed.concat(suffixed);
     }
 
