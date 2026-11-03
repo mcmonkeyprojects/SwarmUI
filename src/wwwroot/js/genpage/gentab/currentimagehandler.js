@@ -1370,11 +1370,24 @@ function highlightSelectedImage(src) {
 /** Gets the container div element for a generated image to put into, in the batch output view. If Separate Batches is enabled, will use or create a per-batch container. */
 function getPreferredBatchContainer(batchId) {
     let mainContainer = getRequiredElementById('current_image_batch');
+    let maxRetain = Math.max(1, parseInt(getUserSetting('ui.maxbatchretain', 10000)));
+    let images = mainContainer.getElementsByClassName('image-block');
+    if (maxRetain > 0 && images.length >= maxRetain) {
+        let removeCount = maxRetain >= 200 ? 20 : 1;
+        let firstRemoved = images[Math.max(0, images.length - removeCount)];
+        while (firstRemoved.parentElement.classList.contains('batch-container') && firstRemoved.parentElement.firstElementChild == firstRemoved) {
+            firstRemoved = firstRemoved.parentElement;
+        }
+        let range = document.createRange();
+        range.setStartBefore(firstRemoved);
+        range.setEnd(mainContainer, mainContainer.childNodes.length);
+        range.deleteContents();
+    }
     if (separateBatchesElem.checked) {
         let reqId = batchId.split('_')[0];
         let batchContainer = document.getElementById(`current_image_batch_${reqId}`);
         if (!batchContainer) {
-            batchContainer = createDiv(`current_image_batch_${reqId}`, null);
+            batchContainer = createDiv(`current_image_batch_${reqId}`, 'batch-container');
             mainContainer.prepend(batchContainer);
         }
         return batchContainer;

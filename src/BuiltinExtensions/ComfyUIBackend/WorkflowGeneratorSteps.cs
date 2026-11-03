@@ -2086,7 +2086,7 @@ public class WorkflowGeneratorSteps
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 double? videoCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_Video, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, T2IParamInput.SectionID_Video);
                 int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_Video, false) ?? g.UserInput.Get(T2IParamTypes.VideoSteps, 20, sectionId: T2IParamInput.SectionID_Video);
-                string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
+                string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Image Aspect, Model Res");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed) + 42, sectionId: T2IParamInput.SectionID_Video, includeBase: false);
                 string prompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
                 string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");
