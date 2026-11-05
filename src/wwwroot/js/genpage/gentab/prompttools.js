@@ -70,6 +70,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('region', 'Apply a different prompt to a sub-region within the image', (prefix) => {
             return ['\nx,y,width,height eg "0.25,0.25,0.5,0.5"', '\nor x,y,width,height,strength eg "0,0,1,1,0.5"', '\nwhere strength is how strongly to apply the prompt to the region (vs global prompt). Can do "region:background" for background-only region.'];
         });
+        this.registerPrefix('bbox[0,0,1,1]', "Create a JSON bounding box element in the current model's prompt format", (prefix) => {
+            return ['\nUse "<bbox[x1,y1,x2,y2]:prompt>" with normalized 0-1 coordinates, measured from the top-left. Only some models support BBox prompting.', '\nFor example, "<bbox[0,0,0.5,1]:a cat>" places a cat in the left half.'];
+        });
         this.registerPrefix('object', 'Select a sub-region inside the image and inpaint over it with a different prompt', (prefix) => {
             return ['\nx,y,width,height eg "0.25,0.25,0.5,0.5"', '\nor x,y,width,height,strength,strength2 eg "0,0,1,1,0.5,0.4"', '\nwhere strength is how strongly to apply the prompt to the region (vs global prompt) on the general pass, and strength2 is how strongly to inpaint (ie InitImageCreativity).'];
         });
@@ -851,7 +854,7 @@ class PromptPlusButton {
         w = Math.max(0, Math.min(1, w + x)) - x;
         h = Math.max(0, Math.min(1, h + y)) - y;
         if (this.regionModalTypeInput.value == 'ideogram') {
-            this.applyNewSyntax(`{"type": "obj", "bbox": [${Math.round(y * 1000)}, ${Math.round(x * 1000)}, ${Math.round((y + h) * 1000)}, ${Math.round((x + w) * 1000)}], "desc": "${this.regionModalMainText.value.trim()}"}`);
+            this.applyNewSyntax(`<bbox[${roundTo(x, 0.001).toFixed(3)},${roundTo(y, 0.001).toFixed(3)},${roundTo(x + w, 0.001).toFixed(3)},${roundTo(y + h, 0.001).toFixed(3)}]:${this.regionModalMainText.value.trim()}>`);
             return;
         }
         let key = this.regionModalInpaint.checked ? 'object' : 'region';

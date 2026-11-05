@@ -207,6 +207,22 @@ public class T2IPromptHandling
 
     static T2IPromptHandling()
     {
+        PromptTagProcessors["bbox"] = (data, context) =>
+        {
+            string coordinates = context.Parse(context.PreData ?? "");
+            if (!TryParseBoundingBox(coordinates, out _))
+            {
+                context.TrackWarning($"Bounding box input 'bbox[{coordinates}]:{data}' has invalid coordinates (expected x1,y1,x2,y2 in 0..1 with x1 < x2 and y1 < y2) and will be ignored.");
+                return null;
+            }
+            if (string.IsNullOrWhiteSpace(data))
+            {
+                context.TrackWarning($"Bounding box input 'bbox[{coordinates}]:{data}' has an empty prompt and will be ignored.");
+                return null;
+            }
+            return $"<bbox[{coordinates}]:{context.Parse(data)}>";
+        };
+        PromptTagLengthEstimators["bbox"] = (data, context) => ProcessPromptLikeForLength(data);
         PromptTagProcessors["random"] = (data, context) =>
         {
             (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data, context);
@@ -900,6 +916,55 @@ public class T2IPromptHandling
             val = LegacyPromptParser.Convert(val);
         }
         return val;
+    }
+
+    public static bool TryParseBoundingBox(string coordinates, out double[] box)
+    {
+        string[] values = coordinates.SplitFast(',');
+        box = new double[4];
+        if (values.Length != 4)
+        {
+            return false;
+        }
+        for (int i = 0; i < box.Length; i++)
+        {
+            if (!double.TryParse(values[i], out box[i]) || !double.IsFinite(box[i]) || box[i] < 0 || box[i] > 1)
+            {
+                return false;
+            }
+        }
+        return box[0] < box[2] && box[1] < box[3];
+    }
+
+    public static string ProcessPromptForModel(string prompt, T2IModel model, int width, int height)
+    {
+        T2IBoundingBoxFormat format = model?.ModelClass?.CompatClass?.BoundingBoxFormat ?? T2IBoundingBoxFormat.Generic;
+        int index = 0;
+        string process(string text)
+        {
+            if (!text.ToLowerFast().Contains("<bbox"))
+            {
+                return text;
+            }
+            return StringConversionHelper.QuickSimpleTagFiller(text, "<", ">", tag =>
+            {
+                string prefix = tag.BeforeAndAfter(':', out string description).ToLowerFast();
+                if (prefix.Before('[') != "bbox")
+                {
+                    return $"<{process(tag)}>";
+                }
+                if (!prefix.StartsWithFast("bbox[") || !prefix.EndsWithFast(']'))
+                {
+                    return null;
+                }
+                if (!TryParseBoundingBox(prefix.After('[').BeforeLast(']'), out double[] box) || string.IsNullOrWhiteSpace(description))
+                {
+                    return null;
+                }
+                return format.Format(box, description, width, height, ++index).ToString(Newtonsoft.Json.Formatting.None);
+            }, false, 0);
+        }
+        return process(prompt);
     }
 
     public static string ProcessPromptLikeForLength(string val)

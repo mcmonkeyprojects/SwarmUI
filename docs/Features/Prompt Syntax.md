@@ -198,6 +198,10 @@
         - The problem with this, is it's basically random - you might have eg `a photo of a big fluffy dog`, and it gets split into `a photo of a big fluffy` and then `dog` (in practice 75 tokens is a much longer prompt but just an example of how the split might go wrong)
         - Using `<break>` lets you manually specify where it splits, so you might do eg `a photo <break> big fluffy dog` (to intentionally put the style in one chunk and the subject in the next)
 
+## JSON Bounding Boxes
+
+- Use `<bbox[x1,y1,x2,y2]:prompt>` to create an automatic JSON bounding box prompt for models that support this concept. See [Model Support](/docs/Model%20Support.md) for info on models that support this.
+
 ## Regional Prompting
 
 ![img](/docs/images/sdxl_catdog.jpg)

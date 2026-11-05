@@ -2495,6 +2495,19 @@ public partial class WorkflowGenerator
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input.</summary>
     public JArray CreateConditioningDirect(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null, JArray attachImages = null, int steps = -1)
     {
+        int width = UserInput.GetImageWidth();
+        int height = UserInput.GetImageHeight();
+        if (prompt.ToLowerFast().Contains("<bbox"))
+        {
+            int bboxWidth = width, bboxHeight = height;
+            if (IsRefinerStage)
+            {
+                double scale = UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
+                bboxWidth = (int)Math.Round(bboxWidth * scale) / 16 * 16;
+                bboxHeight = (int)Math.Round(bboxHeight * scale) / 16 * 16;
+            }
+            prompt = T2IPromptHandling.ProcessPromptForModel(prompt, model, bboxWidth, bboxHeight);
+        }
         if (steps == -1)
         {
             steps = UserInput.Get(T2IParamTypes.Steps, 20);
@@ -2506,8 +2519,6 @@ public partial class WorkflowGenerator
         }
         string node;
         double mult = isPositive ? 1.5 : 0.8;
-        int width = UserInput.GetImageWidth();
-        int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
         bool needsAdvancedEncode = prompt.Contains("<break>") || prompt.Contains("<weight") || prompt.Contains("<embed") || prompt.Contains("<fromto") || prompt.Contains("<alternate") || prompt.Contains("<alt:") || prompt.Contains("<alt[") || prompt.Contains('(');
         double defaultGuidance = -1;

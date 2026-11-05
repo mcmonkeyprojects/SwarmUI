@@ -604,7 +604,7 @@ class ImageEditorToolSelect extends ImageEditorTool {
         </div>`;
         let makeRegionButton = `<div class="image-editor-tool-block">
             <button class="basic-button id-make-region">Make Region</button>
-            <button class="basic-button id-make-ideogram">Make Ideogram JSON</button>
+            <button class="basic-button id-make-bbox">Make Bounding Box</button>
         </div>`;
         this.configDiv.innerHTML = copyDropdown + makeRegionButton;
         this.copyModeSelect = this.configDiv.querySelector('.id-copy-mode');
@@ -623,14 +623,15 @@ class ImageEditorToolSelect extends ImageEditorTool {
                 triggerChangeFor(promptBox);
             }
         });
-        this.configDiv.querySelector('.id-make-ideogram').addEventListener('click', () => {
+        this.configDiv.querySelector('.id-make-bbox').addEventListener('click', () => {
             if (this.editor.hasSelection) {
                 // TODO: This should create a new pseudo-layer that highlights a simple box and render the region text inside of it
                 let promptBox = getRequiredElementById('alt_prompt_textbox');
+                /** Clamps and formats a normalized bounding box coordinate. */
                 function roundClean(v) {
-                    return Math.max(0, Math.min(1000, Math.round(v * 1000)));
+                    return roundTo(Math.max(0, Math.min(1, v)), 0.001).toFixed(3);
                 }
-                let regionText = `\n{"type": "obj", "bbox": [${roundClean(this.editor.selectY / this.editor.realHeight)}, ${roundClean(this.editor.selectX / this.editor.realWidth)}, ${roundClean((this.editor.selectY + this.editor.selectHeight) / this.editor.realHeight)}, ${roundClean((this.editor.selectX + this.editor.selectWidth) / this.editor.realWidth)}], "desc": "My New Element"}`;
+                let regionText = `\n<bbox[${roundClean(this.editor.selectX / this.editor.realWidth)},${roundClean(this.editor.selectY / this.editor.realHeight)},${roundClean((this.editor.selectX + this.editor.selectWidth) / this.editor.realWidth)},${roundClean((this.editor.selectY + this.editor.selectHeight) / this.editor.realHeight)}]:My New Element>`;
                 promptBox.value += regionText;
                 triggerChangeFor(promptBox);
             }
