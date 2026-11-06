@@ -613,7 +613,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice, ModelAttentionBackend, UseSparseAttention, SeedVRUpscaleMethod, SeedVRColorCorrectionBehavior, EnableReferenceLatents, TextEncodedImage;
 
-    public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG, SeedVRSplitLatent;
+    public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG, SeedVRSplitLatent, SeedVROnly;
 
     public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG, NormalizedAttentionGuidanceScale, NormalizedAttentionGuidanceAlpha, NormalizedAttentionGuidanceTau, SeedVRUpscale, SeedVRPreDownscale;
 
@@ -877,6 +877,9 @@ public class ComfyUIBackendExtension : Extension
             ));
         // ================================================ SeedVR ================================================
         GroupSeedVR = new T2IParamGroup("SeedVR", Toggles: true, Open: false, OrderPriority: -2.5, Description: "SeedVR2 is a one-step restoration model, run over the result of the normal generation.");
+        SeedVROnly = T2IParamTypes.Register<bool>(new("SeedVR Only", "",
+            "false", IgnoreIf: "false", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSwarmInternal, VisibleNormally: false, ExtraHidden: true, HideFromMetadata: true
+            ));
         SeedVRModel = T2IParamTypes.Register<T2IModel>(new("SeedVR Model", "Which SeedVR2 model to restore with.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", Group: GroupSeedVR, Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true, OrderPriority: -10,
             GetValues: (session) => ["None", .. T2IParamTypes.CleanModelList(Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "seedvr2").OrderBy(m => m.Name).Select(m => m.Name))]
