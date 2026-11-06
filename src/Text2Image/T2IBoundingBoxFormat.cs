@@ -40,7 +40,7 @@ public record class T2IBoundingBoxFormat
     {
         ["bbox"] = new JArray(box),
         ["desc"] = prompt
-    } });
+    }});
 
     /// <summary>Ideogram 4 elements: type, bbox, desc, in training key order. See https://github.com/ideogram-oss/ideogram4/blob/main/docs/prompting.md.</summary>
     public static T2IBoundingBoxFormat Ideogram4 = Register(new() { ID = "ideogram-4", Format = (box, prompt, width, height, index) => new JObject()
@@ -48,7 +48,7 @@ public record class T2IBoundingBoxFormat
         ["type"] = "obj",
         ["bbox"] = ToYxyx1000(box),
         ["desc"] = prompt
-    } });
+    }});
 
     /// <summary>FLUX 3 element table rows: id, bbox, desc. See https://huggingface.co/black-forest-labs/flux-3-image-klein-pup/blob/main/system_prompts.json.</summary>
     public static T2IBoundingBoxFormat Flux3 = Register(new() { ID = "flux-3", Format = (box, prompt, width, height, index) => new JObject()
@@ -56,14 +56,14 @@ public record class T2IBoundingBoxFormat
         ["id"] = $"object_{index}",
         ["bbox"] = ToYxyx1000(box),
         ["desc"] = prompt
-    } });
+    }});
 
     /// <summary>Fibo 2 objects with top-left x,y,w,h percentages rounded to one decimal.</summary>
     public static T2IBoundingBoxFormat Fibo2 = Register(new() { ID = "fibo-2", Format = (box, prompt, width, height, index) => new JObject()
     {
         ["description"] = prompt,
         ["bounding_box"] = new JArray(Math.Round(box[0] * 100, 1), Math.Round(box[1] * 100, 1), Math.Round((box[2] - box[0]) * 100, 1), Math.Round((box[3] - box[1]) * 100, 1))
-    } });
+    }});
 
     /// <summary>Ming Image layers with normalized center/width/height strings. See https://github.com/inclusionAI/Ming-Image/blob/main/assets/t2i_rewriter_system_prompt.txt.</summary>
     public static T2IBoundingBoxFormat MingImage = Register(new() { ID = "ming-image", Format = (box, prompt, width, height, index) => new JObject()
@@ -72,7 +72,7 @@ public record class T2IBoundingBoxFormat
         ["coordinates"] = $"cx: {(box[0] + box[2]) / 2:F3}, cy: {(box[1] + box[3]) / 2:F3}, w: {box[2] - box[0]:F3}, h: {box[3] - box[1]:F3}",
         ["hierarchy_and_relation"] = "",
         ["color_specs"] = new JArray()
-    } });
+    }});
 
     /// <summary>MOSS Image items with centered pixel y1,x1,y2,x2 boxes. See https://github.com/OpenMOSS/MOSS-Image/blob/main/skills/moss-image-prompt-enhancer/scripts/compile_prompt.py.</summary>
     public static T2IBoundingBoxFormat MossImage = Register(new() { ID = "moss-image", Format = (box, prompt, width, height, index) => new JObject()
@@ -80,5 +80,5 @@ public record class T2IBoundingBoxFormat
         ["label"] = "object",
         ["caption"] = prompt,
         ["bbox"] = new JArray(ToCenteredPixel(box[1], height, false), ToCenteredPixel(box[0], width, false), ToCenteredPixel(box[3], height, true), ToCenteredPixel(box[2], width, true))
-    } });
+    }});
 }
