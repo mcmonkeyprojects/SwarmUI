@@ -1263,6 +1263,21 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 'initimagecreativity': 0,
                 'images': 1
             };
+            let startSize = getUserSetting('ui.refineimagestartsize');
+            if (startSize != 'User Size') {
+                let [width, height] = naturalDim();
+                let precision = getResolutionPrecision();
+                if (startSize == 'Image Aspect, User Size') {
+                    let userWidth = getRequiredElementById('input_width').value;
+                    let userHeight = getRequiredElementById('input_height').value;
+                    let scale = Math.sqrt(userWidth * userHeight / (width * height));
+                    width *= scale;
+                    height *= scale;
+                }
+                input_overrides['aspectratio'] = 'Custom';
+                input_overrides['width'] = roundTo(width, precision);
+                input_overrides['height'] = roundTo(height, precision);
+            }
             if (currentMetadataVal) {
                 let readable = interpretMetadata(currentMetadataVal);
                 let metadata = readable ? JSON.parse(readable).sui_image_params : {};
