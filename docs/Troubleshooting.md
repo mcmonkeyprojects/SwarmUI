@@ -18,7 +18,7 @@ That is the build dependency service, connections to it are required for the fir
 
 If you see errors like:
 - `The type or namespace name 'Hardware' could not be found (are you missing a using directive or an assembly reference?) [src/SwarmUI.csproj]`, noting the mention of `Hardware` specifically (this is a NuGet package)
-- `The type or namespace name 'Image<>' does not exist in the namespace 'SixLabors.ImageSharp'`
+- `The type or namespace name 'MagickImage' does not exist in the namespace 'ImageMagick'`
 
 that might mean your NuGet cache is corrupt. This is rare, but can happen. In that case, you must reset your NuGet cache.
 

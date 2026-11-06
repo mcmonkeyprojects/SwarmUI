@@ -288,7 +288,7 @@ public class Session : IEquatable<Session>
                     File.WriteAllBytes(fullPath, actualFile.RawData);
                     if ((User.Settings.FileFormat.SaveTextFileMetadata || extension == "webp" || !OutputMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
                     {
-                        if (extension == "webp" && actualFile is ImageFile imageFile && imageFile.ToIS.Frames.Count == 1)
+                        if (extension == "webp" && actualFile is ImageFile imageFile && imageFile.ToMagickFrames.Count == 1)
                         {
                             // no .json write for still-image webps
                         }

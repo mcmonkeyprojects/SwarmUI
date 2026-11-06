@@ -1,13 +1,9 @@
+using System;
 using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
+using ImageMagick;
 using SwarmUI.Accounts;
 using SwarmUI.Utils;
-using ISImage = SixLabors.ImageSharp.Image;
-using Image = SwarmUI.Utils.Image;
-using SixLabors.ImageSharp.PixelFormats;
-using System;
 using SwarmUI.Media;
 
 namespace SwarmUI.Text2Image;
@@ -60,7 +56,7 @@ public class T2IMultiStepObjectBuilder
             return null;
         }
         //user_input.Set(T2IParamTypes.EndStepsEarly, 0.6); // TODO: Configurable
-        ISImage liveImg = img.ToIS.Clone(_ => { });
+        using IMagickImage<ushort> liveImg = img.ToMagick.Clone();
         float overBound = 0.1f;
         foreach (PromptRegion.Part part in objects)
         {
@@ -70,7 +66,7 @@ public class T2IMultiStepObjectBuilder
             }
             user_input.Set(T2IParamTypes.Seed, user_input.Get(T2IParamTypes.Seed) + 1);
             T2IParamInput objInput = user_input.Clone();
-            int mpTarget = liveImg.Width * liveImg.Height;
+            int mpTarget = (int)(liveImg.Width * liveImg.Height);
             if (objInput.TryGet(T2IParamTypes.RegionalObjectInpaintingModel, out T2IModel model))
             {
                 objInput.Set(T2IParamTypes.Model, model);
@@ -86,16 +82,18 @@ public class T2IMultiStepObjectBuilder
             int pixelHeight = (int)(part.Height * liveImg.Height);
             int extraX = Math.Max((int)((part.X - overBound * 0.5) * liveImg.Width), 0);
             int extraY = Math.Max((int)((part.Y - overBound * 0.5) * liveImg.Height), 0);
-            int extraWidth = Math.Min((int)((part.Width + overBound) * liveImg.Width), liveImg.Width - extraX);
-            int extraHeight = Math.Min((int)((part.Height + overBound) * liveImg.Height), liveImg.Height - extraY);
+            int extraWidth = Math.Min((int)((part.Width + overBound) * liveImg.Width), (int)liveImg.Width - extraX);
+            int extraHeight = Math.Min((int)((part.Height + overBound) * liveImg.Height), (int)liveImg.Height - extraY);
             (int fixedWidth, int fixedHeight) = Utilities.ResToModelFit(extraWidth, extraHeight, mpTarget);
             double scaleWidth = fixedWidth / (double)extraWidth;
             double scaleHeight = fixedHeight / (double)extraHeight;
-            using ISImage subImage = liveImg.Clone(i => i.Crop(new Rectangle(extraX, extraY, extraWidth, extraHeight)).Resize(fixedWidth, fixedHeight));
-            using ISImage maskImage = ISImage.LoadPixelData<Rgb24>(Enumerable.Repeat(Color.Black.ToPixel<Rgb24>(), 1).ToArray(), 1, 1);
-            using ISImage maskInnerImage = ISImage.LoadPixelData<Rgb24>(Enumerable.Repeat(Color.White.ToPixel<Rgb24>(), 1).ToArray(), 1, 1);
-            maskInnerImage.Mutate(i => i.Resize((int)(pixelWidth * scaleWidth), (int)(pixelHeight * scaleHeight)));
-            maskImage.Mutate(i => i.Resize(fixedWidth, fixedHeight).DrawImage(maskInnerImage, new Point((int)((pixelX - extraX) * scaleWidth), (int)((pixelY - extraY) * scaleHeight)), 1));
+            using IMagickImage<ushort> subImage = liveImg.Clone();
+            subImage.Crop(new MagickGeometry(extraX, extraY, (uint)extraWidth, (uint)extraHeight));
+            subImage.ResetPage();
+            subImage.Resize(new MagickGeometry((uint)fixedWidth, (uint)fixedHeight) { IgnoreAspectRatio = true });
+            using MagickImage maskImage = new(MagickColors.Black, (uint)fixedWidth, (uint)fixedHeight) { Depth = 8 };
+            using MagickImage maskInnerImage = new(MagickColors.White, (uint)(pixelWidth * scaleWidth), (uint)(pixelHeight * scaleHeight)) { Depth = 8 };
+            maskImage.Composite(maskInnerImage, (int)((pixelX - extraX) * scaleWidth), (int)((pixelY - extraY) * scaleHeight), CompositeOperator.Over);
             objInput.Set(T2IParamTypes.MaskImage, new(maskImage));
             objInput.Set(T2IParamTypes.Prompt, part.Prompt);
             objInput.Set(T2IParamTypes.InitImage, new Image(subImage));
@@ -107,9 +105,9 @@ public class T2IMultiStepObjectBuilder
             {
                 return null;
             }
-            ISImage objISImg = objImg.ToIS;
-            objISImg = objISImg.Clone(i => i.Resize(extraWidth, extraHeight));
-            liveImg.Mutate(i => i.DrawImage(objISImg, new Point(extraX, extraY), 1));
+            using IMagickImage<ushort> objectImage = objImg.ToMagick.Clone();
+            objectImage.Resize(new MagickGeometry((uint)extraWidth, (uint)extraHeight) { IgnoreAspectRatio = true });
+            liveImg.Composite(objectImage, extraX, extraY, CompositeOperator.Over);
             if (user_input.Get(T2IParamTypes.OutputIntermediateImages, false))
             {
                 output(new JObject() { ["image"] = "data:image/png;base64," + new Image(liveImg).AsBase64, ["batch_index"] = $"{batchId}{obj++}", ["request_id"] = $"{user_input.UserRequestId}", ["metadata"] = null });

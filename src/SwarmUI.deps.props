@@ -7,8 +7,7 @@
         <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.25.0" />
         <PackageReference Include="LLamaSharp.Backend.Cuda12" Version="0.25.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
-        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.16.0" />
         <PackageReference Include="z440.atl.core" Version="7.16.0" />
     </ItemGroup>
 </Project>
