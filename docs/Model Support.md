@@ -762,7 +762,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **CFG Scale:** normal ranges, they officially use `3` but higher may be better - `7` is used for the sample image
     - **Steps:** normal ranges like `20` though higher may be needed for the raw models
     - **Resolution:** `1024`, lower values down to 256 work as expected, higher values are quite variable
-    - **SkipLayerGuidance:** The OpenMOSS team recommends skip layer guidance with Layer Target set to `22`, but the benefit is questionable. This is available in Swarm's extension list if you'd like to try it.
+    - **SkipLayerGuidance:** The OpenMOSS team recommends skip layer guidance with Scale set to `0` and Layer Target set to `22`, but the benefit is questionable. This is available in Swarm's extension list if you'd like to try it.
 
 # Bria Fibo 2
 

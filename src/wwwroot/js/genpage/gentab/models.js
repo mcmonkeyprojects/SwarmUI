@@ -433,8 +433,20 @@ function save_edit_model() {
     complete();
 }
 
-function isModelArchCorrect(model) {
-    let curCompat = currentModelHelper.curCompatClass;
+function isModelArchCorrect(model, curCompat = null) {
+    if (curCompat == null) {
+        for (let param of gen_param_types || []) {
+            if (param.type != 'model' || param.subtype != 'Stable-Diffusion' || !isParamEnabled(param)) {
+                continue;
+            }
+            let input = document.getElementById(`input_${param.id}`);
+            let compat = input?.value ? modelsHelpers.getDataFor('Stable-Diffusion', input.value)?.modelClass?.compatClass?.id : null;
+            if (compat && isModelArchCorrect(model, compat)) {
+                return true;
+            }
+        }
+        curCompat = currentModelHelper.curCompatClass;
+    }
     if (model.compat_class && curCompat) {
         let slash = model.architecture.indexOf('/');
         if (slash != -1) { // Base models are excluded

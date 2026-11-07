@@ -1,8 +1,7 @@
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
+using ImageMagick;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Media;
@@ -15,8 +14,6 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using Image = SwarmUI.Utils.Image;
-using ISImage = SixLabors.ImageSharp.Image;
-using ISImageRGBA = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 
 namespace SwarmUI.WebAPI;
 
@@ -454,7 +451,7 @@ public static class T2IAPI
         T2IEngine.ImageOutput[] griddables = [.. imageSet.Where(i => i.IsReal)];
         if (griddables.Length <= session.User.Settings.MaxImagesInMiniGrid && griddables.Length > 1 && griddables.All(i => i.File.Type.MetaType == MediaMetaType.Image))
         {
-            ISImage[] imgs = [.. griddables.Select(i => (i.File as Image).ToIS)];
+            IMagickImage<ushort>[] imgs = [.. griddables.Select(i => (i.File as Image).ToMagick)];
             int columns = (int)Math.Ceiling(Math.Sqrt(imgs.Length));
             int rows = columns;
             if (griddables.Length <= columns * (columns - 1))
@@ -465,17 +462,14 @@ public static class T2IAPI
             {
                 (columns, rows) = GridShapeTable[imgs.Length - 1];
             }
-            int widthPerImage = imgs.Max(i => i.Width);
-            int heightPerImage = imgs.Max(i => i.Height);
-            ISImageRGBA grid = new(widthPerImage * columns, heightPerImage * rows);
-            grid.Mutate(m =>
+            int widthPerImage = (int)imgs.Max(i => i.Width);
+            int heightPerImage = (int)imgs.Max(i => i.Height);
+            using MagickImage grid = new(MagickColors.Transparent, (uint)(widthPerImage * columns), (uint)(heightPerImage * rows)) { Depth = 8 };
+            for (int i = 0; i < imgs.Length; i++)
             {
-                for (int i = 0; i < imgs.Length; i++)
-                {
-                    int x = (i % columns) * widthPerImage, y = (i / columns) * heightPerImage;
-                    m.DrawImage(imgs[i], new Point(x, y), 1);
-                }
-            });
+                int x = (i % columns) * widthPerImage, y = (i / columns) * heightPerImage;
+                grid.Composite(imgs[i], x, y, CompositeOperator.Over);
+            }
             Image gridImg = new(grid);
             long genTime = Environment.TickCount64 - timeStart;
             T2IParamInput finalInput = user_input.Clone();

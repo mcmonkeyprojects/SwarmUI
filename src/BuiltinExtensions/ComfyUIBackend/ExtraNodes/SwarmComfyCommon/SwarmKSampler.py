@@ -282,6 +282,18 @@ def split_latent_tensor(latent_tensor, tile_size=1024, scale_factor=8):
     return tiles
 
 
+def crop_conditioning(conditioning, coords):
+    """Crop SeedVR2 spatial conditioning to a tile without modifying the full-image conditioning."""
+    left, upper, right, lower = coords
+    result = []
+    for embedding, metadata in conditioning:
+        metadata = metadata.copy()
+        if "condition" in metadata:
+            metadata["condition"] = metadata["condition"][..., upper:lower, left:right]
+        result.append([embedding, metadata])
+    return result
+
+
 def stitch_latent_tensors(original_size, tiles, scale_factor=8):
     """Stitch tiles together to create the final upscaled latent tensor with overlaps."""
     result = torch.zeros(original_size)
@@ -490,7 +502,9 @@ class SwarmKSampler:
         # resample each tile using self.sample
         resampled_tiles = []
         for coords, tile in tiles:
-            resampled_tile = self.sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, {"samples": tile}, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, model_negative)
+            tile_positive = crop_conditioning(positive, coords)
+            tile_negative = crop_conditioning(negative, coords)
+            resampled_tile = self.sample(model, noise_seed, steps, cfg, sampler_name, scheduler, tile_positive, tile_negative, {"samples": tile}, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, model_negative)
             resampled_tiles.append((coords, resampled_tile[0]["samples"]))
         # stitch the tiles to get the final upscaled image
         result = stitch_latent_tensors(latent_samples.shape, resampled_tiles)

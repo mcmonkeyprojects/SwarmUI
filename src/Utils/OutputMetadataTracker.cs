@@ -231,7 +231,7 @@ public static class OutputMetadataTracker
                     byte[] data = File.ReadAllBytes(file);
                     fileData = data;
                     ImageFile img = new Image(data, MediaType.GetByExtension(ext));
-                    if (ext == "webp" && img.ToIS.Frames.Count == 1)
+                    if (ext == "webp" && img.ToMagickFrames.Count == 1)
                     {
                         fileData = img.ToMetadataJpg()?.RawData;
                     }

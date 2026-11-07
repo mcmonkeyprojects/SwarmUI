@@ -12,15 +12,10 @@ using SwarmUI.Media;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using System.Net.WebSockets;
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Drawing.Processing;
+using ImageMagick;
+using ImageMagick.Drawing;
 
 using static SwarmUI.Builtin_GridGeneratorExtension.GridGenCore;
-using Image = SwarmUI.Utils.Image;
-using ISImage = SixLabors.ImageSharp.Image;
-using ISImageRGBA = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 
 namespace SwarmUI.Builtin_GridGeneratorExtension;
 
@@ -444,17 +439,9 @@ public class GridGeneratorExtension : Extension
         return new JObject() { ["exists"] = exists };
     }
 
-    public static FontCollection MainFontCollection;
-    public static ConcurrentDictionary<float, Font> Fonts = new();
-
-    public static Font GetFont(float sizeMult)
+    public static IDrawables<ushort> GetFont(float sizeMult)
     {
-        if (MainFontCollection is null)
-        {
-            MainFontCollection = new();
-            MainFontCollection.Add("src/wwwroot/fonts/unifont-12.0.01.woff2");
-        }
-        return Fonts.GetOrCreate(sizeMult, () => MainFontCollection.Families.First().CreateFont(16 * sizeMult, FontStyle.Bold));
+        return new Drawables().Font("src/wwwroot/fonts/unifont-12.0.01.woff2", FontStyleType.Normal, FontWeight.Bold, FontStretch.Normal).FontPointSize(16 * sizeMult);
     }
 
     public async Task<JObject> GridGenRun(WebSocket socket, Session session, JObject raw, string outputFolderName, bool doOverwrite, bool fastSkip, bool generatePage, bool publishGenMetadata, bool dryRun, bool weightOrder, string outputType, bool continueOnError, bool showOutputs)
@@ -516,103 +503,129 @@ public class GridGeneratorExtension : Extension
                 List<(string, string)> xAxis = [.. grid.Axes[0].Values.Where(v => !v.Skip).Select(proc)];
                 List<(string, string)> yAxis = grid.Axes.Count > 1 ? [.. grid.Axes[1].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
                 List<(string, string)> y2Axis = grid.Axes.Count > 2 ? [.. grid.Axes[2].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
-                int maxWidth = images.Max(x => x.ToIS.Width);
-                int maxHeight = images.Max(x => x.ToIS.Height);
+                int maxWidth = (int)images.Max(x => x.ToMagick.Width);
+                int maxHeight = (int)images.Max(x => x.ToMagick.Height);
                 float extraSizeMult = 1;
                 if (maxWidth > 800 || maxHeight > 800)
                 {
                     extraSizeMult = 2;
                 }
-                Font font = GetFont(extraSizeMult);
-                TextOptions options = new(font);
-                FontRectangle rect = TextMeasurer.MeasureSize("ABCdefg Word Prefix", options);
-                int textWidth = (int)Math.Ceiling(rect.Width);
-                int rawTextHeight = (int)Math.Ceiling(rect.Height * 1.1);
+                IDrawables<ushort> font = GetFont(extraSizeMult);
+                ITypeMetric rect = font.FontTypeMetrics("ABCdefg Word Prefix");
+                int textWidth = (int)Math.Ceiling(rect.TextWidth);
+                int rawTextHeight = (int)Math.Ceiling(rect.TextHeight * 1.1);
                 int textHeight = rawTextHeight * 2;
                 int totalWidth = maxWidth * xAxis.Count + textWidth;
                 int totalHeight = maxHeight * (yAxis.Count * y2Axis.Count) + textHeight * y2Axis.Count;
                 Logs.Info($"Will generate grid image of size {totalWidth}x{totalHeight}");
-                ISImageRGBA gridImg = new(totalWidth, totalHeight);
-                gridImg.Mutate(m =>
+                using MagickImage gridImg = new(MagickColors.White, (uint)totalWidth, (uint)totalHeight) { Depth = 8 };
+                void DrawTextAutoScale(string text, float x, float y, float width, float height)
                 {
-                    Brush brush = new SolidBrush(Color.Black);
-                    void DrawTextAutoScale(string text, float x, float y, float width, float height)
+                    if (text.Length == 0)
                     {
-                        if (text.Length > 500)
-                        {
-                            text = $"{text[..500]}...";
-                        }
-                        RichTextOptions rto = new(font) { WrappingLength = width, Origin = new(x, y) };
-                        float lines = height / rawTextHeight;
-                        FontRectangle measured = TextMeasurer.MeasureSize(text, options);
-                        Logs.Verbose($"Measured text '{text}' as {measured.Width}x{measured.Height} in {width}x{height} with {lines} lines");
-                        if (measured.Width < width * lines * 0.5)
-                        {
-                            rto.Font = GetFont(2 * extraSizeMult);
-                        }
-                        else if (measured.Width > width * lines * 2)
-                        {
-                            rto.Font = GetFont(0.5f * extraSizeMult);
-                        }
-                        else if (measured.Width > width * lines)
-                        {
-                            rto.Font = GetFont(0.75f * extraSizeMult);
-                        }
-                        m.DrawText(rto, text, brush);
+                        return;
                     }
-                    m.Fill(Color.White);
-                    int xIndex = 0;
-                    float yIndex = 0;
-                    foreach ((string x, _) in xAxis)
+                    if (text.Length > 500)
                     {
-                        DrawTextAutoScale(x, xIndex * maxWidth + textWidth, 0, maxWidth, textHeight);
-                        xIndex++;
+                        text = $"{text[..500]}...";
                     }
-                    foreach ((string y2, _) in y2Axis)
+                    float lines = height / rawTextHeight;
+                    ITypeMetric measured = font.FontTypeMetrics(text);
+                    Logs.Verbose($"Measured text '{text}' as {measured.TextWidth}x{measured.TextHeight} in {width}x{height} with {lines} lines");
+                    float sizeMult = extraSizeMult;
+                    if (measured.TextWidth < width * lines * 0.5)
                     {
-                        if (y2 is not null)
+                        sizeMult *= 2;
+                    }
+                    else if (measured.TextWidth > width * lines * 2)
+                    {
+                        sizeMult *= 0.5f;
+                    }
+                    else if (measured.TextWidth > width * lines)
+                    {
+                        sizeMult *= 0.75f;
+                    }
+                    IDrawables<ushort> labelFont = GetFont(sizeMult);
+                    IDrawables<ushort> label = GetFont(sizeMult).FillColor(MagickColors.Black);
+                    ITypeMetric lineMetrics = labelFont.FontTypeMetrics("Ag");
+                    double baseline = y + lineMetrics.Ascent;
+                    foreach (string paragraph in text.Replace("\r", "").Split('\n'))
+                    {
+                        string line = "";
+                        foreach (Rune character in paragraph.EnumerateRunes())
                         {
-                            DrawTextAutoScale(y2, 0, yIndex * maxHeight + textHeight, textWidth, maxHeight);
-                            yIndex += textHeight / (float)maxHeight;
+                            string candidate = line + character;
+                            if (line.Length > 0 && labelFont.FontTypeMetrics(candidate).TextWidth > width)
+                            {
+                                int space = line.LastIndexOf(' ');
+                                label.Text(x, baseline, space > 0 ? line[..space] : line);
+                                baseline += lineMetrics.TextHeight;
+                                line = (space > 0 ? line[(space + 1)..] : "") + character;
+                            }
+                            else
+                            {
+                                line = candidate;
+                            }
                         }
-                        foreach ((string y, _) in yAxis)
+                        if (line.Length > 0)
                         {
+                            label.Text(x, baseline, line);
+                        }
+                        baseline += lineMetrics.TextHeight;
+                    }
+                    label.Draw(gridImg);
+                }
+                int xIndex = 0;
+                float yIndex = 0;
+                foreach ((string x, _) in xAxis)
+                {
+                    DrawTextAutoScale(x, xIndex * maxWidth + textWidth, 0, maxWidth, textHeight);
+                    xIndex++;
+                }
+                foreach ((string y2, _) in y2Axis)
+                {
+                    if (y2 is not null)
+                    {
+                        DrawTextAutoScale(y2, 0, yIndex * maxHeight + textHeight, textWidth, maxHeight);
+                        yIndex += textHeight / (float)maxHeight;
+                    }
+                    foreach ((string y, _) in yAxis)
+                    {
+                        if (y is not null)
+                        {
+                            DrawTextAutoScale(y, 0, yIndex * maxHeight + textHeight * 2, textWidth, maxHeight);
+                        }
+                        yIndex++;
+                    }
+                }
+                yIndex = 0;
+                foreach ((_, string y2) in y2Axis)
+                {
+                    if (y2 is not null)
+                    {
+                        yIndex += textHeight / (float)maxHeight;
+                    }
+                    foreach ((_, string y) in yAxis)
+                    {
+                        xIndex = 0;
+                        foreach ((_, string x) in xAxis)
+                        {
+                            string imgPath = x;
                             if (y is not null)
                             {
-                                DrawTextAutoScale(y, 0, yIndex * maxHeight + textHeight * 2, textWidth, maxHeight);
-                            }
-                            yIndex++;
-                        }
-                    }
-                    yIndex = 0;
-                    foreach ((_, string y2) in y2Axis)
-                    {
-                        if (y2 is not null)
-                        {
-                            yIndex += textHeight / (float)maxHeight;
-                        }
-                        foreach ((_, string y) in yAxis)
-                        {
-                            xIndex = 0;
-                            foreach ((_, string x) in xAxis)
-                            {
-                                string imgPath = x;
-                                if (y is not null)
+                                imgPath = $"{imgPath}/{y}";
+                                if (y2 is not null)
                                 {
-                                    imgPath = $"{imgPath}/{y}";
-                                    if (y2 is not null)
-                                    {
-                                        imgPath = $"{imgPath}/{y2}";
-                                    }
+                                    imgPath = $"{imgPath}/{y2}";
                                 }
-                                ISImage img = (data.GeneratedOutputs[imgPath] as ImageFile).ToIS;
-                                m.DrawImage(img, new Point(xIndex * maxWidth + textWidth, (int)(yIndex * maxHeight + textHeight)), 1);
-                                xIndex++;
                             }
-                            yIndex++;
+                            IMagickImage<ushort> img = (data.GeneratedOutputs[imgPath] as ImageFile).ToMagick;
+                            gridImg.Composite(img, xIndex * maxWidth + textWidth, (int)(yIndex * maxHeight + textHeight), CompositeOperator.Over);
+                            xIndex++;
                         }
+                        yIndex++;
                     }
-                });
+                }
                 Logs.Info("Generated, saving...");
                 Image outImg = new(gridImg);
                 int batchId = (xAxis.Count * yAxis.Count * y2Axis.Count) + 1;

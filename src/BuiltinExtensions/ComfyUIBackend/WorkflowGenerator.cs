@@ -2496,6 +2496,19 @@ public partial class WorkflowGenerator
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input.</summary>
     public JArray CreateConditioningDirect(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null, JArray attachImages = null, int steps = -1)
     {
+        int width = UserInput.GetImageWidth();
+        int height = UserInput.GetImageHeight();
+        if (prompt.ToLowerFast().Contains("<bbox"))
+        {
+            int bboxWidth = width, bboxHeight = height;
+            if (IsRefinerStage)
+            {
+                double scale = UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
+                bboxWidth = (int)Math.Round(bboxWidth * scale) / 16 * 16;
+                bboxHeight = (int)Math.Round(bboxHeight * scale) / 16 * 16;
+            }
+            prompt = T2IPromptHandling.ProcessPromptForModel(prompt, model, bboxWidth, bboxHeight);
+        }
         if (steps == -1)
         {
             steps = UserInput.Get(T2IParamTypes.Steps, 20);
@@ -2507,8 +2520,6 @@ public partial class WorkflowGenerator
         }
         string node;
         double mult = isPositive ? 1.5 : 0.8;
-        int width = UserInput.GetImageWidth();
-        int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
         bool needsAdvancedEncode = prompt.Contains("<break>") || prompt.Contains("<weight") || prompt.Contains("<embed") || prompt.Contains("<fromto") || prompt.Contains("<alternate") || prompt.Contains("<alt:") || prompt.Contains("<alt[") || prompt.Contains('(');
         double defaultGuidance = -1;
@@ -3176,7 +3187,7 @@ public partial class WorkflowGenerator
         string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null) : null);
         string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: sectionId, includeBase: false) ?? (isRefiner ? UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null) : null);
         int startStep = isRefiner ? (int)Math.Round(steps * (1 - UserInput.Get(T2IParamTypes.RefinerControl, 1))) : 0;
-        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], [cond, 1], latent, cfg, steps, startStep, 10000, seed, false, true, explicitSampler: explicitSampler ?? "euler", explicitScheduler: explicitScheduler ?? "simple", sectionId: sectionId);
+        string sampled = CreateKSampler(CurrentModel.Path, [cond, 0], [cond, 1], latent, cfg, steps, startStep, 10000, seed, false, true, doTiled: isRefiner && UserInput.Get(T2IParamTypes.RefinerDoTiling, false), explicitSampler: explicitSampler ?? "euler", explicitScheduler: explicitScheduler ?? "simple", sectionId: sectionId);
         JArray sampledLatent = [sampled, 0];
         if (chunkOverlap is not null)
         {

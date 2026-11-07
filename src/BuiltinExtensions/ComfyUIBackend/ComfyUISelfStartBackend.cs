@@ -86,10 +86,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     };
 
     /// <summary>The current version of the comfy frontend package that has been confirmed to not break.</summary>
-    public static string SwarmValidatedFrontendVersion = "1.53.6";
+    public static string SwarmValidatedFrontendVersion = "1.57.6";
 
     /// <summary>The current known version of PyTorch.</summary>
-    public static string CurrentTorchVersion = "2.13.0";
+    public static string CurrentTorchVersion = "2.15.0";
 
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =

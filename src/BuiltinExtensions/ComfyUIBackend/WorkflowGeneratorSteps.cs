@@ -385,6 +385,37 @@ public class WorkflowGeneratorSteps
                     g.LoadingModel = [teaCacheNode, 0];
                 }
             }
+            if (g.UserInput.Contains(ComfyUIBackendExtension.VideoContextLength) && g.UserInput.Contains(ComfyUIBackendExtension.VideoContextOverlap))
+            {
+                string contextNode = g.IsAnyWanModel() ? "WanContextWindowsManual" : (g.IsLTXV() || g.IsLTXV2()) ? "LTXVContextWindows" : g.IsMiniMaxH3() ? "MiniMaxH3ContextWindows" : null;
+                if (contextNode is not null)
+                {
+                    int contextLength = g.UserInput.Get(ComfyUIBackendExtension.VideoContextLength);
+                    int contextOverlap = g.UserInput.Get(ComfyUIBackendExtension.VideoContextOverlap);
+                    if (contextOverlap >= contextLength)
+                    {
+                        throw new SwarmUserErrorException("Video Context Overlap must be less than Video Context Length.");
+                    }
+                    JObject contextInputs = new()
+                    {
+                        ["model"] = g.LoadingModel,
+                        ["context_length"] = contextLength,
+                        ["context_overlap"] = contextOverlap,
+                        ["fuse_method"] = "pyramid",
+                        ["freenoise"] = true,
+                        ["split_conds_to_windows"] = false
+                    };
+                    if (contextNode != "MiniMaxH3ContextWindows")
+                    {
+                        contextInputs["context_schedule"] = "standard_uniform";
+                        contextInputs["context_stride"] = 1;
+                        contextInputs["closed_loop"] = false;
+                        contextInputs["retain_first_frame"] = false;
+                    }
+                    string contextWindows = g.CreateNode(contextNode, contextInputs);
+                    g.LoadingModel = [contextWindows, 0];
+                }
+            }
         }, -4);
         AddModelGenStep(g =>
         {
@@ -2073,7 +2104,7 @@ public class WorkflowGeneratorSteps
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 double? videoCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_Video, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, T2IParamInput.SectionID_Video);
                 int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_Video, false) ?? g.UserInput.Get(T2IParamTypes.VideoSteps, 20, sectionId: T2IParamInput.SectionID_Video);
-                string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
+                string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Image Aspect, Model Res");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed, g.UserInput.Get(T2IParamTypes.Seed) + 42, sectionId: T2IParamInput.SectionID_Video, includeBase: false);
                 string prompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
                 string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");

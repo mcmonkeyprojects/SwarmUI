@@ -51,6 +51,18 @@ public class T2IParamSet
         }
     }
 
+    /// <summary>Returns whether the parameter is present.</summary>
+    public bool ContainsRaw(T2IParamType param)
+    {
+        return ValuesInput.ContainsKey(param.ID);
+    }
+
+    /// <summary>Returns whether the parameter is present.</summary>
+    public bool Contains<T>(T2IRegisteredParam<T> param)
+    {
+        return ContainsRaw(param.Type);
+    }
+
     /// <summary>Gets the raw value of the parameter, if it is present, or null if not.</summary>
     public object GetRaw(T2IParamType param)
     {

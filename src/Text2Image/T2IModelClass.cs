@@ -72,6 +72,9 @@ public record class T2IModelCompatClass
     /// <summary>If true, this family supports the legacy (A1111/Comfy) prompt syntax parser.</summary>
     public bool SupportLegacyPromptParser = false;
 
+    /// <summary>JSON bounding box element format for this family, or null to use the generic format.</summary>
+    public T2IBoundingBoxFormat BoundingBoxFormat;
+
     /// <summary>Get a networkable JObject for this compat class.</summary>
     public JObject ToNetData()
     {

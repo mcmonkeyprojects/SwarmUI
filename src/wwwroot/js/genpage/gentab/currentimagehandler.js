@@ -1263,6 +1263,21 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 'initimagecreativity': 0,
                 'images': 1
             };
+            let startSize = getUserSetting('ui.refineimagestartsize');
+            if (startSize != 'User Size') {
+                let [width, height] = naturalDim();
+                let precision = getResolutionPrecision();
+                if (startSize == 'Image Aspect, User Size') {
+                    let userWidth = getRequiredElementById('input_width').value;
+                    let userHeight = getRequiredElementById('input_height').value;
+                    let scale = Math.sqrt(userWidth * userHeight / (width * height));
+                    width *= scale;
+                    height *= scale;
+                }
+                input_overrides['aspectratio'] = 'Custom';
+                input_overrides['width'] = roundTo(width, precision);
+                input_overrides['height'] = roundTo(height, precision);
+            }
             if (currentMetadataVal) {
                 let readable = interpretMetadata(currentMetadataVal);
                 let metadata = readable ? JSON.parse(readable).sui_image_params : {};
@@ -1414,11 +1429,24 @@ function highlightSelectedImage(src) {
 /** Gets the container div element for a generated image to put into, in the batch output view. If Separate Batches is enabled, will use or create a per-batch container. */
 function getPreferredBatchContainer(batchId) {
     let mainContainer = getRequiredElementById('current_image_batch');
+    let maxRetain = Math.max(1, parseInt(getUserSetting('ui.maxbatchretain', 10000)));
+    let images = mainContainer.getElementsByClassName('image-block');
+    if (maxRetain > 0 && images.length >= maxRetain) {
+        let removeCount = maxRetain >= 200 ? 20 : 1;
+        let firstRemoved = images[Math.max(0, images.length - removeCount)];
+        while (firstRemoved.parentElement.classList.contains('batch-container') && firstRemoved.parentElement.firstElementChild == firstRemoved) {
+            firstRemoved = firstRemoved.parentElement;
+        }
+        let range = document.createRange();
+        range.setStartBefore(firstRemoved);
+        range.setEnd(mainContainer, mainContainer.childNodes.length);
+        range.deleteContents();
+    }
     if (separateBatchesElem.checked) {
         let reqId = batchId.split('_')[0];
         let batchContainer = document.getElementById(`current_image_batch_${reqId}`);
         if (!batchContainer) {
-            batchContainer = createDiv(`current_image_batch_${reqId}`, null);
+            batchContainer = createDiv(`current_image_batch_${reqId}`, 'batch-container');
             mainContainer.prepend(batchContainer);
         }
         return batchContainer;

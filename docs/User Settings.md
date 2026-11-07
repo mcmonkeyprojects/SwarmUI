@@ -30,5 +30,7 @@
 - `[user_name]`: the name of the user
 - `[batch_id]`: the index # of this image within the batch
 - `[some parameter name here]`: the value of the parameter named. Must have exact parameter name. For example `[refinermodel]` will get you the name of the refiner model.
+    - It is always the actual parameter name as displayed on the Generate tab, in metadata, and anywhere else.
+    - Formatting is very open ended as it is with all usages of parameters, for example with the CFG Scale parameter you can do `[cfgscale]` or `[CFG Scale]` or `[cfg_scale]` or anything like that, it will all just work.
 
 If names overlap, a numeric index will be appended to the end, eg if `123-a cat.jpg` is your output but it already exists, `123-a cat-1.jpg` will be used.

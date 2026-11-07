@@ -1,28 +1,16 @@
 using SwarmUI.Utils;
-using SixLabors.ImageSharp;
+using ImageMagick;
+using ImageMagick.Formats;
+using System.Buffers.Binary;
 using System.IO;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using Newtonsoft.Json.Linq;
-using SixLabors.ImageSharp.Processing;
 using FreneticUtilities.FreneticExtensions;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.PixelFormats;
-
-using Image = SwarmUI.Utils.Image;
-using ISImage = SixLabors.ImageSharp.Image;
-using ISImage32 = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
-using ISImageFrame32 = SixLabors.ImageSharp.ImageFrame<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 
 namespace SwarmUI.Media;
 
 /// <summary>A still image file. Also encompasses animation file types (eg gif, animated webp, etc.)</summary>
 public class ImageFile : MediaFile
 {
-    /// <summary>Used for <see cref="ISImgToPngBytes(ISImage)"/>.</summary>
-    public static PngEncoder FastPngEncoder = new() { CompressionLevel = PngCompressionLevel.Level1 };
-
     /// <summary>Creates an image object from a web image data URL string.</summary>
     public static ImageFile FromDataString(string data)
     {
@@ -38,46 +26,117 @@ public class ImageFile : MediaFile
         return new Image(raw, type);
     }
 
-    /// <summary>Helper to convert an ImageSharp image to png bytes.</summary>
-    public static byte[] ISImgToPngBytes(ISImage img)
+    /// <summary>Helper to convert a Magick image to png bytes.</summary>
+    public static byte[] MagickImageToPngBytes(IMagickImage<ushort> img)
     {
-        using MemoryStream stream = new();
-        img.SaveAsPng(stream, FastPngEncoder);
-        return stream.ToArray();
+        using IMagickImage<ushort> copy = img.Clone();
+        copy.Settings.SetDefine(MagickFormat.Png, "compression-level", 1);
+        return copy.ToByteArray(MagickFormat.Png);
     }
 
-    /// <summary>Helper to convert an ImageSharp image to jpg bytes.</summary>
-    public static byte[] ISImgToJpgBytes(ISImage img)
+    /// <summary>Helper to convert a Magick image to jpg bytes.</summary>
+    public static byte[] MagickImageToJpgBytes(IMagickImage<ushort> img)
     {
-        using MemoryStream stream = new();
-        img.SaveAsJpeg(stream);
-        return stream.ToArray();
+        using IMagickImage<ushort> copy = img.Clone();
+        copy.Quality = 75;
+        return copy.ToByteArray(MagickFormat.Jpeg);
     }
 
-    /// <summary>Internal cache of <see cref="ToIS"/> to avoid reprocessing.</summary>
-    public ISImage _CacheISImg;
+    /// <summary>Encodes all frames, using lossless WebP for animations and fast PNG for still images.</summary>
+    public static byte[] MagickFramesToImageBytes(IMagickImageCollection<ushort> frames)
+    {
+        using IMagickImageCollection<ushort> copy = frames.Clone();
+        foreach (IMagickImage<ushort> frame in copy)
+        {
+            if (copy.Count > 1)
+            {
+                frame.Quality = 100;
+                frame.Settings.SetDefines(new WebPWriteDefines() { Lossless = true, Exact = true, AlphaQuality = 100 });
+            }
+            else
+            {
+                frame.Settings.SetDefine(MagickFormat.Png, "compression-level", 1);
+            }
+        }
+        return copy.ToByteArray(copy.Count > 1 ? MagickFormat.WebP : MagickFormat.Png);
+    }
 
-    /// <summary>Gets an ImageSharp <see cref="ISImage"/> for this image.</summary>
-    public ISImage ToIS
+    /// <summary>Internal cache of <see cref="ToMagickFrames"/> to avoid reprocessing.</summary>
+    public MagickImageCollection _CacheMagick;
+
+    /// <summary>Gets the decoded frames, owned by this file. Do not dispose or modify these shared images.</summary>
+    public MagickImageCollection ToMagickFrames
     {
         get
         {
-            if (_CacheISImg is null)
+            if (_CacheMagick is null)
             {
                 lock (this)
                 {
-                    _CacheISImg ??= ISImage.Load(RawData);
+                    if (_CacheMagick is null)
+                    {
+                        MagickImageCollection images = new(RawData);
+                        try
+                        {
+                            if (images.Count > 1)
+                            {
+                                images.Coalesce();
+                                if (images[0].Format == MagickFormat.WebP)
+                                {
+                                    RestoreWebpFrameDelays(images);
+                                }
+                            }
+                            _CacheMagick = images;
+                        }
+                        catch
+                        {
+                            images.Dispose();
+                            throw;
+                        }
+                    }
                 }
             }
-            return _CacheISImg;
+            return _CacheMagick;
+        }
+    }
+
+    /// <summary>Gets the first decoded frame, owned by this file. Clone it before editing.</summary>
+    public IMagickImage<ushort> ToMagick => ToMagickFrames[0];
+
+    /// <summary>Workaround/patch for webp issue: Restores millisecond WebP delays that ImageMagick 7.1.2-29 rounds to centiseconds when decoding.</summary>
+    public void RestoreWebpFrameDelays(MagickImageCollection images)
+    {
+        int frameIndex = 0;
+        for (int offset = 12; offset <= RawData.Length - 8;)
+        {
+            uint length = BinaryPrimitives.ReadUInt32LittleEndian(RawData.AsSpan(offset + 4, 4));
+            long nextOffset = offset + 8L + length + (length & 1);
+            if (nextOffset > RawData.Length)
+            {
+                throw new InvalidDataException("Truncated WebP chunk.");
+            }
+            if (RawData.AsSpan(offset, 4).SequenceEqual("ANMF"u8))
+            {
+                if (length < 16 || frameIndex >= images.Count)
+                {
+                    throw new InvalidDataException("Invalid WebP animation frame.");
+                }
+                IMagickImage<ushort> frame = images[frameIndex++];
+                frame.AnimationTicksPerSecond = 1000;
+                frame.AnimationDelay = (uint)(RawData[offset + 20] | RawData[offset + 21] << 8 | RawData[offset + 22] << 16);
+            }
+            offset = (int)nextOffset;
+        }
+        if (frameIndex != images.Count)
+        {
+            throw new InvalidDataException("WebP animation frame count does not match its decoded frames.");
         }
     }
 
     /// <summary>Returns the (width, height) of the image.</summary>
     public (int, int) GetResolution()
     {
-        Size size = ToIS.Size;
-        return (size.Width, size.Height);
+        return ((int)ToMagick.Width, (int)ToMagick.Height);
     }
 
     /// <summary>Returns a metadata-format of the image.</summary>
@@ -89,17 +148,17 @@ public class ImageFile : MediaFile
             return null;
         }
         metadataText ??= GetMetadata();
-        ISImage img = ToIS;
+        using IMagickImage<ushort> img = ToMagick.Clone();
         float factor = 256f / Math.Min(img.Width, img.Height);
-        img = img.Clone(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
+        img.Resize(new MagickGeometry((uint)(img.Width * factor), (uint)(img.Height * factor)) { IgnoreAspectRatio = true });
         if (!string.IsNullOrWhiteSpace(metadataText))
         {
-            img.Metadata.XmpProfile = null;
+            img.RemoveProfile("xmp");
             ExifProfile prof = new();
-            prof.SetValue(ExifTag.UserComment, metadataText);
-            img.Metadata.ExifProfile = prof;
+            prof.SetValue(ExifTag.UserComment, MetadataHelper.EncodeExifUserComment(metadataText));
+            img.SetProfile(prof);
         }
-        return new Image(ISImgToJpgBytes(img), MediaType.ImageJpg);
+        return new Image(MagickImageToJpgBytes(img), MediaType.ImageJpg);
     }
 
     /// <summary>Returns a simplified webp animation for preview purposes. Returns null if the input was not animated.</summary>
@@ -109,41 +168,41 @@ public class ImageFile : MediaFile
         {
             return null;
         }
-        ISImage isimg = ToIS;
-        if (isimg.Frames.Count <= 1)
+        MagickImageCollection images = ToMagickFrames;
+        if (images.Count <= 1)
         {
             return null;
         }
         int timeTotal = 0;
         int timeAccum = 166;
-        int maxFrame = isimg.Frames.Count;
-        using ISImage32 oldImage = isimg.CloneAs<Rgba32>();
-        int targetWidth = isimg.Width, targetHeight = isimg.Height;
+        int maxFrame = images.Count;
+        uint targetWidth = images[0].Width, targetHeight = images[0].Height;
         if (targetWidth > 256 || targetHeight > 256)
         {
             float factor = 256f / Math.Min(targetWidth, targetHeight);
-            targetWidth = (int)(targetWidth * factor);
-            targetHeight = (int)(targetHeight * factor);
+            targetWidth = (uint)(targetWidth * factor);
+            targetHeight = (uint)(targetHeight * factor);
         }
-        using ISImage32 newImage = new(targetWidth, targetHeight);
+        using MagickImageCollection newImages = [];
         for (int i = 0; i < maxFrame; i++)
         {
-            ISImageFrame32 frame = oldImage.Frames[i];
-            int timeMs = Type == MediaType.ImageWebp ? (int)frame.Metadata.GetWebpMetadata().FrameDelay : frame.Metadata.GetGifMetadata().FrameDelay * 10;
+            IMagickImage<ushort> frame = images[i];
+            int timeMs = (int)(frame.AnimationDelay * 1000L / frame.AnimationTicksPerSecond);
             timeTotal += timeMs;
             timeAccum += timeMs;
             if (timeAccum > 99)
             {
-                if (frame.Width != targetWidth || frame.Height != targetHeight)
+                IMagickImage<ushort> previewFrame = frame.Clone();
+                newImages.Add(previewFrame);
+                if (previewFrame.Width != targetWidth || previewFrame.Height != targetHeight)
                 {
-                    ISImage32 frameImage = new(frame.Width, frame.Height);
-                    frameImage.Frames.AddFrame(frame);
-                    frameImage.Frames.RemoveFrame(0);
-                    frameImage.Mutate(i => i.Resize(targetWidth, targetHeight));
-                    frame = frameImage.Frames[0];
+                    previewFrame.Resize(new MagickGeometry(targetWidth, targetHeight) { IgnoreAspectRatio = true });
                 }
-                frame.Metadata.GetWebpMetadata().FrameDelay = (uint)timeAccum;
-                newImage.Frames.AddFrame(frame);
+                previewFrame.ResetPage();
+                previewFrame.AnimationTicksPerSecond = 1000;
+                previewFrame.AnimationDelay = (uint)timeAccum;
+                previewFrame.AnimationIterations = 0;
+                previewFrame.Quality = 50;
                 timeAccum = 0;
             }
             if (timeTotal > 5000)
@@ -151,12 +210,8 @@ public class ImageFile : MediaFile
                 break;
             }
         }
-        newImage.Frames.RemoveFrame(0);
-        newImage.Metadata.GetWebpMetadata().RepeatCount = 0;
-        using MemoryStream saveStream = new();
-        newImage.SaveAsWebp(saveStream, new WebpEncoder() { Quality = 50 });
-        saveStream.Seek(0, SeekOrigin.Begin);
-        return new Image(saveStream.ToArray(), MediaType.ImageWebp);
+        newImages[0].Settings.SetDefine(MagickFormat.WebP, "lossless", false);
+        return new Image(newImages.ToByteArray(MagickFormat.WebP), MediaType.ImageWebp);
     }
 
     /// <summary>Returns a metadata-format of the image.</summary>
@@ -172,13 +227,15 @@ public class ImageFile : MediaFile
         {
             return this;
         }
-        ISImage img = ToIS;
-        if (ToIS.Width == width && ToIS.Height == height)
+        IMagickImage<ushort> img = ToMagick;
+        if (img.Width == width && img.Height == height)
         {
             return this;
         }
-        img = img.Clone(i => i.Resize(width, height));
-        return new Image(ISImgToPngBytes(img), Type);
+        using IMagickImage<ushort> copy = img.Clone();
+        copy.Resize(new MagickGeometry((uint)width, (uint)height) { IgnoreAspectRatio = true });
+        copy.ResetPage();
+        return new Image(MagickImageToPngBytes(copy), MediaType.ImagePng);
     }
 
     /// <summary>Returns a copy of this image that's definitely in '.png' format.</summary>
@@ -188,7 +245,7 @@ public class ImageFile : MediaFile
         {
             return this;
         }
-        return new Image(ISImgToPngBytes(ToIS), Type);
+        return new Image(MagickImageToPngBytes(ToMagick), MediaType.ImagePng);
     }
 
     /// <inheritdoc/>
@@ -196,31 +253,17 @@ public class ImageFile : MediaFile
     {
         try
         {
-            ISImage img = ToIS;
-            string pngMetadata = img.Metadata?.GetPngMetadata()?.TextData?.FirstOrDefault(t => t.Keyword.ToLowerFast() == "parameters").Value;
-            if (pngMetadata is not null)
+            IMagickImage<ushort> img = ToMagick;
+            string parameterName = img.AttributeNames.FirstOrDefault(name => name.ToLowerFast() == "parameters");
+            if (parameterName is not null)
             {
-                return pngMetadata;
+                return img.GetAttribute(parameterName);
             }
-            string output = null;
-            if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.Model, out IExifValue<string> data) ?? false)
-            {
-                output = data.Value;
-            }
-            if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.UserComment, out IExifValue<EncodedString> data2) ?? false)
-            {
-                output = data2.Value.Text;
-            }
-            if (output is not null && output.Length > 0)
-            {
-                // Special fix for ImageSharp not parsing BigEndian unicode, so detect inverted strings (slightly hack) and flip them
-                byte[] encoded = Encoding.Unicode.GetBytes(output);
-                if (encoded[0] == 0 && encoded[1] != 0)
-                {
-                    output = Encoding.BigEndianUnicode.GetString(encoded);
-                }
-            }
-            return output;
+            IExifProfile prof = img.GetExifProfile();
+            // Preserve the original TIFF byte order before parsing, which makes subsequent serialization rewrite the profile.
+            byte[] profileData = prof?.ToByteArray();
+            byte[] comment = prof?.GetValue(ExifTag.UserComment)?.Value;
+            return comment is null ? prof?.GetValue(ExifTag.Model)?.Value : MetadataHelper.DecodeExifUserComment(comment, profileData);
         }
         catch (ArgumentNullException ex)
         {
@@ -274,102 +317,111 @@ public class ImageFile : MediaFile
         {
             return this;
         }
-        using MemoryStream ms = new();
-        ISImage img = ToIS;
+        using IMagickImageCollection<ushort> frames = ToMagickFrames.Clone();
+        (MagickFormat outputFormat, MediaType type) = ConvertMagickFrame(frames[0], format, metadata, dpi, quality, stealthMetadata);
+        for (int i = 1; i < frames.Count; i++)
+        {
+            ConvertMagickFrame(frames[i], format, metadata, dpi, quality, stealthMetadata);
+        }
+        return new Image(frames.ToByteArray(outputFormat), type);
+    }
+
+    /// <summary>Helper for <see cref="ConvertTo(string, string, int, int, string)"/>.</summary>
+    public static (MagickFormat, MediaType) ConvertMagickFrame(IMagickImage<ushort> img, string format, string metadata, int dpi, int quality, string stealthMetadata)
+    {
         bool isLossyWebp = format.StartsWith("WEBP") && format != "WEBP_LOSSLESS";
         bool canDoStealth = metadata is not null && (format == "PNG" || format.StartsWith("WEBP")) && !(isLossyWebp && stealthMetadata.ToLowerFast() == "rgb");
         if (stealthMetadata.ToLowerFast() != "false" && canDoStealth)
         {
             string actualStealthMode = stealthMetadata.ToLowerInvariant();
-            ISImage32 rgbaImage = img.CloneAs<Rgba32>();
-            MetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode, format);
-            img = rgbaImage;
+            MetadataHelper.EncodeStealthMetadata(img, metadata, actualStealthMode, format);
         }
-        img.Metadata.XmpProfile = null;
+        foreach (string oldProf in new List<string>(img.ProfileNames))
+        {
+            img.RemoveProfile(oldProf);
+        }
         ExifProfile prof = new();
         if (dpi > 0)
         {
             prof.SetValue(ExifTag.XResolution, new Rational((uint)dpi, 1));
             prof.SetValue(ExifTag.YResolution, new Rational((uint)dpi, 1));
             prof.SetValue(ExifTag.ResolutionUnit, (ushort)2);
-            img.Metadata.HorizontalResolution = dpi;
-            img.Metadata.VerticalResolution = dpi;
+            img.Density = new Density(dpi, dpi, DensityUnit.PixelsPerInch);
         }
         if (metadata is not null)
         {
             if (format == "PNG")
             {
-                img.Metadata.GetPngMetadata().TextData.Add(new("parameters", metadata, "", ""));
+                img.SetAttribute("parameters", metadata);
             }
             else
             {
-                prof.SetValue(ExifTag.UserComment, metadata);
+                prof.SetValue(ExifTag.UserComment, MetadataHelper.EncodeExifUserComment(metadata));
             }
         }
-        img.Metadata.ExifProfile = prof;
+        img.SetProfile(prof);
         MediaType type;
+        MagickFormat outputFormat;
         switch (format)
         {
             case "PNG":
-                if (stealthMetadata.ToLowerFast() == "alpha")
+                img.Settings.SetDefines(new PngWriteDefines()
                 {
-                    PngEncoder encoder = new()
-                    {
-                        TextCompressionThreshold = int.MaxValue,
-                        BitDepth = img.PixelType.BitsPerPixel > 32 ? PngBitDepth.Bit16 : PngBitDepth.Bit8,
-                        CompressionLevel = PngCompressionLevel.Level1,
-                        ColorType = PngColorType.RgbWithAlpha,
-                        TransparentColorMode = PngTransparentColorMode.Preserve
-                    };
-                    img.SaveAsPng(ms, encoder);
-                }
-                else
-                {
-                    PngEncoder encoder = new()
-                    {
-                        TextCompressionThreshold = int.MaxValue,
-                        BitDepth = img.PixelType.BitsPerPixel > 32 ? PngBitDepth.Bit16 : PngBitDepth.Bit8,
-                        CompressionLevel = PngCompressionLevel.Level1
-                    };
-                    img.SaveAsPng(ms, encoder);
-                }
+                    CompressionLevel = 1,
+                    BitDepth = img.Depth > 8 ? 16u : 8u,
+                    ExcludeChunks = PngChunkFlags.zTXt,
+                    ColorType = stealthMetadata.ToLowerFast() == "alpha" ? ColorType.TrueColorAlpha : null
+                });
                 type = MediaType.ImagePng;
+                outputFormat = MagickFormat.Png;
                 break;
             case "JPG":
                 type = MediaType.ImageJpg;
-                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = quality });
+                outputFormat = MagickFormat.Jpeg;
+                img.Quality = (uint)quality;
                 break;
             case "JPG90": // NOTE: Legacy (0.9.6) format variants with built-in quality selector
                 type = MediaType.ImageJpg;
-                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 90 });
+                outputFormat = MagickFormat.Jpeg;
+                img.Quality = 90;
                 break;
             case "JPG75":
                 type = MediaType.ImageJpg;
-                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 75 });
+                outputFormat = MagickFormat.Jpeg;
+                img.Quality = 75;
                 break;
             case "WEBP_LOSSLESS":
                 type = MediaType.ImageWebp;
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = true, FileFormat = WebpFileFormatType.Lossless, Quality = 100 });
+                outputFormat = MagickFormat.WebP;
+                img.Quality = 100;
                 break;
             case "WEBP":
                 type = MediaType.ImageWebp;
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = quality });
+                outputFormat = MagickFormat.WebP;
+                img.Quality = (uint)quality;
                 break;
             case "WEBP_100":
                 type = MediaType.ImageWebp;
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 100 });
+                outputFormat = MagickFormat.WebP;
+                img.Quality = 100;
                 break;
             case "WEBP_90":
                 type = MediaType.ImageWebp;
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 90 });
+                outputFormat = MagickFormat.WebP;
+                img.Quality = 90;
                 break;
             case "WEBP_75":
                 type = MediaType.ImageWebp;
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 75 });
+                outputFormat = MagickFormat.WebP;
+                img.Quality = 75;
                 break;
             default:
                 throw new SwarmReadableErrorException($"User setting for image format is '{format}', which is invalid");
         }
-        return new Image(ms.ToArray(), type);
+        if (outputFormat == MagickFormat.WebP)
+        {
+            img.Settings.SetDefines(new WebPWriteDefines() { Lossless = !isLossyWebp, Exact = true, AlphaQuality = 100 });
+        }
+        return (outputFormat, type);
     }
 }

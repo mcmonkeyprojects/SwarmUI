@@ -6,7 +6,6 @@ using LiteDB;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using SixLabors.ImageSharp;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Text2Image;

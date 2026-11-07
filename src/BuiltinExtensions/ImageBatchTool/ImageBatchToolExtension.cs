@@ -10,7 +10,6 @@ using SwarmUI.WebAPI;
 using System;
 using System.IO;
 using System.Net.WebSockets;
-using ISImage = SixLabors.ImageSharp.Image;
 
 namespace SwarmUI.Builtin_ImageBatchToolExtension;
 
@@ -128,7 +127,7 @@ public class ImageBatchToolExtension : Extension
                 break;
             }
             Image image = new(File.ReadAllBytes(file), MediaType.GetByExtension(file.AfterLast('.')));
-            ISImage imgData = image.ToIS;
+            (int imageWidth, int imageHeight) = image.GetResolution();
             T2IParamInput param = baseParams.Clone();
             void setRes(int width, int height)
             {
@@ -147,17 +146,17 @@ public class ImageBatchToolExtension : Extension
                 case "From Parameter":
                     break;
                 case "From Image":
-                    setRes(imgData.Width, imgData.Height);
+                    setRes(imageWidth, imageHeight);
                     break;
                 case "Scale To Model":
-                    (int width, int height) = Utilities.ResToModelFit(imgData.Width, imgData.Height, param.Get(T2IParamTypes.Model));
+                    (int width, int height) = Utilities.ResToModelFit(imageWidth, imageHeight, param.Get(T2IParamTypes.Model));
                     setRes(width, height);
                     break;
                 case "Scale To Model Or Above":
-                    (width, height) = Utilities.ResToModelFit(imgData.Width, imgData.Height, param.Get(T2IParamTypes.Model));
-                    if (width < imgData.Width || height < imgData.Height)
+                    (width, height) = Utilities.ResToModelFit(imageWidth, imageHeight, param.Get(T2IParamTypes.Model));
+                    if (width < imageWidth || height < imageHeight)
                     {
-                        setRes(imgData.Width, imgData.Height);
+                        setRes(imageWidth, imageHeight);
                     }
                     else
                     {

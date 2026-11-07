@@ -479,6 +479,13 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("How much to increase or decrease prompt weight when you hold Control and press the up/down arrow keys on selected text in a prompt box.\nDefault is 0.1.")]
             public double WeightStep = 0.1;
+
+            [ConfigComment("Max number of generation outputs to retain in the batch view.\nIf you generate more than this number at a time, the oldest entries will be discarded from the batch view (but will remain in history).\nDefault is 10000.")]
+            public int MaxBatchRetain = 10000;
+
+            [ConfigComment("What resolution to use for the image input under the 'Refine Image' button.\n'Image' uses the exact image size (rounded to fix the model).\n'User Size' uses your specified resolution exactly.\n'Image Aspect, User Size' retains the image's aspect ratio but adjusts to your set side length.")]
+            [ManualSettingsOptions(Vals = ["Image Aspect, User Size", "Image", "User Size"])]
+            public string RefineImageStartSize = "Image Aspect, User Size";
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
