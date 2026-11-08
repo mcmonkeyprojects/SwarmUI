@@ -418,3 +418,14 @@ SeedVRTiling:
     tags:
     - parameters
     - nodes
+
+SnapRef:
+    author: BetaDoggo
+    description: Adds SnapRef reference support for Anima models.
+    url: https://github.com/BetaDoggo/SwarmUI-SnapRef
+    license: Apache-2.0
+    tags:
+    - parameters
+    - nodes
+    # Vibecoded
+    - low quality
