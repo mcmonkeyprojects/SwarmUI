@@ -588,6 +588,9 @@ function imagePromptRemoveMedia(media) {
 /** Shows the action menu for one prompt media attachment. */
 function showPromptMediaMenu(media, menuButton, x = null, y = null) {
     let buttons = [];
+    if (media.tagName == 'IMG' && media.naturalWidth > 0 && media.naturalHeight > 0) {
+        buttons.push(...getImageResolutionOptions(media.naturalWidth, media.naturalHeight));
+    }
     if (media.tagName == 'VIDEO') {
         buttons.push({
             key: 'Split Audio',
