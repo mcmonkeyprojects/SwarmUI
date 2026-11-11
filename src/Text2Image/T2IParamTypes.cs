@@ -607,7 +607,7 @@ public class T2IParamTypes
         {
             string id = model.ModelClass.ID;
             return id.Contains("stable-video-diffusion") || id.Contains("lightricks-ltx-video") || id.Contains("-video2world") || id.Contains("-i2v") || id.Contains("-ti2v") || id.Contains("-flf2v") || id.Contains("-image2video") || id.Contains("hunyuan-video-1_5") || id.Contains("kandinsky5-video") ||
-                (id.Contains("minimax-h3") && (!model.Name.Contains("ref2va") || model.Name.Contains("fl2va")));
+                (model.ModelClass.CompatClass == T2IModelClassSorter.CompatMiniMaxH3 && (!model.Name.Contains("ref2va") || model.Name.Contains("fl2va")));
         }
         VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nSelect an image-to-video conversion model, note that text-to-video models do not work.",
             "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoModel(m)).Select(m => m.Name)),

@@ -26,6 +26,7 @@
 [Flux 3 Image](#flux-3-image) | DiT | 2026 | Black Forest Labs | 5.6B | Yes | Modern, intelligent but poor details |
 [MOSS Image](#moss-image) | DiT | 2026 | OpenMOSS | 5B | No | Modern, extremely capable |
 [Fibo 2](#bria-fibo-2) | DiT | 2026 | Bria | 8B | Minimal | Modern, meh quality |
+[MiniMax H3 Image](#minimax-h3-image) | DiT | 2026 | MiniMax AI | 20B | Minimal | Modern, intelligent but poor details |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -781,6 +782,24 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **CFG Scale:** `1`
     - **Steps:** `8` or higher for dev, `4` for edit
     - **Resolution:** defaults to `1024` but can do anywhere from `256` to `1536` well, starts losing coherence above that but not unusuable
+
+# MiniMax H3 Image
+
+![img](/docs/images/models2/h3image.jpg)
+
+- [MiniMax H3 Image](https://huggingface.co/MiniMaxAI/MiniMax-H3-Image) is supported in SwarmUI!
+- It is a 20B direct text2image that supports references (including for editing)
+    - Download here [Comfy-Org/MiniMax-H3-Image](<https://huggingface.co/Comfy-Org/MiniMax-H3-Image/blob/main/diffusion_models/minimax_h3_image_pruned_int8_convrot.safetensors>)
+    - Save in `diffusion_models`
+- It uses Qwen3 VL 32B as a text encoder, Swarm will automatically download an fp4 (16GB) version of it.
+- It has a unique image VAE.
+- **Parameters:**
+    - **Prompt:** Supports H3 syntax like `<Picture 1>`, `<Subject 1>`, etc.
+    - **Prompt Images:** You can add up to 16 images to the prompt to use as references or editing
+    - **CFG Scale:** `1`
+    - **Steps:** `6`
+    - **Resolution:** Defaults to `2048` but can do from `768`-ish (will degrade heavily below that) up to `4096`.
+        - It is a 16x downscale VAE, vs most other models are 8x, so this 2048 is closer to other models' 1024.
 
 # Video Models
 

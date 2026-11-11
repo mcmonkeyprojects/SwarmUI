@@ -208,7 +208,7 @@ function reviseBackendFeatureSet() {
     doAnyCompatFeature(['stable-diffusion-v1', 'stable-diffusion-xl-v1'], 'model_has_ipadapter');
     doAnyCompatFeature(['stable-diffusion-v1', 'stable-diffusion-v2', 'stable-diffusion-xl-v1'], 'supports_reference_only');
     doAnyCompatFeature(['stable-diffusion-v1', 'stable-diffusion-v2', 'stable-diffusion-xl-v1'], 'supports_hypertile');
-    doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video', 'hunyuan-video', 'nvidia-cosmos-1', `wan-21`, `wan-22`, 'kandinsky5-vidlite', 'kandinsky5-vidpro', 'minimax-h3'], 'text2video');
+    doAnyCompatFeature(currentModelHelper.curCompatClass == 'minimax-h3-image' ? [] : ['genmo-mochi-1', 'lightricks-ltx-video', 'hunyuan-video', 'nvidia-cosmos-1', `wan-21`, `wan-22`, 'kandinsky5-vidlite', 'kandinsky5-vidpro', 'minimax-h3'], 'text2video');
     doAnyCompatFeature(['ace-step-1_5', 'minimax-music-3', 'yue-2'], 'text2audio');
     doCompatFeature('ace-step-1_5', 'audio_ace_inputs');
     for (let changer of featureSetChangers) {
@@ -588,6 +588,9 @@ function imagePromptRemoveMedia(media) {
 /** Shows the action menu for one prompt media attachment. */
 function showPromptMediaMenu(media, menuButton, x = null, y = null) {
     let buttons = [];
+    if (media.tagName == 'IMG' && media.naturalWidth > 0 && media.naturalHeight > 0) {
+        buttons.push(...getImageResolutionOptions(media.naturalWidth, media.naturalHeight));
+    }
     if (media.tagName == 'VIDEO') {
         buttons.push({
             key: 'Split Audio',

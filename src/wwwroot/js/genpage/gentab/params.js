@@ -105,6 +105,70 @@ let aspectRatios = [
     new AspectRatio("9:21", 320, 768)
 ];
 
+function getImageResolutionOptions(imageWidth, imageHeight) {
+    let inputAspectRatio = getRequiredElementById('input_aspectratio');
+    let inputWidth = getRequiredElementById('input_width');
+    let inputHeight = getRequiredElementById('input_height');
+    return [
+        {
+            key: 'Use Closest Aspect Ratio',
+            title: "Sets the Aspect Ratio parameter to whatever's closest, avoiding 'Custom'",
+            action: () => {
+                let closest = "1:1";
+                let closestDiff = 999999;
+                for (let ratio of aspectRatios) {
+                    let diff = Math.abs(ratio.ratio - (imageWidth / imageHeight));
+                    if (diff < closestDiff) {
+                        closest = ratio.id;
+                        closestDiff = diff;
+                    }
+                }
+                inputAspectRatio.value = closest;
+                triggerChangeFor(inputAspectRatio);
+            }
+        },
+        {
+            key: 'Use Exact Aspect Ratio',
+            title: "Sets the Aspect Ratio to Custom, and resolution to a perfectly matched aspect ratio for this image (rounded to x32 pixels)",
+            action: () => {
+                inputAspectRatio.value = "Custom";
+                triggerChangeFor(inputAspectRatio);
+                let ratio = imageWidth / imageHeight;
+                let width = Math.round(Math.sqrt(512 * 512 * ratio));
+                let height = Math.round(512 * 512 / width);
+                inputWidth.value = roundTo(width * (currentModelHelper.curWidth == 0 ? 512 : currentModelHelper.curWidth) / 512, 32);
+                inputHeight.value = roundTo(height * (currentModelHelper.curHeight == 0 ? 512 : currentModelHelper.curHeight) / 512, 32);
+                triggerChangeFor(inputWidth);
+                triggerChangeFor(inputHeight);
+            }
+        },
+        {
+            key: 'Use Resolution',
+            title: "Sets the Aspect Ratio to Custom, and resolution to exactly this image's resolution, with rounding to x32 pixels to avoid errors",
+            action: () => {
+                inputAspectRatio.value = "Custom";
+                inputWidth.value = roundTo(imageWidth, 32);
+                inputHeight.value = roundTo(imageHeight, 32);
+                triggerChangeFor(inputAspectRatio);
+                triggerChangeFor(inputWidth);
+                triggerChangeFor(inputHeight);
+            }
+        },
+        {
+            key: 'Use Exact Aspect Resolution',
+            title: "Sets the Aspect Ratio to Custom, and resolution to exactly this image's resolution, without any rounding",
+            action: () => {
+                inputAspectRatio.value = "Custom";
+                inputWidth.value = imageWidth;
+                inputHeight.value = imageHeight;
+                triggerChangeFor(inputAspectRatio);
+                triggerChangeFor(inputWidth);
+                triggerChangeFor(inputHeight);
+            }
+        }
+    ];
+}
+
 /** Synchronizes video duration controls in frames and seconds using the applicable Video FPS input. */
 function enableVideoFramesInput(id, prefix) {
     let frameInput = getRequiredElementById(id);
@@ -758,64 +822,7 @@ function genInputs(delay_final = false) {
                     let rect = button.getBoundingClientRect();
                     let imageWidth = inputInitImage.dataset.width || 512;
                     let imageHeight = inputInitImage.dataset.height || 512;
-                    new AdvancedPopover('initimage_res', [
-                        {
-                            key: 'Use Closest Aspect Ratio',
-                            title: "Sets the Aspect Ratio parameter to whatever's closest, avoiding 'Custom'",
-                            action: () => {
-                                let closest = "1:1";
-                                let closestDiff = 999999;
-                                for (let ratio of aspectRatios) {
-                                    let diff = Math.abs(ratio.ratio - (imageWidth / imageHeight));
-                                    if (diff < closestDiff) {
-                                        closest = ratio.id;
-                                        closestDiff = diff;
-                                    }
-                                }
-                                inputAspectRatio.value = closest;
-                                triggerChangeFor(inputAspectRatio);
-                            }
-                        },
-                        {
-                            key: 'Use Exact Aspect Ratio',
-                            title: "Sets the Aspect Ratio to Custom, and resolution to a perfectly matched aspect ratio for this image (rounded to x32 pixels)",
-                            action: () => {
-                                inputAspectRatio.value = "Custom";
-                                triggerChangeFor(inputAspectRatio);
-                                let ratio = imageWidth / imageHeight;
-                                let width = Math.round(Math.sqrt(512 * 512 * ratio));
-                                let height = Math.round(512 * 512 / width);
-                                inputWidth.value = roundTo(width * (currentModelHelper.curWidth == 0 ? 512 : currentModelHelper.curWidth) / 512, 32);
-                                inputHeight.value = roundTo(height * (currentModelHelper.curHeight == 0 ? 512 : currentModelHelper.curHeight) / 512, 32);
-                                triggerChangeFor(inputWidth);
-                                triggerChangeFor(inputHeight);
-                            }
-                        },
-                        {
-                            key: 'Use Resolution',
-                            title: "Sets the Aspect Ratio to Custom, and resolution to exactly this image's resolution, with rounding to x32 pixels to avoid errors",
-                            action: () => {
-                                inputAspectRatio.value = "Custom";
-                                inputWidth.value = roundTo(imageWidth, 32);
-                                inputHeight.value = roundTo(imageHeight, 32);
-                                triggerChangeFor(inputAspectRatio);
-                                triggerChangeFor(inputWidth);
-                                triggerChangeFor(inputHeight);
-                            }
-                        },
-                        {
-                            key: 'Use Exact Aspect Resolution',
-                            title: "Sets the Aspect Ratio to Custom, and resolution to exactly this image's resolution, without any rounding",
-                            action: () => {
-                                inputAspectRatio.value = "Custom";
-                                inputWidth.value = imageWidth;
-                                inputHeight.value = imageHeight;
-                                triggerChangeFor(inputAspectRatio);
-                                triggerChangeFor(inputWidth);
-                                triggerChangeFor(inputHeight);
-                            }
-                        }
-                    ], false, rect.x, rect.y + rect.height, document.body);
+                    new AdvancedPopover('initimage_res', getImageResolutionOptions(imageWidth, imageHeight), false, rect.x, rect.y + rect.height, document.body);
                 });
             }
         }

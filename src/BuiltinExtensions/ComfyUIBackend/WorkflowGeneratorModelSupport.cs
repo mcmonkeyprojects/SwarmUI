@@ -57,6 +57,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is MiniMax H3.</summary>
     public bool IsMiniMaxH3() => IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxH3);
 
+    /// <summary>Returns true if the current model is MiniMax H3 Image.</summary>
+    public bool IsMiniMaxH3Image() => IsModelCompatClass(T2IModelClassSorter.CompatMiniMaxH3Image);
+
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
     public bool IsFlux() => IsModelCompatClass(T2IModelClassSorter.CompatFlux);
 
@@ -422,6 +425,15 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
             return new([emptyVideo, 0], this, WGNodeData.DT_LATENT_VIDEO, CurrentCompat()) { Width = width, Height = height, Frames = frames, FPS = fps };
+        }
+        else if (IsMiniMaxH3Image())
+        {
+            return resultImage(CreateNode("SwarmEmptyMiniMaxH3ImageLatent", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height,
+                ["width"] = width
+            }, id));
         }
         else if (IsMiniMaxH3())
         {
@@ -1498,6 +1510,11 @@ public partial class WorkflowGenerator
                 helpers.LoadClipAudio(IsLTXV25() ? helpers.GetLTX25Gemma4Model() : helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
                 helpers.AudioVaeLoad(model.ToString(ModelFolderFormat));
             }
+        }
+        else if (IsMiniMaxH3Image())
+        {
+            helpers.LoadClip("minimax", helpers.GetQwen3vl_32bMiniMaxModel());
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatMiniMaxH3Image, "minimax-h3-image-vae");
         }
         else if (IsMiniMaxH3())
         {

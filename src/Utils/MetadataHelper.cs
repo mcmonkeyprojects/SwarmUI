@@ -67,15 +67,14 @@ public static class MetadataHelper
         image.ColorSpace = ColorSpace.sRGB;
         image.ColorType = ColorType.TrueColorAlpha;
         image.Depth = 8;
-        // stupid hack to stop the alpha layer from getting deleted
-        if (actualMode == "alpha" && format.StartsWith("WEBP"))
-        {
-            PrepareImageForWebPAlpha(image);
-        }
-
         string binaryData = PrepareData(metadata, actualMode, true);
         using IPixelCollection<ushort> pixels = image.GetPixels();
         byte[] data = pixels.ToByteArray(PixelMapping.RGBA);
+        // stupid hack to stop the alpha layer from getting deleted
+        if (actualMode == "alpha" && format.StartsWith("WEBP"))
+        {
+            PrepareImageForWebPAlpha(data, (int)image.Width, (int)image.Height);
+        }
         if (actualMode == "alpha")
         {
             EmbedAlpha(data, (int)image.Width, (int)image.Height, binaryData);
@@ -91,14 +90,11 @@ public static class MetadataHelper
     /// Pre-processes the image to prevent the WebP encoder from discarding the alpha channel.
     /// It does this by creating a semi-transparent vertical line on the right edge of the image.
     /// </summary>
-    public static void PrepareImageForWebPAlpha(IMagickImage<ushort> image)
+    public static void PrepareImageForWebPAlpha(byte[] pixels, int width, int height)
     {
-        image.ColorType = ColorType.TrueColorAlpha;
-        using IPixelCollection<ushort> pixels = image.GetPixels();
-        for (int y = 0; y < image.Height; y++)
+        for (int y = 0; y < height; y++)
         {
-            IPixel<ushort> pixel = pixels.GetPixel((int)image.Width - 1, y);
-            pixel.SetChannel(3, 254 * 257);
+            pixels[(y * width + width - 1) * 4 + 3] = 254;
         }
     }
 
