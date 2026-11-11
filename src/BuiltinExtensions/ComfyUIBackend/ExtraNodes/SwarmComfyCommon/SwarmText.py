@@ -534,6 +534,8 @@ class SwarmTextEncodeAdvanced:
             nonlocal images
             extra = {}
             if minimax_refs is not None:
+                if "picture_label" in minimax_refs:
+                    return clip.tokenize(text, images=[item["data"] for item in minimax_refs["ref_items"]], picture_label=minimax_refs["picture_label"])
                 extra["minimax_ref_items"] = minimax_refs["ref_items"]
             if clip_vision_output is not None:
                 return clip.tokenize(text, llama_template=llama_template if llama_template else None, image_embeds=clip_vision_output.mm_projected, **extra)

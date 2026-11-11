@@ -113,6 +113,26 @@ def _empty_av_latent(width, height, length, batch_size=1):
                         device=comfy.model_management.intermediate_device())
     return {"samples": comfy.nested_tensor.NestedTensor((video, audio))}, frame_count
 
+class SwarmEmptyMiniMaxH3ImageLatent(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="SwarmEmptyMiniMaxH3ImageLatent",
+            display_name="Swarm Empty MiniMax H3 Image Latent",
+            category="SwarmUI/latent",
+            inputs=[
+                io.Int.Input("width", default=2048, min=32, max=nodes.MAX_RESOLUTION, step=32),
+                io.Int.Input("height", default=2048, min=32, max=nodes.MAX_RESOLUTION, step=32),
+                io.Int.Input("batch_size", default=1, min=1, max=4096),
+            ],
+            outputs=[io.Latent.Output()],
+        )
+
+    @classmethod
+    def execute(cls, width, height, batch_size=1) -> io.NodeOutput:
+        latent = torch.zeros([batch_size, 24, 1, height // 16, width // 16], device=comfy.model_management.intermediate_device())
+        return io.NodeOutput({"samples": latent})
+
 class SwarmEmptyMiniMaxH3LatentAV(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -154,6 +174,30 @@ def _encode_ref_audio(audio_vae, audio):
         waveform = comfy.audio.resample(waveform, sr, vae_sr)
     z = audio_vae.encode(waveform[:1].movedim(1, -1))
     return z, z.shape[-1]
+
+class SwarmMiniMaxH3ImageCollectReferences(io.ComfyNode):
+    """Collects MiniMax H3 Image references for SwarmTextEncodeAdvanced."""
+
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="SwarmMiniMaxH3ImageCollectReferences",
+            display_name="Swarm MiniMax H3 Image Collect References",
+            category="SwarmUI/conditioning",
+            inputs=[
+                io.Vae.Input("vae"),
+                io.Autogrow.Input("ref_images", optional=True, template=io.Autogrow.TemplatePrefix(input=io.Image.Input("ref_image"), prefix="ref_image_", min=0, max=100)),
+            ],
+            outputs=[MiniMaxReferences.Output(display_name="MiniMax References")],
+        )
+
+    @classmethod
+    def execute(cls, vae, ref_images=None) -> io.NodeOutput:
+        from comfy_extras.nodes_minimax_h3 import _image_refs, _size_short_edge, IMAGE_REF_SHORT_EDGE, IMAGE_REF_VAE_MAX_SHORT_EDGE
+        _, vision_images, ref_blocks = _image_refs(ref_images, vae,
+            lambda w, h: _size_short_edge(w, h, IMAGE_REF_SHORT_EDGE, IMAGE_REF_SHORT_EDGE),
+            lambda w, h: _size_short_edge(w, h, IMAGE_REF_SHORT_EDGE, IMAGE_REF_VAE_MAX_SHORT_EDGE))
+        return io.NodeOutput({"ref_items": [{"type": "image", "data": image} for image in vision_images], "ref_blocks": ref_blocks, "picture_label": "Picture %d: "})
 
 class SwarmMiniMaxH3CollectReferences(io.ComfyNode):
     """Collects MiniMax H3 reference images / videos / audio into MiniMaxReferences."""
@@ -247,5 +291,7 @@ NODE_CLASS_MAPPINGS = {
     "SwarmLTXVAudioVAELoader": SwarmLTXVAudioVAELoader,
     "SwarmMiniMaxH3AddKeyframes": SwarmMiniMaxH3AddKeyframes,
     "SwarmEmptyMiniMaxH3LatentAV": SwarmEmptyMiniMaxH3LatentAV,
+    "SwarmEmptyMiniMaxH3ImageLatent": SwarmEmptyMiniMaxH3ImageLatent,
+    "SwarmMiniMaxH3ImageCollectReferences": SwarmMiniMaxH3ImageCollectReferences,
     "SwarmMiniMaxH3CollectReferences": SwarmMiniMaxH3CollectReferences,
 }

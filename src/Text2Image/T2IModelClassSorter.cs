@@ -106,6 +106,7 @@ public class T2IModelClassSorter
         CompatFibo2 = RegisterCompat(new() { ID = "fibo-2", ShortCode = "Fibo2", LorasTargetTextEnc = false, VaeFamily = VaeFlux2, BoundingBoxFormat = T2IBoundingBoxFormat.Fibo2 }),
         CompatMageFlow = RegisterCompat(new() { ID = "mage-flow", ShortCode = "Mage", LorasTargetTextEnc = false, VaeFamily = VaeFlux2 }),
         CompatMiniMaxH3 = RegisterCompat(new() { ID = "minimax-h3", ShortCode = "MMH3", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true, HasJointAVLatents = true, ResolutionPrecision = 32 }),
+        CompatMiniMaxH3Image = RegisterCompat(new() { ID = "minimax-h3-image", ShortCode = "MMH3I", LorasTargetTextEnc = false, ResolutionPrecision = 32 }),
         CompatSam3 = RegisterCompat(new() { ID = "sam3", ShortCode = "SAM3", LorasTargetTextEnc = false }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
@@ -220,7 +221,8 @@ public class T2IModelClassSorter
         bool isLtxv23(JObject h) => hasKey(h, "text_embedding_projection.audio_aggregate_embed.weight") || hasKey(h, "transformer_blocks.1.prompt_scale_shift_table");
         bool isLtxv2Lora(JObject h) => (hasLoraKey(h, "transformer_blocks.0.attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.attn2.to_v"))
             || (hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.audio_attn1.to_v"));
-        bool isMiniMaxH3(JObject h) => hasKey(h, "video_patch_proj.weight") && hasKey(h, "audio_patch_proj.weight");
+        bool isMiniMaxH3(JObject h) => hasKey(h, "video_patch_proj.weight") && hasKey(h, "audio_patch_proj.weight") && hasKey(h, "blocks.49.attn.out_proj.weight");
+        bool isMiniMaxH3Image(JObject h) => hasKey(h, "video_patch_proj.weight") && hasKey(h, "condition_proj.weight") && hasKey(h, "blocks.49.attn.qkv_proj.weight") && !hasKey(h, "audio_patch_proj.weight");
         bool isMiniMaxH3Lora(JObject h) => (hasLoraKey(h, "blocks.0.adaln_proj.linear") || hasLoraKey(h, "blocks.0.attn.qkv_proj")) && hasLoraKey(h, "blocks.49.mlp.fc2") && hasLoraKey(h, "token_refiner.blocks.0.attn.out_proj");
         bool isMiniMaxH3Embedding(JObject h) => h.ContainsKey("qwen3vl_32b") && h.Properties().Count() < 4;
         bool isMiniMaxH3VideoVae(JObject h) => h.ContainsKey("decoder.transformer_blocks.0.scale1") && h.ContainsKey("encoder.down.5.block.0.conv1.weight");
@@ -801,6 +803,14 @@ public class T2IModelClassSorter
         Register(new() { ID = "minimax-h3/audio-vae", CompatClass = CompatMiniMaxH3, Name = "MiniMax H3 Audio VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isMiniMaxH3AudioVae(h) && !isMiniMaxH3VideoVae(h);
+        }});
+        Register(new() { ID = "minimax-h3-image", CompatClass = CompatMiniMaxH3Image, Name = "MiniMax H3 Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isMiniMaxH3Image(h);
+        }});
+        Register(new() { ID = "minimax-h3-image/vae", CompatClass = CompatMiniMaxH3Image, Name = "MiniMax H3 Image VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
         }});
         // ====================== Anima ======================
         Register(new() { ID = "anima", CompatClass = CompatAnima, Name = "Anima", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>

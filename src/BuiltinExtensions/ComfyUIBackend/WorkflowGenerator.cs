@@ -1064,7 +1064,7 @@ public partial class WorkflowGenerator
             defscheduler ??= "simple";
         }
         // TODO: Registry of model default preferences instead of this
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsMingImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsFibo2() || IsMageFlow() || IsMossImage() || IsMiniMaxMusic3() || IsSeedVR2())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsQwenImage21() || IsZImage() || IsMingImage() || IsZetaChroma() || IsErnie() || IsHiDreamO1() || IsLens() || IsPixelDiT() || IsKrea2() || IsBoogu() || IsFibo2() || IsMageFlow() || IsMossImage() || IsMiniMaxMusic3() || IsSeedVR2() || IsMiniMaxH3Image())
         {
             defscheduler ??= "simple";
         }
@@ -2527,7 +2527,30 @@ public partial class WorkflowGenerator
             defaultGuidance = 1;
         }
         JArray minimaxRefs = null;
-        if (isPositive && IsMiniMaxH3())
+        if (isPositive && IsMiniMaxH3Image())
+        {
+            JObject refData = new()
+            {
+                ["vae"] = CurrentVae.Path
+            };
+            bool hasAny = false;
+            // TODO: Warn or error if max inputs exceeded
+            for (int i = 0; i < 16; i++)
+            {
+                JArray image = GetPromptImage(false, true, i);
+                if (image is null)
+                {
+                    break;
+                }
+                hasAny = true;
+                refData[$"ref_images.ref_image_{i}"] = image;
+            }
+            if (hasAny)
+            {
+                minimaxRefs = NodePath(CreateNode("SwarmMiniMaxH3ImageCollectReferences", refData), 0);
+            }
+        }
+        else if (isPositive && IsMiniMaxH3())
         {
             JObject refData = new()
             {
