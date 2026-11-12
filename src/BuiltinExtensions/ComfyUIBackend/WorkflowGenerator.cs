@@ -178,6 +178,12 @@ public partial class WorkflowGenerator
     /// <summary>If true, the generator is currently working on Image2Video-SwapModel.</summary>
     public bool IsImageToVideoSwap = false;
 
+    /// <summary>Whether the initial image-to-video stage already trimmed the video output.</summary>
+    internal bool VideoTrimApplied;
+
+    /// <summary>Whether a video stage already applied the requested interpolation to the output.</summary>
+    internal bool VideoInterpolationApplied;
+
     /// <summary>If true, the main sampler should add noise. If false, it shouldn't.</summary>
     public bool MainSamplerAddNoise = true;
 
@@ -2346,6 +2352,7 @@ public partial class WorkflowGenerator
                 ["trim_end"] = UserInput.Get(T2IParamTypes.TrimVideoEndFrames, 0)
             });
             CurrentMedia = CurrentMedia.WithPath([trimNode, 0]);
+            VideoTrimApplied |= genInfo.ContextID == T2IParamInput.SectionID_Video;
         }
         IsImageToVideo = false;
     }

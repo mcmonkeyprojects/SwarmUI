@@ -2161,6 +2161,7 @@ public class WorkflowGeneratorSteps
                     JArray interpolated = g.DoInterpolation(g.CurrentMedia.Path, method, mult);
                     g.CurrentMedia = g.CurrentMedia.WithPath(interpolated);
                     g.CurrentMedia.FPS = genInfo.VideoFPS.HasValue ? genInfo.VideoFPS.Value * mult : null;
+                    g.VideoInterpolationApplied = true;
                 }
             }
         }, 11);
@@ -2308,6 +2309,7 @@ public class WorkflowGeneratorSteps
                     g.CurrentMedia = g.CurrentMedia.WithPath(interp);
                     videoFps *= mult;
                     g.CurrentMedia.FPS = videoFps;
+                    g.VideoInterpolationApplied = true;
                 }
             }
         }, 12);
@@ -2432,7 +2434,7 @@ public class WorkflowGeneratorSteps
         {
             if (g.IsVideoModel())
             {
-                if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
+                if (!g.VideoTrimApplied && (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _)))
                 {
                     string trimNode = g.CreateNode("SwarmTrimFrames", new JObject()
                     {
@@ -2442,7 +2444,7 @@ public class WorkflowGeneratorSteps
                     });
                     g.CurrentMedia = g.CurrentMedia.WithPath([trimNode, 0]);
                 }
-                if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
+                if (!g.VideoInterpolationApplied && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
                     && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1
                     && g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 99) > 1)
                 {
