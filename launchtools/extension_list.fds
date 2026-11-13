@@ -429,3 +429,12 @@ SnapRef:
     - nodes
     # Vibecoded
     - low quality
+
+H3SeamMatch:
+    author: CrHasher
+    description: Online color/brightness seam correction between chained MiniMax H3 image-to-video clips.
+    url: https://github.com/CrHasher/SwarmUI-H3SeamMatch
+    license: MIT
+    tags:
+    - parameters
+    - nodes
