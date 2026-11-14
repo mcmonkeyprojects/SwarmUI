@@ -800,6 +800,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Steps:** `6`
     - **Resolution:** Defaults to `2048` but can do from `768`-ish (will degrade heavily below that) up to `4096`.
         - It is a 16x downscale VAE, vs most other models are 8x, so this 2048 is closer to other models' 1024.
+        - The best strat is probably gen at 4096, then use SeedVR with a pre-downscale and re-upscale to fix the details.
 
 # Video Models
 

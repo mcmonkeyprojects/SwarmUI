@@ -26,8 +26,6 @@ if not getattr(latent_preview.preview_to_image, "_swarm_patched", False):
             latents_ubyte = (((latent_image + 1.0) / 2.0).clamp(0, 1).mul(0xFF))
         else:
             latents_ubyte = (latent_image.clamp(0, 1).mul(0xFF))
-        if comfy.model_management.directml_enabled:
-            latents_ubyte = latents_ubyte.to(dtype=torch.uint8)
         latents_ubyte = latents_ubyte.to(device="cpu", dtype=torch.uint8, non_blocking=comfy.model_management.device_supports_non_blocking(latent_image.device))
         return latents_ubyte
     _swarm_preview_to_image._swarm_patched = True
