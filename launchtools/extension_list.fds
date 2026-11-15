@@ -96,6 +96,31 @@ APIBackends:
     - backend
     - paid
 
+CloudBackends:
+    author: Hartsy
+    description: Runs generations on RunPod and Vast.ai cloud GPUs (serverless or pods/instances), starting and stopping them on demand.
+    url: https://github.com/HartsyAI/SwarmUI-CloudBackends
+    license: MIT
+    tags:
+    - backend
+    - paid
+
+ModelBrowser:
+    author: Hartsy
+    description: Adds a model browser to Utilities > Model Downloader to search, preview, and download models from CivitAI, Hugging Face, and Hartsy.
+    url: https://github.com/HartsyAI/SwarmUI-ModelBrowser
+    license: MIT
+    tags:
+    - ui
+
+Workspaces:
+    author: Hartsy
+    description: Saves your whole Generate tab as named workspaces (every parameter, toggle, and active preset) that you can switch between in one click.
+    url: https://github.com/HartsyAI/SwarmUI-Workspaces
+    license: MIT
+    tags:
+    - ui
+
 WildcardImporter:
     author: spoomples+bman654
     description: Lets you import Wildcards from Auto1111-extension-syntax (SD Dynamic Prompts) YAML cards into Swarm's standardizable format.
