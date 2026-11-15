@@ -113,6 +113,14 @@ ModelBrowser:
     tags:
     - ui
 
+Workspaces:
+    author: Hartsy
+    description: Saves your whole Generate tab as named workspaces (every parameter, toggle, and active preset) that you can switch between in one click.
+    url: https://github.com/HartsyAI/SwarmUI-Workspaces
+    license: MIT
+    tags:
+    - ui
+
 WildcardImporter:
     author: spoomples+bman654
     description: Lets you import Wildcards from Auto1111-extension-syntax (SD Dynamic Prompts) YAML cards into Swarm's standardizable format.
