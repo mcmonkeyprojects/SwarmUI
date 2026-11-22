@@ -808,6 +808,10 @@ public class T2IModelClassSorter
         {
             return isMiniMaxH3Image(h);
         }});
+        Register(new() { ID = "minimax-h3-image/lora", CompatClass = CompatMiniMaxH3Image, Name = "MiniMax H3 Image LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // Can't distinguish from h3 video
+        }});
         Register(new() { ID = "minimax-h3-image/vae", CompatClass = CompatMiniMaxH3Image, Name = "MiniMax H3 Image VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return false;
@@ -1099,8 +1103,8 @@ public class T2IModelClassSorter
         Remaps["hidream_o1_image"] = "hidream-o1";
         // ====================== kohya ss_network_module remaps ======================
         Remaps["networks.lora_minimax_h3"] = "minimax-h3/lora";
-        Remaps["MiniMax-H3-Image/lora"] = "minimax-h3/lora";
-        Remaps["minimaxh3image"] = "minimax-h3/lora";
+        Remaps["MiniMax-H3-Image/lora"] = "minimax-h3-image/lora";
+        Remaps["minimaxh3image"] = "minimax-h3-image/lora";
     }
 
     /// <summary>Returns the model class that matches this model, or null if none.</summary>
