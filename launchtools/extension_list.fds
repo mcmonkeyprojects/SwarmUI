@@ -175,15 +175,14 @@ Mahiro:
     - lowquality
 
 TIPO:
-    author: Hugs288
+    author: AshtakaOOf, Hugs288
     description: Adds a parameter group for TIPO (anime tag prompt gen).
-    url: https://github.com/Hugs288/TipoForSwarmUI
+    url: https://github.com/AshtakaOOf/TipoForSwarmUI
+    old_url: https://github.com/Hugs288/TipoForSwarmUI
     license: MIT
     tags:
     - parameters
     - nodes
-    # Removed from github?
-    - hidden
 
 NegPip:
     author: khanghy1000, orig. Hugs288
