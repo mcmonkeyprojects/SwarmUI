@@ -104,6 +104,8 @@ CloudBackends:
     tags:
     - backend
     - paid
+    # Vibecoded in rapid mass pushes? Code quality is through the floor.
+    - lowquality
 
 ModelBrowser:
     author: Hartsy
@@ -112,6 +114,8 @@ ModelBrowser:
     license: MIT
     tags:
     - ui
+    # Vibecoded in rapid mass pushes? Code quality is through the floor.
+    - lowquality
 
 Workspaces:
     author: Hartsy
@@ -120,6 +124,8 @@ Workspaces:
     license: MIT
     tags:
     - ui
+    # Vibecoded in rapid mass pushes? Code quality is through the floor.
+    - lowquality
 
 WildcardImporter:
     author: spoomples+bman654
