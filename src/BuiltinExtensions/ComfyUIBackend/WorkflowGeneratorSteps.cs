@@ -12,8 +12,6 @@ namespace SwarmUI.Builtin_ComfyUIBackend;
 
 public class WorkflowGeneratorSteps
 {
-    public static Action<WorkflowGenerator> SeedVRStep;
-
     /// <summary>Register a new step to the workflow generator.</summary>
     public static void AddStep(Action<WorkflowGenerator> step, double priority)
     {
@@ -56,16 +54,24 @@ public class WorkflowGeneratorSteps
     {
         AddStep(g =>
         {
-            T2IModel model = g.UserInput.Get(T2IParamTypes.Model);
-            if (g.UserInput.Get(ComfyUIBackendExtension.SeedVROnly) && model?.ModelClass?.CompatClass == T2IModelClassSorter.CompatSeedVR2 && g.UserInput.TryGet(T2IParamTypes.InitImage, out Image input))
+            if (g.UserInput.Get(ComfyUIBackendExtension.SeedVROnly, false))
             {
+                T2IModel model = g.UserInput.Get(ComfyUIBackendExtension.SeedVRModel);
+                Image input = g.UserInput.Get(T2IParamTypes.InitImage);
                 g.FinalLoadedModel = model;
                 g.NoVAEOverride = true;
                 (g.FinalLoadedModel, g.CurrentModel, g.CurrentTextEnc, g.CurrentVae) = g.CreateModelLoader(model, "SeedVR2", sectionId: T2IParamInput.SectionID_SeedVR);
-                g.PreserveSeedVRSourceMetadata(input);
                 g.CurrentMedia = g.LoadImage(input, "${initimage}", false, "15");
-                g.UserInput.Set(ComfyUIBackendExtension.SeedVRModel, model);
-                SeedVRStep(g);
+                if (input.Type.MetaType == MediaMetaType.Animation)
+                {
+                    ImageMagick.MagickImageCollection frames = input.ToMagickFrames;
+                    g.CurrentMedia.DataType = frames.Count == 1 ? WGNodeData.DT_IMAGE : WGNodeData.DT_VIDEO;
+                    if (frames.Count > 1 && frames.All(f => f.AnimationDelay > 0 && f.AnimationTicksPerSecond > 0))
+                    {
+                        g.CurrentMedia.FPS = 1 / frames.Average(f => (double)f.AnimationDelay / f.AnimationTicksPerSecond);
+                    }
+                }
+                runSeedVR(g);
                 g.CurrentMedia.SaveOutput(g.CurrentVae, null, "9");
                 g.SkipFurtherSteps = true;
             }
@@ -2331,7 +2337,7 @@ public class WorkflowGeneratorSteps
         }, 12);
         #endregion
         #region SeedVR
-        AddStep(SeedVRStep = g =>
+        void runSeedVR(WorkflowGenerator g)
         {
             if (!g.UserInput.TryGet(ComfyUIBackendExtension.SeedVRModel, out T2IModel seedVrModel) || seedVrModel is null)
             {
@@ -2443,7 +2449,8 @@ public class WorkflowGeneratorSteps
                 }
             }
             g.CurrentMedia = g.CreateSeedVR2Restore(seedVrModel, media, vae, seed);
-        }, 40);
+        }
+        AddStep(runSeedVR, 40);
         #endregion
         #region Final Cleanups
         AddStep(g =>

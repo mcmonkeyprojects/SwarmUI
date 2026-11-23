@@ -517,6 +517,10 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     public JObject BuildRequest(T2IParamInput user_input)
     {
         JObject req = user_input.ToJSON();
+        if (req.Value<bool>("seedvronly") && user_input.TryGet(T2IParamTypes.InitImage, out Image media) && media.Type != MediaType.ImagePng)
+        {
+            req["initimage"] = $"data:{media.Type.MimeType};base64,{req["initimage"]}";
+        }
         req[T2IParamTypes.Images.Type.ID] = 1;
         req["session_id"] = Session;
         req[T2IParamTypes.DoNotSave.Type.ID] = true;
