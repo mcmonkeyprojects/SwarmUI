@@ -1241,6 +1241,7 @@ class InputBrowserHelper {
         if (!this.inputImageBrowser) {
             this.inputImageBrowser = new GenPageBrowserClass('input_image_browser_container', this.listInputFiles.bind(this), 'inputimagebrowser', 'Thumbnails', this.describeInputFile.bind(this), this.selectInputFile.bind(this));
         }
+        $('#input_image_browser_modal').appendTo('body');
         $('#input_image_browser_modal').modal('show');
         this.inputImageBrowser.navigate('');
         this.inputImageBrowser.lightRefresh();
