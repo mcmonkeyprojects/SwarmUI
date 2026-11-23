@@ -96,6 +96,37 @@ APIBackends:
     - backend
     - paid
 
+CloudBackends:
+    author: Hartsy
+    description: Runs generations on RunPod and Vast.ai cloud GPUs (serverless or pods/instances), starting and stopping them on demand.
+    url: https://github.com/HartsyAI/SwarmUI-CloudBackends
+    license: MIT
+    tags:
+    - backend
+    - paid
+    # Vibecoded in rapid mass pushes? Code quality is through the floor.
+    - lowquality
+
+ModelBrowser:
+    author: Hartsy
+    description: Adds a model browser to Utilities > Model Downloader to search, preview, and download models from CivitAI, Hugging Face, and Hartsy.
+    url: https://github.com/HartsyAI/SwarmUI-ModelBrowser
+    license: MIT
+    tags:
+    - ui
+    # Vibecoded in rapid mass pushes? Code quality is through the floor.
+    - lowquality
+
+Workspaces:
+    author: Hartsy
+    description: Saves your whole Generate tab as named workspaces (every parameter, toggle, and active preset) that you can switch between in one click.
+    url: https://github.com/HartsyAI/SwarmUI-Workspaces
+    license: MIT
+    tags:
+    - ui
+    # Vibecoded in rapid mass pushes? Code quality is through the floor.
+    - lowquality
+
 WildcardImporter:
     author: spoomples+bman654
     description: Lets you import Wildcards from Auto1111-extension-syntax (SD Dynamic Prompts) YAML cards into Swarm's standardizable format.
@@ -175,15 +206,14 @@ Mahiro:
     - lowquality
 
 TIPO:
-    author: Hugs288
+    author: AshtakaOOf, Hugs288
     description: Adds a parameter group for TIPO (anime tag prompt gen).
-    url: https://github.com/Hugs288/TipoForSwarmUI
+    url: https://github.com/AshtakaOOf/TipoForSwarmUI
+    old_url: https://github.com/Hugs288/TipoForSwarmUI
     license: MIT
     tags:
     - parameters
     - nodes
-    # Removed from github?
-    - hidden
 
 NegPip:
     author: khanghy1000, orig. Hugs288
@@ -428,4 +458,15 @@ SnapRef:
     - parameters
     - nodes
     # Vibecoded
+    - low quality
+
+H3SeamMatch:
+    author: CrHasher
+    description: Color/brightness seam correction between chained MiniMax H3 image-to-video clips.
+    url: https://github.com/CrHasher/SwarmUI-H3SeamMatch
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+    # Vibecoded, questionable implementation
     - low quality

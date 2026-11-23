@@ -460,6 +460,9 @@ function isModelArchCorrect(model, curCompat = null) {
             if (model.architecture.endsWith('/lora') && model.compat_class.startsWith('flux-1') && curCompat.startsWith('chroma')) {
                 return true;
             }
+            if (model.architecture.endsWith('/lora') && model.compat_class == 'minimax-h3' && curCompat == 'minimax-h3-image') {
+                return true;
+            }
             return model.compat_class == curCompat;
         }
     }

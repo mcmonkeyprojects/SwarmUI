@@ -222,8 +222,8 @@ public class T2IModelClassSorter
         bool isLtxv2Lora(JObject h) => (hasLoraKey(h, "transformer_blocks.0.attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.attn2.to_v"))
             || (hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.audio_attn1.to_v"));
         bool isMiniMaxH3(JObject h) => hasKey(h, "video_patch_proj.weight") && hasKey(h, "audio_patch_proj.weight") && hasKey(h, "blocks.49.attn.out_proj.weight");
-        bool isMiniMaxH3Image(JObject h) => hasKey(h, "video_patch_proj.weight") && hasKey(h, "condition_proj.weight") && hasKey(h, "blocks.49.attn.qkv_proj.weight") && !hasKey(h, "audio_patch_proj.weight");
         bool isMiniMaxH3Lora(JObject h) => (hasLoraKey(h, "blocks.0.adaln_proj.linear") || hasLoraKey(h, "blocks.0.attn.qkv_proj")) && hasLoraKey(h, "blocks.49.mlp.fc2") && hasLoraKey(h, "token_refiner.blocks.0.attn.out_proj");
+        bool isMiniMaxH3Image(JObject h) => hasKey(h, "video_patch_proj.weight") && hasKey(h, "condition_proj.weight") && hasKey(h, "blocks.49.attn.qkv_proj.weight") && !hasKey(h, "audio_patch_proj.weight");
         bool isMiniMaxH3Embedding(JObject h) => h.ContainsKey("qwen3vl_32b") && h.Properties().Count() < 4;
         bool isMiniMaxH3VideoVae(JObject h) => h.ContainsKey("decoder.transformer_blocks.0.scale1") && h.ContainsKey("encoder.down.5.block.0.conv1.weight");
         bool isMiniMaxH3AudioVae(JObject h) => h.ContainsKey("pre_block.attn.zero_k_bias");
@@ -808,6 +808,10 @@ public class T2IModelClassSorter
         {
             return isMiniMaxH3Image(h);
         }});
+        Register(new() { ID = "minimax-h3-image/lora", CompatClass = CompatMiniMaxH3Image, Name = "MiniMax H3 Image LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // Can't distinguish from h3 video
+        }});
         Register(new() { ID = "minimax-h3-image/vae", CompatClass = CompatMiniMaxH3Image, Name = "MiniMax H3 Image VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return false;
@@ -1099,6 +1103,8 @@ public class T2IModelClassSorter
         Remaps["hidream_o1_image"] = "hidream-o1";
         // ====================== kohya ss_network_module remaps ======================
         Remaps["networks.lora_minimax_h3"] = "minimax-h3/lora";
+        Remaps["MiniMax-H3-Image/lora"] = "minimax-h3-image/lora";
+        Remaps["minimaxh3image"] = "minimax-h3-image/lora";
     }
 
     /// <summary>Returns the model class that matches this model, or null if none.</summary>
@@ -1119,7 +1125,8 @@ public class T2IModelClassSorter
             ?? fix(header?["__metadata__"]?.Value<string>("model_type"))
             ?? fix(header.Value<string>("model_type"))
             ?? fix(header?["__metadata__"]?.Value<string>("ss_network_module"))
-            ?? fix(header.Value<string>("ss_network_module"));
+            ?? fix(header.Value<string>("ss_network_module"))
+            ?? fix(header.Value<string>("ss_architecture"));
         T2IModelClass matchedClass = null;
         if (arch is not null)
         {
