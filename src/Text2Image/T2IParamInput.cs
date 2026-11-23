@@ -700,9 +700,15 @@ public class T2IParamInput
     public void Set(T2IParamType param, string val, int sectionId = 0)
     {
         GetSectionParamOverrides(sectionId).Set(param, val);
-        if (param.FeatureFlag is not null)
+        if (!string.IsNullOrWhiteSpace(param.FeatureFlag))
         {
-            RequiredFlags.UnionWith(param.FeatureFlag.SplitFast(','));
+            foreach (string flag in param.FeatureFlag.SplitFast(','))
+            {
+                if (!string.IsNullOrWhiteSpace(flag))
+                {
+                    RequiredFlags.Add(flag.Trim());
+                }
+            }
         }
     }
 
@@ -710,9 +716,15 @@ public class T2IParamInput
     public void Set<T>(T2IRegisteredParam<T> param, T val, int sectionId = 0)
     {
         GetSectionParamOverrides(sectionId).Set(param, val);
-        if (param.Type.FeatureFlag is not null)
+        if (!string.IsNullOrWhiteSpace(param.Type.FeatureFlag))
         {
-            RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
+            foreach (string flag in param.Type.FeatureFlag.SplitFast(','))
+            {
+                if (!string.IsNullOrWhiteSpace(flag))
+                {
+                    RequiredFlags.Add(flag.Trim());
+                }
+            }
         }
     }
 
