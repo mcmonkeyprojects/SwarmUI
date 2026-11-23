@@ -128,6 +128,12 @@ public class T2IParamInput
     /// <summary>Extra data to store in metadata.</summary>
     public Dictionary<string, object> ExtraMeta = [];
 
+    /// <summary>Source prompts for output filenames when processing existing media.</summary>
+    public (string Prompt, string NegativePrompt)? OutputPrompts;
+
+    /// <summary>Optional transformation applied to the generated output metadata.</summary>
+    public Func<JObject, JObject> MetadataModifier;
+
     /// <summary>Indices in the LoRA parameter lists that are dynamically applied by prompt conditioning hooks.</summary>
     public List<int> DynamicLoraIndices = [];
 
@@ -485,7 +491,7 @@ public class T2IParamInput
                 final["sui_models"] = models;
             }
         }
-        return final;
+        return MetadataModifier?.Invoke(final) ?? final;
     }
 
     /// <summary>Generates a metadata JSON object for this input and creates a proper string form of it, fit for inclusion in an image.</summary>

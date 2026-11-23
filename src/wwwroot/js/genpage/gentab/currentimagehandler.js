@@ -1301,6 +1301,47 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             });
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
+    includeButton('Run SeedVR', () => {
+        let modelInput = document.getElementById('input_seedvrmodel');
+        let model = modelInput && getInputVal(modelInput);
+        if (!model || model == 'None') {
+            showError('Select a SeedVR Model before using SeedVR.');
+            return;
+        }
+        let [width, height] = naturalDim();
+        toDataURL(src, url => {
+            let overrides = { model, seedvronly: true, noloadmodels: true, images: 1, width, height, initimage: url };
+            let source = metaParsed?.sui_image_params;
+            if (source?.seed != null && !('seedvrmodel' in source)) {
+                overrides.seed = source.seed;
+            }
+            let retained = new Set([...Object.keys(overrides), 'seed', 'imageformat', 'videoformat', 'colordepth', 'donotsave', 'overrideoutpathformat', 'internalbackendtype', 'exactbackendid', 'vaetilesize', 'vaetileoverlap', 'vaetemporaltilesize', 'vaetemporaltileoverlap']);
+            for (let param of gen_param_types) {
+                for (let group = param.original_group || param.group; group; group = group.parent) {
+                    if (group.id == 'seedvr') {
+                        retained.add(param.id);
+                        break;
+                    }
+                }
+            }
+            let toggler = getRequiredElementById('input_group_content_seedvr_toggle');
+            let togglerOriginal = toggler.checked;
+            toggler.checked = true;
+            triggerChangeFor(toggler);
+            mainGenHandler.doGenerate(overrides, {}, input => {
+                toggler.checked = togglerOriginal;
+                triggerChangeFor(toggler);
+                for (let key of Object.keys(input)) {
+                    if (!retained.has(key)) {
+                        delete input[key];
+                    }
+                }
+                if (source) {
+                    input.extra_metadata = { seedvr_source_metadata: metadata };
+                }
+            });
+        });
+    }, '', 'Runs SeedVR on this image or video with the current SeedVR settings', ['image', 'video']);
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {

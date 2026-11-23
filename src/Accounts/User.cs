@@ -370,6 +370,8 @@ public class User
 
         public string BatchID;
 
+        public (string Prompt, string NegativePrompt)? OutputPrompts;
+
         public OutpathFillHelper(T2IParamInput user_input, User user, string batchId)
         {
             UserInput = user_input;
@@ -414,10 +416,10 @@ public class User
                 "second" => $"{UserInput.RequestTime.Second:00}",
                 "millisecond" => $"{UserInput.RequestTime.Millisecond:000}",
                 "request_time_inc" => $"{UserInput.RequestRefTime:000}",
-                "prompt" => UserInput.Get(T2IParamTypes.Prompt),
-                "prompthash" => QuickHash(UserInput.Get(T2IParamTypes.Prompt)),
-                "negative_prompt" => UserInput.Get(T2IParamTypes.NegativePrompt),
-                "negativeprompthash" => QuickHash(UserInput.Get(T2IParamTypes.NegativePrompt)),
+                "prompt" => OutputPrompts?.Prompt ?? UserInput.Get(T2IParamTypes.Prompt),
+                "prompthash" => QuickHash(OutputPrompts?.Prompt ?? UserInput.Get(T2IParamTypes.Prompt)),
+                "negative_prompt" => OutputPrompts?.NegativePrompt ?? UserInput.Get(T2IParamTypes.NegativePrompt),
+                "negativeprompthash" => QuickHash(OutputPrompts?.NegativePrompt ?? UserInput.Get(T2IParamTypes.NegativePrompt)),
                 "seed" => $"{UserInput.Get(T2IParamTypes.Seed)}",
                 "cfg_scale" => $"{UserInput.Get(T2IParamTypes.CFGScale)}",
                 "width" => $"{UserInput.GetImageWidth()}",
@@ -436,6 +438,10 @@ public class User
                 string clean = T2IParamTypes.CleanTypeName(part);
                 if (T2IParamTypes.TryGetType(clean, out T2IParamType type, UserInput))
                 {
+                    if (OutputPrompts is { } prompts && type.ID is "prompt" or "negativeprompt")
+                    {
+                        return $"{T2IParamInput.SimplifyParamVal(type.ID == "prompt" ? prompts.Prompt : prompts.NegativePrompt)}";
+                    }
                     data = "";
                     if (UserInput.TryGetRaw(type, out object val))
                     {
@@ -464,7 +470,7 @@ public class User
     {
         int maxLen = Settings.OutPathBuilder.MaxLenPerPart;
         DateTimeOffset time = DateTimeOffset.Now;
-        OutpathFillHelper helper = new(user_input, this, $"{batchIndex}");
+        OutpathFillHelper helper = new(user_input, this, $"{batchIndex}") { OutputPrompts = user_input.OutputPrompts };
         string buildPathPart(string part)
         {
             string data = helper.FillPartUnformatted(part) ?? $"[{part}]";

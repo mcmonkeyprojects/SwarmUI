@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
@@ -169,10 +170,83 @@ public class ComfyUIBackendExtension : Extension
         return [.. results];
     }
 
+    /// <summary>Use the selected media's generation metadata as the base for a standalone SeedVR result.</summary>
+    public static void PrepareSeedVRInput(T2IParamInput input)
+    {
+        if (!input.Get(SeedVROnly, false))
+        {
+            return;
+        }
+        T2IModel model = input.Get(T2IParamTypes.Model);
+        if (model?.ModelClass?.CompatClass != T2IModelClassSorter.CompatSeedVR2 || !input.TryGet(T2IParamTypes.InitImage, out Image media) || (media.Type.MetaType != MediaMetaType.Video && !media.Type.MimeType.StartsWith("image/", StringComparison.Ordinal)))
+        {
+            throw new SwarmUserErrorException("Run SeedVR requires a SeedVR model and a source image or video.");
+        }
+        input.Set(SeedVRModel, model);
+        long inputSeed = input.Get(T2IParamTypes.Seed);
+        JObject pass = new() { ["input_seed"] = inputSeed, ["sampling_seed"] = input.Get(T2IParamTypes.Seed, inputSeed + 9, sectionId: T2IParamInput.SectionID_SeedVR, includeBase: false) };
+        foreach (T2IRegisteredParam<int> param in new[] { T2IParamTypes.VAETileSize, T2IParamTypes.VAETileOverlap, T2IParamTypes.VAETemporalTileSize, T2IParamTypes.VAETemporalTileOverlap })
+        {
+            if (input.TryGet(param, out int value))
+            {
+                pass[param.Type.ID] = value;
+            }
+        }
+        input.ExtraMeta["seedvr_pass"] = pass;
+        input.ParamsQueried.UnionWith(input.InternalSet.ValuesInput.Keys.Where(isSeedVRParam));
+        if (!input.ExtraMeta.Remove("seedvr_source_metadata", out object supplied) || supplied is not string json)
+        {
+            return;
+        }
+        try
+        {
+            JObject source = JObject.Parse(json);
+            if (source["sui_image_params"] is not JObject parameters)
+            {
+                return;
+            }
+            input.OutputPrompts = ((parameters["prompt"] as JValue)?.Value as string ?? "", (parameters["negativeprompt"] as JValue)?.Value as string ?? "");
+            input.MetadataModifier = restored =>
+            {
+                JObject result = new(source.Properties().Where(p => p.Name is not ("sui_image_params" or "sui_models" or "is_starred")));
+                result["sui_image_params"] = new JObject(parameters.Properties().Where(p => !isSeedVRParam(p.Name)).Concat(((JObject)restored["sui_image_params"]).Properties().Where(p => isSeedVRParam(p.Name))));
+                JObject extra = result["sui_extra_data"] as JObject ?? new();
+                extra["seedvr_pass"] = pass;
+                result["sui_extra_data"] = extra;
+                JArray models = new((source["sui_models"] as JArray ?? []).Where(m => !isSeedVRParam((m as JObject)?["param"]?.ToString())).Concat((restored["sui_models"] as JArray ?? []).Where(m => isSeedVRParam((string)m["param"]))));
+                if (models.Count > 0)
+                {
+                    result["sui_models"] = models;
+                }
+                return result;
+            };
+        }
+        catch (JsonException ex)
+        {
+            Logs.Warning($"Could not read SeedVR source metadata: {ex.Message}");
+        }
+
+        bool isSeedVRParam(string key)
+        {
+            if (key is not null && T2IParamTypes.TryGetType(key, out T2IParamType type, input))
+            {
+                for (T2IParamGroup group = type.Group; group is not null; group = group.Parent)
+                {
+                    if (group == GroupSeedVR)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
     /// <inheritdoc/>
     public override void OnShutdown()
     {
         T2IParamTypes.FakeTypeProviders.Remove(DynamicParamGenerator);
+        T2IParamInput.LateSpecialParameterHandlers.Remove(PrepareSeedVRInput);
     }
 
     /// <summary>Forces all currently running comfy backends to restart.</summary>
@@ -613,7 +687,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice, ModelAttentionBackend, UseSparseAttention, SeedVRUpscaleMethod, SeedVRColorCorrectionBehavior, EnableReferenceLatents, TextEncodedImage;
 
-    public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG, SeedVRSplitLatent;
+    public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG, SeedVRSplitLatent, SeedVROnly;
 
     public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG, NormalizedAttentionGuidanceScale, NormalizedAttentionGuidanceAlpha, NormalizedAttentionGuidanceTau, SeedVRUpscale, SeedVRPreDownscale;
 
@@ -877,6 +951,10 @@ public class ComfyUIBackendExtension : Extension
             ));
         // ================================================ SeedVR ================================================
         GroupSeedVR = new T2IParamGroup("SeedVR", Toggles: true, Open: false, OrderPriority: -2.5, Description: "SeedVR2 is a one-step restoration model, run over the result of the normal generation.");
+        SeedVROnly = T2IParamTypes.Register<bool>(new("SeedVR Only", "",
+            "false", IgnoreIf: "false", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSwarmInternal, VisibleNormally: false, ExtraHidden: true, HideFromMetadata: true
+            ));
+        T2IParamInput.LateSpecialParameterHandlers.Add(PrepareSeedVRInput);
         SeedVRModel = T2IParamTypes.Register<T2IModel>(new("SeedVR Model", "Which SeedVR2 model to restore with.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", Group: GroupSeedVR, Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true, OrderPriority: -10,
             GetValues: (session) => ["None", .. T2IParamTypes.CleanModelList(Program.MainSDModels.ListModelsFor(session).Where(m => m.ModelClass?.CompatClass?.ID == "seedvr2").OrderBy(m => m.Name).Select(m => m.Name))]
