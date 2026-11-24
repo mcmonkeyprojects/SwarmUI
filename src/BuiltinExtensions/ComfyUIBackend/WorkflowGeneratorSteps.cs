@@ -1766,6 +1766,21 @@ public class WorkflowGeneratorSteps
                         }, "26");
                         g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0], WGNodeData.DT_LATENT_VIDEO);
                     }
+                    else if (g.IsMiniMaxH3Image())
+                    {
+                        int precision = T2IModelClassSorter.CompatMiniMaxH3Image.ResolutionPrecision;
+                        width = Math.Max(precision, width / precision * precision);
+                        height = Math.Max(precision, height / precision * precision);
+                        g.CurrentMedia = g.CurrentMedia.AsLatentImage(g.CurrentVae);
+                        g.CreateNode("MiniMaxH3LatentUpscaleWithModel", new JObject()
+                        {
+                            ["model"] = NodePath("27", 0),
+                            ["samples"] = g.CurrentMedia.Path,
+                            ["width"] = width,
+                            ["height"] = height
+                        }, "26");
+                        g.CurrentMedia = g.CurrentMedia.WithPath(["26", 0]);
+                    }
                     else
                     {
                         throw new SwarmUserErrorException($"Cannot latent-upscale with a model for {g.CurrentCompatClass()}, check your Refiner Upscale Method parameter");
