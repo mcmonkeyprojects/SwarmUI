@@ -1036,12 +1036,7 @@ class GenTabLayout {
             this.mobileTopbarCanDrag = false;
             this.mobileTopbarDragging = false;
             document.body.classList.remove('mobile-panel-dragging');
-            if (this.isSmallWindow && document.body.classList.contains('modal-open')) {
-                this.swipeStartX = -1;
-                this.swipeStartY = -1;
-                return;
-            }
-            if (this.isSmallWindow && this.isMobileSplitterTouchTarget(e.target)) {
+            if (this.isSmallWindow && (document.body.classList.contains('modal-open') || this.isMobileSplitterTouchTarget(e.target) || (this.isMobileBottomOpen() && e.target.closest?.('#t2i_bottom_bar_content')))) {
                 this.swipeStartX = -1;
                 this.swipeStartY = -1;
                 return;
